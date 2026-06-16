@@ -13,5 +13,5 @@ func TestAIModelService_RecommendModels(t *testing.T) {
 	var service *service.AIModelService
 	unitTest.FetchService(&service)
 
-	t.Log(service.RecommendModels("deepseek", "sk-ccec93010d58433699b4abda77bc372f", ""))
+	t.Log(service.RecommendModels("deepseek", "sk-mock", ""))
 }
