@@ -17,8 +17,8 @@
 </p>
 
 <p align="center">
-  <a href="https://8tree.net">Website</a> ·
-  <a href="https://preview.8tree.net">Live Preview</a> ·
+  <a href="https://goraven.dev">Website</a> ·
+  <a href="https://preview.goraven.dev">Live Preview</a> ·
   <a href="https://discord.gg/derR7CBYDW">Discord</a> ·
   <a href="./README_CN.md">中文</a>
 </p>
