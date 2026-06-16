@@ -56,17 +56,6 @@ docker run -d --restart=always --name raven-agent \
   8treenet/raven:latest
 ```
 
-### China mirror
-
-```bash
-docker pull docker.1panel.live/8treenet/raven:latest
-
-docker run -d --restart=always --name raven-agent \
-  -p 8000:8000 \
-  -e RAVEN_CHINA_MIRROR=1 \
-  docker.1panel.live/8treenet/raven:latest
-```
-
 After startup, visit `http://localhost:8000` and follow the initialization flow to create your admin account.
 
 ---

@@ -1,0 +1,454 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================
+   Raven Design Tokens
+   "Precision Tooling"
+   ============================================ */
+
+@theme inline {
+  /* Background layers */
+  --color-bg-base: var(--bg-base);
+  --color-bg-layer-1: var(--bg-layer-1);
+  --color-bg-layer-2: var(--bg-layer-2);
+  --color-bg-layer-3: var(--bg-layer-3);
+  --color-bg-hover: var(--bg-hover);
+
+  /* Text hierarchy */
+  --color-text-1: var(--text-1);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-text-muted: var(--text-muted);
+
+  /* Borders */
+  --color-border-custom: var(--border-custom);
+  --color-border-strong: var(--border-strong);
+
+  /* Accent / Highlight */
+  --color-highlight: var(--highlight);
+  --color-highlight-fg: var(--highlight-fg);
+
+  /* Interactive (links, selected indicators) */
+  --color-interactive: var(--interactive);
+  --color-interactive-hover: var(--interactive-hover);
+
+  /* Font */
+  --font-sans: "system-ui", -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --font-mono: "Cascadia Code", "Consolas", "JetBrains Mono", "Fira Code", "SF Mono", monospace;
+
+  /* Radius */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* Shadow */
+  --shadow-soft: var(--shadow-soft-val);
+  --shadow-pop: var(--shadow-pop-val);
+}
+
+/* ============================================
+   Light mode (primary)
+   Pure white base + steel-blue structures
+   + amber highlight + cool interactive
+   ============================================ */
+
+:root {
+  --bg-base: #ffffff;
+  --bg-layer-1: oklch(0.98 0.002 260);
+  --bg-layer-2: oklch(0.96 0.004 255);
+  --bg-layer-3: oklch(0.91 0.02 250);
+  --bg-hover: oklch(0.87 0.035 245);
+
+  --text-1: oklch(0.15 0.003 260);
+  --text-2: oklch(0.40 0.004 255);
+  --text-3: oklch(0.55 0.005 250);
+  --text-muted: oklch(0.70 0.004 248);
+
+  --border-custom: oklch(0.89 0.015 250);
+  --border-strong: oklch(0.80 0.03 248);
+
+  --highlight: oklch(0.68 0.16 80);
+  --highlight-fg: #ffffff;
+
+  --interactive: oklch(0.52 0.10 260);
+  --interactive-hover: oklch(0.45 0.12 260);
+
+  --shadow-soft-val: 0 1px 0 0 rgba(0, 0, 0, 0.02), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-pop-val: 0 1px 0 0 rgba(0, 0, 0, 0.02), 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================
+   System dark (prefers-color-scheme: dark)
+   Cool-tinted deep surfaces
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-base: oklch(0.18 0.008 260);
+    --bg-layer-1: oklch(0.22 0.008 260);
+    --bg-layer-2: oklch(0.25 0.010 255);
+    --bg-layer-3: oklch(0.30 0.012 250);
+    --bg-hover: oklch(0.34 0.014 245);
+
+    --text-1: oklch(0.94 0.001 260);
+    --text-2: oklch(0.74 0.003 255);
+    --text-3: oklch(0.58 0.003 250);
+    --text-muted: oklch(0.54 0.003 248);
+
+  --border-custom: oklch(0.30 0.008 255);
+  --border-strong: oklch(0.38 0.010 250);
+
+  --highlight: oklch(0.72 0.14 80);
+  --highlight-fg: oklch(0.12 0.003 260);
+
+  --interactive: oklch(0.65 0.10 260);
+  --interactive-hover: oklch(0.72 0.12 260);
+
+  --shadow-soft-val: inset 0 1px 0 0 rgba(255, 255, 255, 0.04), 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-pop-val: inset 0 1px 0 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.60);
+  }
+}
+
+/* ============================================
+   Forced dark (user selected "dark")
+   ============================================ */
+
+.dark {
+  --bg-base: oklch(0.18 0.008 260);
+  --bg-layer-1: oklch(0.22 0.008 260);
+  --bg-layer-2: oklch(0.25 0.010 255);
+  --bg-layer-3: oklch(0.30 0.012 250);
+  --bg-hover: oklch(0.34 0.014 245);
+
+  --text-1: oklch(0.94 0.001 260);
+  --text-2: oklch(0.74 0.003 255);
+  --text-3: oklch(0.58 0.003 250);
+  --text-muted: oklch(0.54 0.003 248);
+
+  --border-custom: oklch(0.30 0.008 255);
+  --border-strong: oklch(0.38 0.010 250);
+
+  --highlight: oklch(0.72 0.14 80);
+  --highlight-fg: oklch(0.12 0.003 260);
+
+  --interactive: oklch(0.65 0.10 260);
+  --interactive-hover: oklch(0.72 0.12 260);
+
+  --shadow-soft-val: inset 0 1px 0 0 rgba(255, 255, 255, 0.04), 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-pop-val: inset 0 1px 0 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.60);
+}
+
+/* ============================================
+   Forced light (user selected "light" while system is dark)
+   ============================================ */
+
+.light {
+  --bg-base: #ffffff;
+  --bg-layer-1: oklch(0.98 0.002 260);
+  --bg-layer-2: oklch(0.96 0.004 255);
+  --bg-layer-3: oklch(0.91 0.02 250);
+  --bg-hover: oklch(0.87 0.035 245);
+
+  --text-1: oklch(0.15 0.003 260);
+  --text-2: oklch(0.40 0.004 255);
+  --text-3: oklch(0.55 0.005 250);
+  --text-muted: oklch(0.70 0.004 248);
+
+  --border-custom: oklch(0.89 0.015 250);
+  --border-strong: oklch(0.80 0.03 248);
+
+  --highlight: oklch(0.68 0.16 80);
+  --highlight-fg: #ffffff;
+
+  --interactive: oklch(0.52 0.10 260);
+  --interactive-hover: oklch(0.45 0.12 260);
+
+  --shadow-soft-val: 0 1px 0 0 rgba(0, 0, 0, 0.02), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-pop-val: 0 1px 0 0 rgba(0, 0, 0, 0.02), 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================
+   shadcn/ui CSS variable mapping
+   ============================================ */
+
+:root {
+  --background: var(--color-bg-base);
+  --foreground: var(--color-text-1);
+  --card: var(--color-bg-layer-1);
+  --card-foreground: var(--color-text-1);
+  --popover: var(--color-bg-base);
+  --popover-foreground: var(--color-text-1);
+  --primary: var(--color-text-1);
+  --primary-foreground: var(--color-bg-base);
+  --secondary: var(--color-bg-layer-3);
+  --secondary-foreground: var(--color-text-1);
+  --muted: var(--color-bg-layer-2);
+  --muted-foreground: var(--color-text-3);
+  --accent: var(--highlight);
+  --accent-foreground: var(--highlight-fg);
+  --destructive: var(--color-border-strong);
+  --destructive-foreground: var(--color-text-1);
+  --border: var(--color-border-custom);
+  --input: var(--color-border-strong);
+  --ring: var(--color-interactive);
+  --radius: 6px;
+
+  --sidebar: var(--color-bg-layer-1);
+  --sidebar-foreground: var(--color-text-1);
+  --sidebar-primary: var(--color-text-1);
+  --sidebar-primary-foreground: var(--color-bg-base);
+  --sidebar-accent: var(--color-bg-hover);
+  --sidebar-accent-foreground: var(--color-text-1);
+  --sidebar-border: var(--color-border-custom);
+  --sidebar-ring: var(--color-interactive);
+
+  --chart-1: var(--highlight);
+  --chart-2: var(--color-interactive);
+  --chart-3: oklch(0.64 0.12 75);
+  --chart-4: oklch(0.70 0.06 250);
+  --chart-5: oklch(0.56 0.10 80);
+}
+
+/* ============================================
+    Streamdown / Markdown overrides
+    Scoped to .raven-markdown wrapper
+    ============================================ */
+
+.raven-markdown {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.raven-markdown .heading-1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: currentColor;
+}
+
+.raven-markdown .heading-2 {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: currentColor;
+}
+
+.raven-markdown .heading-3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 1rem;
+  margin-bottom: 0.375rem;
+  color: currentColor;
+}
+
+.raven-markdown .heading-4,
+.raven-markdown .heading-5,
+.raven-markdown .heading-6 {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+  color: currentColor;
+  opacity: 0.8;
+}
+
+.raven-markdown p {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  color: inherit;
+}
+
+.raven-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.raven-markdown .blockquote {
+  border-left: none;
+  background-color: var(--bg-layer-1);
+  border-radius: var(--radius-md);
+  padding: 0.625rem 0.875rem;
+  margin: 0.75rem 0;
+  color: var(--text-2);
+  font-style: normal;
+}
+
+.raven-markdown .blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.raven-markdown .inline-code {
+  background-color: var(--bg-layer-2);
+  border-radius: var(--radius-sm);
+  padding: 0.125rem 0.375rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: currentColor;
+}
+
+.raven-markdown [data-streamdown="code-block"] {
+  border-radius: 0;
+  background-color: transparent;
+  border: none;
+  padding: 0;
+}
+
+.raven-markdown [data-streamdown="code-block-header"] {
+  display: none;
+}
+
+.raven-markdown .table {
+  width: 100%;
+  margin: 0.75rem 0;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.raven-markdown .table-header-cell {
+  text-align: left;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  color: currentColor;
+  opacity: 0.7;
+  background-color: var(--bg-layer-1);
+}
+
+.raven-markdown .table-cell {
+  padding: 0.5rem 0.75rem;
+  color: inherit;
+}
+
+.raven-markdown .table-row:nth-child(even) {
+  background-color: var(--bg-layer-1);
+}
+
+.raven-markdown .ordered-list,
+.raven-markdown .unordered-list {
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
+
+.raven-markdown .list-item {
+  margin: 0.25rem 0;
+  color: inherit;
+}
+
+.raven-markdown .list-item::marker {
+  color: var(--text-muted);
+}
+
+.raven-markdown hr {
+  border: none;
+  border-top: 1px solid var(--border-custom);
+  margin: 1rem 0;
+}
+
+.raven-markdown a {
+  color: var(--interactive);
+  text-decoration: none;
+}
+
+.raven-markdown a:hover {
+  text-decoration: underline;
+}
+
+.raven-markdown strong {
+  font-weight: 600;
+  color: currentColor;
+}
+
+/* ============================================
+    Sonner toast overrides
+    ============================================ */
+
+[data-sonner-toaster] {
+  --normal-bg: var(--color-bg-layer-2);
+  --normal-border: var(--color-border-custom);
+  --normal-text: var(--color-text-1);
+  --success-bg: var(--color-bg-layer-2);
+  --success-border: var(--color-border-custom);
+  --error-bg: var(--color-bg-layer-2);
+  --error-border: var(--color-border-custom);
+  --warning-bg: var(--color-bg-layer-2);
+  --warning-border: var(--color-border-custom);
+  --info-bg: var(--color-bg-layer-2);
+  --info-border: var(--color-border-custom);
+  font-family: var(--font-sans);
+}
+
+[data-sonner-toaster] [data-sonner-toast] {
+  border-radius: var(--radius-lg);
+}
+
+[data-sonner-toaster] [data-close-button] {
+  right: 12px;
+  top: 12px;
+  left: auto;
+  transform: none;
+}
+
+/* ============================================
+    Base styles
+    ============================================ */
+
+/* Prevent Recharts SVG overflow from covering UI elements.
+   The !important is needed because Recharts sets overflow:visible
+   on the SVG element programmatically. Tooltip divs are siblings of
+   the SVG so they remain unclipped. */
+.recharts-surface {
+  overflow: hidden !important;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    background-color: var(--color-bg-base);
+    color: var(--color-text-1);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Unified thin scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-bg-layer-3) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--color-bg-layer-3);
+    border-radius: 9999px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-border-strong);
+  }
+}

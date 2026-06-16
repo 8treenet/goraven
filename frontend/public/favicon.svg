@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 8 38 50" fill="none">
+  <!-- Raven — geometric minimal silhouette, right-facing profile -->
+  <!-- Beak -->
+  <polygon points="28,20 40,17 28,25" fill="#8bb5d4"/>
+  <!-- Head -->
+  <rect x="18" y="14" width="12" height="12" fill="#8bb5d4"/>
+  <!-- Head top crest -->
+  <polygon points="18,14 22,14 22,10 14,12" fill="#8bb5d4"/>
+  <!-- Neck -->
+  <rect x="16" y="24" width="10" height="6" fill="#6c93b5"/>
+  <!-- Body -->
+  <polygon points="16,28 30,28 28,40 14,40" fill="#5589ad"/>
+  <!-- Wing upper -->
+  <polygon points="18,28 30,28 32,36 18,36" fill="#3d6d92"/>
+  <!-- Wing lower -->
+  <polygon points="18,36 32,36 34,44 18,44" fill="#6396ba"/>
+  <!-- Tail -->
+  <polygon points="14,40 8,42 6,50 14,48" fill="#d99a2c"/>
+  <polygon points="14,48 6,50 8,54 16,52" fill="#b87d1e"/>
+  <!-- Legs -->
+  <rect x="16" y="44" width="2" height="10" fill="#8bb5d4"/>
+  <rect x="20" y="44" width="2" height="10" fill="#8bb5d4"/>
+  <!-- Feet -->
+  <polygon points="16,54 18,54 19,56 15,56" fill="#8bb5d4"/>
+  <polygon points="20,54 22,54 23,56 19,56" fill="#8bb5d4"/>
+  <!-- Eye -->
+  <rect x="22" y="16" width="3" height="3" fill="#0a0a0b"/>
+</svg>

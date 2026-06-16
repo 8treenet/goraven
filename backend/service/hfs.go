@@ -1,0 +1,344 @@
+package service
+
+import (
+	"crypto/md5"
+	"encoding/hex"
+	"fmt"
+	"io"
+	"math/rand"
+	"os"
+	"path/filepath"
+	"raven/backend/po"
+	"raven/backend/repository"
+	"raven/backend/vo"
+	"raven/config"
+	"raven/core/iface"
+	"raven/core/sandbox"
+	"raven/util"
+	"strings"
+	"time"
+
+	"github.com/8treenet/freedom"
+)
+
+func init() {
+	freedom.Prepare(func(initiator freedom.Initiator) {
+		initiator.BindService(func() *HFSService {
+			return &HFSService{}
+		})
+		initiator.InjectController(func(ctx freedom.Context) (service *HFSService) {
+			initiator.FetchService(ctx, &service)
+			return
+		})
+		initiator.BindBooting(func(bootManager freedom.BootManager) {
+			freedom.ServiceLocator().Call(func(service *HFSService) error {
+				service.Worker.DeferRecycle()
+				service.VerifierTimer()
+				return nil
+			})
+		})
+	})
+}
+
+type HFSService struct {
+	Worker		freedom.Worker
+	HFSRepo		*repository.HFSRepository
+	SysCfgRepo	*repository.SystemSettingRepository
+	UserRepository	*repository.UserRepository
+}
+
+var _ iface.FileURLGenerator = (*HFSService)(nil)
+
+func (service *HFSService) GenerateURL(userID string, filePath string) (string, error) {
+
+	sysconf, err := service.SysCfgRepo.LoadConfig()
+	if err != nil {
+		return "", err
+	}
+	user, err := service.UserRepository.FindByUserId(userID)
+	if err != nil {
+		return "", err
+	}
+	sb, sberr := sandbox.NewSandbox(user.Username)
+	if sberr != nil {
+		return "", sberr
+	}
+	exists, err := sb.Exists(filepath.Join(sb.GetWorkspace(), filePath))
+	if err != nil {
+		return "", fmt.Errorf("验证文件失败: %w", err)
+	}
+	if !exists {
+		return "", fmt.Errorf("文件不存在: %s", filePath)
+	}
+
+	existing, err := service.HFSRepo.GetFileLinkByPath(userID, filePath)
+	if err == nil && existing != nil && existing.Deleted == 0 && !existing.IsExpired() {
+		return service.buildURL(existing.LinkId, filePath, sysconf.GeneralDomain), nil
+	}
+
+	linkId := util.UUID()
+	fileName := filepath.Base(filePath)
+	expiresHours := sysconf.FileLinkExpiresHours
+
+	link := &po.FileLink{
+		LinkId:		linkId,
+		UserId:		userID,
+		FilePath:	filePath,
+		FileName:	fileName,
+		ExpiresAt:	time.Now().Add(time.Duration(expiresHours) * time.Hour),
+	}
+	if err := service.HFSRepo.CreateFileLink(link); err != nil {
+		return "", fmt.Errorf("创建外链记录失败: %w", err)
+	}
+
+	return service.buildURL(linkId, filePath, sysconf.GeneralDomain), nil
+}
+
+func (service *HFSService) ResolveFile(linkId string) (userID, userName string, filePath string, fileName string, err error) {
+	link, err := service.HFSRepo.GetFileLinkByLinkId(linkId)
+	if err != nil {
+		return "", "", "", "", fmt.Errorf("外链不存在: %s", linkId)
+	}
+	if link.Deleted == 1 {
+		return "", "", "", "", fmt.Errorf("外链已被删除: %s", linkId)
+	}
+	if link.IsExpired() {
+		return "", "", "", "", fmt.Errorf("外链已过期: %s", linkId)
+	}
+
+	user, err := service.UserRepository.FindByUserId(link.UserId)
+	if err != nil || user == nil {
+		return "", "", "", "", fmt.Errorf("外链已过期: %s", linkId)
+	}
+	return link.UserId, user.Username, link.FilePath, link.FileName, nil
+}
+
+func (service *HFSService) buildURL(linkId string, filePath, domain string) string {
+	ext := filepath.Ext(filePath)
+	return fmt.Sprintf("%s/api/hfs/public/%s%s", strings.TrimSuffix(domain, "/"), linkId, ext)
+}
+
+func (service *HFSService) CreateUpload(userID string, req *vo.ChunkUploadCreateReq) (*vo.ChunkUploadCreateRsp, error) {
+	uploadId := util.UUID()
+	tempBase := config.Get().GetUploadTempDir()
+	tempDir := filepath.Join(tempBase, uploadId)
+
+	if err := os.MkdirAll(tempDir, 0755); err != nil {
+		return nil, fmt.Errorf("create temp dir: %w", err)
+	}
+
+	totalChunks := req.TotalChunks
+	if totalChunks <= 0 {
+		totalChunks = int(req.FileSize / int64(req.ChunkSize))
+		if req.FileSize%int64(req.ChunkSize) != 0 {
+			totalChunks++
+		}
+	}
+
+	upload := &po.ChunkUpload{
+		UploadId:	uploadId,
+		UserId:		userID,
+		FileName:	req.FileName,
+		FileSize:	req.FileSize,
+		ChunkSize:	req.ChunkSize,
+		TotalChunks:	totalChunks,
+		TempDir:	tempDir,
+		Status:		po.UploadStatusPending,
+	}
+
+	if err := service.HFSRepo.CreateUpload(upload); err != nil {
+		os.RemoveAll(tempDir)
+		return nil, fmt.Errorf("create upload record: %w", err)
+	}
+
+	return &vo.ChunkUploadCreateRsp{
+		UploadId:	uploadId,
+		TempDir:	tempDir,
+	}, nil
+}
+
+func (service *HFSService) UploadChunk(userID string, req *vo.ChunkUploadReq, chunkData io.Reader) error {
+	upload, err := service.HFSRepo.GetUploadByUploadId(req.UploadId)
+	if err != nil {
+		return fmt.Errorf("upload not found: %s", req.UploadId)
+	}
+
+	if upload.UserId != userID {
+		return fmt.Errorf("permission denied")
+	}
+
+	if upload.Status != po.UploadStatusPending {
+		return fmt.Errorf("upload already completed or cancelled")
+	}
+
+	if req.ChunkIndex < 0 || req.ChunkIndex >= upload.TotalChunks {
+		return fmt.Errorf("invalid chunk index: %d", req.ChunkIndex)
+	}
+
+	chunkPath := filepath.Join(upload.TempDir, fmt.Sprintf("chunk_%d", req.ChunkIndex))
+	chunkFile, err := os.Create(chunkPath)
+	if err != nil {
+		return fmt.Errorf("create chunk file: %w", err)
+	}
+	defer chunkFile.Close()
+
+	hash := md5.New()
+	tee := io.TeeReader(chunkData, hash)
+
+	if _, err := io.Copy(chunkFile, tee); err != nil {
+		return fmt.Errorf("write chunk: %w", err)
+	}
+
+	actualMd5 := hex.EncodeToString(hash.Sum(nil))
+	if req.ChunkMd5 != "" && actualMd5 != req.ChunkMd5 {
+		os.Remove(chunkPath)
+		return fmt.Errorf("chunk md5 mismatch: expected %s, got %s", req.ChunkMd5, actualMd5)
+	}
+
+	return nil
+}
+
+func (service *HFSService) MergeUpload(userID string, uploadId string) (*vo.ChunkMergeRsp, error) {
+	upload, err := service.HFSRepo.GetUploadByUploadId(uploadId)
+	if err != nil {
+		return nil, fmt.Errorf("upload not found: %s", uploadId)
+	}
+
+	if upload.UserId != userID {
+		return nil, fmt.Errorf("permission denied")
+	}
+
+	if upload.Status != po.UploadStatusPending {
+		return nil, fmt.Errorf("upload already completed or cancelled")
+	}
+
+	for i := 0; i < upload.TotalChunks; i++ {
+		chunkPath := filepath.Join(upload.TempDir, fmt.Sprintf("chunk_%d", i))
+		if _, err := os.Stat(chunkPath); os.IsNotExist(err) {
+			return nil, fmt.Errorf("incomplete upload: missing chunk %d", i)
+		}
+	}
+
+	mergedPath := filepath.Join(upload.TempDir, upload.FileName)
+	mergedFile, err := os.Create(mergedPath)
+	if err != nil {
+		return nil, fmt.Errorf("create merged file: %w", err)
+	}
+	defer mergedFile.Close()
+
+	for i := 0; i < upload.TotalChunks; i++ {
+		chunkPath := filepath.Join(upload.TempDir, fmt.Sprintf("chunk_%d", i))
+		chunkFile, err := os.Open(chunkPath)
+		if err != nil {
+			return nil, fmt.Errorf("open chunk %d: %w", i, err)
+		}
+		if _, err := io.Copy(mergedFile, chunkFile); err != nil {
+			chunkFile.Close()
+			return nil, fmt.Errorf("merge chunk %d: %w", i, err)
+		}
+		chunkFile.Close()
+		os.Remove(chunkPath)
+	}
+
+	if err := service.HFSRepo.UpdateUploadStatus(uploadId, po.UploadStatusCompleted); err != nil {
+		return nil, fmt.Errorf("update status: %w", err)
+	}
+
+	return &vo.ChunkMergeRsp{
+		UploadId:	uploadId,
+		FilePath:	mergedPath,
+		FileName:	upload.FileName,
+		FileSize:	upload.FileSize,
+	}, nil
+}
+
+func (service *HFSService) CommitAssets(userID string, uploadId string) (*vo.AssetsRsp, error) {
+	upload, err := service.HFSRepo.GetUploadByUploadId(uploadId)
+	if err != nil {
+		return nil, fmt.Errorf("upload not found: %s", uploadId)
+	}
+
+	if upload.UserId != userID {
+		return nil, fmt.Errorf("permission denied")
+	}
+
+	if upload.Status != po.UploadStatusCompleted {
+		return nil, fmt.Errorf("upload not completed")
+	}
+
+	srcPath := filepath.Join(upload.TempDir, upload.FileName)
+	if _, err := os.Stat(srcPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("file not found in temp dir")
+	}
+
+	dateDir := time.Now().Format("20060102")
+	uploadDir := filepath.Join(config.Get().GetUploadDir(), dateDir)
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		return nil, fmt.Errorf("create upload dir: %w", err)
+	}
+
+	ext := filepath.Ext(upload.FileName)
+	dstFileName := uploadId + ext
+	dstPath := filepath.Join(uploadDir, dstFileName)
+
+	if err := os.Rename(srcPath, dstPath); err != nil {
+		return nil, fmt.Errorf("move file: %w", err)
+	}
+
+	if err := service.HFSRepo.MarkUploadUsed(uploadId); err != nil {
+		os.Rename(dstPath, srcPath)
+		return nil, fmt.Errorf("mark upload used: %w", err)
+	}
+
+	os.RemoveAll(upload.TempDir)
+
+	return &vo.AssetsRsp{
+		Path: fmt.Sprintf("/upload/%s/%s", dateDir, dstFileName),
+	}, nil
+}
+
+func (service *HFSService) VerifierTimer() {
+	if !config.Get().System.Initialized {
+		return
+	}
+	go func() {
+		time.Sleep(time.Duration(10+rand.Intn(20)) * time.Second)
+		for {
+			service.cleanupExpiredUploads()
+			time.Sleep(100 * time.Minute)
+		}
+	}()
+}
+
+func (service *HFSService) cleanupExpiredUploads() {
+	if err := service.HFSRepo.SoftDeleteExpiredUploads(2); err != nil {
+		service.Worker.Logger().Errorf("cleanup expired uploads db: %v", err)
+	}
+
+	removeCall := func(removedir string, cutoff time.Time) {
+		entries, err := os.ReadDir(removedir)
+		if err != nil {
+			service.Worker.Logger().Errorf("cleanup read temp dir: %v", err)
+			return
+		}
+
+		for _, entry := range entries {
+			info, err := entry.Info()
+			if err != nil {
+				continue
+			}
+			if !info.ModTime().Before(cutoff) {
+				continue
+			}
+			path := filepath.Join(removedir, entry.Name())
+			if entry.IsDir() {
+				os.RemoveAll(path)
+			} else {
+				os.Remove(path)
+			}
+		}
+	}
+
+	removeCall(config.Get().GetUploadTempDir(), time.Now().Add(-48*time.Hour))
+	removeCall(config.Get().GetDownloadTempDir(), time.Now().Add(-48*time.Hour))
+}
