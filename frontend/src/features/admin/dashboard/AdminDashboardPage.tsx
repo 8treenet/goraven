@@ -21,7 +21,7 @@ import {
   Area,
   ReferenceLine,
 } from 'recharts'
-import { useT } from '@/i18n'
+import { useT, type TranslationKey } from '@/i18n'
 import { formatNumber, formatDiff } from '@/lib/format'
 import { SegmentedControl } from '@/components/charts/SegmentedControl'
 import { ChartTooltip } from '@/components/charts/ChartTooltip'
@@ -116,11 +116,13 @@ function useChartColors() {
 
 type TrendDays = 7 | 30 | 90
 
-const TREND_OPTIONS = [
-  { label: '近 7 天', value: 7 as TrendDays },
-  { label: '近 30 天', value: 30 as TrendDays },
-  { label: '近 90 天', value: 90 as TrendDays },
-]
+function getTrendOptions(t: (key: TranslationKey) => string) {
+  return [
+    { label: t('adminDashboard.trend7Days'), value: 7 as TrendDays },
+    { label: t('adminDashboard.trend30Days'), value: 30 as TrendDays },
+    { label: t('adminDashboard.trend90Days'), value: 90 as TrendDays },
+  ]
+}
 
 /* ============================================
    Shared axis style
@@ -384,7 +386,7 @@ function TokenTrendPanel({
     <div className="flex flex-1 flex-col px-6 py-4">
       <div className="flex shrink-0 items-center justify-between">
         <h3 className="text-xs font-semibold text-text-2">{t('adminDashboard.tokenTrend')}</h3>
-        <SegmentedControl value={trendDays} options={TREND_OPTIONS} onChange={onTrendDaysChange} />
+        <SegmentedControl value={trendDays} options={getTrendOptions(t)} onChange={onTrendDaysChange} />
       </div>
 
       <div className="mt-2 flex shrink-0 gap-6">
@@ -574,7 +576,7 @@ function ActiveTrendPanel({
     <div className="flex flex-1 flex-col px-6 py-4">
       <div className="flex shrink-0 items-center justify-between">
         <h3 className="text-xs font-semibold text-text-2">{t('adminDashboard.activityTrend')}</h3>
-        <SegmentedControl value={trendDays} options={TREND_OPTIONS} onChange={onTrendDaysChange} />
+        <SegmentedControl value={trendDays} options={getTrendOptions(t)} onChange={onTrendDaysChange} />
       </div>
 
       <div className="mt-3 flex-1 min-h-0">

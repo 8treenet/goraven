@@ -131,7 +131,7 @@ function getSourceLabel(source: SourceType): string {
 }
 
 function getInstallStatusLabel(status: InstallStatus): string {
-  if (status === 0) return '未安装'
+  if (status === 0) return translate('common.notInstalled')
   if (status === 1) return translate('common.installing')
   if (status === 2) return translate('common.installed')
   return translate('common.failed')
@@ -142,17 +142,17 @@ function parseSkillContent(content: string): { name: string; description: string
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)
 
   if (!match) {
-    return { name: '', description: '', errors: ['YAML frontmatter 必须以单独一行 --- 开始和结束'] }
+    return { name: '', description: '', errors: [translate('adminSkills.frontmatterError')] }
   }
 
   const frontmatter = match[1]
   const name = frontmatter.match(/^name:\s*(.+)$/m)?.[1]?.trim() ?? ''
   const description = frontmatter.match(/^description:\s*(.+)$/m)?.[1]?.trim() ?? ''
 
-  if (!name) errors.push('缺少 name')
-  if (!description) errors.push('缺少 description')
-  if (name && !name.startsWith('raven-')) errors.push('name 必须以 raven- 开头')
-  if (name && !/^raven-[a-z0-9][a-z0-9-]*$/.test(name)) errors.push('name 只能使用小写英文、数字和连字符')
+  if (!name) errors.push(translate('adminSkills.errMissingName'))
+  if (!description) errors.push(translate('adminSkills.errMissingDescription'))
+  if (name && !name.startsWith('raven-')) errors.push(translate('adminSkills.errNamePrefix'))
+  if (name && !/^raven-[a-z0-9][a-z0-9-]*$/.test(name)) errors.push(translate('adminSkills.errNameFormat'))
 
   return { name, description, errors }
 }
@@ -478,7 +478,7 @@ export function Component() {
   const submitClawHubSearch = useCallback(async () => {
     const query = clawHubQuery.trim()
     if (!query) {
-      toast.error('请输入搜索关键词')
+      toast.error(translate('adminSkills.emptySearchQuery'))
       return
     }
 
@@ -1206,8 +1206,8 @@ export function Component() {
                       </div>
                       <p className="mt-1 text-xs leading-5 text-text-3">
                         {clawHubMode === 'search'
-                          ? 'ClawHub 搜索可能较慢，输入不会触发实时请求。若要直接浏览，请切换到排行。'
-                          : '正在等待 ClawHub 排行数据。'}
+                          ? translate('adminSkills.clawhubSearchTip')
+                          : translate('adminSkills.clawhubRankingWait')}
                       </p>
                     </div>
                   </div>

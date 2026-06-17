@@ -1232,7 +1232,7 @@ function DeleteModelDialog({
         <DialogHeader>
           <DialogTitle>{t('adminModels.deleteModel')}</DialogTitle>
           <DialogDescription>
-            {translate('adminModels.deleteConfirm').replace('删除模型？', `删除模型 ${modelName}？`)}
+            {t('adminModels.deleteConfirm').replace('{name}', modelName)}
           </DialogDescription>
         </DialogHeader>
         <div className="flex justify-end gap-2">
@@ -1811,6 +1811,8 @@ export function Component() {
             <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-text-3" />
             <input
               type="text"
+              name="search"
+              autoComplete="off"
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder={t('adminModels.searchPlaceholder')}

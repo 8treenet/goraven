@@ -224,9 +224,9 @@ function SettingControl({ item, value, onChange, error }: ControlProps) {
             value={value}
             onChange={(e) => onChange(key, e.target.value)}
           >
-            <option value="option1">选项 1</option>
-            <option value="option2">选项 2</option>
-            <option value="option3">选项 3</option>
+            <option value="option1">Option 1</option>
+            <option value="option2">Option 2</option>
+            <option value="option3">Option 3</option>
           </select>
           {error && (
             <span className="text-xs text-red-500">{error}</span>

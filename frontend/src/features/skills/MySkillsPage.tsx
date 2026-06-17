@@ -563,7 +563,7 @@ export function Component() {
 
         <div className={cn('shrink-0', total <= 5 ? 'py-3.5' : 'py-2.5')}>
           <span className="text-xs text-text-muted tabular-nums">
-            {skill.installedCount}次
+            {t('skills.installCountSuffix').replace('{count}', String(skill.installedCount))}
           </span>
         </div>
 
@@ -985,7 +985,7 @@ export function Component() {
           <DialogHeader>
             <DialogTitle>{t('skills.confirmDeleteSkill')}</DialogTitle>
             <DialogDescription>
-              将删除 &quot;{deleteTarget?.skillName}&quot; ({deleteTarget?.skillName})
+              {t('skills.confirmDeleteSkillDesc').replace('{name}', deleteTarget?.skillName ?? '')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">

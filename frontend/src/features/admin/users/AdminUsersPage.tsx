@@ -960,6 +960,8 @@ export function Component() {
             <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-text-3" />
             <input
               type="text"
+              name="search"
+              autoComplete="off"
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder={t('adminUsers.searchPlaceholder')}

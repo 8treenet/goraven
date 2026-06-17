@@ -346,7 +346,7 @@ function TemplateDrawer({
                 ) : (
                   <span />
                 )}
-                <span className="text-xs text-text-muted tabular-nums">{roleInfoCharCount} 字</span>
+                <span className="text-xs text-text-muted tabular-nums">{t('adminPersonaTemplates.charCount').replace('{count}', String(roleInfoCharCount))}</span>
               </div>
             </div>
           </div>
@@ -383,7 +383,7 @@ function TemplateDrawer({
             className="flex-1 resize-none rounded-lg border border-border-strong bg-transparent px-3 py-2.5 text-sm text-text-1 outline-none placeholder:text-text-muted focus:border-interactive focus:ring-3 focus:ring-interactive/50 font-mono"
           />
           <div className="flex items-center justify-between pt-2">
-            <span className="text-xs text-text-muted tabular-nums">{roleInfoCharCount} 字</span>
+            <span className="text-xs text-text-muted tabular-nums">{t('adminPersonaTemplates.charCount').replace('{count}', String(roleInfoCharCount))}</span>
             <Button variant="default" size="default" onClick={() => setFullscreenOpen(false)}>
               {t('adminPersonaTemplates.finishEdit')}
             </Button>
@@ -555,7 +555,7 @@ function CategoryManagementDialog({
                     setForm((f) => ({ ...f, name: e.target.value }))
                     setFormError('')
                   }}
-                  placeholder="如「创意设计」"
+                  placeholder={t('adminPersonaTemplates.catNamePlaceholder')}
                   className="h-8 text-sm"
                   maxLength={32}
                 />
@@ -648,7 +648,7 @@ function DeleteTemplateDialog({
         <DialogHeader>
           <DialogTitle>{translate('adminPersonaTemplates.deleteTemplate')}</DialogTitle>
           <DialogDescription>
-            {translate('adminPersonaTemplates.deleteTemplateDesc')}确定删除「{templateName}」？
+            {translate('adminPersonaTemplates.deleteTemplateDesc')} {translate('adminPersonaTemplates.deleteTemplateConfirm').replace('{name}', templateName)}
           </DialogDescription>
         </DialogHeader>
         <div className="flex justify-end gap-2">

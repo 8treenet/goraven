@@ -936,7 +936,7 @@ function DeleteMcpDialog({
         <DialogHeader>
           <DialogTitle>{t('adminMcp.deleteEndpoint')}</DialogTitle>
           <DialogDescription>
-            {translate('adminMcp.deleteConfirm').replace('删除？', `删除 ${displayName}？`)}
+            {t('adminMcp.deleteConfirm').replace('{name}', displayName)}
           </DialogDescription>
         </DialogHeader>
         <div className="flex justify-end gap-2">
