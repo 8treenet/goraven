@@ -31,16 +31,16 @@ func init() {
 }
 
 type AdminController struct {
-	UserSev		*service.UserService
-	ModelSev	*service.AIModelService
-	McpSev		*service.McpService
-	SkillSev	*service.SkillService
-	PersonaSev	*service.PersonaService
-	SystemSev	*service.SystemInfoService
-	DashboardSev	*service.DashboardService
-	SettingSev	*service.SystemSettingService
-	Request		*infra.Request
-	Worker		freedom.Worker
+	UserSev      *service.UserService
+	ModelSev     *service.AIModelService
+	McpSev       *service.McpService
+	SkillSev     *service.SkillService
+	PersonaSev   *service.PersonaService
+	SystemSev    *service.SystemInfoService
+	DashboardSev *service.DashboardService
+	SettingSev   *service.SystemSettingService
+	Request      *infra.Request
+	Worker       freedom.Worker
 }
 
 func (controller *AdminController) BeforeActivation(b freedom.BeforeActivation) {
@@ -73,6 +73,7 @@ func (controller *AdminController) BeforeActivation(b freedom.BeforeActivation) 
 	b.Handle("PUT", "/mcp/{id:int}/status", "UpdateMCPStatus")
 	b.Handle("GET", "/mcp/recommend", "GetRecommendMCPs")
 	b.Handle("POST", "/mcp/healthCheck", "CheckMCPHealth")
+	b.Handle("PUT", "/mcp/{id:int}/alwaysOn", "ToggleMCPAlwaysOn")
 
 	b.Handle("GET", "/systemSkills", "GetSystemSkills")
 	b.Handle("GET", "/systemSkills/{id:int}", "GetSystemSkillDetail")
@@ -122,6 +123,7 @@ func (controller *AdminController) BeforeActivation(b freedom.BeforeActivation) 
 	b.Handle("GET", "/dashboard", "GetDashboard")
 	b.Handle("GET", "/dashboard/tokenTrend", "GetTokenTrend")
 	b.Handle("GET", "/dashboard/activeUsers", "GetActiveUsers")
+
 }
 
 func (controller *AdminController) GetUsers() freedom.Result {
@@ -412,6 +414,19 @@ func (controller *AdminController) GetRecommendMCPs() freedom.Result {
 	return &infra.JSONResponse{Object: map[string]interface{}{"list": list}}
 }
 
+func (controller *AdminController) ToggleMCPAlwaysOn(id int) freedom.Result {
+	var req vo.AdminMCPToggleAlwaysOnReq
+	if err := controller.Request.ReadJSON(&req, true); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+
+	if err := controller.McpSev.ToggleMCPAlwaysOn(id, &req); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+
+	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
+}
+
 func (controller *AdminController) CheckMCPHealth() freedom.Result {
 	controller.McpSev.CheckAllMCPHealth()
 	return &infra.JSONResponse{Object: map[string]string{"status": "checking"}}
@@ -419,9 +434,9 @@ func (controller *AdminController) CheckMCPHealth() freedom.Result {
 
 func (controller *AdminController) GetRecommendModels() freedom.Result {
 	var req struct {
-		ProviderID	string	`url:"providerId"`
-		APIKey		string	`url:"apiKey"`
-		BaseURL		string	`url:"baseUrl"`
+		ProviderID string `url:"providerId"`
+		APIKey     string `url:"apiKey"`
+		BaseURL    string `url:"baseUrl"`
 	}
 	if err := controller.Request.ReadQuery(&req); err != nil {
 		return &infra.JSONResponse{Object: map[string]interface{}{"list": []interface{}{}}}

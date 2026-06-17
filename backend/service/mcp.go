@@ -39,10 +39,10 @@ func init() {
 }
 
 type McpService struct {
-	Worker		freedom.Worker
-	UserRepo	*repository.UserRepository
-	McpRepo		*repository.MCPRepository
-	PersonaRepo	*repository.PersonaRepository
+	Worker      freedom.Worker
+	UserRepo    *repository.UserRepository
+	McpRepo     *repository.MCPRepository
+	PersonaRepo *repository.PersonaRepository
 }
 
 func (service *McpService) VerifierTimer() {
@@ -104,11 +104,11 @@ func (service *McpService) ListEnabledMCPs() ([]vo.UserMCPItem, error) {
 	items := make([]vo.UserMCPItem, 0, len(endpoints))
 	for _, ep := range endpoints {
 		items = append(items, vo.UserMCPItem{
-			McpId:		ep.McpId,
-			Name:		ep.Name,
-			DisplayName:	ep.DisplayName,
-			Icon:		ep.Icon,
-			Description:	ep.Description,
+			McpId:       ep.McpId,
+			Name:        ep.Name,
+			DisplayName: ep.DisplayName,
+			Icon:        ep.Icon,
+			Description: ep.Description,
 		})
 	}
 	return items, nil
@@ -123,11 +123,11 @@ func (service *McpService) ListEnabledMCPsByIDs(mcpIds []int) ([]vo.UserMCPItem,
 	items := make([]vo.UserMCPItem, 0, len(endpoints))
 	for _, ep := range endpoints {
 		items = append(items, vo.UserMCPItem{
-			McpId:		ep.McpId,
-			Name:		ep.Name,
-			DisplayName:	ep.DisplayName,
-			Icon:		ep.Icon,
-			Description:	ep.Description,
+			McpId:       ep.McpId,
+			Name:        ep.Name,
+			DisplayName: ep.DisplayName,
+			Icon:        ep.Icon,
+			Description: ep.Description,
 		})
 	}
 	return items, nil
@@ -139,11 +139,11 @@ func (service *McpService) ListMCPEndpoints(req *vo.AdminMCPListReq) (*infra.Pag
 		return nil, err
 	}
 	return &infra.PageResponse{
-		List:		items,
-		TotalPage:	pr.TotalPage,
-		TotalCount:	pr.TotalCount,
-		Page:		pr.Page,
-		PageSize:	pr.PageSize,
+		List:       items,
+		TotalPage:  pr.TotalPage,
+		TotalCount: pr.TotalCount,
+		Page:       pr.Page,
+		PageSize:   pr.PageSize,
 	}, nil
 }
 
@@ -153,24 +153,24 @@ func (service *McpService) GetMCPEndpointDetail(mcpId int) (*vo.AdminMCPDetailRs
 		return nil, errs.ErrMCPNotFound
 	}
 	return &vo.AdminMCPDetailRsp{
-		McpId:			endpoint.McpId,
-		Name:			endpoint.Name,
-		DisplayName:		endpoint.DisplayName,
-		Icon:			endpoint.Icon,
-		Description:		endpoint.Description,
-		Transport:		endpoint.Transport,
-		HttpUrl:		endpoint.HttpUrl,
-		HttpHeader:		endpoint.HttpHeader,
-		HttpProxyUrl:		endpoint.HttpProxyURL,
-		StdioType:		endpoint.StdioType,
-		StdioEnv:		endpoint.StdioEnv,
-		StdioArgs:		endpoint.StdioArgs,
-		Status:			endpoint.Status,
-		HealthLatency:		endpoint.HealthLatency,
-		HealthCheckedAt:	endpoint.HealthCheckedAt,
-		Remark:			endpoint.Remark,
-		Created:		endpoint.Created,
-		Updated:		endpoint.Updated,
+		McpId:           endpoint.McpId,
+		Name:            endpoint.Name,
+		DisplayName:     endpoint.DisplayName,
+		Icon:            endpoint.Icon,
+		Description:     endpoint.Description,
+		Transport:       endpoint.Transport,
+		HttpUrl:         endpoint.HttpUrl,
+		HttpHeader:      endpoint.HttpHeader,
+		HttpProxyUrl:    endpoint.HttpProxyURL,
+		StdioType:       endpoint.StdioType,
+		StdioEnv:        endpoint.StdioEnv,
+		StdioArgs:       endpoint.StdioArgs,
+		Status:          endpoint.Status,
+		HealthLatency:   endpoint.HealthLatency,
+		HealthCheckedAt: endpoint.HealthCheckedAt,
+		Remark:          endpoint.Remark,
+		Created:         endpoint.Created,
+		Updated:         endpoint.Updated,
 	}, nil
 }
 
@@ -205,21 +205,21 @@ func (service *McpService) CreateMCPEndpoint(req *vo.AdminCreateMCPReq) error {
 	latencyMs := int(time.Since(startCheckTime).Milliseconds())
 
 	endpoint := &po.MCPEndpoint{
-		Name:			req.Name,
-		DisplayName:		req.DisplayName,
-		Icon:			req.Icon,
-		Description:		req.Description,
-		Transport:		req.Transport,
-		HttpUrl:		req.HttpUrl,
-		HttpHeader:		httpHeaderJSON,
-		HttpProxyURL:		req.HttpProxyUrl,
-		StdioType:		req.StdioType,
-		StdioEnv:		stdioEnvJSON,
-		StdioArgs:		stdioArgsJSON,
-		Status:			po.MCPEndpointStatusEnabled,
-		Remark:			req.Remark,
-		HealthCheckedAt:	&startCheckTime,
-		HealthLatency:		latencyMs,
+		Name:            req.Name,
+		DisplayName:     req.DisplayName,
+		Icon:            req.Icon,
+		Description:     req.Description,
+		Transport:       req.Transport,
+		HttpUrl:         req.HttpUrl,
+		HttpHeader:      httpHeaderJSON,
+		HttpProxyURL:    req.HttpProxyUrl,
+		StdioType:       req.StdioType,
+		StdioEnv:        stdioEnvJSON,
+		StdioArgs:       stdioArgsJSON,
+		Status:          po.MCPEndpointStatusEnabled,
+		Remark:          req.Remark,
+		HealthCheckedAt: &startCheckTime,
+		HealthLatency:   latencyMs,
 	}
 
 	return service.McpRepo.CreateMCPEndpoint(endpoint)
@@ -384,16 +384,16 @@ func (service *McpService) GetRecommendMCPs() []vo.MCPRecommendItem {
 	reuslt := []vo.MCPRecommendItem{}
 	for _, item := range items {
 		item := vo.MCPRecommendItem{
-			Name:		item.Name,
-			DisplayName:	item.DisplayName,
-			Icon:		item.Icon,
-			Description:	item.Description,
-			Transport:	item.Transport,
-			HttpUrl:	item.HttpUrl,
-			HttpHeader:	item.HttpHeader,
-			StdioType:	item.StdioType,
-			StdioArgs:	item.StdioArgs,
-			StdioEnv:	item.StdioEnv,
+			Name:        item.Name,
+			DisplayName: item.DisplayName,
+			Icon:        item.Icon,
+			Description: item.Description,
+			Transport:   item.Transport,
+			HttpUrl:     item.HttpUrl,
+			HttpHeader:  item.HttpHeader,
+			StdioType:   item.StdioType,
+			StdioArgs:   item.StdioArgs,
+			StdioEnv:    item.StdioEnv,
 		}
 		if ep, ok := installedMap[item.Name]; ok {
 			item.Installed = true
@@ -499,13 +499,13 @@ func (service *McpService) CheckMCPToolNameConflicts(mcpIds []int) error {
 
 func (service *McpService) BuildMCPObjectFromEndpoint(ep *po.MCPEndpoint) tools.MCP {
 	mcpObj := tools.MCP{
-		Transport:	ep.Transport,
-		Name:		ep.Name,
-		DisplayName:	ep.DisplayName,
-		HttpURL:	ep.HttpUrl,
-		HttpHeader:	ep.HttpHeader,
-		ProxyURL:	ep.HttpProxyURL,
-		StdioType:	ep.StdioType,
+		Transport:   ep.Transport,
+		Name:        ep.Name,
+		DisplayName: ep.DisplayName,
+		HttpURL:     ep.HttpUrl,
+		HttpHeader:  ep.HttpHeader,
+		ProxyURL:    ep.HttpProxyURL,
+		StdioType:   ep.StdioType,
 	}
 
 	if ep.StdioEnv != "" {
@@ -520,11 +520,11 @@ func (service *McpService) BuildMCPObjectFromEndpoint(ep *po.MCPEndpoint) tools.
 
 func (service *McpService) buildMCPObject(transport, httpUrl, httpHeader, proxyUrl, stdioType, stdioEnv, stdioArgs string) tools.MCP {
 	mcpObj := tools.MCP{
-		Transport:	transport,
-		HttpURL:	httpUrl,
-		HttpHeader:	httpHeader,
-		ProxyURL:	proxyUrl,
-		StdioType:	stdioType,
+		Transport:  transport,
+		HttpURL:    httpUrl,
+		HttpHeader: httpHeader,
+		ProxyURL:   proxyUrl,
+		StdioType:  stdioType,
 	}
 
 	if stdioEnv != "" {
@@ -535,4 +535,15 @@ func (service *McpService) buildMCPObject(transport, httpUrl, httpHeader, proxyU
 	}
 
 	return mcpObj
+}
+
+// ToggleMCPAlwaysOn 切换 MCP 端点始终启用状态
+func (service *McpService) ToggleMCPAlwaysOn(mcpId int, req *vo.AdminMCPToggleAlwaysOnReq) error {
+	if _, err := service.McpRepo.GetMCPEndpointByID(mcpId); err != nil {
+		return errs.ErrMCPNotFound
+	}
+
+	return service.McpRepo.UpdateMCPEndpoint(mcpId, map[string]interface{}{
+		"always_on": req.AlwaysOn,
+	})
 }

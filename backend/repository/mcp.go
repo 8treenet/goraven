@@ -60,24 +60,24 @@ func (repo *MCPRepository) PaginateMCPEndpoints(req *vo.AdminMCPListReq) ([]vo.A
 	items := make([]vo.AdminMCPItem, 0, len(endpoints))
 	for _, ep := range endpoints {
 		items = append(items, vo.AdminMCPItem{
-			McpId:			ep.McpId,
-			Name:			ep.Name,
-			DisplayName:		ep.DisplayName,
-			Icon:			ep.Icon,
-			Description:		ep.Description,
-			Transport:		ep.Transport,
-			HttpUrl:		ep.HttpUrl,
-			HttpHeader:		util.MaskJSONValues(ep.HttpHeader),
-			HttpProxyUrl:		ep.HttpProxyURL,
-			StdioType:		ep.StdioType,
-			StdioEnv:		util.MaskJSONValues(ep.StdioEnv),
-			StdioArgs:		ep.StdioArgs,
-			Status:			ep.Status,
-			HealthLatency:		ep.HealthLatency,
-			HealthCheckedAt:	ep.HealthCheckedAt,
-			Remark:			ep.Remark,
-			Created:		ep.Created,
-			Updated:		ep.Updated,
+			McpId:           ep.McpId,
+			Name:            ep.Name,
+			DisplayName:     ep.DisplayName,
+			Icon:            ep.Icon,
+			Description:     ep.Description,
+			Transport:       ep.Transport,
+			HttpUrl:         ep.HttpUrl,
+			HttpHeader:      util.MaskJSONValues(ep.HttpHeader),
+			HttpProxyUrl:    ep.HttpProxyURL,
+			StdioType:       ep.StdioType,
+			StdioEnv:        util.MaskJSONValues(ep.StdioEnv),
+			StdioArgs:       ep.StdioArgs,
+			Status:          ep.Status,
+			HealthLatency:   ep.HealthLatency,
+			HealthCheckedAt: ep.HealthCheckedAt,
+			Remark:          ep.Remark,
+			Created:         ep.Created,
+			Updated:         ep.Updated,
 		})
 	}
 
@@ -107,17 +107,17 @@ func (repo *MCPRepository) SoftDeleteMCPEndpoint(mcpId int) error {
 
 	suffixedName := fmt.Sprintf("%s-%d", endpoint.Name, time.Now().Unix())
 	return repo.db().Model(&po.MCPEndpoint{}).Where("mcp_id = ? AND deleted = 0", mcpId).Updates(map[string]interface{}{
-		"deleted":	1,
-		"name":		suffixedName,
-		"updated":	time.Now(),
+		"deleted": 1,
+		"name":    suffixedName,
+		"updated": time.Now(),
 	}).Error
 }
 
 func (repo *MCPRepository) UpdateMCPEndpointHealth(mcpId int, latencyMs int, checkedAt time.Time) error {
 	return repo.db().Model(&po.MCPEndpoint{}).Where("mcp_id = ? AND deleted = 0", mcpId).Updates(map[string]interface{}{
-		"health_latency":	latencyMs,
-		"health_checked_at":	checkedAt,
-		"updated":		time.Now(),
+		"health_latency":    latencyMs,
+		"health_checked_at": checkedAt,
+		"updated":           time.Now(),
 	}).Error
 }
 
@@ -144,6 +144,23 @@ func (repo *MCPRepository) GetMCPEndpointsByIDs(mcpIds []int) ([]po.MCPEndpoint,
 	var endpoints []po.MCPEndpoint
 	err := repo.db().Where("mcp_id IN ? AND status = 1 AND deleted = 0", mcpIds).Find(&endpoints).Error
 	return endpoints, err
+}
+
+// FindUserSelectableMCPEndpoints 查询用户可选的 MCP 端点（启用且未删除且非始终启用）
+// 始终启用的 MCP 由管理员配置，用户无需也无需选择，故从可选列表排除
+func (repo *MCPRepository) FindUserSelectableMCPEndpoints() ([]po.MCPEndpoint, error) {
+	var endpoints []po.MCPEndpoint
+	err := repo.db().Where("status = ? AND deleted = ? AND always_on = ?", 1, 0, 0).Find(&endpoints).Error
+	return endpoints, err
+}
+
+// FindAlwaysOnMcpIds 获取始终启用的 MCP 端点 ID 列表（启用且未删除且 always_on=1）
+func (repo *MCPRepository) FindAlwaysOnMcpIds() ([]int, error) {
+	var ids []int
+	err := repo.db().Model(&po.MCPEndpoint{}).
+		Where("status = ? AND deleted = ? AND always_on = ?", 1, 0, 1).
+		Pluck("mcp_id", &ids).Error
+	return ids, err
 }
 
 func (repo *MCPRepository) db() *gorm.DB {
