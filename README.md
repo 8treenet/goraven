@@ -82,7 +82,6 @@ After startup, visit `http://localhost:8000` and follow the initialization flow 
 ## Roadmap
 
 - Core code cleanup and open-source
-- Knowledge base
 - Multi-user sandbox
 - API
 - Multi-user collaboration

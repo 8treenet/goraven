@@ -94,8 +94,7 @@ docker run -d --restart=always --name raven-agent \
 
 ## 路线图
 
-- Core 代码整理开放
-- 知识库
+- Core 代码整理并开放
 - 多用户沙盒
 - API
 - 多人协作
