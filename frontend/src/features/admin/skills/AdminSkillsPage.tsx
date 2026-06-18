@@ -368,7 +368,7 @@ export function Component() {
     if (clawHubMode === 'search') {
       const query = clawHubSubmittedQuery.trim().toLowerCase()
       if (!query || clawHubSearching) return []
-      return clawHubItems.filter((item) => item.displayName.toLowerCase().includes(query) || item.summary.toLowerCase().includes(query))
+      return clawHubItems.filter((item) => (item.displayName ?? '').toLowerCase().includes(query) || (item.summary ?? '').toLowerCase().includes(query))
     }
 
     if (clawHubExploring) return []
@@ -458,8 +458,8 @@ export function Component() {
       const result = await adminSkillsApi.exploreClawHub({ sort })
       setClawHubItems(result.items.map((item) => ({
         slug: item.slug,
-        displayName: item.displayName,
-        summary: item.summary,
+        displayName: item.displayName ?? '',
+        summary: item.summary ?? '',
         version: '',
         score: 0,
         downloads: item.stats.downloads,
@@ -489,9 +489,9 @@ export function Component() {
       const result = await adminSkillsApi.searchClawHub({ q: query, limit: 25 })
       setClawHubItems(result.results.map((item) => ({
         slug: item.slug,
-        displayName: item.displayName,
-        summary: item.summary,
-        version: item.version,
+        displayName: item.displayName ?? '',
+        summary: item.summary ?? '',
+        version: item.version ?? '',
         score: item.score,
         downloads: 0,
         installs: 0,
