@@ -28,6 +28,8 @@ const zh = {
   'sidebar.logout': '退出',
   'sidebar.rename': '重命名',
   'sidebar.archive': '归档',
+  'sidebar.close': '关闭',
+  'sidebar.menu': '菜单',
 
   // common
   'common.previous': '上一步',
@@ -619,6 +621,9 @@ const zh = {
   'adminMcp.updated': 'MCP 端点已更新',
   'adminMcp.deleted': 'MCP 端点已删除',
   'adminMcp.statusToggleFailed': '状态切换失败',
+  'adminMcp.alwaysOn': '始终启用',
+  'adminMcp.alwaysOnTip': '开启后该 MCP 将在所有会话中自动注入，用户在角色和新建会话中无需再选择。',
+  'adminMcp.alwaysOnToggleFailed': '始终启用切换失败',
   'adminMcp.fetchTemplatesFailed': '获取推荐模板失败',
 
   // admin settings

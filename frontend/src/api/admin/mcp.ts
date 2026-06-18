@@ -60,6 +60,11 @@ export function updateMCPStatus(id: number, status: number) {
   return http.put(`/admin/mcp/${id}/status`, { status })
 }
 
+/** PUT /api/admin/mcp/:id/alwaysOn */
+export function toggleMCPAlwaysOn(id: number, alwaysOn: number) {
+  return http.put(`/admin/mcp/${id}/alwaysOn`, { alwaysOn })
+}
+
 /** GET /api/admin/mcp/recommend */
 export function getRecommendMCPs() {
   return http.get<{

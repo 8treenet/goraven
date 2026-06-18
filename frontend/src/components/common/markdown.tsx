@@ -4,6 +4,15 @@ import { cn } from '@/lib/utils'
 import { RavenFile } from './raven-file'
 import { RavenChart } from './raven-chart'
 
+const SHIKI_JS_ENGINE_SUPPORTED = (() => {
+  try {
+    new RegExp('(?<=a)b')
+    return true
+  } catch {
+    return false
+  }
+})()
+
 interface MarkdownProps {
   children: string
   mode?: 'static' | 'streaming'
@@ -95,7 +104,7 @@ export function Markdown({
   const base = {
     mode,
     isAnimating,
-    plugins: { code } as StreamdownProps['plugins'],
+    plugins: (SHIKI_JS_ENGINE_SUPPORTED ? { code } : undefined) as StreamdownProps['plugins'],
     shikiTheme: ['github-light', 'github-dark'] as StreamdownProps['shikiTheme'],
     controls: false as StreamdownProps['controls'],
     mermaid: {} as StreamdownProps['mermaid'],

@@ -472,6 +472,7 @@ export interface AdminMcpItem {
   stdioEnv: string
   stdioArgs: string
   status: number
+  alwaysOn: number
   healthLatency: number
   healthCheckedAt: string
   remark: string

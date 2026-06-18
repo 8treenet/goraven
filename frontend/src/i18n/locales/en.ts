@@ -28,6 +28,8 @@ const en = {
   'sidebar.logout': 'Logout',
   'sidebar.rename': 'Rename',
   'sidebar.archive': 'Archive',
+  'sidebar.close': 'Close',
+  'sidebar.menu': 'Menu',
 
   // common
   'common.previous': 'Previous',
@@ -619,6 +621,9 @@ const en = {
   'adminMcp.updated': 'MCP endpoint updated',
   'adminMcp.deleted': 'MCP endpoint deleted',
   'adminMcp.statusToggleFailed': 'Status toggle failed',
+  'adminMcp.alwaysOn': 'Always On',
+  'adminMcp.alwaysOnTip': 'When enabled, this MCP is automatically injected into every session, removing the need to select it when creating personas or starting new chats.',
+  'adminMcp.alwaysOnToggleFailed': 'Always-on toggle failed',
   'adminMcp.fetchTemplatesFailed': 'Failed to fetch recommended templates',
 
   // admin settings

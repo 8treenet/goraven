@@ -23,6 +23,7 @@ import {
 import { renderIcon } from '@/components/common/Icon'
 import { IconPickerTrigger, DEFAULT_ICON, type IconName } from '@/components/common/IconPicker'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -963,6 +964,8 @@ function McpRow({
   onDelete,
   onToggleStatus,
   toggling,
+  onToggleAlwaysOn,
+  togglingAlwaysOn,
 }: {
   item: AdminMcpItem
   isEven: boolean
@@ -970,6 +973,8 @@ function McpRow({
   onDelete: () => void
   onToggleStatus: (v: boolean) => void
   toggling: boolean
+  onToggleAlwaysOn: (v: boolean) => void
+  togglingAlwaysOn: boolean
 }) {
   const t = useT()
   return (
@@ -1024,6 +1029,13 @@ function McpRow({
           onChange={onToggleStatus}
         />
       </td>
+      <td className="py-2.5 pr-4">
+        <StatusToggle
+          checked={item.alwaysOn === 1}
+          loading={togglingAlwaysOn}
+          onChange={onToggleAlwaysOn}
+        />
+      </td>
       <td className="py-2.5 pr-4 text-sm text-text-3">
         {formatDate(item.updated)}
       </td>
@@ -1066,6 +1078,7 @@ function TableSkeleton() {
             <th className="pb-2 pr-4 font-normal">{t('adminMcp.latency')}</th>
             <th className="pb-2 pr-4 font-normal">{t('adminMcp.checkTime')}</th>
             <th className="pb-2 pr-4 font-normal">{t('common.status')}</th>
+            <th className="pb-2 pr-4 font-normal">{t('adminMcp.alwaysOn')}</th>
             <th className="pb-2 pr-4 font-normal">{t('common.updated')}</th>
             <th className="pb-2 pr-4 font-normal" />
           </tr>
@@ -1088,6 +1101,9 @@ function TableSkeleton() {
               </td>
               <td className="py-2.5 pr-4">
                 <div className="h-3.5 w-14 animate-pulse rounded bg-bg-layer-2" />
+              </td>
+              <td className="py-2.5 pr-4">
+                <div className="h-4 w-8 animate-pulse rounded-full bg-bg-layer-2" />
               </td>
               <td className="py-2.5 pr-4">
                 <div className="h-4 w-8 animate-pulse rounded-full bg-bg-layer-2" />
@@ -1260,6 +1276,7 @@ export function Component() {
   const [recommendItems, setRecommendItems] = useState<RecommendItem[]>([])
 
   const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set())
+  const [togglingAlwaysOnIds, setTogglingAlwaysOnIds] = useState<Set<number>>(new Set())
 
   const loadData = useCallback(async () => {
     setState('loading')
@@ -1431,6 +1448,25 @@ export function Component() {
     [loadData],
   )
 
+  // Toggle always-on
+  const handleToggleAlwaysOn = useCallback(
+    async (item: AdminMcpItem, enabled: boolean) => {
+      setTogglingAlwaysOnIds((prev) => new Set(prev).add(item.mcpId))
+      try {
+        await adminMcpApi.toggleMCPAlwaysOn(item.mcpId, enabled ? 1 : 0)
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : translate('adminMcp.alwaysOnToggleFailed'))
+      }
+      setTogglingAlwaysOnIds((prev) => {
+        const next = new Set(prev)
+        next.delete(item.mcpId)
+        return next
+      })
+      loadData()
+    },
+    [loadData],
+  )
+
   // Recommend
   const handleOpenRecommend = useCallback(async () => {
     try {
@@ -1540,6 +1576,16 @@ export function Component() {
                   <th className="pb-2 pr-4 font-normal">{t('adminMcp.latency')}</th>
                   <th className="pb-2 pr-4 font-normal">{t('adminMcp.checkTime')}</th>
                   <th className="pb-2 pr-4 font-normal">{t('common.status')}</th>
+                  <th className="pb-2 pr-4 font-normal">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="cursor-help border-b border-dashed border-text-muted">
+                          {t('adminMcp.alwaysOn')}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>{t('adminMcp.alwaysOnTip')}</TooltipContent>
+                    </Tooltip>
+                  </th>
                   <th className="pb-2 pr-4 font-normal">{t('common.updated')}</th>
                   <th className="pb-2 pr-4 font-normal" />
                 </tr>
@@ -1557,6 +1603,8 @@ export function Component() {
                     }}
                     onToggleStatus={(v) => handleToggleStatus(item, v)}
                     toggling={togglingIds.has(item.mcpId)}
+                    onToggleAlwaysOn={(v) => handleToggleAlwaysOn(item, v)}
+                    togglingAlwaysOn={togglingAlwaysOnIds.has(item.mcpId)}
                   />
                 ))}
               </tbody>

@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Share2, Shrink, Paperclip, ArrowUp, CircleStop, Loader2, TriangleAlert, FolderGit2, FolderOpen, FolderClock } from 'lucide-react'
+import { Share2, Shrink, Paperclip, ArrowUp, CircleStop, Loader2, TriangleAlert, FolderGit2, FolderOpen, FolderClock, Menu } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { listFiles } from '@/api/files'
 import type { FileItem } from '@/api/types'
@@ -448,6 +448,7 @@ function ChatToolbar({
   sessionId?: string
 }) {
   const t = useT()
+  const openMobile = useSidebarStore((s) => s.openMobile)
   const [open, setOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const [noModelOpen, setNoModelOpen] = useState(false)
@@ -478,6 +479,13 @@ function ChatToolbar({
   if (showSession) {
     return (
       <div className="flex h-10 shrink-0 items-center gap-3 border-b border-border px-4">
+        <button
+          onClick={openMobile}
+          aria-label={t('sidebar.menu')}
+          className="shrink-0 text-text-muted transition-colors hover:text-text-3 md:hidden"
+        >
+          <Menu className="size-4" />
+        </button>
         {personaName ? (
           <button
             onClick={onPersonaClick}
@@ -498,7 +506,7 @@ function ChatToolbar({
 
         <div className="flex-1" />
 
-        <div className="flex items-center gap-2">
+        <div className="hidden items-center gap-2 md:flex">
           {project ? (
             <div className="flex items-center gap-1.5 max-w-36 text-xs text-highlight">
               <FolderGit2 className="size-3.5 shrink-0" />
@@ -566,6 +574,13 @@ function ChatToolbar({
 
   return (
     <div className="flex h-10 shrink-0 items-center border-b border-border px-4">
+      <button
+        onClick={openMobile}
+        aria-label={t('sidebar.menu')}
+        className="shrink-0 text-text-muted transition-colors hover:text-text-3 md:hidden"
+      >
+        <Menu className="size-4" />
+      </button>
       {!models || models.length === 0 ? (
         <>
           <button
@@ -632,7 +647,7 @@ function ChatToolbar({
             </button>
 
             {open && (
-              <div className="absolute left-0 top-full z-40 mt-1 w-56 rounded-lg border border-border bg-bg-layer-2 py-1 shadow-pop">
+              <div className="absolute left-0 top-full z-40 mt-1 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-bg-layer-2 py-1 shadow-pop md:w-56">
                 <div className="px-3 py-0.5 text-xs text-text-muted">{t('chat.modelsDropdown')}</div>
                 {models?.map((m) => (
                   <button key={m.id} onClick={() => handleSelectModel(m.id)}
@@ -853,7 +868,7 @@ function NewChatInput({
             </Tooltip>
 
             {plusOpen && !personaLocked && (
-              <div className="absolute bottom-full left-0 mb-2 w-72 max-h-80 overflow-y-auto rounded-lg border border-border bg-bg-layer-2 p-3 shadow-pop [scrollbar-width:thin] [scrollbar-color:var(--color-bg-layer-3)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-bg-layer-3 [&::-webkit-scrollbar-track]:bg-transparent">
+              <div className="fixed inset-x-0 bottom-0 z-50 max-h-80 overflow-y-auto rounded-t-lg border border-border bg-bg-layer-2 p-3 shadow-pop [scrollbar-width:thin] [scrollbar-color:var(--color-bg-layer-3)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-bg-layer-3 [&::-webkit-scrollbar-track]:bg-transparent md:absolute md:inset-x-auto md:bottom-full md:left-0 md:mb-2 md:w-72 md:rounded-lg md:rounded-t-none">
                 <div className="mb-3">
                   <label className="mb-1.5 block text-sm text-text-3">{t('chat.mcpTools')}</label>
                   <div className="space-y-0.5">
@@ -976,7 +991,10 @@ function NewChatInput({
       </div>
 
       <Dialog open={projectOpen} onOpenChange={setProjectOpen}>
-        <DialogContent className="!max-w-lg p-5" style={{ left: dialogLeft }}>
+        <DialogContent
+          className="!max-w-lg p-5 md:left-[var(--dialog-left)]"
+          style={{ '--dialog-left': dialogLeft } as React.CSSProperties}
+        >
           <p className="text-base font-semibold text-text-1 mb-3">{t('chat.projectsTitle')}</p>
 
           {projectLoading ? (

@@ -82,16 +82,20 @@ export function RavenFile({ kind = 'doc', path = '', name, description }: RavenF
   const url = resolveUrl(path)
   const isPrivate = !path.startsWith('http://') && !path.startsWith('https://') && !path.startsWith('/assets/')
 
+  // 兜底：path 无文件后缀视为目录（LLM 幻觉），不触发下载
+  const isDownloadable = isPrivate && !!ext
+
   const handleDownload = useCallback(() => {
+    if (!ext) return
     downloadFile(url, displayName)
-  }, [url, displayName])
+  }, [url, displayName, ext])
 
   return (
     <div
-      onClick={isPrivate ? handleDownload : undefined}
+      onClick={isDownloadable ? handleDownload : undefined}
       className={cn(
         'group my-2.5 flex items-start gap-3 rounded-md bg-bg-layer-2 px-3 py-2',
-        isPrivate && 'cursor-pointer hover:bg-bg-hover',
+        isDownloadable && 'cursor-pointer hover:bg-bg-hover',
       )}
     >
       <Icon className="mt-px size-4 shrink-0 text-text-muted" />
@@ -103,7 +107,7 @@ export function RavenFile({ kind = 'doc', path = '', name, description }: RavenF
               {ext}
             </span>
           )}
-          {isPrivate && (
+          {isDownloadable && (
             <Download className="size-3 shrink-0 text-text-muted opacity-0 transition-opacity group-hover:opacity-100" />
           )}
         </div>

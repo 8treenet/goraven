@@ -4,6 +4,14 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* streamdown 在运行时生成这些 Tailwind 任意值类，但它们只出现在
+   node_modules/streamdown/dist 里，Tailwind v4 默认不扫描依赖，
+   因此不会生成对应 CSS → shiki token 颜色不生效。显式 safelist。 */
+@source inline("text-[var(--sdm-c,inherit)]");
+@source inline("dark:text-[var(--shiki-dark,var(--sdm-c,inherit))]");
+@source inline("bg-[var(--sdm-tbg)]");
+@source inline("dark:bg-[var(--shiki-dark-bg,var(--sdm-tbg))]");
+
 /* ============================================
    Raven Design Tokens
    "Precision Tooling"

@@ -50,6 +50,7 @@ function generateMockMcps(): AdminMcpItem[] {
       stdioEnv: '',
       stdioArgs: '["@modelcontextprotocol/server-filesystem","/tmp"]',
       status: 1,
+      alwaysOn: 0,
       healthLatency: 45,
       healthCheckedAt: new Date(now - 60000).toISOString(),
       remark: '',
@@ -70,6 +71,7 @@ function generateMockMcps(): AdminMcpItem[] {
       stdioEnv: '',
       stdioArgs: '["@modelcontextprotocol/server-github"]',
       status: 1,
+      alwaysOn: 0,
       healthLatency: 120,
       healthCheckedAt: new Date(now - 120000).toISOString(),
       remark: '',
@@ -90,6 +92,7 @@ function generateMockMcps(): AdminMcpItem[] {
       stdioEnv: '',
       stdioArgs: '["@modelcontextprotocol/server-postgres","postgresql://localhost:5432/mydb"]',
       status: 1,
+      alwaysOn: 0,
       healthLatency: 80,
       healthCheckedAt: new Date(now - 300000).toISOString(),
       remark: '',
@@ -110,6 +113,7 @@ function generateMockMcps(): AdminMcpItem[] {
       stdioEnv: '',
       stdioArgs: '["@modelcontextprotocol/server-slack"]',
       status: 0,
+      alwaysOn: 0,
       healthLatency: 0,
       healthCheckedAt: '',
       remark: '',
@@ -130,6 +134,7 @@ function generateMockMcps(): AdminMcpItem[] {
       stdioEnv: '',
       stdioArgs: '',
       status: 1,
+      alwaysOn: 0,
       healthLatency: 210,
       healthCheckedAt: new Date(now - 90000).toISOString(),
       remark: '',
@@ -150,6 +155,7 @@ function generateMockMcps(): AdminMcpItem[] {
       stdioEnv: '',
       stdioArgs: '["@modelcontextprotocol/server-time"]',
       status: 1,
+      alwaysOn: 0,
       healthLatency: 35,
       healthCheckedAt: new Date(now - 50000).toISOString(),
       remark: '',
@@ -170,6 +176,7 @@ function generateMockMcps(): AdminMcpItem[] {
       stdioEnv: '',
       stdioArgs: '["@modelcontextprotocol/server-puppeteer"]',
       status: 1,
+      alwaysOn: 0,
       healthLatency: 340,
       healthCheckedAt: new Date(now - 180000).toISOString(),
       remark: '',
@@ -190,6 +197,7 @@ function generateMockMcps(): AdminMcpItem[] {
       stdioEnv: '',
       stdioArgs: '["@modelcontextprotocol/server-memory"]',
       status: 1,
+      alwaysOn: 0,
       healthLatency: 55,
       healthCheckedAt: new Date(now - 200000).toISOString(),
       remark: '',
@@ -210,6 +218,7 @@ function generateMockMcps(): AdminMcpItem[] {
       stdioEnv: '',
       stdioArgs: '',
       status: 1,
+      alwaysOn: 0,
       healthLatency: 150,
       healthCheckedAt: new Date(now - 70000).toISOString(),
       remark: '',
@@ -230,6 +239,7 @@ function generateMockMcps(): AdminMcpItem[] {
       stdioEnv: '',
       stdioArgs: '',
       status: 0,
+      alwaysOn: 0,
       healthLatency: 0,
       healthCheckedAt: new Date(now - 3600000).toISOString(),
       remark: '',
@@ -250,6 +260,7 @@ function generateMockMcps(): AdminMcpItem[] {
       stdioEnv: '',
       stdioArgs: '',
       status: 1,
+      alwaysOn: 0,
       healthLatency: 280,
       healthCheckedAt: new Date(now - 40000).toISOString(),
       remark: '',
@@ -270,6 +281,7 @@ function generateMockMcps(): AdminMcpItem[] {
       stdioEnv: '',
       stdioArgs: '["@modelcontextprotocol/server-sequential-thinking"]',
       status: 1,
+      alwaysOn: 0,
       healthLatency: 60,
       healthCheckedAt: new Date(now - 150000).toISOString(),
       remark: '',
@@ -522,6 +534,7 @@ export async function createMcp(req: {
     stdioEnv: req.stdioEnv ?? '',
     stdioArgs: req.stdioArgs ?? '',
     status: 1,
+    alwaysOn: 0,
     healthLatency: Math.floor(Math.random() * 300) + 20,
     healthCheckedAt: now,
     remark: req.remark ?? '',
@@ -591,6 +604,26 @@ export async function toggleMcpStatus(
   store[index] = {
     ...store[index],
     status,
+    updated: new Date().toISOString(),
+  }
+  return { ...store[index] }
+}
+
+export async function toggleMcpAlwaysOn(
+  id: number,
+  alwaysOn: number,
+): Promise<AdminMcpItem> {
+  await mutationDelay()
+
+  const store = ensureStore()
+  const index = store.findIndex((m) => m.mcpId === id)
+  if (index === -1) {
+    throw new Error('MCP 端点不存在')
+  }
+
+  store[index] = {
+    ...store[index],
+    alwaysOn,
     updated: new Date().toISOString(),
   }
   return { ...store[index] }

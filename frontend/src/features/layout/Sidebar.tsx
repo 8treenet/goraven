@@ -74,12 +74,36 @@ const TIME_GROUP_I18N: Record<TimeGroup, TranslationKey> = {
    Component
    ============================================ */
 
-export function Sidebar() {
+export function Sidebar({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile' }) {
   const location = useLocation()
   const collapsed = useSidebarStore((s) => s.collapsed)
+  const mobileOpen = useSidebarStore((s) => s.mobileOpen)
+  const closeMobile = useSidebarStore((s) => s.closeMobile)
   const adminMode = location.pathname.startsWith('/admin')
   const currentUser = useUserStore((s) => s.currentUser)
   const user = currentUser ?? GUEST_USER
+
+  useEffect(() => {
+    if (variant === 'mobile') closeMobile()
+  }, [location.pathname, closeMobile, variant])
+
+  if (variant === 'mobile') {
+    return (
+      <aside
+        className={cn(
+          'fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-bg-layer-1 transition-transform duration-200 ease-out md:hidden',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full',
+        )}
+      >
+        <SidebarBrand variant="mobile" />
+        {!adminMode && <SidebarNewChat variant="mobile" />}
+        <div className="flex-1 overflow-y-auto px-2">
+          {adminMode ? <AdminMenu collapsed={false} /> : <MobileUserMenu />}
+        </div>
+        <SidebarUserArea user={user} collapsed={false} variant={variant} />
+      </aside>
+    )
+  }
 
   return (
     <aside
@@ -88,12 +112,12 @@ export function Sidebar() {
         collapsed ? 'w-16' : 'w-64',
       )}
     >
-      <SidebarBrand />
-      {!adminMode && <SidebarNewChat />}
+      <SidebarBrand variant="desktop" />
+      {!adminMode && <SidebarNewChat variant="desktop" />}
       <div className="flex-1 overflow-y-auto px-2">
         {adminMode ? <AdminMenu /> : <UserMenu />}
       </div>
-      <SidebarUserArea user={user} />
+      <SidebarUserArea user={user} variant={variant} />
     </aside>
   )
 }
@@ -102,9 +126,11 @@ export function Sidebar() {
    Brand
    ============================================ */
 
-function SidebarBrand() {
+function SidebarBrand({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile' }) {
   const collapsed = useSidebarStore((s) => s.collapsed)
   const toggleCollapsed = useSidebarStore((s) => s.toggleCollapsed)
+  const closeMobile = useSidebarStore((s) => s.closeMobile)
+  const t = useT()
 
   return (
     <div className="flex h-10 items-center justify-between px-2 mb-2">
@@ -119,22 +145,32 @@ function SidebarBrand() {
           alt="Raven"
           className="h-7 w-7 shrink-0 opacity-80"
         />
-        {!collapsed && (
+        {!(variant === 'desktop' && collapsed) && (
           <span className="truncate text-base font-semibold text-text-1">
             Raven
           </span>
         )}
       </a>
-      <button
-        onClick={toggleCollapsed}
-        className="shrink-0 text-text-muted transition-colors hover:text-text-3"
-      >
-        {collapsed ? (
-          <PanelLeftOpen className="size-4" />
-        ) : (
-          <PanelLeftClose className="size-4" />
-        )}
-      </button>
+      {variant === 'mobile' ? (
+        <button
+          onClick={closeMobile}
+          aria-label={t('sidebar.close')}
+          className="shrink-0 text-text-muted transition-colors hover:text-text-3"
+        >
+          <X className="size-4" />
+        </button>
+      ) : (
+        <button
+          onClick={toggleCollapsed}
+          className="shrink-0 text-text-muted transition-colors hover:text-text-3"
+        >
+          {collapsed ? (
+            <PanelLeftOpen className="size-4" />
+          ) : (
+            <PanelLeftClose className="size-4" />
+          )}
+        </button>
+      )}
     </div>
   )
 }
@@ -143,22 +179,28 @@ function SidebarBrand() {
    New Chat Button
    ============================================ */
 
-function SidebarNewChat() {
+function SidebarNewChat({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile' }) {
   const t = useT()
   const collapsed = useSidebarStore((s) => s.collapsed)
+  const closeMobile = useSidebarStore((s) => s.closeMobile)
   const navigate = useNavigate()
+
+  const handleClick = () => {
+    navigate('/chat')
+    if (variant === 'mobile') closeMobile()
+  }
 
   return (
     <div className="px-2 py-2">
       <button
-        onClick={() => navigate('/chat')}
+        onClick={handleClick}
         className={cn(
           'flex w-full items-center gap-2 rounded-md bg-bg-layer-2 py-1.5 text-sm text-text-1 transition-colors hover:bg-bg-layer-3',
-          collapsed ? 'justify-center px-0' : 'px-3',
+          (variant === 'desktop' && collapsed) ? 'justify-center px-0' : 'px-3',
         )}
       >
         <MessageSquarePlus className="size-4 shrink-0" />
-        {!collapsed && <span>{t('sidebar.newChat')}</span>}
+        {!(variant === 'desktop' && collapsed) && <span>{t('sidebar.newChat')}</span>}
       </button>
     </div>
   )
@@ -315,12 +357,146 @@ function UserMenu() {
 }
 
 /* ============================================
+   Mobile User Menu (sessions only, no workspace nav)
+   ============================================ */
+
+function MobileUserMenu() {
+  const t = useT()
+  const closeMobile = useSidebarStore((s) => s.closeMobile)
+  const refreshSessions = useChatStore((s) => s.refreshSessions)
+  const sessionHasMore = useChatStore((s) => s.sessionHasMore)
+  const loadMoreSessions = useChatStore((s) => s.loadMoreSessions)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    let lastRefresh = 0
+    const refresh = () => {
+      const now = Date.now()
+      if (now - lastRefresh < 30_000) return
+      lastRefresh = now
+      refreshSessions()
+    }
+    refresh()
+    window.addEventListener('focus', refresh)
+    return () => window.removeEventListener('focus', refresh)
+  }, [refreshSessions])
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && sessionHasMore) {
+          loadMoreSessions()
+        }
+      },
+      { threshold: 0.1 },
+    )
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [sessionHasMore, loadMoreSessions])
+
+  const storeSessions = useChatStore((s) => s.sessions)
+  const sessions: SessionSimple[] = storeSessions.map((s) => ({
+    sessionId: s.id,
+    title: s.title,
+    status: s.status,
+    personaId: s.personaId ?? 0,
+    project: s.project,
+    lastChatTime: s.lastChatTime,
+    created: s.lastChatTime,
+  }))
+
+  const groupedSessions = useMemo(() => {
+    const groups: Record<TimeGroup, SessionSimple[]> = {
+      today: [], '7days': [], '30days': [],
+    }
+    for (const s of sessions) {
+      const group = getTimeGroup(s.lastChatTime)
+      if (group) groups[group].push(s)
+    }
+    return TIME_GROUP_ORDER
+      .filter((key) => groups[key].length > 0)
+      .map((key) => ({ key, sessions: groups[key] }))
+  }, [sessions])
+
+  const handleRename = useCallback(async (sessionId: string, title: string) => {
+    useChatStore.setState((s) => ({
+      sessions: s.sessions.map((sess) => sess.id === sessionId ? { ...sess, title } : sess),
+    }))
+    try {
+      await sessionsApi.updateSession(sessionId, { title })
+    } catch {
+      refreshSessions()
+    }
+  }, [refreshSessions])
+
+  const handleDelete = useCallback(async (sessionId: string) => {
+    useChatStore.setState((s) => ({
+      sessions: s.sessions.filter((sess) => sess.id !== sessionId),
+    }))
+    try {
+      await sessionsApi.deleteSession(sessionId)
+    } catch {
+      refreshSessions()
+    }
+  }, [refreshSessions])
+
+  return (
+    <div className="py-2 space-y-2">
+      {groupedSessions.length === 0 && (
+        <p className="px-2 text-xs text-text-muted">{t('sidebar.noSessions')}</p>
+      )}
+      {groupedSessions.map((group) => (
+        <div key={group.key}>
+          <p className="px-2 py-0.5 text-xs text-text-muted">{t(TIME_GROUP_I18N[group.key])}</p>
+          <div className="mt-0.5 space-y-0.5">
+            {group.sessions.map((s) => (
+              <MobileSessionItem key={s.sessionId} session={s} onRename={handleRename} onDelete={handleDelete} onClose={closeMobile} />
+            ))}
+          </div>
+        </div>
+      ))}
+      <div ref={sentinelRef} className="h-1" />
+    </div>
+  )
+}
+
+function MobileSessionItem({
+  session,
+  onRename,
+  onDelete,
+  onClose,
+}: {
+  session: SessionSimple
+  onRename: (sessionId: string, title: string) => void
+  onDelete: (sessionId: string) => void
+  onClose: () => void
+}) {
+  const navigate = useNavigate()
+  const handleNavigate = () => {
+    navigate(`/chat/${session.sessionId}`)
+    onClose()
+  }
+  return (
+    <SessionItem
+      session={session}
+      collapsed={false}
+      onRename={onRename}
+      onDelete={onDelete}
+      onNavigateOverride={handleNavigate}
+    />
+  )
+}
+
+/* ============================================
    Admin Menu
    ============================================ */
 
-function AdminMenu() {
+function AdminMenu({ collapsed: collapsedProp }: { collapsed?: boolean }) {
   const t = useT()
-  const collapsed = useSidebarStore((s) => s.collapsed)
+  const storeCollapsed = useSidebarStore((s) => s.collapsed)
+  const collapsed = collapsedProp ?? storeCollapsed
 
   return (
     <>
@@ -444,11 +620,13 @@ function SessionItem({
   collapsed,
   onRename,
   onDelete,
+  onNavigateOverride,
 }: {
   session: SessionSimple
   collapsed: boolean
   onRename: (sessionId: string, title: string) => void
   onDelete: (sessionId: string) => void
+  onNavigateOverride?: () => void
 }) {
   const t = useT()
   const navigate = useNavigate()
@@ -495,7 +673,7 @@ function SessionItem({
   if (collapsed) {
     return (
       <button
-        onClick={() => navigate(`/chat/${session.sessionId}`)}
+        onClick={onNavigateOverride ?? (() => navigate(`/chat/${session.sessionId}`))}
         title={session.title}
         className={cn(
           'flex w-full items-center justify-center rounded-md py-1.5 text-sm text-text-2 transition-colors hover:bg-bg-hover',
@@ -544,7 +722,7 @@ function SessionItem({
       )}
     >
       <button
-        onClick={() => navigate(`/chat/${session.sessionId}`)}
+        onClick={onNavigateOverride ?? (() => navigate(`/chat/${session.sessionId}`))}
         className="flex min-w-0 flex-1 py-1.5 pl-3 pr-2"
       >
         <span className="overflow-hidden text-nowrap text-sm">{session.title}</span>
@@ -592,12 +770,17 @@ function SessionItem({
 
 function SidebarUserArea({
   user,
+  collapsed: collapsedProp,
+  variant = 'desktop',
 }: {
   user: CurrentUser
+  collapsed?: boolean
+  variant?: 'desktop' | 'mobile'
 }) {
   const t = useT()
   const location = useLocation()
-  const collapsed = useSidebarStore((s) => s.collapsed)
+  const storeCollapsed = useSidebarStore((s) => s.collapsed)
+  const collapsed = collapsedProp ?? storeCollapsed
   const adminMode = location.pathname.startsWith('/admin')
   const isAdmin = useUserStore((s) => s.isAdmin)
   const [open, setOpen] = useState(false)
@@ -684,7 +867,7 @@ function SidebarUserArea({
 
             <PopoverItem icon={User} label={t('sidebar.profile')} onClick={handleProfile} />
 
-            {isAdmin && (
+            {isAdmin && variant !== 'mobile' && (
               <PopoverItem
                 icon={adminMode ? ChevronDown : Settings}
                 label={adminMode ? t('sidebar.userMode') : t('sidebar.adminMode')}
