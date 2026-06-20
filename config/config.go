@@ -334,3 +334,7 @@ func (conf *Configuration) GetSkillInstalledDir() string {
 	}
 	return "/raven/skill_installed"
 }
+
+func (conf *Configuration) GetSkillShareDir() string {
+	return "/raven/data/skill_share"
+}

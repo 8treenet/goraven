@@ -128,7 +128,11 @@ const pollIntervals = new Map<string, ReturnType<typeof setInterval>>()
 const backgroundTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 const BACKGROUND_TIMEOUT_MS = 3 * 60 * 1000
 
-function startPolling(sessionId: string, get: () => ChatState) {
+function startPolling(
+  sessionId: string,
+  get: () => ChatState,
+  set: Parameters<StateCreator<ChatState>>[0],
+) {
   if (pollIntervals.has(sessionId)) return
   if (get().generatingSessionId === sessionId) return
   const id = setInterval(async () => {
@@ -137,7 +141,13 @@ function startPolling(sessionId: string, get: () => ChatState) {
       if (detail.status === 0) {
         clearInterval(id)
         pollIntervals.delete(sessionId)
-        get().loadSession(sessionId)
+        if (get().currentSessionId === sessionId) {
+          get().loadSession(sessionId)
+        } else {
+          set((s) => ({
+            sessions: s.sessions.map((se) => se.id === sessionId ? { ...se, status: 0 } : se),
+          }))
+        }
       }
     } catch {
       // ignore polling errors
@@ -284,7 +294,7 @@ function createStreamHandlers(
       })
       // Start polling so we detect when the backend finishes generating
       if (wasGenerating) {
-        startPolling(sessionId, get)
+        startPolling(sessionId, get, set)
       }
     },
   }
@@ -345,6 +355,7 @@ interface ChatState {
   refreshSessions: () => Promise<void>
   loadMoreSessions: () => Promise<void>
   setInput: (v: string) => void
+  backgroundActiveSession: (except?: string) => void
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -515,8 +526,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
         backgroundTimeouts.delete(genId)
       }
       // If the existing stream is for a different session, clean up generating state
+      // and start polling so it transitions to background mode
       if (genId && genId !== state.currentSessionId) {
         set({ generatingSessionId: null, streamController: null, streamingContent: '', streamingThinkingSegments: [] })
+        startPolling(genId, get, set)
       }
     }
 
@@ -655,7 +668,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         ),
       })
       controller.abort()
-      startPolling(sessionId, get)
+      startPolling(sessionId, get, set)
       backgroundTimeouts.delete(sessionId)
     }, BACKGROUND_TIMEOUT_MS)
     backgroundTimeouts.set(sessionId, timeoutId)
@@ -668,14 +681,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   loadSession: async (id) => {
-    // Only abort stream if loading a different session from the one actively generating
-    if (get().generatingSessionId && get().generatingSessionId !== id) {
-      const genId = get().generatingSessionId!
-      clearTimeout(backgroundTimeouts.get(genId))
-      backgroundTimeouts.delete(genId)
-      get().streamController?.abort()
-      set({ generatingSessionId: null, streamController: null, streamingContent: '', streamingThinkingSegments: [] })
-    }
+    // Background any actively generating session (abort SSE, start polling)
+    get().backgroundActiveSession(id)
 
     try {
       const [detail, apiMessages] = await Promise.all([
@@ -725,7 +732,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       // Start polling if session is generating in the background (no active SSE)
       if (detail.status === 1 && get().generatingSessionId !== id) {
-        startPolling(id, get)
+        startPolling(id, get, set)
       }
     } catch {
       // On error, still set the sessionId so the UI can show an error state
@@ -934,4 +941,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   setInput: (v) => set({ input: v }),
+
+  backgroundActiveSession: (except) => {
+    const genId = get().generatingSessionId
+    if (!genId || genId === except) return
+    clearTimeout(backgroundTimeouts.get(genId))
+    backgroundTimeouts.delete(genId)
+    get().streamController?.abort()
+    set({ generatingSessionId: null, streamController: null, streamingContent: '', streamingThinkingSegments: [] })
+    startPolling(genId, get, set)
+  },
 }))

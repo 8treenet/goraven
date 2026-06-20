@@ -125,6 +125,7 @@ function NewChat() {
   const generating = generatingSessionId !== null || creatingSession
 
   useEffect(() => {
+    useChatStore.getState().backgroundActiveSession()
     useChatStore.setState({
       messages: [],
       currentSessionId: null,
@@ -147,6 +148,7 @@ function NewChat() {
   const scrollContainerRef = useAutoScroll([messages, streamingContent, streamingThinkingSegments])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const plusRef = useRef<HTMLDivElement>(null)
+  const isComposingRef = useRef({ composing: false, justEnded: false })
   const personaLocked = formPersonaId !== null
   const chatting = messages.length > 0
 
@@ -170,9 +172,17 @@ function NewChat() {
   }, [input, generating, navigate, sendMessage])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      const { composing, justEnded } = isComposingRef.current
+      if (composing || justEnded || e.nativeEvent.isComposing || e.keyCode === 229) {
+        isComposingRef.current.justEnded = false
+        e.preventDefault()
+        return
+      }
       e.preventDefault()
       handleSend()
+    } else if (!e.nativeEvent.isComposing) {
+      isComposingRef.current.justEnded = false
     }
   }, [handleSend])
 
@@ -216,6 +226,7 @@ function NewChat() {
                 formProjectPath={formProjectPath}
                 onProjectChange={setFormProjectPath}
                 stopDisabled={stopDisabled}
+                isComposingRef={isComposingRef}
               />
             </div>
           </div>
@@ -234,6 +245,7 @@ function NewChat() {
           isGenerating={generating}
           isBackground={false}
           stopDisabled={stopDisabled}
+          isComposingRef={isComposingRef}
         />
       )}
     </div>
@@ -256,6 +268,7 @@ function SessionChat({ sessionId }: { sessionId: string }) {
   const [loading, setLoading] = useState(true)
   const [personaDialogOpen, setPersonaDialogOpen] = useState(false)
   const [modelDialogOpen, setModelDialogOpen] = useState(false)
+  const isComposingRef = useRef({ composing: false, justEnded: false })
   const isGenerating = generatingSessionId === sessionId
   const isBackground = session?.status === 1 && !isGenerating
   const personaId = session?.personaId ?? sessionDetail?.personaId ?? null
@@ -285,14 +298,20 @@ function SessionChat({ sessionId }: { sessionId: string }) {
     loadModels()
   }, [sessionDetail, models.length, loadModels])
 
-  // Cleanup: stop polling for this session on unmount.
+  // Cleanup: stop polling for this session on unmount — but only if the
+  // session has finished (status 0). If it's still in background (status 1),
+  // keep polling so it transitions to done even after the user navigates away.
   // Do NOT destroy stream state (streamController, generatingSessionId, streaming*)
   // here — those live in the global Zustand store and are managed by sendMessage /
   // loadSession / stopGeneration. Destroying them on unmount breaks React StrictMode
   // double-mount and HMR, killing the active SSE mid-stream.
   useEffect(() => {
     return () => {
-      stopPolling(sessionId)
+      const state = useChatStore.getState()
+      const session = state.sessions.find(s => s.id === sessionId)
+      if (!session || session.status === 0) {
+        stopPolling(sessionId)
+      }
     }
   }, [sessionId])
 
@@ -305,9 +324,17 @@ function SessionChat({ sessionId }: { sessionId: string }) {
   }, [input, isGenerating, isBackground, sendMessage])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      const { composing, justEnded } = isComposingRef.current
+      if (composing || justEnded || e.nativeEvent.isComposing || e.keyCode === 229) {
+        isComposingRef.current.justEnded = false
+        e.preventDefault()
+        return
+      }
       e.preventDefault()
       handleSend()
+    } else if (!e.nativeEvent.isComposing) {
+      isComposingRef.current.justEnded = false
     }
   }, [handleSend])
 
@@ -369,6 +396,7 @@ function SessionChat({ sessionId }: { sessionId: string }) {
         compressing={compressing}
         onStop={stopGeneration}
         stopDisabled={stopDisabled}
+        isComposingRef={isComposingRef}
       />
       <PersonaInfoDialog
         personaId={personaId}
@@ -703,6 +731,7 @@ function NewChatInput({
   onMcpToggle, onSkillToggle,
   formProjectPath, onProjectChange,
   stopDisabled,
+  isComposingRef,
 }: {
   value: string
   onChange: (v: string) => void
@@ -722,6 +751,7 @@ function NewChatInput({
   formProjectPath: string | null
   onProjectChange: (path: string | null) => void
   stopDisabled: boolean
+  isComposingRef: React.MutableRefObject<{ composing: boolean; justEnded: boolean }>
 }) {
   const t = useT()
   const thinking = useChatStore((s) => s.formThinking)
@@ -835,6 +865,8 @@ function NewChatInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKeyDown}
+        onCompositionStart={() => { isComposingRef.current.composing = true; isComposingRef.current.justEnded = false }}
+        onCompositionEnd={() => { isComposingRef.current.composing = false; isComposingRef.current.justEnded = true }}
         placeholder={t('chat.inputPlaceholder')}
         disabled={generating}
         rows={1}
@@ -1078,6 +1110,7 @@ function NewChatInput({
 
 function ChatInput({
   value, onChange, onSend, onKeyDown, isGenerating, isBackground, compressing, onStop, stopDisabled,
+  isComposingRef,
 }: {
   value: string
   onChange: (v: string) => void
@@ -1088,6 +1121,7 @@ function ChatInput({
   compressing?: boolean
   onStop?: () => void
   stopDisabled?: boolean
+  isComposingRef: React.MutableRefObject<{ composing: boolean; justEnded: boolean }>
 }) {
   const t = useT()
   const thinking = useChatStore((s) => s.formThinking)
@@ -1162,7 +1196,10 @@ function ChatInput({
           <textarea
             ref={textareaRef}
             value={value} onChange={(e) => onChange(e.target.value)}
-            onKeyDown={onKeyDown} placeholder={isBackground ? t('chat.backgroundThinkingPlaceholder') : t('chat.inputPlaceholderSession')} disabled={isGenerating || isBackground || compressing} rows={1}
+            onKeyDown={onKeyDown}
+            onCompositionStart={() => { isComposingRef.current.composing = true; isComposingRef.current.justEnded = false }}
+            onCompositionEnd={() => { isComposingRef.current.composing = false; isComposingRef.current.justEnded = true }}
+            placeholder={isBackground ? t('chat.backgroundThinkingPlaceholder') : t('chat.inputPlaceholderSession')} disabled={isGenerating || isBackground || compressing} rows={1}
             className={cn(
               'w-full resize-none overflow-y-auto border-0 bg-transparent px-3 pt-3 text-base text-text-1 placeholder:text-text-muted outline-none max-h-40 [scrollbar-width:thin] [scrollbar-color:var(--color-bg-layer-3)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-bg-layer-3 [&::-webkit-scrollbar-track]:bg-transparent',
               (isGenerating || isBackground || compressing) && 'opacity-50',

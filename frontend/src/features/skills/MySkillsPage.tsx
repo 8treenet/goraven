@@ -1,40 +1,24 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { useT, t as translate } from '@/i18n'
 import { toast } from 'sonner'
-import {
-  Search,
-  Sparkles,
-  ChevronDown,
-  ChevronRight,
-  X,
-  Loader2,
-  Trash2,
-  Eye,
-  Package,
-  Copy,
-  Check,
-} from 'lucide-react'
+import { Search, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog'
-import { Icon } from '@/components/common/Icon'
-import { IconPicker } from '@/components/common/IconPicker'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { getSkillCategories, getUserSkills, getMarketSkills, installSkill, deleteUserSkill, refreshSkills, toggleAlwaysOn, updateUserSkill } from '@/api/skills'
 import { getUserSkillDetail, getMarketSkillDetail } from '@/api/skills'
-import type { SkillCategory, UserSkill, MarketSkill } from '@/api/types'
+import { getShareSkills, shareSkillToTeam, installShareSkill, deleteShareSkill, getShareSkillDetail } from '@/api/skills'
+import type { SkillCategory, UserSkill, MarketSkill, ShareSkill } from '@/api/types'
+
+import { InstalledSkillRow, MarketSkillRow, ShareSkillRow } from './components/SkillRow'
+import { SkillDrawer } from './components/SkillDrawer'
+import type { SkillDrawerMetaField } from './components/SkillDrawer'
+import { DeleteSkillDialog, InstallSuccessDialog, ShareSkillDialog, CancelShareDialog } from './components/SkillDialogs'
 
 /* ============================================
    Types
    ============================================ */
 
-type TabValue = 'installed' | 'market'
+type TabValue = 'installed' | 'market' | 'team'
 type PageState = 'loading' | 'data' | 'empty'
 
 /* ============================================
@@ -51,6 +35,8 @@ function getSourceLabel(source: string): string {
       return translate('skills.userCreated')
     case 'market':
       return translate('skills.marketplaceSource')
+    case 'share':
+      return translate('skills.installedShareSource')
     default:
       return source
   }
@@ -132,7 +118,7 @@ function FilterDropdown<T extends string | number | null>({
         className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs text-text-3 transition-colors hover:bg-bg-hover hover:text-text-2"
       >
         {current ? current.label : label}
-        <ChevronDown className="size-4" />
+        <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
       </button>
       {open && (
         <div className="absolute top-full left-0 z-30 mt-1 min-w-[120px] rounded-md border border-border bg-bg-layer-2 py-1 shadow-pop">
@@ -170,22 +156,26 @@ export function Component() {
 
   const [installedSkills, setInstalledSkills] = useState<UserSkill[]>([])
   const [marketSkills, setMarketSkills] = useState<MarketSkill[]>([])
+  const [shareSkills, setShareSkills] = useState<ShareSkill[]>([])
   const [categories, setCategories] = useState<SkillCategory[]>([])
 
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<number | null>(null)
 
   const [drawerSkillId, setDrawerSkillId] = useState<number | null>(null)
-  const [drawerSource, setDrawerSource] = useState<'installed' | 'market'>( 'installed')
+  const [drawerSource, setDrawerSource] = useState<'installed' | 'market' | 'team'>('installed')
   const [showSkillMd, setShowSkillMd] = useState(false)
 
   const [deleteTarget, setDeleteTarget] = useState<UserSkill | null>(null)
+  const [shareTarget, setShareTarget] = useState<UserSkill | null>(null)
+  const [cancelShareTarget, setCancelShareTarget] = useState<ShareSkill | null>(null)
   const [installSuccessTarget, setInstallSuccessTarget] = useState<MarketSkill | null>(null)
   const [installCopied, setInstallCopied] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
 
   const [drawerContent, setDrawerContent] = useState<string | null>(null)
   const [drawerContentLoading, setDrawerContentLoading] = useState(false)
+  const [drawerIsShared, setDrawerIsShared] = useState(false)
 
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false)
@@ -198,11 +188,12 @@ export function Component() {
 
   useEffect(() => {
     const pageParams = { pageSize: 1000 }
-    Promise.all([getSkillCategories(), getUserSkills(pageParams), getMarketSkills(pageParams)])
-      .then(([cats, userResult, marketResult]) => {
+    Promise.all([getSkillCategories(), getUserSkills(pageParams), getMarketSkills(pageParams), getShareSkills(pageParams)])
+      .then(([cats, userResult, marketResult, shareResult]) => {
         setCategories(cats)
         setInstalledSkills(userResult.list)
         setMarketSkills(marketResult.list)
+        setShareSkills(shareResult.list)
         setPageState('data')
       })
       .catch(() => {
@@ -240,19 +231,43 @@ export function Component() {
     })
   }, [marketSkills, searchQuery, categoryFilter])
 
+  const filteredShares = useMemo(() => {
+    return shareSkills.filter((s) => {
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase()
+        if (!s.skillName.toLowerCase().includes(q)) return false
+      }
+      if (categoryFilter !== null && s.categoryId !== categoryFilter)
+        return false
+      return true
+    })
+  }, [shareSkills, searchQuery, categoryFilter])
+
   /* ---- Tab counts ---- */
 
   const installedCount = installedSkills.length
   const marketCount = marketSkills.filter((s) => !s.userInstalled).length
+  const shareCount = shareSkills.length
+
+  /* ---- Cross-reference for installed shares ---- */
+
+  const installedShareNames = useMemo(() => {
+    return new Set(
+      installedSkills
+        .filter((s) => s.source === 'share')
+        .map((s) => s.skillName),
+    )
+  }, [installedSkills])
 
   /* ---- Actions ---- */
 
   const reloadData = useCallback(() => {
     const pageParams = { pageSize: 1000 }
-    return Promise.all([getUserSkills(pageParams), getMarketSkills(pageParams)]).then(
-      ([userResult, marketResult]) => {
+    return Promise.all([getUserSkills(pageParams), getMarketSkills(pageParams), getShareSkills(pageParams)]).then(
+      ([userResult, marketResult, shareResult]) => {
         setInstalledSkills(userResult.list)
         setMarketSkills(marketResult.list)
+        setShareSkills(shareResult.list)
       },
     )
   }, [])
@@ -326,13 +341,60 @@ export function Component() {
     [reloadData],
   )
 
+  const handleShare = useCallback(
+    (note: string) => {
+      if (!shareTarget) return
+      shareSkillToTeam(shareTarget.userSkillId, note)
+        .then(() => {
+          setShareTarget(null)
+          toast.success(translate('skills.shareSuccess'))
+          reloadData()
+        })
+        .catch((err: Error) => {
+          toast.error(err.message || translate('skills.shareFail'))
+        })
+    },
+    [shareTarget, reloadData],
+  )
+
+  const handleInstallShare = useCallback(
+    (skill: ShareSkill) => {
+      installShareSkill(skill.shareId)
+        .then(() => {
+          toast.success(translate('skills.installComplete').replace('{name}', skill.skillName))
+          reloadData()
+        })
+        .catch((err: Error) => {
+          toast.error(err.message || translate('skills.installFail'))
+        })
+    },
+    [reloadData],
+  )
+
+  const handleCancelShare = useCallback(() => {
+    if (!cancelShareTarget) return
+    deleteShareSkill(cancelShareTarget.shareId)
+      .then(() => {
+        setCancelShareTarget(null)
+        if (drawerSkillId === cancelShareTarget.shareId && drawerSource === 'team') {
+          setDrawerSkillId(null)
+        }
+        toast.success(translate('skills.deletedToast').replace('{name}', cancelShareTarget.skillName))
+        reloadData()
+      })
+      .catch((err: Error) => {
+        toast.error(err.message || translate('common.deleteFailed'))
+      })
+  }, [cancelShareTarget, drawerSkillId, drawerSource, reloadData])
+
   const openDrawer = useCallback(
-    (id: number, source: 'installed' | 'market') => {
+    (id: number, source: 'installed' | 'market' | 'team') => {
       setDrawerSkillId(id)
       setDrawerSource(source)
       setShowSkillMd(false)
       setIconPickerOpen(false)
       setCategoryPickerOpen(false)
+      setDrawerIsShared(false)
     },
     [],
   )
@@ -356,7 +418,12 @@ export function Component() {
     return marketSkills.find((s) => s.skillId === drawerSkillId) || null
   }, [drawerSource, drawerSkillId, marketSkills])
 
-  const drawerSkill = drawerInstalledSkill || drawerMarketSkill
+  const drawerShareSkill = useMemo(() => {
+    if (drawerSource !== 'team' || drawerSkillId === null) return null
+    return shareSkills.find((s) => s.shareId === drawerSkillId) || null
+  }, [drawerSource, drawerSkillId, shareSkills])
+
+  const drawerSkill = drawerInstalledSkill || drawerMarketSkill || drawerShareSkill
 
   /* ---- Drawer edit handlers ---- */
 
@@ -438,17 +505,25 @@ export function Component() {
   useEffect(() => {
     if (drawerSkillId === null) {
       setDrawerContent(null)
+      setDrawerIsShared(false)
       return
     }
     setDrawerContent(null)
     setDrawerContentLoading(true)
-    const promise =
-      drawerSource === 'installed'
-        ? getUserSkillDetail(drawerSkillId)
-        : getMarketSkillDetail(drawerSkillId)
+    let promise: Promise<{ content: string; isShared?: boolean }>
+    if (drawerSource === 'installed') {
+      promise = getUserSkillDetail(drawerSkillId)
+    } else if (drawerSource === 'team') {
+      promise = getShareSkillDetail(drawerSkillId).then(d => ({ content: d.content, isShared: undefined }))
+    } else {
+      promise = getMarketSkillDetail(drawerSkillId).then(d => ({ content: d.content, isShared: undefined }))
+    }
     promise
       .then((detail) => {
         setDrawerContent(detail.content)
+        if (drawerSource === 'installed' && detail.isShared !== undefined) {
+          setDrawerIsShared(detail.isShared)
+        }
         setDrawerContentLoading(false)
       })
       .catch(() => {
@@ -457,404 +532,67 @@ export function Component() {
       })
   }, [drawerSkillId, drawerSource])
 
-  /* ---- Render helpers ---- */
+  /* ---- Drawer props (derived) ---- */
 
-  const renderInstalledRow = (skill: UserSkill, i: number, total: number) => {
-    return (
-      <div
-        key={skill.userSkillId}
-        className={cn(
-          'group flex items-center gap-3 px-4 transition-colors',
-          i % 2 === 0
-            ? 'bg-bg-layer-1 hover:bg-bg-hover'
-            : 'hover:bg-bg-hover',
-        )}
-      >
-        <div className={cn('shrink-0', total <= 5 ? 'py-3.5' : 'py-2.5')}>
-          <Icon name={skill.icon} className="size-4 text-text-3" />
-        </div>
+  const drawerMetaFields = useMemo<SkillDrawerMetaField[]>(() => {
+    if (!drawerSkill) return []
 
-        <div className={cn('flex-1 min-w-0', total <= 5 ? 'py-3.5' : 'py-2.5')}>
-          <span className="text-sm font-semibold text-text-1 truncate">
-            {skill.skillName}
-          </span>
-          <div className="mt-0.5 flex items-center gap-1.5 min-w-0">
-            <span className="shrink-0 text-xs text-text-muted">
-              {skill.skillName}
-            </span>
-            <span className="shrink-0 text-text-muted">·</span>
-            <span className="truncate text-xs text-text-3">
-              {skill.description}
-            </span>
-          </div>
-        </div>
+    if (drawerSource === 'installed') {
+      const isk = drawerSkill as UserSkill
+      const fields: SkillDrawerMetaField[] = [
+        { label: t('skills.installTime'), value: formatDate(isk.created) },
+      ]
+      return fields
+    }
 
-        <div className={cn('shrink-0', total <= 5 ? 'py-3.5' : 'py-2.5')}>
-          {skill.categoryName && (
-            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs text-text-1 bg-bg-layer-3">
-              {skill.categoryName}
-            </span>
-          )}
-        </div>
+    if (drawerSource === 'team') {
+      const shk = drawerSkill as ShareSkill
+      const fields: SkillDrawerMetaField[] = [
+        { label: t('skills.owner'), value: shk.ownerName },
+        { label: t('skills.installCount'), value: String(shk.installCount) },
+      ]
+      if (shk.note) {
+        fields.push({ label: t('skills.shareNote'), value: shk.note })
+      }
+      return fields
+    }
 
-        <div className={cn('flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100', total <= 5 ? 'py-3.5' : 'py-2.5')}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => openDrawer(skill.userSkillId, 'installed')}
-              >
-                <Eye className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t('skills.details')}</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setDeleteTarget(skill)}
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t('common.delete')}</TooltipContent>
-          </Tooltip>
-        </div>
-      </div>
-    )
-  }
+    const msk = drawerSkill as MarketSkill
+    if (msk.installedCount !== undefined) {
+      return [
+        { label: t('skills.installCount'), value: String(msk.installedCount) },
+      ]
+    }
+    return []
+  }, [drawerSkill, drawerSource, t])
 
-  const renderMarketRow = (skill: MarketSkill, i: number, total: number) => {
-    return (
-      <div
-        key={skill.skillId}
-        className={cn(
-          'group flex items-center gap-3 px-4 transition-colors',
-          i % 2 === 0
-            ? 'bg-bg-layer-1 hover:bg-bg-hover'
-            : 'hover:bg-bg-hover',
-        )}
-      >
-        <div className={cn('shrink-0', total <= 5 ? 'py-3.5' : 'py-2.5')}>
-          <Icon name={skill.icon} className="size-4 text-text-3" />
-        </div>
+  const isDrawerInstalled = drawerSource === 'installed'
+  const isDrawerTeam = drawerSource === 'team'
+  const drawerName = drawerSkill
+    ? ('skillName' in drawerSkill ? drawerSkill.skillName : ('name' in drawerSkill ? drawerSkill.name : ''))
+    : ''
+  const drawerDirName = drawerSkill
+    ? ('skillName' in drawerSkill
+        ? drawerSkill.skillName
+        : ('name' in drawerSkill ? drawerSkill.name.toLowerCase().replace(/\s+/g, '-') : ''))
+    : ''
 
-        <div className={cn('flex-1 min-w-0', total <= 5 ? 'py-3.5' : 'py-2.5')}>
-          <span className="text-sm font-semibold text-text-1 truncate">
-            {skill.name}
-          </span>
-          <div className="mt-0.5 flex items-center gap-1.5 min-w-0">
-            <span className="truncate text-xs text-text-3">
-              {skill.description}
-            </span>
-          </div>
-        </div>
+  const drawerSourceLabel = drawerSkill
+    ? ('source' in drawerSkill ? getSourceLabel(drawerSkill.source) : isDrawerTeam ? t('skills.teamShared') : '')
+    : ''
+  const drawerCategoryName = drawerSkill
+    ? ('categoryName' in drawerSkill ? drawerSkill.categoryName : null)
+    : null
+  const drawerIcon = drawerSkill ? drawerSkill.icon : ''
+  const drawerDescription = drawerSkill ? drawerSkill.description : ''
 
-        <div className={cn('shrink-0', total <= 5 ? 'py-3.5' : 'py-2.5')}>
-          {skill.categoryName && (
-            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs text-text-1 bg-bg-layer-3">
-              {skill.categoryName}
-            </span>
-          )}
-        </div>
+  /* ---- Show share button for installed custom skills ---- */
 
-        <div className={cn('shrink-0', total <= 5 ? 'py-3.5' : 'py-2.5')}>
-          <span className="text-xs text-text-muted tabular-nums">
-            {t('skills.installCountSuffix').replace('{count}', String(skill.installedCount))}
-          </span>
-        </div>
-
-        <div className={cn('flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100', total <= 5 ? 'py-3.5' : 'py-2.5')}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => openDrawer(skill.skillId, 'market')}
-              >
-                <Eye className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t('skills.details')}</TooltipContent>
-          </Tooltip>
-          {skill.userInstalled ? (
-            <span className="px-1.5 text-xs text-text-muted">
-              {t('common.installed')}
-            </span>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleInstall(skill)}
-                >
-                  <Package className="size-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t('skills.install')}</TooltipContent>
-            </Tooltip>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  const renderDrawer = () => {
-    if (!drawerSkill) return null
-
-    const isInstalled = drawerSource === 'installed'
-    const installedSkill = drawerSkill as UserSkill
-
-    return (
-      <>
-        <div
-          className="fixed inset-0 z-40 bg-black/60 animate-in fade-in duration-150"
-          onClick={closeDrawer}
-        />
-        <div className="fixed inset-y-0 right-0 z-50 w-[400px] animate-in slide-in-from-right duration-200 border-l border-border bg-bg-layer-1 shadow-pop">
-          <div className="flex h-full flex-col">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <h2 className="text-base font-semibold text-text-1">
-                {t('skills.details')}
-              </h2>
-              <button
-                onClick={closeDrawer}
-                className="text-text-3 transition-colors hover:text-text-1"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-auto p-4 space-y-4">
-              {/* Icon + Name */}
-              <div className="flex items-start gap-3">
-                {isInstalled ? (
-                  <div ref={iconPickerRef} className="relative shrink-0 mt-0.5">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => setIconPickerOpen(!iconPickerOpen)}
-                          className={cn(
-                            'inline-flex size-8 items-center justify-center rounded-md transition-colors',
-                            iconPickerOpen
-                              ? 'bg-bg-layer-3 text-text-1'
-                              : 'text-text-2 hover:bg-bg-hover hover:text-text-1',
-                          )}
-                        >
-                          <Icon name={drawerSkill.icon} className="size-5" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>{t('skills.editIcon')}</TooltipContent>
-                    </Tooltip>
-                    {iconPickerOpen && (
-                      <div className="absolute left-0 top-full z-50 mt-1 w-72 rounded-md border border-border bg-bg-layer-1 p-3 shadow-pop">
-                        <IconPicker
-                          value={drawerSkill.icon}
-                          onChange={handleIconChange}
-                        />
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <Icon name={drawerSkill.icon} className="size-5 shrink-0 mt-0.5 text-text-2" />
-                )}
-                <div className="min-w-0">
-                  <h3 className="text-base font-semibold text-text-1">
-                    {'skillName' in drawerSkill ? drawerSkill.skillName : drawerSkill.name}
-                  </h3>
-                  <p className="text-xs text-text-muted">
-                    {'skillName' in drawerSkill
-                      ? drawerSkill.skillName
-                      : drawerSkill.name.toLowerCase().replace(/\s+/g, '-')}
-                  </p>
-                </div>
-              </div>
-
-              {/* Description */}
-              <p className="text-sm text-text-2 leading-relaxed">
-                {drawerSkill.description}
-              </p>
-
-              {/* Install error */}
-              <div className="border-t border-border" />
-
-              {/* Meta */}
-              <div className="space-y-2.5">
-                <div className="flex items-center gap-2">
-                  <span className="shrink-0 text-xs text-text-muted w-16">
-                    {t('skills.source')}
-                  </span>
-                  <span className="text-xs text-text-2">
-                    {getSourceLabel(drawerSkill.source)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="shrink-0 text-xs text-text-muted w-16">
-                    {t('common.category')}
-                  </span>
-                  {isInstalled ? (
-                    <div ref={categoryPickerRef} className="relative">
-                      <button
-                        onClick={() => setCategoryPickerOpen(!categoryPickerOpen)}
-                        className={cn(
-                          'flex items-center gap-1 rounded py-0.5 text-xs transition-colors',
-                          categoryPickerOpen
-                            ? 'bg-bg-layer-3 text-text-1'
-                            : 'text-text-2 hover:bg-bg-hover hover:text-text-1',
-                        )}
-                      >
-                        {drawerInstalledSkill?.categoryName || t('skills.noCategory')}
-                        <ChevronDown className="size-3" />
-                      </button>
-                      {categoryPickerOpen && (
-                        <div className="absolute top-full left-0 z-30 mt-1 min-w-[120px] rounded-md border border-border bg-bg-layer-2 py-1 shadow-pop">
-                          {categories.map(cat => (
-                            <button
-                              key={cat.categoryId}
-                              onClick={() => handleCategoryChange(cat.categoryId)}
-                              className={cn(
-                                'w-full whitespace-nowrap px-3 py-1.5 text-left text-xs transition-colors',
-                                drawerInstalledSkill?.categoryId === cat.categoryId
-                                  ? 'bg-bg-layer-3 text-text-1'
-                                  : 'text-text-3 hover:bg-bg-hover hover:text-text-2',
-                              )}
-                            >
-                              {cat.name}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-xs text-text-2">
-                      {drawerSkill.categoryName || t('skills.noCategory')}
-                    </span>
-                  )}
-                </div>
-                {isInstalled && (
-                  <div className="flex items-center gap-2">
-                    <span className="shrink-0 text-xs text-text-muted w-16">
-                      {t('skills.installTime')}
-                    </span>
-                    <span className="text-xs text-text-2 tabular-nums">
-                      {formatDate(installedSkill.created)}
-                    </span>
-                  </div>
-                )}
-                {isInstalled && (
-                  <div className="flex items-center gap-2">
-                    <span className="shrink-0 text-xs text-text-muted w-16">
-                      {t('skills.alwaysOn')}
-                    </span>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => handleToggleAlwaysOn(installedSkill)}
-                          className="flex items-center gap-1.5 rounded-md py-1 text-xs text-text-2 transition-colors hover:bg-bg-hover"
-                        >
-                          <span
-                            className={cn(
-                              'relative inline-flex h-3.5 w-8 items-center rounded-full transition-colors',
-                              installedSkill.alwaysOn === 1 ? 'bg-highlight' : 'bg-bg-hover',
-                            )}
-                          >
-                            <span
-                              className={cn(
-                                'inline-block h-3 w-3 rounded-full transition-transform',
-                                installedSkill.alwaysOn === 1
-                                  ? 'bg-highlight-fg translate-x-5'
-                                  : 'bg-text-muted',
-                              )}
-                            />
-                          </span>
-                          <span>{installedSkill.alwaysOn === 1 ? t('common.enabled') : t('common.disabled')}</span>
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>{t('skills.alwaysOnTip')}</TooltipContent>
-                    </Tooltip>
-                  </div>
-                )}
-                {!isInstalled && (drawerSkill as MarketSkill).installedCount !== undefined && (
-                  <div className="flex items-center gap-2">
-                    <span className="shrink-0 text-xs text-text-muted w-16">
-                      {t('skills.installCount')}
-                    </span>
-                    <span className="text-xs text-text-2 tabular-nums">
-                      {(drawerSkill as MarketSkill).installedCount}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="border-t border-border" />
-
-              {/* SKILL.md collapsible */}
-              <div>
-                <button
-                  onClick={() => setShowSkillMd(!showSkillMd)}
-                  className="flex items-center gap-1.5 text-xs text-text-3 transition-colors hover:text-text-2"
-                >
-                  <ChevronRight
-                    className={cn(
-                      'size-4 transition-transform',
-                      showSkillMd && 'rotate-90',
-                    )}
-                  />
-                  SKILL.md {t('skills.skillMdContent')}
-                </button>
-                {showSkillMd && (
-                  <div className="mt-2 rounded-md border border-border bg-bg-layer-2 p-3">
-                    {drawerContentLoading ? (
-                      <div className="flex items-center gap-2 py-2">
-                        <Loader2 className="size-4 animate-spin text-text-3" />
-                        <span className="text-xs text-text-3">{t('common.loading')}</span>
-                      </div>
-                    ) : drawerContent ? (
-                      <pre className="text-xs text-text-3 whitespace-pre-wrap leading-relaxed">
-                        {drawerContent}
-                      </pre>
-                    ) : (
-                      <span className="text-xs text-text-3">
-                        {'skillName' in drawerSkill ? drawerSkill.skillName : drawerSkill.name}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Bottom action */}
-            {isInstalled && (
-              <div className="border-t border-border px-4 py-3">
-                <Button
-                  variant="destructive"
-                  size="default"
-                  className="w-full"
-                  onClick={() => {
-                    setDeleteTarget(installedSkill)
-                    closeDrawer()
-                  }}
-                >
-                  <Trash2 className="size-4" />
-                  {t('skills.deleteSkill')}
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      </>
-    )
-  }
+  const showShareButton = isDrawerInstalled && drawerInstalledSkill?.source === 'custom'
 
   /* ---- Render ---- */
 
-  const currentList = activeTab === 'installed' ? filteredInstalled : filteredMarket
+  const currentList = activeTab === 'installed' ? filteredInstalled : activeTab === 'market' ? filteredMarket : filteredShares
 
   return (
     <div className="flex h-full flex-col bg-bg-base">
@@ -868,6 +606,7 @@ export function Component() {
           options={[
             { value: 'installed', label: `${t('skills.installed')} (${installedCount})` },
             { value: 'market', label: `${t('skills.marketplace')} (${marketCount})` },
+            { value: 'team', label: `${t('skills.team')} (${shareCount})` },
           ]}
           value={activeTab}
           onChange={(v) => {
@@ -934,32 +673,68 @@ export function Component() {
           </div>
         )}
 
-        {/* Data */}
+        {/* Empty */}
         {pageState === 'data' && currentList.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center gap-3">
-            <Icon name="bot" className="size-10 text-text-muted" />
+            <svg className="size-10 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14l2 2h16l2-2"/></svg>
             <div className="text-center">
               <p className="text-sm text-text-2">
                 {searchQuery || categoryFilter
                   ? t('skills.noMatch')
                   : activeTab === 'installed'
                     ? t('skills.noInstalled')
-                    : t('skills.noMarketplace')}
+                    : activeTab === 'market'
+                      ? t('skills.noMarketplace')
+                      : t('skills.noTeamShares')}
               </p>
               <p className="mt-1 text-xs text-text-3">
                 {activeTab === 'installed'
                   ? t('skills.marketplaceHint')
-                  : t('skills.marketplaceEmptyHint')}
+                  : activeTab === 'market'
+                    ? t('skills.marketplaceEmptyHint')
+                    : t('skills.teamSharesHint')}
               </p>
             </div>
           </div>
         )}
 
+        {/* Rows */}
         {pageState === 'data' && currentList.length > 0 && (
           <>
             {activeTab === 'installed'
-              ? filteredInstalled.map((s, i) => renderInstalledRow(s, i, filteredInstalled.length))
-              : filteredMarket.map((s, i) => renderMarketRow(s, i, filteredMarket.length))}
+              ? filteredInstalled.map((s, i) => (
+                  <InstalledSkillRow
+                    key={s.userSkillId}
+                    skill={s}
+                    index={i}
+                    total={filteredInstalled.length}
+                    onOpenDrawer={(id) => openDrawer(id, 'installed')}
+                    onDelete={setDeleteTarget}
+                  />
+                ))
+              : activeTab === 'market'
+                ? filteredMarket.map((s, i) => (
+                    <MarketSkillRow
+                      key={s.skillId}
+                      skill={s}
+                      index={i}
+                      total={filteredMarket.length}
+                      onOpenDrawer={(id) => openDrawer(id, 'market')}
+                      onInstall={handleInstall}
+                    />
+                  ))
+                : filteredShares.map((s, i) => (
+                    <ShareSkillRow
+                      key={s.shareId}
+                      skill={s}
+                      index={i}
+                      total={filteredShares.length}
+                      userInstalled={installedShareNames.has(s.skillName)}
+                      onOpenDrawer={(id) => openDrawer(id, 'team')}
+                      onInstall={handleInstallShare}
+                      onDelete={(sk) => setCancelShareTarget(sk)}
+                    />
+                  ))}
           </>
         )}
       </div>
@@ -974,104 +749,80 @@ export function Component() {
       )}
 
       {/* Drawer */}
-      {drawerSkill && renderDrawer()}
+      {drawerSkill && (
+        <SkillDrawer
+          name={drawerName}
+          dirName={drawerDirName}
+          icon={drawerIcon}
+          description={drawerDescription}
+          sourceLabel={drawerSourceLabel}
+          categoryName={drawerCategoryName}
+          metaFields={drawerMetaFields}
+          editableIcon={isDrawerInstalled}
+          editableCategory={isDrawerInstalled}
+          categories={categories}
+          onIconChange={isDrawerInstalled ? handleIconChange : undefined}
+          onCategoryChange={isDrawerInstalled ? handleCategoryChange : undefined}
+          showAlwaysOn={isDrawerInstalled}
+          alwaysOn={isDrawerInstalled ? (drawerSkill as UserSkill).alwaysOn : undefined}
+          onToggleAlwaysOn={isDrawerInstalled ? () => handleToggleAlwaysOn(drawerSkill as UserSkill) : undefined}
+          showDeleteButton={isDrawerInstalled}
+          onDelete={
+            isDrawerInstalled
+              ? () => {
+                  setDeleteTarget(drawerSkill as UserSkill)
+                  closeDrawer()
+                }
+              : undefined
+          }
+          showShareButton={showShareButton}
+          isShared={drawerIsShared}
+          onShare={showShareButton ? () => setShareTarget(drawerSkill as UserSkill) : undefined}
+          skillMdContent={drawerContent}
+          skillMdLoading={drawerContentLoading}
+          iconPickerOpen={iconPickerOpen}
+          setIconPickerOpen={setIconPickerOpen}
+          categoryPickerOpen={categoryPickerOpen}
+          setCategoryPickerOpen={setCategoryPickerOpen}
+          iconPickerRef={iconPickerRef}
+          categoryPickerRef={categoryPickerRef}
+          showSkillMd={showSkillMd}
+          onToggleSkillMd={() => setShowSkillMd(!showSkillMd)}
+          onClose={closeDrawer}
+        />
+      )}
 
       {/* Delete dialog */}
-      <Dialog
-        open={deleteTarget !== null}
-        onOpenChange={() => setDeleteTarget(null)}
-      >
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{t('skills.confirmDeleteSkill')}</DialogTitle>
-            <DialogDescription>
-              {t('skills.confirmDeleteSkillDesc').replace('{name}', deleteTarget?.skillName ?? '')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <p className="text-xs text-text-3">
-              {t('skills.deleteSkillDesc')}
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="ghost"
-                size="default"
-                onClick={() => setDeleteTarget(null)}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button variant="default" size="default" onClick={handleDelete}>
-                {t('common.confirmDelete')}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <DeleteSkillDialog
+        target={deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
 
       {/* Install success dialog */}
-      <Dialog
-        open={installSuccessTarget !== null}
-        onOpenChange={() => {
+      <InstallSuccessDialog
+        target={installSuccessTarget}
+        copied={installCopied}
+        onClose={() => {
           setInstallSuccessTarget(null)
           setInstallCopied(false)
         }}
-      >
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{t('skills.installSuccessTitle')}</DialogTitle>
-          </DialogHeader>
+        onCopy={handleCopyInstallText}
+      />
 
-          <div className="space-y-4">
-            <div className="rounded-md border border-border bg-bg-layer-2 p-4">
-              <div className="flex items-start gap-4">
-                <Icon
-                  name={installSuccessTarget?.icon || 'bot'}
-                  className="size-8 shrink-0 mt-0.5 text-text-2"
-                />
-                <div className="min-w-0">
-                  <h3 className="text-base font-semibold text-text-1">
-                    {installSuccessTarget?.name}
-                  </h3>
-                  <p className="mt-1 text-sm text-text-3 leading-relaxed">
-                    {installSuccessTarget?.description}
-                  </p>
-                </div>
-              </div>
-            </div>
+      {/* Share dialog */}
+      <ShareSkillDialog
+        target={shareTarget}
+        onClose={() => setShareTarget(null)}
+        onConfirm={handleShare}
+      />
 
-            <p className="text-sm text-text-3 leading-relaxed">
-              {t('skills.installSuccessDesc')}
-            </p>
-
-            <div className="rounded-md border border-border bg-bg-layer-2 p-4">
-              <p className="text-base text-text-2 leading-relaxed">
-                {installSuccessTarget
-                  ? translate('skills.installSuccessContent')
-                      .replace('{name}', installSuccessTarget.name)
-                      .replace('{dir}', installSuccessTarget.name.toLowerCase().replace(/\s+/g, '-'))
-                  : ''}
-              </p>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <Button
-                variant="ghost"
-                size="default"
-                onClick={() => {
-                  setInstallSuccessTarget(null)
-                  setInstallCopied(false)
-                }}
-              >
-                {t('common.close')}
-              </Button>
-              <Button variant="default" size="default" onClick={handleCopyInstallText}>
-                {installCopied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-                {installCopied ? t('common.copied') : t('common.copy')}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Cancel share dialog */}
+      <CancelShareDialog
+        target={cancelShareTarget}
+        onClose={() => setCancelShareTarget(null)}
+        onConfirm={handleCancelShare}
+      />
     </div>
   )
 }

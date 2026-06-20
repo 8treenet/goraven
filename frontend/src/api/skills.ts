@@ -10,6 +10,9 @@ import type {
   InstallSkillResult,
   UserSkillStatus,
   RefreshSkillsResult,
+  ShareSkill,
+  ShareSkillResult,
+  ShareSkillDetail,
 } from './types'
 
 /** GET /api/skills/simpleSkills */
@@ -88,6 +91,35 @@ export function retryInstall(id: number) {
 /** PUT /api/skills/user/:id/alwaysOn */
 export function toggleAlwaysOn(id: number, alwaysOn: number) {
   return http.put(`/skills/user/${id}/alwaysOn`, { alwaysOn })
+}
+
+/** GET /api/skills/shares */
+export function getShareSkills(params?: {
+  search?: string
+  page?: number
+  pageSize?: number
+}) {
+  return http.get<PaginatedResponse<ShareSkill>>('/skills/shares', { params })
+}
+
+/** POST /api/skills/shares */
+export function shareSkillToTeam(userSkillId: number, note?: string) {
+  return http.post<ShareSkillResult>('/skills/shares', { userSkillId, note })
+}
+
+/** POST /api/skills/shares/:id/install */
+export function installShareSkill(shareId: number) {
+  return http.post<InstallSkillResult>(`/skills/shares/${shareId}/install`)
+}
+
+/** DELETE /api/skills/shares/:id */
+export function deleteShareSkill(shareId: number) {
+  return http.delete(`/skills/shares/${shareId}`)
+}
+
+/** GET /api/skills/shares/:id */
+export function getShareSkillDetail(shareId: number) {
+  return http.get<ShareSkillDetail>(`/skills/shares/${shareId}`)
 }
 
 /** GET /api/skills/categories */

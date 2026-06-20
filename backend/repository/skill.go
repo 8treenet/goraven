@@ -37,9 +37,9 @@ func (repo *SkillRepository) SystemSkillList() ([]iface.SkillInfo, error) {
 	result := make([]iface.SkillInfo, len(skills))
 	for i, s := range skills {
 		result[i] = iface.SkillInfo{
-			Name:		s.Name,
-			Description:	s.Description,
-			Content:	s.Content,
+			Name:        s.Name,
+			Description: s.Description,
+			Content:     s.Content,
 		}
 	}
 	return result, nil
@@ -91,9 +91,9 @@ func (repo *SkillRepository) SoftDeleteSystemSkill(skillId int) error {
 
 	suffixedName := fmt.Sprintf("%s-%d", skill.Name, time.Now().Unix())
 	return repo.db().Model(&po.SystemSkill{}).Where("skill_id = ? AND deleted = 0", skillId).Updates(map[string]interface{}{
-		"deleted":	1,
-		"name":		suffixedName,
-		"updated":	time.Now(),
+		"deleted": 1,
+		"name":    suffixedName,
+		"updated": time.Now(),
 	}).Error
 }
 
@@ -151,9 +151,9 @@ func (repo *SkillRepository) SoftDeleteMarketSkill(skillId int) error {
 
 	suffixedName := fmt.Sprintf("%s-%d", skill.Name, time.Now().Unix())
 	return repo.db().Model(&po.SkillMarket{}).Where("skill_id = ? AND deleted = 0", skillId).Updates(map[string]interface{}{
-		"deleted":	1,
-		"name":		suffixedName,
-		"updated":	time.Now(),
+		"deleted": 1,
+		"name":    suffixedName,
+		"updated": time.Now(),
 	}).Error
 }
 
@@ -235,9 +235,9 @@ func (repo *SkillRepository) SoftDeleteSkillCategory(categoryId int) error {
 
 	suffixedName := fmt.Sprintf("%s-%d", cat.Name, time.Now().Unix())
 	return repo.db().Model(&po.SkillCategory{}).Where("category_id = ? AND deleted = 0", categoryId).Updates(map[string]interface{}{
-		"deleted":	1,
-		"name":		suffixedName,
-		"updated":	time.Now(),
+		"deleted": 1,
+		"name":    suffixedName,
+		"updated": time.Now(),
 	}).Error
 }
 
@@ -279,10 +279,10 @@ func (repo *SkillRepository) GetAllSkillCategories() ([]vo.AdminSkillCategoryIte
 	items := make([]vo.AdminSkillCategoryItem, 0, len(categories))
 	for _, c := range categories {
 		items = append(items, vo.AdminSkillCategoryItem{
-			CategoryId:	c.CategoryId,
-			Name:		c.Name,
-			Icon:		c.Icon,
-			IsDefault:	c.IsDefault,
+			CategoryId: c.CategoryId,
+			Name:       c.Name,
+			Icon:       c.Icon,
+			IsDefault:  c.IsDefault,
 		})
 	}
 	return items, nil
@@ -406,8 +406,8 @@ func (repo *SkillRepository) GetUserSkillNameMapByIDs(userId string, skillIds []
 		return map[int]string{}, nil
 	}
 	var results []struct {
-		UserSkillId	int
-		SkillName	string
+		UserSkillId int
+		SkillName   string
 	}
 	err := repo.db().Model(&po.UserSkill{}).
 		Select("user_skill_id, skill_name").
@@ -421,4 +421,48 @@ func (repo *SkillRepository) GetUserSkillNameMapByIDs(userId string, skillIds []
 		m[r.UserSkillId] = r.SkillName
 	}
 	return m, nil
+}
+
+// PaginateSkillShares 团队共享技能分页列表
+func (repo *SkillRepository) PaginateSkillShares(req *vo.SkillShareListReq) ([]po.SkillShare, *PageResult, error) {
+	query := repo.db().Model(&po.SkillShare{})
+	if req.Search != "" {
+		query = query.Where("skill_name LIKE ?", "%"+req.Search+"%")
+	}
+	var shares []po.SkillShare
+	pr, err := Paginate(query.Order("created DESC"), &PageQuery{Page: req.Page, PageSize: req.PageSize}, &shares)
+	if err != nil {
+		return nil, nil, err
+	}
+	return shares, pr, nil
+}
+
+func (repo *SkillRepository) CreateSkillShare(share *po.SkillShare) error {
+	return repo.db().Create(share).Error
+}
+
+func (repo *SkillRepository) GetSkillShareByID(shareId int) (*po.SkillShare, error) {
+	var share po.SkillShare
+	err := repo.db().First(&share, "share_id = ?", shareId).Error
+	return &share, err
+}
+
+func (repo *SkillRepository) GetSkillShareBySkillName(skillName string) (*po.SkillShare, error) {
+	var share po.SkillShare
+	err := repo.db().First(&share, "skill_name = ?", skillName).Error
+	return &share, err
+}
+
+func (repo *SkillRepository) DeleteSkillShare(shareId int) error {
+	return repo.db().Delete(&po.SkillShare{}, "share_id = ?", shareId).Error
+}
+
+func (repo *SkillRepository) UpdateSkillShare(shareId int, updates map[string]interface{}) error {
+	updates["updated"] = time.Now()
+	return repo.db().Model(&po.SkillShare{}).Where("share_id = ?", shareId).Updates(updates).Error
+}
+
+func (repo *SkillRepository) IncrSkillShareInstallCount(shareId int) error {
+	return repo.db().Model(&po.SkillShare{}).Where("share_id = ?", shareId).
+		UpdateColumn("install_count", gorm.Expr("install_count + 1")).Error
 }

@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
-import { TriangleAlert } from 'lucide-react'
+import { TriangleAlert, Copy, Check } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,7 @@ interface ShareDialogProps {
   onOpenChange: (open: boolean) => void
   sessionTitle: string
   domainConfigured?: boolean
-  onGenerate?: (params: ShareParams) => Promise<string> | string | void
+  onGenerate: (params: ShareParams) => Promise<string | void>
 }
 
 const EXPIRY_OPTIONS: ReadonlyArray<{ value: ShareExpiry; seconds: number }> = [
@@ -50,11 +50,15 @@ export function ShareDialog({ open, onOpenChange, sessionTitle, domainConfigured
   }
   const [title, setTitle] = useState(sessionTitle)
   const [expiry, setExpiry] = useState<ShareExpiry>('24h')
+  const [generatedLink, setGeneratedLink] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (open) {
       setTitle(sessionTitle)
       setExpiry('24h')
+      setGeneratedLink(null)
+      setCopied(false)
     }
   }, [open, sessionTitle])
 
@@ -63,17 +67,32 @@ export function ShareDialog({ open, onOpenChange, sessionTitle, domainConfigured
     [expiry],
   )
 
+  const copyLink = useCallback(async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch {
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      textarea.style.position = 'fixed'
+      textarea.style.left = '-9999px'
+      document.body.appendChild(textarea)
+      textarea.focus()
+      textarea.select()
+      try { document.execCommand('copy') } catch {}
+      document.body.removeChild(textarea)
+    }
+    setCopied(true)
+    toast(translate('share.linkCopied'))
+    setTimeout(() => setCopied(false), 2000)
+  }, [])
+
   const handleGenerate = async () => {
     const trimmed = title.trim()
     if (!trimmed) return
 
-    if (onGenerate) {
-      const link = await onGenerate({ title: trimmed, expiresIn: expiry })
-      if (link) {
-        navigator.clipboard.writeText(link).catch(() => {})
-        toast(translate('share.linkCopied'))
-        onOpenChange(false)
-      }
+    const link = await onGenerate({ title: trimmed, expiresIn: expiry })
+    if (link) {
+      setGeneratedLink(link)
     }
   }
 
@@ -184,15 +203,34 @@ export function ShareDialog({ open, onOpenChange, sessionTitle, domainConfigured
               </div>
             </div>
           </div>
+
+          {generatedLink && (
+            <div className="space-y-1.5 rounded-lg border border-border p-3">
+              <label className="text-sm text-text-2">{t('share.shareLink')}</label>
+              <div className="flex gap-2">
+                <Input value={generatedLink} readOnly className="flex-1 text-xs font-mono" />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => copyLink(generatedLink)}
+                  className="shrink-0"
+                >
+                  {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mt-6 flex items-center justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t('common.cancel')}
+            {t('common.close')}
           </Button>
-          <Button onClick={handleGenerate} disabled={!title.trim()}>
-            {t('share.generateCopy')}
-          </Button>
+          {!generatedLink && (
+            <Button onClick={handleGenerate} disabled={!title.trim()}>
+              {t('share.generate')}
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

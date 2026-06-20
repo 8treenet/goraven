@@ -15,10 +15,11 @@ func init() {
 }
 
 type SkillController struct {
-	SkillSev	*service.SkillService
-	Request		*infra.Request
+	SkillSev *service.SkillService
+	Request  *infra.Request
 }
 
+// BeforeActivation 绑定路由前缀 /api/skills
 func (controller *SkillController) BeforeActivation(b freedom.BeforeActivation) {
 	b.Handle("GET", "/simpleSkills", "GetSimpleSkills")
 	b.Handle("GET", "/simpleSkills/byIds", "GetSimpleSkillsByIDs")
@@ -34,6 +35,12 @@ func (controller *SkillController) BeforeActivation(b freedom.BeforeActivation) 
 	b.Handle("GET", "/categories", "ListCategories")
 	b.Handle("POST", "/install", "InstallSkill")
 	b.Handle("PUT", "/user/{id:int}/retry", "RetryInstallSkill")
+	b.Handle("POST", "/shares", "ShareSkill")
+	b.Handle("GET", "/shares", "ListSkillShares")
+	b.Handle("GET", "/shares/{id:int}", "GetSkillShareDetail")
+	b.Handle("PUT", "/shares/{id:int}", "UpdateSharedSkill")
+	b.Handle("DELETE", "/shares/{id:int}", "DeleteSkillShare")
+	b.Handle("POST", "/shares/{id:int}/install", "InstallSharedSkill")
 }
 
 func (controller *SkillController) GetSimpleSkills() freedom.Result {
@@ -176,6 +183,65 @@ func (controller *SkillController) RefreshUserSkills() freedom.Result {
 
 func (controller *SkillController) ListCategories() freedom.Result {
 	rsp, err := controller.SkillSev.ListSkillCategoriesForUser()
+	if err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	return &infra.JSONResponse{Object: rsp}
+}
+
+func (controller *SkillController) ShareSkill() freedom.Result {
+	userId := controller.Request.GetUserId()
+	var req vo.ShareSkillReq
+	if err := controller.Request.ReadJSON(&req, true); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	rsp, err := controller.SkillSev.ShareSkill(userId, &req)
+	if err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	return &infra.JSONResponse{Object: rsp}
+}
+
+func (controller *SkillController) ListSkillShares() freedom.Result {
+	userId := controller.Request.GetUserId()
+	var req vo.SkillShareListReq
+	if err := controller.Request.ReadQuery(&req); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	rsp, err := controller.SkillSev.ListSkillShares(userId, &req)
+	if err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	return &infra.JSONResponse{Object: rsp}
+}
+
+func (controller *SkillController) GetSkillShareDetail(id int) freedom.Result {
+	rsp, err := controller.SkillSev.GetSkillShareDetail(id)
+	if err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	return &infra.JSONResponse{Object: rsp}
+}
+
+func (controller *SkillController) UpdateSharedSkill(id int) freedom.Result {
+	userId := controller.Request.GetUserId()
+	if err := controller.SkillSev.UpdateSharedSkill(id, userId); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	return &infra.JSONResponse{}
+}
+
+func (controller *SkillController) DeleteSkillShare(id int) freedom.Result {
+	userId := controller.Request.GetUserId()
+	if err := controller.SkillSev.DeleteSkillShare(id, userId); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	return &infra.JSONResponse{}
+}
+
+func (controller *SkillController) InstallSharedSkill(id int) freedom.Result {
+	userId := controller.Request.GetUserId()
+	rsp, err := controller.SkillSev.InstallSharedSkill(userId, id)
 	if err != nil {
 		return &infra.JSONResponse{Error: err}
 	}

@@ -45,9 +45,27 @@ func (repo *ShareLinkRepository) DeleteShareLink(sessionId string, userId string
 	return repo.db().Model(&po.ShareLink{}).
 		Where("session_id = ? AND user_id = ? AND deleted = 0", sessionId, userId).
 		Updates(map[string]interface{}{
-			"deleted":	1,
-			"updated":	time.Now(),
+			"deleted": 1,
+			"updated": time.Now(),
 		}).Error
+}
+
+func (repo *ShareLinkRepository) UpdateShareLink(shareId string, title string, expiresAt time.Time) (*po.ShareLink, error) {
+	if err := repo.db().Model(&po.ShareLink{}).
+		Where("share_id = ? AND deleted = 0", shareId).
+		Updates(map[string]interface{}{
+			"title":      title,
+			"expires_at": expiresAt,
+			"view_count": 0,
+			"updated":    time.Now(),
+		}).Error; err != nil {
+		return nil, err
+	}
+	var shareLink po.ShareLink
+	if err := repo.db().First(&shareLink, "share_id = ? AND deleted = 0", shareId).Error; err != nil {
+		return nil, err
+	}
+	return &shareLink, nil
 }
 
 func (repo *ShareLinkRepository) ListUserShareLinks(userId string, req *vo.UserShareListReq) ([]po.ShareLink, *PageResult, error) {
@@ -64,8 +82,8 @@ func (repo *ShareLinkRepository) IncrementViewCount(shareId string) error {
 	return repo.db().Model(&po.ShareLink{}).
 		Where("share_id = ? AND deleted = 0", shareId).
 		Updates(map[string]interface{}{
-			"view_count":	gorm.Expr("view_count + 1"),
-			"updated":	time.Now(),
+			"view_count": gorm.Expr("view_count + 1"),
+			"updated":    time.Now(),
 		}).Error
 }
 

@@ -151,7 +151,7 @@ export interface SkillSimple {
   skillName: string
   description: string
   icon: string
-  source: 'market' | 'custom'
+  source: 'market' | 'custom' | 'share'
   categoryId: number
   categoryName: string
 }
@@ -191,6 +191,31 @@ export interface MarketSkillDetail extends MarketSkill {
 
 export interface UserSkillDetail extends UserSkill {
   content: string
+  isShared: boolean
+}
+
+export interface ShareSkill {
+  shareId: number
+  ownerId: string
+  ownerName: string
+  skillName: string
+  description: string
+  icon: string
+  categoryId: number
+  categoryName: string
+  note: string
+  installCount: number
+  created: string
+  updated: string
+  canDelete: boolean
+}
+
+export interface ShareSkillDetail extends ShareSkill {
+  content: string
+}
+
+export interface ShareSkillResult {
+  shareId: number
 }
 
 export interface SkillCategory {

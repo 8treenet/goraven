@@ -36,14 +36,15 @@ func init() {
 }
 
 type SkillService struct {
-	Worker			freedom.Worker
-	SkillRepo		*repository.SkillRepository
-	HFSRepo			*repository.HFSRepository
-	ClawHubRepo		*repository.ClawHubRepository
-	SystemSettingRepo	*repository.SystemSettingRepository
-	AIModelRepo		*repository.ProviderRepository
-	DailyStatsRepo		*repository.DailyStatsRepository
-	PersonaRepo		*repository.PersonaRepository
+	Worker            freedom.Worker
+	SkillRepo         *repository.SkillRepository
+	HFSRepo           *repository.HFSRepository
+	ClawHubRepo       *repository.ClawHubRepository
+	SystemSettingRepo *repository.SystemSettingRepository
+	AIModelRepo       *repository.ProviderRepository
+	DailyStatsRepo    *repository.DailyStatsRepository
+	PersonaRepo       *repository.PersonaRepository
+	UserRepo          *repository.UserRepository
 }
 
 func (service *SkillService) BeginRequest(worker freedom.Worker) {
@@ -64,20 +65,20 @@ func (service *SkillService) ListSystemSkills(req *vo.AdminSystemSkillListReq) (
 	items := make([]vo.AdminSystemSkillItem, 0, len(skills))
 	for _, s := range skills {
 		items = append(items, vo.AdminSystemSkillItem{
-			SkillId:	s.SkillId,
-			Name:		s.Name,
-			Description:	s.Description,
-			Status:		s.Status,
-			Updated:	s.Updated,
+			SkillId:     s.SkillId,
+			Name:        s.Name,
+			Description: s.Description,
+			Status:      s.Status,
+			Updated:     s.Updated,
 		})
 	}
 
 	return &infra.PageResponse{
-		List:		items,
-		TotalPage:	pr.TotalPage,
-		TotalCount:	pr.TotalCount,
-		Page:		pr.Page,
-		PageSize:	pr.PageSize,
+		List:       items,
+		TotalPage:  pr.TotalPage,
+		TotalCount: pr.TotalCount,
+		Page:       pr.Page,
+		PageSize:   pr.PageSize,
 	}, nil
 }
 
@@ -87,13 +88,13 @@ func (service *SkillService) GetSystemSkillDetail(skillId int) (*vo.AdminSystemS
 		return nil, errs.ErrSystemSkillNotFound
 	}
 	return &vo.AdminSystemSkillDetailRsp{
-		SkillId:	skill.SkillId,
-		Name:		skill.Name,
-		Description:	skill.Description,
-		Content:	skill.Content,
-		Status:		skill.Status,
-		Created:	skill.Created,
-		Updated:	skill.Updated,
+		SkillId:     skill.SkillId,
+		Name:        skill.Name,
+		Description: skill.Description,
+		Content:     skill.Content,
+		Status:      skill.Status,
+		Created:     skill.Created,
+		Updated:     skill.Updated,
 	}, nil
 }
 
@@ -115,10 +116,10 @@ func (service *SkillService) CreateSystemSkill(req *vo.AdminCreateSystemSkillReq
 	}
 
 	skill := &po.SystemSkill{
-		Name:		name,
-		Description:	description,
-		Content:	req.Content,
-		Status:		po.SystemSkillStatusEnabled,
+		Name:        name,
+		Description: description,
+		Content:     req.Content,
+		Status:      po.SystemSkillStatusEnabled,
 	}
 	return service.SkillRepo.CreateSystemSkill(skill)
 }
@@ -148,9 +149,9 @@ func (service *SkillService) UpdateSystemSkill(skillId int, req *vo.AdminUpdateS
 	}
 
 	updates := map[string]interface{}{
-		"name":		name,
-		"description":	description,
-		"content":	req.Content,
+		"name":        name,
+		"description": description,
+		"content":     req.Content,
 	}
 	return service.SkillRepo.UpdateSystemSkill(skillId, updates)
 }
@@ -182,16 +183,16 @@ func (service *SkillService) ListMarketSkills(req *vo.AdminMarketSkillListReq) (
 	items := make([]vo.AdminMarketSkillItem, 0, len(skills))
 	for _, s := range skills {
 		item := vo.AdminMarketSkillItem{
-			SkillId:	s.SkillId,
-			Name:		s.Name,
-			Description:	s.Description,
-			Icon:		s.Icon,
-			Source:		s.Source,
-			CategoryId:	s.CategoryId,
-			InstalledCount:	s.InstalledCount,
-			Status:		s.Status,
-			SortOrder:	s.SortOrder,
-			Updated:	s.Updated,
+			SkillId:        s.SkillId,
+			Name:           s.Name,
+			Description:    s.Description,
+			Icon:           s.Icon,
+			Source:         s.Source,
+			CategoryId:     s.CategoryId,
+			InstalledCount: s.InstalledCount,
+			Status:         s.Status,
+			SortOrder:      s.SortOrder,
+			Updated:        s.Updated,
 		}
 		if cat, ok := categoryMap[s.CategoryId]; ok {
 			item.CategoryName = cat.Name
@@ -201,11 +202,11 @@ func (service *SkillService) ListMarketSkills(req *vo.AdminMarketSkillListReq) (
 	}
 
 	return &infra.PageResponse{
-		List:		items,
-		TotalPage:	pr.TotalPage,
-		TotalCount:	pr.TotalCount,
-		Page:		pr.Page,
-		PageSize:	pr.PageSize,
+		List:       items,
+		TotalPage:  pr.TotalPage,
+		TotalCount: pr.TotalCount,
+		Page:       pr.Page,
+		PageSize:   pr.PageSize,
 	}, nil
 }
 
@@ -216,19 +217,19 @@ func (service *SkillService) GetMarketSkillDetail(skillId int) (*vo.AdminMarketS
 	}
 
 	rsp := &vo.AdminMarketSkillDetailRsp{
-		SkillId:	skill.SkillId,
-		Name:		skill.Name,
-		Description:	skill.Description,
-		Icon:		skill.Icon,
-		Source:		skill.Source,
-		SourceUrl:	skill.SourceUrl,
-		CategoryId:	skill.CategoryId,
-		Status:		skill.Status,
-		SortOrder:	skill.SortOrder,
-		InstalledCount:	skill.InstalledCount,
-		Remark:		skill.Remark,
-		Created:	skill.Created,
-		Updated:	skill.Updated,
+		SkillId:        skill.SkillId,
+		Name:           skill.Name,
+		Description:    skill.Description,
+		Icon:           skill.Icon,
+		Source:         skill.Source,
+		SourceUrl:      skill.SourceUrl,
+		CategoryId:     skill.CategoryId,
+		Status:         skill.Status,
+		SortOrder:      skill.SortOrder,
+		InstalledCount: skill.InstalledCount,
+		Remark:         skill.Remark,
+		Created:        skill.Created,
+		Updated:        skill.Updated,
 	}
 
 	if skill.CategoryId > 0 {
@@ -319,18 +320,18 @@ func (service *SkillService) GetMarketSkillUsers(skillId int, req *vo.AdminMarke
 	items := make([]vo.AdminMarketSkillUserItem, 0, len(userSkills))
 	for _, us := range userSkills {
 		items = append(items, vo.AdminMarketSkillUserItem{
-			UserId:		us.UserId,
-			InstallStatus:	us.InstallStatus,
-			Created:	us.Created,
+			UserId:        us.UserId,
+			InstallStatus: us.InstallStatus,
+			Created:       us.Created,
 		})
 	}
 
 	return &infra.PageResponse{
-		List:		items,
-		TotalPage:	pr.TotalPage,
-		TotalCount:	pr.TotalCount,
-		Page:		pr.Page,
-		PageSize:	pr.PageSize,
+		List:       items,
+		TotalPage:  pr.TotalPage,
+		TotalCount: pr.TotalCount,
+		Page:       pr.Page,
+		PageSize:   pr.PageSize,
 	}, nil
 }
 
@@ -409,11 +410,11 @@ func (service *SkillService) GetClawHubSkillDetail(slug string) (*vo.AdminClawHu
 	}
 
 	return &vo.AdminClawHubSkillDetailRsp{
-		Slug:		slug,
-		Name:		name,
-		Description:	description,
-		Content:	content,
-		Version:	"",
+		Slug:        slug,
+		Name:        name,
+		Description: description,
+		Content:     content,
+		Version:     "",
 	}, nil
 }
 
@@ -435,13 +436,13 @@ func (service *SkillService) processSkillZip(zipPath string, source string, sour
 	}
 
 	skill := &po.SkillMarket{
-		Name:		skillName,
-		Description:	description,
-		Icon:		icon,
-		Source:		source,
-		SourceUrl:	sourceUrl,
-		CategoryId:	categoryId,
-		Status:		po.SkillStatusEnabled,
+		Name:        skillName,
+		Description: description,
+		Icon:        icon,
+		Source:      source,
+		SourceUrl:   sourceUrl,
+		CategoryId:  categoryId,
+		Status:      po.SkillStatusEnabled,
 	}
 
 	if err := service.SkillRepo.CreateMarketSkill(skill); err != nil {
@@ -579,21 +580,21 @@ func (service *SkillService) ListSkillCategories(req *vo.AdminSkillCategoryListR
 	for _, c := range categories {
 		skillCount, _ := service.SkillRepo.CountSkillsByCategoryId(c.CategoryId)
 		items = append(items, vo.AdminSkillCategoryItem{
-			CategoryId:	c.CategoryId,
-			Name:		c.Name,
-			Icon:		c.Icon,
-			IsDefault:	c.IsDefault,
-			SkillCount:	skillCount,
-			Updated:	c.Updated,
+			CategoryId: c.CategoryId,
+			Name:       c.Name,
+			Icon:       c.Icon,
+			IsDefault:  c.IsDefault,
+			SkillCount: skillCount,
+			Updated:    c.Updated,
 		})
 	}
 
 	return &infra.PageResponse{
-		List:		items,
-		TotalPage:	pr.TotalPage,
-		TotalCount:	pr.TotalCount,
-		Page:		pr.Page,
-		PageSize:	pr.PageSize,
+		List:       items,
+		TotalPage:  pr.TotalPage,
+		TotalCount: pr.TotalCount,
+		Page:       pr.Page,
+		PageSize:   pr.PageSize,
 	}, nil
 }
 
@@ -607,19 +608,19 @@ func (service *SkillService) GetSkillCategoryDetail(categoryId int) (*vo.AdminSk
 		return nil, errs.ErrSkillCategoryNotFound
 	}
 	return &vo.AdminSkillCategoryDetailRsp{
-		CategoryId:	cat.CategoryId,
-		Name:		cat.Name,
-		Icon:		cat.Icon,
-		IsDefault:	cat.IsDefault,
-		Created:	cat.Created,
-		Updated:	cat.Updated,
+		CategoryId: cat.CategoryId,
+		Name:       cat.Name,
+		Icon:       cat.Icon,
+		IsDefault:  cat.IsDefault,
+		Created:    cat.Created,
+		Updated:    cat.Updated,
 	}, nil
 }
 
 func (service *SkillService) CreateSkillCategory(req *vo.AdminCreateSkillCategoryReq) error {
 	cat := &po.SkillCategory{
-		Name:	req.Name,
-		Icon:	req.Icon,
+		Name: req.Name,
+		Icon: req.Icon,
 	}
 	return service.SkillRepo.CreateSkillCategory(cat)
 }
@@ -723,12 +724,12 @@ func (service *SkillService) ListAvailableSkills(userId string) ([]vo.UserAvaila
 		}
 
 		item := vo.UserAvailableSkillItem{
-			UserSkillId:	s.UserSkillId,
-			SkillName:	s.SkillName,
-			Description:	s.Description,
-			Icon:		s.Icon,
-			Source:		s.Source,
-			CategoryId:	s.CategoryId,
+			UserSkillId: s.UserSkillId,
+			SkillName:   s.SkillName,
+			Description: s.Description,
+			Icon:        s.Icon,
+			Source:      s.Source,
+			CategoryId:  s.CategoryId,
 		}
 		if cat, ok := categoryMap[s.CategoryId]; ok {
 			item.CategoryName = cat.Name
@@ -750,12 +751,12 @@ func (service *SkillService) ListAvailableSkillsByIDs(userId string, userSkillId
 	items := make([]vo.UserAvailableSkillItem, 0, len(userSkills))
 	for _, s := range userSkills {
 		item := vo.UserAvailableSkillItem{
-			UserSkillId:	s.UserSkillId,
-			SkillName:	s.SkillName,
-			Description:	s.Description,
-			Icon:		s.Icon,
-			Source:		s.Source,
-			CategoryId:	s.CategoryId,
+			UserSkillId: s.UserSkillId,
+			SkillName:   s.SkillName,
+			Description: s.Description,
+			Icon:        s.Icon,
+			Source:      s.Source,
+			CategoryId:  s.CategoryId,
 		}
 		if cat, ok := categoryMap[s.CategoryId]; ok {
 			item.CategoryName = cat.Name
@@ -799,18 +800,18 @@ func (service *SkillService) ListUserSkills(userId string, req *vo.UserSkillList
 	items := make([]vo.UserSkillItem, 0, len(skills))
 	for _, s := range skills {
 		item := vo.UserSkillItem{
-			UserSkillId:	s.UserSkillId,
-			SkillName:	s.SkillName,
-			Description:	s.Description,
-			Icon:		s.Icon,
-			MarketSkillId:	s.MarketSkillId,
-			CategoryId:	s.CategoryId,
-			Source:		s.Source,
-			InstallStatus:	s.InstallStatus,
-			InstallError:	s.InstallError,
-			AlwaysOn:	s.AlwaysOn,
-			Created:	s.Created,
-			Updated:	s.Updated,
+			UserSkillId:   s.UserSkillId,
+			SkillName:     s.SkillName,
+			Description:   s.Description,
+			Icon:          s.Icon,
+			MarketSkillId: s.MarketSkillId,
+			CategoryId:    s.CategoryId,
+			Source:        s.Source,
+			InstallStatus: s.InstallStatus,
+			InstallError:  s.InstallError,
+			AlwaysOn:      s.AlwaysOn,
+			Created:       s.Created,
+			Updated:       s.Updated,
 		}
 		if cat, ok := categoryMap[s.CategoryId]; ok {
 			item.CategoryName = cat.Name
@@ -819,11 +820,11 @@ func (service *SkillService) ListUserSkills(userId string, req *vo.UserSkillList
 	}
 
 	return &infra.PageResponse{
-		List:		items,
-		TotalPage:	pr.TotalPage,
-		TotalCount:	pr.TotalCount,
-		Page:		pr.Page,
-		PageSize:	pr.PageSize,
+		List:       items,
+		TotalPage:  pr.TotalPage,
+		TotalCount: pr.TotalCount,
+		Page:       pr.Page,
+		PageSize:   pr.PageSize,
 	}, nil
 }
 
@@ -854,19 +855,19 @@ func (service *SkillService) GetUserSkillDetail(userSkillId int, userId string) 
 	}
 
 	return &vo.UserSkillDetailRsp{
-		UserSkillId:	skill.UserSkillId,
-		SkillName:	skill.SkillName,
-		Description:	skill.Description,
-		Icon:		skill.Icon,
-		MarketSkillId:	skill.MarketSkillId,
-		CategoryId:	skill.CategoryId,
-		CategoryName:	categoryName,
-		Source:		skill.Source,
-		InstallStatus:	skill.InstallStatus,
-		InstallError:	skill.InstallError,
-		Content:	content,
-		Created:	skill.Created,
-		Updated:	skill.Updated,
+		UserSkillId:   skill.UserSkillId,
+		SkillName:     skill.SkillName,
+		Description:   skill.Description,
+		Icon:          skill.Icon,
+		MarketSkillId: skill.MarketSkillId,
+		CategoryId:    skill.CategoryId,
+		CategoryName:  categoryName,
+		Source:        skill.Source,
+		InstallStatus: skill.InstallStatus,
+		InstallError:  skill.InstallError,
+		Content:       content,
+		Created:       skill.Created,
+		Updated:       skill.Updated,
 	}, nil
 }
 
@@ -886,14 +887,14 @@ func (service *SkillService) InstallSkill(userId string, req *vo.UserSkillInstal
 	}
 
 	userSkill := &po.UserSkill{
-		UserId:		userId,
-		SkillName:	marketSkill.Name,
-		Description:	marketSkill.Description,
-		Icon:		marketSkill.Icon,
-		MarketSkillId:	marketSkill.SkillId,
-		CategoryId:	marketSkill.CategoryId,
-		Source:		"market",
-		InstallStatus:	po.UserSkillInstalled,
+		UserId:        userId,
+		SkillName:     marketSkill.Name,
+		Description:   marketSkill.Description,
+		Icon:          marketSkill.Icon,
+		MarketSkillId: marketSkill.SkillId,
+		CategoryId:    marketSkill.CategoryId,
+		Source:        "market",
+		InstallStatus: po.UserSkillInstalled,
 	}
 	if err := service.SkillRepo.CreateUserSkill(userSkill); err != nil {
 		return nil, err
@@ -938,8 +939,8 @@ func (service *SkillService) RetryInstallSkill(userSkillId int, userId string) e
 	}
 
 	if err := service.SkillRepo.UpdateUserSkill(userSkillId, map[string]interface{}{
-		"install_status":	po.UserSkillInstallProgress,
-		"install_error":	"",
+		"install_status": po.UserSkillInstallProgress,
+		"install_error":  "",
 	}); err != nil {
 		return err
 	}
@@ -972,8 +973,8 @@ func (service *SkillService) copySkillToUserSpace(userId string, skillName strin
 
 	if err := box.Upload(srcPath, dstPath); err != nil {
 		service.SkillRepo.UpdateUserSkill(userSkillId, map[string]interface{}{
-			"install_status":	po.UserSkillInstallFailed,
-			"install_error":	"复制技能文件失败: " + err.Error(),
+			"install_status": po.UserSkillInstallFailed,
+			"install_error":  "复制技能文件失败: " + err.Error(),
 		})
 		return err
 	}
@@ -1007,9 +1008,9 @@ func (service *SkillService) GetUserSkillStatus(userSkillId int, userId string) 
 		return nil, errs.ErrUserSkillNotFound
 	}
 	return &vo.UserSkillStatusRsp{
-		UserSkillId:	skill.UserSkillId,
-		InstallStatus:	skill.InstallStatus,
-		InstallError:	skill.InstallError,
+		UserSkillId:   skill.UserSkillId,
+		InstallStatus: skill.InstallStatus,
+		InstallError:  skill.InstallError,
 	}, nil
 }
 
@@ -1126,13 +1127,13 @@ func (service *SkillService) RefreshUserSkills(userId string) (*vo.UserSkillRefr
 		if _, ok := existingMap[skillName]; !ok {
 
 			userSkill := &po.UserSkill{
-				UserId:		userId,
-				SkillName:	name,
-				Description:	description,
-				MarketSkillId:	0,
-				CategoryId:	defaultCategoryId,
-				Source:		"custom",
-				InstallStatus:	po.UserSkillInstalled,
+				UserId:        userId,
+				SkillName:     name,
+				Description:   description,
+				MarketSkillId: 0,
+				CategoryId:    defaultCategoryId,
+				Source:        "custom",
+				InstallStatus: po.UserSkillInstalled,
 			}
 			if err := service.SkillRepo.CreateUserSkill(userSkill); err != nil {
 				freedom.Logger().Errorf("RefreshUserSkills create user_skill error: %v", err)
@@ -1175,15 +1176,15 @@ func (service *SkillService) ListMarketSkillsForUser(userId string, req *vo.User
 	items := make([]vo.UserMarketSkillItem, 0, len(skills))
 	for _, s := range skills {
 		item := vo.UserMarketSkillItem{
-			SkillId:	s.SkillId,
-			Name:		s.Name,
-			Description:	s.Description,
-			Icon:		s.Icon,
-			Source:		s.Source,
-			CategoryId:	s.CategoryId,
-			InstalledCount:	s.InstalledCount,
-			UserInstalled:	installedSet[s.Name],
-			Updated:	s.Updated,
+			SkillId:        s.SkillId,
+			Name:           s.Name,
+			Description:    s.Description,
+			Icon:           s.Icon,
+			Source:         s.Source,
+			CategoryId:     s.CategoryId,
+			InstalledCount: s.InstalledCount,
+			UserInstalled:  installedSet[s.Name],
+			Updated:        s.Updated,
 		}
 		if cat, ok := categoryMap[s.CategoryId]; ok {
 			item.CategoryName = cat.Name
@@ -1192,11 +1193,11 @@ func (service *SkillService) ListMarketSkillsForUser(userId string, req *vo.User
 	}
 
 	return &infra.PageResponse{
-		List:		items,
-		TotalPage:	pr.TotalPage,
-		TotalCount:	pr.TotalCount,
-		Page:		pr.Page,
-		PageSize:	pr.PageSize,
+		List:       items,
+		TotalPage:  pr.TotalPage,
+		TotalCount: pr.TotalCount,
+		Page:       pr.Page,
+		PageSize:   pr.PageSize,
 	}, nil
 }
 
@@ -1213,9 +1214,9 @@ func (service *SkillService) ListSkillCategoriesForUser() ([]vo.SkillCategoryIte
 	items := make([]vo.SkillCategoryItem, 0, len(categories))
 	for _, c := range categories {
 		items = append(items, vo.SkillCategoryItem{
-			CategoryId:	c.CategoryId,
-			Name:		c.Name,
-			Icon:		c.Icon,
+			CategoryId: c.CategoryId,
+			Name:       c.Name,
+			Icon:       c.Icon,
 		})
 	}
 	return items, nil
@@ -1241,6 +1242,314 @@ func (service *SkillService) CheckSkillNameConflicts(userId string, skillIds []i
 			)
 		}
 		seen[name] = true
+	}
+	return nil
+}
+
+func (service *SkillService) ShareSkill(userId string, req *vo.ShareSkillReq) (*vo.ShareSkillRsp, error) {
+	userSkill, err := service.SkillRepo.GetUserSkillByID(req.UserSkillId, userId)
+	if err != nil {
+		return nil, errs.ErrUserSkillNotFound
+	}
+	if userSkill.InstallStatus != po.UserSkillInstalled {
+		return nil, errs.NewFormatError(
+			"skill is not installed, cannot share",
+			"技能未安装，无法共享",
+		)
+	}
+
+	if userSkill.Source != "custom" {
+		return nil, errs.NewFormatError(
+			"only custom skills can be shared",
+			"仅自定义技能可共享",
+		)
+	}
+
+	existing, err := service.SkillRepo.GetSkillShareBySkillName(userSkill.SkillName)
+	if err == nil && existing != nil {
+		return nil, errs.NewFormatError(
+			"skill '%s' has already been shared",
+			"技能 '%s' 已被共享",
+			userSkill.SkillName,
+		)
+	}
+
+	box, boxErr := sandbox.NewSandbox(infra.GetUserName(service.Worker))
+	if boxErr != nil {
+		return nil, boxErr
+	}
+
+	srcPath, err := box.Download(filepath.Join(box.GetWorkspace(), "skills", userSkill.SkillName))
+	fmt.Println(infra.GetUserName(service.Worker), filepath.Join("skills", userSkill.SkillName), "sp", srcPath)
+	if err != nil {
+		return nil, errs.NewFormatError(
+			"source skill files not found, cannot share",
+			"源技能文件不存在，无法共享",
+		)
+	}
+	dstPath := filepath.Join(config.Get().GetSkillShareDir(), userSkill.SkillName)
+
+	os.RemoveAll(dstPath)
+	if err := util.CopyDir(srcPath, dstPath); err != nil {
+		return nil, errs.NewFormatError(
+			"failed to copy skill files: %v",
+			"复制技能文件失败: %v",
+			err,
+		)
+	}
+
+	share := &po.SkillShare{
+		OwnerId:     userId,
+		SkillName:   userSkill.SkillName,
+		Description: userSkill.Description,
+		Icon:        userSkill.Icon,
+		CategoryId:  userSkill.CategoryId,
+		Note:        req.Note,
+	}
+	if err := service.SkillRepo.CreateSkillShare(share); err != nil {
+		os.RemoveAll(dstPath)
+		return nil, err
+	}
+
+	return &vo.ShareSkillRsp{ShareId: share.ShareId}, nil
+}
+
+func (service *SkillService) UpdateSharedSkill(shareId int, userId string) error {
+	share, err := service.SkillRepo.GetSkillShareByID(shareId)
+	if err != nil {
+		return errs.NewFormatError(
+			"shared skill not found",
+			"共享技能不存在",
+		)
+	}
+	if share.OwnerId != userId {
+		return errs.NewFormatError(
+			"only the owner can update shared skill",
+			"仅共享者可更新共享技能",
+		)
+	}
+
+	box, boxErr := sandbox.NewSandbox(infra.GetUserName(service.Worker))
+	if boxErr != nil {
+		return boxErr
+	}
+	srcPath, err := box.Download(filepath.Join(box.GetWorkspace(), "skills", share.SkillName))
+	if err != nil {
+		return errs.NewFormatError(
+			"source skill files not found, cannot update",
+			"源技能文件不存在，无法更新",
+		)
+	}
+	dstPath := filepath.Join(config.Get().GetSkillShareDir(), share.SkillName)
+
+	os.RemoveAll(dstPath)
+	if err := util.CopyDir(srcPath, dstPath); err != nil {
+		service.SkillRepo.DeleteSkillShare(shareId)
+		return errs.NewFormatError(
+			"failed to copy skill files: %v",
+			"复制技能文件失败: %v",
+			err,
+		)
+	}
+
+	return service.SkillRepo.UpdateSkillShare(shareId, map[string]interface{}{
+		"description": share.Description,
+	})
+}
+
+func (service *SkillService) batchGetCategoryMapByIds(ids []int) map[int]po.SkillCategory {
+	if len(ids) == 0 {
+		return nil
+	}
+	cats, err := service.SkillRepo.BatchGetSkillCategories(ids)
+	if err != nil {
+		return nil
+	}
+	m := make(map[int]po.SkillCategory, len(cats))
+	for _, c := range cats {
+		m[c.CategoryId] = c
+	}
+	return m
+}
+
+func (service *SkillService) ListSkillShares(userId string, req *vo.SkillShareListReq) (*infra.PageResponse, error) {
+	shares, pr, err := service.SkillRepo.PaginateSkillShares(req)
+	if err != nil {
+		return nil, err
+	}
+
+	// 批量查询分类名称
+	categoryIds := make([]int, 0)
+	for _, s := range shares {
+		if s.CategoryId > 0 {
+			categoryIds = append(categoryIds, s.CategoryId)
+		}
+	}
+	categoryMap := service.batchGetCategoryMapByIds(categoryIds)
+
+	isAdmin := infra.IsAdmin(service.Worker)
+	items := make([]vo.SkillShareItem, 0, len(shares))
+	for _, s := range shares {
+		ownerName := ""
+		if u, e := service.UserRepo.FindByUserId(s.OwnerId); e == nil {
+			ownerName = u.Username
+		}
+		item := vo.SkillShareItem{
+			ShareId:      s.ShareId,
+			OwnerId:      s.OwnerId,
+			OwnerName:    ownerName,
+			SkillName:    s.SkillName,
+			Description:  s.Description,
+			Icon:         s.Icon,
+			CategoryId:   s.CategoryId,
+			Note:         s.Note,
+			InstallCount: s.InstallCount,
+			Created:      s.Created.Format("2006-01-02 15:04:05"),
+			Updated:      s.Updated.Format("2006-01-02 15:04:05"),
+			CanDelete:    isAdmin || s.OwnerId == userId,
+		}
+		if cat, ok := categoryMap[s.CategoryId]; ok {
+			item.CategoryName = cat.Name
+		}
+		items = append(items, item)
+	}
+
+	return &infra.PageResponse{
+		List:       items,
+		TotalPage:  pr.TotalPage,
+		TotalCount: pr.TotalCount,
+		Page:       pr.Page,
+		PageSize:   pr.PageSize,
+	}, nil
+}
+
+func (service *SkillService) DeleteSkillShare(shareId int, userId string) error {
+	share, err := service.SkillRepo.GetSkillShareByID(shareId)
+	if err != nil {
+		return errs.NewFormatError(
+			"shared skill not found",
+			"共享技能不存在",
+		)
+	}
+
+	isAdmin := infra.IsAdmin(service.Worker)
+	if share.OwnerId != userId && !isAdmin {
+		return errs.NewFormatError(
+			"only the owner or admin can delete shared skill",
+			"仅共享者或管理员可删除共享技能",
+		)
+	}
+
+	dstPath := filepath.Join(config.Get().GetSkillShareDir(), share.SkillName)
+	os.RemoveAll(dstPath)
+
+	return service.SkillRepo.DeleteSkillShare(shareId)
+}
+
+func (service *SkillService) GetSkillShareDetail(shareId int) (*vo.SkillShareDetailRsp, error) {
+	share, err := service.SkillRepo.GetSkillShareByID(shareId)
+	if err != nil {
+		return nil, errs.NewFormatError(
+			"shared skill not found",
+			"共享技能不存在",
+		)
+	}
+
+	ownerName := ""
+	if u, e := service.UserRepo.FindByUserId(share.OwnerId); e == nil {
+		ownerName = u.Username
+	}
+
+	var categoryName string
+	if share.CategoryId > 0 {
+		if cat, err := service.SkillRepo.GetSkillCategoryByID(share.CategoryId); err == nil {
+			categoryName = cat.Name
+		}
+	}
+
+	// 读取共享目录下的 SKILL.md 内容
+	var content string
+	skillMdPath := filepath.Join(config.Get().GetSkillShareDir(), share.SkillName, "SKILL.md")
+	if data, err := os.ReadFile(skillMdPath); err == nil {
+		content = string(data)
+	}
+
+	return &vo.SkillShareDetailRsp{
+		ShareId:      share.ShareId,
+		OwnerId:      share.OwnerId,
+		OwnerName:    ownerName,
+		SkillName:    share.SkillName,
+		Description:  share.Description,
+		Icon:         share.Icon,
+		CategoryId:   share.CategoryId,
+		CategoryName: categoryName,
+		Note:         share.Note,
+		Content:      content,
+		Created:      share.Created.Format("2006-01-02 15:04:05"),
+		Updated:      share.Updated.Format("2006-01-02 15:04:05"),
+	}, nil
+}
+
+func (service *SkillService) InstallSharedSkill(userId string, shareId int) (*vo.UserSkillInstallRsp, error) {
+	share, err := service.SkillRepo.GetSkillShareByID(shareId)
+	if err != nil {
+		return nil, errs.NewFormatError(
+			"shared skill not found",
+			"共享技能不存在",
+		)
+	}
+
+	existing, err := service.SkillRepo.FindUserSkillByUserIdAndName(userId, share.SkillName)
+	if err == nil && existing != nil {
+		return nil, errs.ErrUserSkillAlreadyInstalled
+	}
+
+	userSkill := &po.UserSkill{
+		UserId:        userId,
+		SkillName:     share.SkillName,
+		Description:   share.Description,
+		CategoryId:    0,
+		Source:        "share",
+		InstallStatus: po.UserSkillInstalled,
+	}
+	if err := service.SkillRepo.CreateUserSkill(userSkill); err != nil {
+		return nil, err
+	}
+
+	service.SkillRepo.IncrSkillShareInstallCount(share.ShareId)
+
+	service.Worker.DeferRecycle()
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				freedom.Logger().Errorf("SkillService InstallSharedSkill panic: %v", r)
+			}
+		}()
+		if err := service.copySharedSkillToUserSpace(userId, share.SkillName, userSkill.UserSkillId); err != nil {
+			service.Worker.Logger().Errorf("copySharedSkillToUserSpace %v", err)
+			return
+		}
+	}()
+
+	return &vo.UserSkillInstallRsp{
+		UserSkillId: userSkill.UserSkillId,
+	}, nil
+}
+
+func (service *SkillService) copySharedSkillToUserSpace(userId string, skillName string, userSkillId int) error {
+	box, boxerr := sandbox.NewSandbox(infra.GetUserName(service.Worker))
+	if boxerr != nil {
+		return boxerr
+	}
+	srcPath := filepath.Join(config.Get().GetSkillShareDir(), skillName)
+	dstPath := filepath.Join(box.GetWorkspace(), "skills", skillName)
+
+	if err := box.Upload(srcPath, dstPath); err != nil {
+		service.SkillRepo.UpdateUserSkill(userSkillId, map[string]interface{}{
+			"install_status": po.UserSkillInstallFailed,
+			"install_error":  "复制技能文件失败: " + err.Error(),
+		})
+		return err
 	}
 	return nil
 }

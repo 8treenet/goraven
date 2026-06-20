@@ -191,3 +191,5 @@ func (repo *UserRepository) PopCaptchaAnswer(username string) (int, bool) {
 	}
 	return n, true
 }
+
+
