@@ -65,6 +65,8 @@ docker run -d --restart=always --name raven-agent \
 ```
 After startup, visit `http://localhost:8000` and follow the initialization flow to create your admin account.
 
+> The container uses UTC by default. To set a different timezone, add `-e TZ=America/New_York`. Available timezones: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+
 ---
 
 <p align="center">
