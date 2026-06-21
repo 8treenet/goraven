@@ -221,6 +221,12 @@ const zh = {
   'share.expire7d': '7 天',
   'share.expire30d': '30 天',
 
+  'share.type': '分享类型',
+  'share.typePublic': '公开',
+  'share.typePublicHint': '任何人都可以通过链接查看',
+  'share.typeInternal': '内部',
+  'share.typeInternalHint': '仅登录用户可以查看内容',
+
   // share page
   'share.pageTitle': '分享的对话',
   'share.sharedBy': '分享者',
@@ -228,7 +234,9 @@ const zh = {
   'share.expired': '该分享链接已过期',
   'share.notFound': '分享链接不存在',
   'share.loadFailed': '加载分享失败',
-  'share.tagline': 'Raven 是一个多用户 Agent Harness 平台，支持自部署。',
+  'share.loginRequiredTitle': '这是一个内部分享',
+  'share.loginRequiredDesc': '该分享仅对平台内已登录用户开放，如需查看请向分享者申请公开链接或在平台内访问。',
+  'share.tagline': 'Raven 是一款支持自部署的多用户 AI Agent 平台。',
   'share.githubLabel': 'GitHub',
 
   // dashboard

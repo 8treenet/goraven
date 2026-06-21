@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
-import { TriangleAlert, Copy, Check } from 'lucide-react'
+import { TriangleAlert, Copy, Check, Globe, Lock } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -11,12 +11,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useT, t as translate } from '@/i18n'
+import type { ShareType } from '@/api/types'
 
 export type ShareExpiry = '1h' | '24h' | '7d' | '30d'
 
 export interface ShareParams {
   title: string
   expiresIn: ShareExpiry
+  shareType: ShareType
 }
 
 interface ShareDialogProps {
@@ -50,6 +52,7 @@ export function ShareDialog({ open, onOpenChange, sessionTitle, domainConfigured
   }
   const [title, setTitle] = useState(sessionTitle)
   const [expiry, setExpiry] = useState<ShareExpiry>('24h')
+  const [shareType, setShareType] = useState<ShareType>('public')
   const [generatedLink, setGeneratedLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -57,6 +60,7 @@ export function ShareDialog({ open, onOpenChange, sessionTitle, domainConfigured
     if (open) {
       setTitle(sessionTitle)
       setExpiry('24h')
+      setShareType('public')
       setGeneratedLink(null)
       setCopied(false)
     }
@@ -90,7 +94,7 @@ export function ShareDialog({ open, onOpenChange, sessionTitle, domainConfigured
     const trimmed = title.trim()
     if (!trimmed) return
 
-    const link = await onGenerate({ title: trimmed, expiresIn: expiry })
+    const link = await onGenerate({ title: trimmed, expiresIn: expiry, shareType })
     if (link) {
       setGeneratedLink(link)
     }
@@ -99,12 +103,12 @@ export function ShareDialog({ open, onOpenChange, sessionTitle, domainConfigured
   if (!domainConfigured) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md gap-0">
+        <DialogContent className="max-w-lg gap-0">
           <DialogHeader className="mb-5">
             <DialogTitle>{t('share.title')}</DialogTitle>
           </DialogHeader>
 
-          <div className="rounded-lg border border-border px-4 py-5">
+          <div className="rounded-lg border border-border px-5 py-5">
             <div className="flex items-center gap-2.5 mb-3">
               <TriangleAlert className="size-5 shrink-0 text-highlight" />
               <span className="text-base font-semibold text-text-1">{t('share.noDomain')}</span>
@@ -146,12 +150,12 @@ export function ShareDialog({ open, onOpenChange, sessionTitle, domainConfigured
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md gap-0">
+      <DialogContent className="max-w-lg gap-0">
         <DialogHeader className="mb-5">
           <DialogTitle>{t('share.title')}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 rounded-lg border border-border px-5 py-5">
           <div className="space-y-1.5">
             <label className="text-sm text-text-2">{t('share.shareTitle')}</label>
             <Input
@@ -160,6 +164,76 @@ export function ShareDialog({ open, onOpenChange, sessionTitle, domainConfigured
               placeholder={t('share.titlePlaceholder')}
             />
             <p className="text-xs text-text-muted">{t('share.titleHint')}</p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm text-text-2">{t('share.type')}</label>
+            <div className="grid grid-cols-2 gap-2">
+              <label
+                className={cn(
+                  'flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2.5 transition-colors',
+                  shareType === 'public' ? 'border-highlight' : 'border-border hover:border-text-muted',
+                )}
+              >
+                <span
+                  className={cn(
+                    'mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border transition-colors',
+                    shareType === 'public' ? 'border-highlight' : 'border-border',
+                  )}
+                >
+                  {shareType === 'public' && <span className="size-2 rounded-full bg-highlight" />}
+                </span>
+                <input
+                  type="radio"
+                  name="shareType"
+                  value="public"
+                  checked={shareType === 'public'}
+                  onChange={() => setShareType('public')}
+                  className="sr-only"
+                />
+                <span className="min-w-0">
+                  <span className="flex items-center gap-1.5 text-sm text-text-1">
+                    <Globe className="size-3.5 text-text-3" />
+                    {t('share.typePublic')}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-text-muted leading-relaxed">
+                    {t('share.typePublicHint')}
+                  </span>
+                </span>
+              </label>
+              <label
+                className={cn(
+                  'flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2.5 transition-colors',
+                  shareType === 'internal' ? 'border-highlight' : 'border-border hover:border-text-muted',
+                )}
+              >
+                <span
+                  className={cn(
+                    'mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border transition-colors',
+                    shareType === 'internal' ? 'border-highlight' : 'border-border',
+                  )}
+                >
+                  {shareType === 'internal' && <span className="size-2 rounded-full bg-highlight" />}
+                </span>
+                <input
+                  type="radio"
+                  name="shareType"
+                  value="internal"
+                  checked={shareType === 'internal'}
+                  onChange={() => setShareType('internal')}
+                  className="sr-only"
+                />
+                <span className="min-w-0">
+                  <span className="flex items-center gap-1.5 text-sm text-text-1">
+                    <Lock className="size-3.5 text-text-3" />
+                    {t('share.typeInternal')}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-text-muted leading-relaxed">
+                    {t('share.typeInternalHint')}
+                  </span>
+                </span>
+              </label>
+            </div>
           </div>
 
           <div className="space-y-1.5">

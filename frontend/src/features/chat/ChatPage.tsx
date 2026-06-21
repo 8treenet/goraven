@@ -591,6 +591,7 @@ function ChatToolbar({
               const share = await sessionsApi.createShare(sessionId, {
                 title: params.title,
                 expiresIn: params.expiresIn,
+                shareType: params.shareType,
               })
               return `${window.location.origin}/share/${share.shareId}`
             }}

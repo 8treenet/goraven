@@ -304,10 +304,13 @@ export interface ChatResponse {
 
 /* ---------- Share ---------- */
 
+export type ShareType = 'public' | 'internal'
+
 export interface ShareInfo {
   shareId: string
   sessionId: string
   title: string
+  shareType: ShareType
   expiresAt: string
   viewCount: number
   isExpired: boolean
@@ -317,17 +320,18 @@ export interface ShareInfo {
 export interface CreateShareRequest {
   title?: string
   expiresIn?: string
+  shareType?: ShareType
 }
 
 export interface PublicShare {
   shareId: string
   title: string
   creator: string
+  shareType: ShareType
   created: string
   expiresAt: string
   viewCount: number
   isExpired: boolean
-  messages: Message[]
 }
 
 /* ---------- Dashboard ---------- */

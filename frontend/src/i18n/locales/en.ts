@@ -221,6 +221,12 @@ const en = {
   'share.expire7d': '7 Days',
   'share.expire30d': '30 Days',
 
+  'share.type': 'Share Type',
+  'share.typePublic': 'Public',
+  'share.typePublicHint': 'Anyone with the link can view',
+  'share.typeInternal': 'Internal',
+  'share.typeInternalHint': 'Only logged-in users can view',
+
   // share page
   'share.pageTitle': 'Shared Conversation',
   'share.sharedBy': 'Shared by',
@@ -228,7 +234,9 @@ const en = {
   'share.expired': 'This share link has expired',
   'share.notFound': 'Share link not found',
   'share.loadFailed': 'Failed to load share',
-  'share.tagline': 'Raven is a multi-user agent harness platform with self-hosting support.',
+  'share.loginRequiredTitle': 'This is an internal share',
+  'share.loginRequiredDesc': 'This share is only available to logged-in users on this platform. Please request a public link from the author, or view it from within the platform.',
+  'share.tagline': 'Raven is a self-hostable, multi-user AI agent platform.',
   'share.githubLabel': 'GitHub',
 
   // dashboard

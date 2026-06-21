@@ -50,11 +50,12 @@ func (repo *ShareLinkRepository) DeleteShareLink(sessionId string, userId string
 		}).Error
 }
 
-func (repo *ShareLinkRepository) UpdateShareLink(shareId string, title string, expiresAt time.Time) (*po.ShareLink, error) {
+func (repo *ShareLinkRepository) UpdateShareLink(shareId string, title string, shareType string, expiresAt time.Time) (*po.ShareLink, error) {
 	if err := repo.db().Model(&po.ShareLink{}).
 		Where("share_id = ? AND deleted = 0", shareId).
 		Updates(map[string]interface{}{
 			"title":      title,
+			"share_type": shareType,
 			"expires_at": expiresAt,
 			"view_count": 0,
 			"updated":    time.Now(),
