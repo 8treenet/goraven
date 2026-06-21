@@ -37,6 +37,14 @@ Basic agent functionality is no longer scarce. What's scarce is an engineering s
 
 ---
 
+---
+
+## Small. Beautiful. Uncompromising.
+
+Raven is not a KPI project, and it never will be. Every feature, every line, even a single button, earns its place — or it doesn't ship. We build for the team that wants a sharp, reliable tool, not a bloated platform padded with checkboxes to please a roadmap committee. No feature creep. No enterprise vanity. Just a team agent platform that does one thing well.
+
+---
+
 ## Quick Start
 
 ```bash
@@ -55,7 +63,6 @@ docker run -d --restart=always --name raven-agent \
   -v /opt/raven_data:/raven/data \
   8treenet/raven:latest
 ```
-
 After startup, visit `http://localhost:8000` and follow the initialization flow to create your admin account.
 
 ---
