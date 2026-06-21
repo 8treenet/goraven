@@ -31,7 +31,7 @@
 
 ## Stop Building Chatbots. Start Building an AI Harness.
 
-Raven is a self-hosted, multi-user AI Agent harness. It assembles models, tools, knowledge, files, skills, and workflows into a single runtime environment where agents can take on tasks, invoke tools, read documents, write code, and compound capabilities across sessions.
+Raven is a self-hostable team Agent platform, with isolated workspaces for every member. It assembles models, tools, knowledge, files, skills, and workflows into a single runtime environment where agents can take on tasks, invoke tools, read documents, write code, and compound capabilities across sessions.
 
 Basic agent functionality is no longer scarce. What's scarce is an engineering system that a team can actually rely on. Raven is not another chat interface. It connects model access, task orchestration, tool invocation, knowledge retrieval, file workspaces, skill distribution, and operational governance into one cohesive harness.
 
@@ -82,9 +82,9 @@ After startup, visit `http://localhost:8000` and follow the initialization flow 
 ## Roadmap
 
 - Core code cleanup and open-source
-- Multi-user sandbox
+- Team sandbox
 - API
-- Multi-user collaboration
+- Team collaboration
 
 ---
 
