@@ -352,7 +352,7 @@ export const MOCK_SYSTEM_INFO = {
     language: 'zh',
     cacheType: 'local',
     cacheMemory: '1500 items',
-    chromaDbBytes: 52428800,
+    timezone: 'Asia/Shanghai',
     uploadBytes: 20971520,
     tempBytes: 0,
   },

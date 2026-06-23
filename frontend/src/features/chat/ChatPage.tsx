@@ -148,7 +148,7 @@ function NewChat() {
   const scrollContainerRef = useAutoScroll([messages, streamingContent, streamingThinkingSegments])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const plusRef = useRef<HTMLDivElement>(null)
-  const isComposingRef = useRef({ composing: false, justEnded: false })
+  const isComposingRef = useRef({ composing: false })
   const personaLocked = formPersonaId !== null
   const chatting = messages.length > 0
 
@@ -173,16 +173,12 @@ function NewChat() {
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      const { composing, justEnded } = isComposingRef.current
-      if (composing || justEnded || e.nativeEvent.isComposing || e.keyCode === 229) {
-        isComposingRef.current.justEnded = false
+      if (isComposingRef.current.composing || e.nativeEvent.isComposing || e.keyCode === 229) {
         e.preventDefault()
         return
       }
       e.preventDefault()
       handleSend()
-    } else if (!e.nativeEvent.isComposing) {
-      isComposingRef.current.justEnded = false
     }
   }, [handleSend])
 
@@ -268,7 +264,7 @@ function SessionChat({ sessionId }: { sessionId: string }) {
   const [loading, setLoading] = useState(true)
   const [personaDialogOpen, setPersonaDialogOpen] = useState(false)
   const [modelDialogOpen, setModelDialogOpen] = useState(false)
-  const isComposingRef = useRef({ composing: false, justEnded: false })
+  const isComposingRef = useRef({ composing: false })
   const isGenerating = generatingSessionId === sessionId
   const isBackground = session?.status === 1 && !isGenerating
   const personaId = session?.personaId ?? sessionDetail?.personaId ?? null
@@ -325,16 +321,12 @@ function SessionChat({ sessionId }: { sessionId: string }) {
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      const { composing, justEnded } = isComposingRef.current
-      if (composing || justEnded || e.nativeEvent.isComposing || e.keyCode === 229) {
-        isComposingRef.current.justEnded = false
+      if (isComposingRef.current.composing || e.nativeEvent.isComposing || e.keyCode === 229) {
         e.preventDefault()
         return
       }
       e.preventDefault()
       handleSend()
-    } else if (!e.nativeEvent.isComposing) {
-      isComposingRef.current.justEnded = false
     }
   }, [handleSend])
 
@@ -752,7 +744,7 @@ function NewChatInput({
   formProjectPath: string | null
   onProjectChange: (path: string | null) => void
   stopDisabled: boolean
-  isComposingRef: React.MutableRefObject<{ composing: boolean; justEnded: boolean }>
+  isComposingRef: React.MutableRefObject<{ composing: boolean }>
 }) {
   const t = useT()
   const thinking = useChatStore((s) => s.formThinking)
@@ -866,8 +858,8 @@ function NewChatInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKeyDown}
-        onCompositionStart={() => { isComposingRef.current.composing = true; isComposingRef.current.justEnded = false }}
-        onCompositionEnd={() => { isComposingRef.current.composing = false; isComposingRef.current.justEnded = true }}
+        onCompositionStart={() => { isComposingRef.current.composing = true }}
+        onCompositionEnd={() => { isComposingRef.current.composing = false }}
         placeholder={t('chat.inputPlaceholder')}
         disabled={generating}
         rows={1}
@@ -1122,7 +1114,7 @@ function ChatInput({
   compressing?: boolean
   onStop?: () => void
   stopDisabled?: boolean
-  isComposingRef: React.MutableRefObject<{ composing: boolean; justEnded: boolean }>
+  isComposingRef: React.MutableRefObject<{ composing: boolean }>
 }) {
   const t = useT()
   const thinking = useChatStore((s) => s.formThinking)
@@ -1198,8 +1190,8 @@ function ChatInput({
             ref={textareaRef}
             value={value} onChange={(e) => onChange(e.target.value)}
             onKeyDown={onKeyDown}
-            onCompositionStart={() => { isComposingRef.current.composing = true; isComposingRef.current.justEnded = false }}
-            onCompositionEnd={() => { isComposingRef.current.composing = false; isComposingRef.current.justEnded = true }}
+            onCompositionStart={() => { isComposingRef.current.composing = true }}
+            onCompositionEnd={() => { isComposingRef.current.composing = false }}
             placeholder={isBackground ? t('chat.backgroundThinkingPlaceholder') : t('chat.inputPlaceholderSession')} disabled={isGenerating || isBackground || compressing} rows={1}
             className={cn(
               'w-full resize-none overflow-y-auto border-0 bg-transparent px-3 pt-3 text-base text-text-1 placeholder:text-text-muted outline-none max-h-40 [scrollbar-width:thin] [scrollbar-color:var(--color-bg-layer-3)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-bg-layer-3 [&::-webkit-scrollbar-track]:bg-transparent',

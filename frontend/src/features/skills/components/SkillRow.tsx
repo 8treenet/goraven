@@ -30,16 +30,17 @@ export function InstalledSkillRow({
     <div
       key={skill.userSkillId}
       className={cn(
-        'group flex items-center gap-3 px-4 transition-colors',
+        'group flex items-start gap-3 px-4 transition-colors',
+        pad,
         index % 2 === 0 ? 'bg-bg-layer-1 hover:bg-bg-hover' : 'hover:bg-bg-hover',
       )}
     >
-      <div className={cn('shrink-0', pad)}>
+      <div className="shrink-0 mt-0.5">
         <Icon name={skill.icon} className="size-4 text-text-3" />
       </div>
 
-      <div className={cn('flex-1 min-w-0', pad)}>
-        <span className="text-sm font-semibold text-text-1 truncate">
+      <div className="flex-1 min-w-0 mt-0.5">
+        <span className="block text-sm font-semibold text-text-1 truncate">
           {skill.skillName}
         </span>
         <div className="mt-0.5 flex items-center gap-1.5 min-w-0">
@@ -49,20 +50,15 @@ export function InstalledSkillRow({
         </div>
       </div>
 
-      <div className={cn('shrink-0', pad)}>
+      <div className="shrink-0 w-24 flex justify-end mt-0.5">
         {skill.categoryName && (
-          <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs text-text-1 bg-bg-layer-3">
+          <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs text-text-1 bg-bg-layer-3 truncate max-w-full">
             {skill.categoryName}
           </span>
         )}
       </div>
 
-      <div
-        className={cn(
-          'flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100',
-          pad,
-        )}
-      >
+      <div className="flex shrink-0 items-center gap-1 w-20 justify-end mt-0.5 opacity-0 transition-opacity group-hover:opacity-100">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -108,16 +104,17 @@ export function MarketSkillRow({
     <div
       key={skill.skillId}
       className={cn(
-        'group flex items-center gap-3 px-4 transition-colors',
+        'group flex items-start gap-3 px-4 transition-colors',
+        pad,
         index % 2 === 0 ? 'bg-bg-layer-1 hover:bg-bg-hover' : 'hover:bg-bg-hover',
       )}
     >
-      <div className={cn('shrink-0', pad)}>
+      <div className="shrink-0 mt-0.5">
         <Icon name={skill.icon} className="size-4 text-text-3" />
       </div>
 
-      <div className={cn('flex-1 min-w-0', pad)}>
-        <span className="text-sm font-semibold text-text-1 truncate">
+      <div className="flex-1 min-w-0 mt-0.5">
+        <span className="block text-sm font-semibold text-text-1 truncate">
           {skill.name}
         </span>
         <div className="mt-0.5 flex items-center gap-1.5 min-w-0">
@@ -125,26 +122,21 @@ export function MarketSkillRow({
         </div>
       </div>
 
-      <div className={cn('shrink-0', pad)}>
+      <div className="shrink-0 w-24 flex justify-end mt-0.5">
         {skill.categoryName && (
-          <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs text-text-1 bg-bg-layer-3">
+          <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs text-text-1 bg-bg-layer-3 truncate max-w-full">
             {skill.categoryName}
           </span>
         )}
       </div>
 
-      <div className={cn('shrink-0', pad)}>
+      <div className="shrink-0 w-20 text-right mt-0.5">
         <span className="text-xs text-text-muted tabular-nums">
           {t('skills.installCountSuffix').replace('{count}', String(skill.installedCount))}
         </span>
       </div>
 
-      <div
-        className={cn(
-          'flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100',
-          pad,
-        )}
-      >
+      <div className="flex shrink-0 items-center gap-0.5 w-20 justify-end mt-0.5 opacity-0 transition-opacity group-hover:opacity-100">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -198,16 +190,17 @@ export function ShareSkillRow({
     <div
       key={skill.shareId}
       className={cn(
-        'group flex items-center gap-3 px-4 transition-colors',
+        'group flex items-start gap-3 px-4 transition-colors',
+        pad,
         index % 2 === 0 ? 'bg-bg-layer-1 hover:bg-bg-hover' : 'hover:bg-bg-hover',
       )}
     >
-      <div className={cn('shrink-0', pad)}>
+      <div className="shrink-0 mt-0.5">
         <Icon name={skill.icon} className="size-4 text-text-3" />
       </div>
 
-      <div className={cn('flex-1 min-w-0', pad)}>
-        <span className="text-sm font-semibold text-text-1 truncate">
+      <div className="flex-1 min-w-0 mt-0.5">
+        <span className="block text-sm font-semibold text-text-1 truncate">
           {skill.skillName}
         </span>
         <div className="mt-0.5 flex items-center gap-1.5 min-w-0">
@@ -217,26 +210,21 @@ export function ShareSkillRow({
         </div>
       </div>
 
-      <div className={cn('shrink-0', pad)}>
+      <div className="shrink-0 w-24 flex justify-end mt-0.5">
         {skill.categoryName && (
-          <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs text-text-1 bg-bg-layer-3">
+          <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs text-text-1 bg-bg-layer-3 truncate max-w-full">
             {skill.categoryName}
           </span>
         )}
       </div>
 
-      <div className={cn('shrink-0', pad)}>
+      <div className="shrink-0 w-20 text-right mt-0.5">
         <span className="text-xs text-text-muted tabular-nums">
           {t('skills.shareInstallCount').replace('{count}', String(skill.installCount))}
         </span>
       </div>
 
-      <div
-        className={cn(
-          'flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100',
-          pad,
-        )}
-      >
+      <div className="flex shrink-0 items-center gap-0.5 w-20 justify-end mt-0.5 opacity-0 transition-opacity group-hover:opacity-100">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

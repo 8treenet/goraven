@@ -236,7 +236,7 @@ const en = {
   'share.loadFailed': 'Failed to load share',
   'share.loginRequiredTitle': 'This is an internal share',
   'share.loginRequiredDesc': 'This share is only available to logged-in users on this platform. Please request a public link from the author, or view it from within the platform.',
-  'share.tagline': 'Raven is a self-hostable, multi-user AI agent platform.',
+  'share.tagline': 'Raven is a self-hostable Agent, with isolated workspaces for every team member.',
   'share.githubLabel': 'GitHub',
 
   // dashboard
@@ -421,7 +421,7 @@ const en = {
   'profile.errAvatarSize': 'File size cannot exceed 2MB',
   'profile.avatarUpdated': 'Avatar updated',
   'profile.about': 'About',
-  'profile.aboutDesc': 'Raven is a private, self-hosted multi-user AI agent platform. Fully control model providers, toolchains and data — run your own AI assistant on your server.',
+  'profile.aboutDesc': 'Raven is a private, self-hosted team AI agent platform. Fully control model providers, toolchains and data — run your own AI assistant on your server.',
   'profile.logout': 'Log Out',
   'profile.logoutConfirm': 'Are you sure you want to log out? You will be returned to the login page.',
   'profile.logoutDesc': 'You will be returned to the login page',
@@ -677,7 +677,7 @@ const en = {
   'adminSystemInfo.chinese': 'Chinese',
   'adminSystemInfo.cacheType': 'Cache Type',
   'adminSystemInfo.cacheUsage': 'Cache Usage',
-  'adminSystemInfo.chromadb': 'ChromaDB',
+  'adminSystemInfo.systemTimezone': 'System Timezone',
   'adminSystemInfo.uploadedFiles': 'Uploaded Files',
   'adminSystemInfo.tempFiles': 'Temp Files',
   'adminSystemInfo.database': 'Database',

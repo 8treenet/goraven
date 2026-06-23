@@ -57,12 +57,15 @@ export function connectChatStream(sessionId: string, handlers: ChatStreamHandler
       // AbortError means intentional stop — don't notify or retry
       if (error?.name === 'AbortError') return
       handlers.onError?.(error)
-      // Don't throw — throwing triggers automatic retry, which is not desired for SSE
+      // Throw to stop the library's automatic retry loop.
+      // Returning undefined would cause @microsoft/fetch-event-source to retry
+      // every 1s indefinitely (the return value is used as retry interval).
+      throw error
     },
     onclose() {
       handlers.onError?.(new Error('SSE connection closed'))
     },
-  })
+  }).catch(() => {})
 
   return controller
 }

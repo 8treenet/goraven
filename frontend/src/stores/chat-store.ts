@@ -231,6 +231,7 @@ function createStreamHandlers(
     onEnd() {
       clearTimeout(backgroundTimeouts.get(sessionId))
       backgroundTimeouts.delete(sessionId)
+      stopPolling(sessionId)
       const s = get()
       // 持久化前过滤掉 retry（重试已过期，不需要保留在最终消息中）
       const persistSegs = s.streamingThinkingSegments.filter((seg) => seg.type !== 'retry')

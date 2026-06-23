@@ -25,7 +25,7 @@ interface OverviewInfo {
   language: string
   cacheType: string
   cacheMemory: string
-  chromaDbBytes: number
+  timezone: string
   uploadBytes: number
   tempBytes: number
 }
@@ -121,7 +121,7 @@ function OverviewPanel({ data }: { data: OverviewInfo }) {
         <FieldRow label={t('adminSystemInfo.systemLanguage')} value={data.language === 'zh' ? t('adminSystemInfo.chinese') : 'English'} />
         <FieldRow label={t('adminSystemInfo.cacheType')} value={data.cacheType} />
         <FieldRow label={t('adminSystemInfo.cacheUsage')} value={data.cacheMemory} />
-        <FieldRow label={t('adminSystemInfo.chromadb')} value={formatBytes(data.chromaDbBytes)} />
+        <FieldRow label={t('adminSystemInfo.systemTimezone')} value={data.timezone} />
         <FieldRow label={t('adminSystemInfo.uploadedFiles')} value={formatBytes(data.uploadBytes)} />
         <FieldRow label={t('adminSystemInfo.tempFiles')} value={formatBytes(data.tempBytes)} />
       </div>

@@ -236,7 +236,7 @@ const zh = {
   'share.loadFailed': '加载分享失败',
   'share.loginRequiredTitle': '这是一个内部分享',
   'share.loginRequiredDesc': '该分享仅对平台内已登录用户开放，如需查看请向分享者申请公开链接或在平台内访问。',
-  'share.tagline': 'Raven 是一款支持自部署的多用户 AI Agent 平台。',
+  'share.tagline': 'Raven 是一款可自部署的 Agent，每位团队成员拥有独立工作空间。',
   'share.githubLabel': 'GitHub',
 
   // dashboard
@@ -421,7 +421,7 @@ const zh = {
   'profile.errAvatarSize': '文件大小不能超过 2MB',
   'profile.avatarUpdated': '头像修改成功',
   'profile.about': '关于',
-  'profile.aboutDesc': 'Raven 是一个私有的、自部署的多用户 AI Agent 平台。完全掌控模型提供商、工具链和数据，在你的服务器上运行自己的 AI 助手。',
+  'profile.aboutDesc': 'Raven 是一个私有的、自部署的团队 AI Agent 平台。完全掌控模型提供商、工具链和数据，在你的服务器上运行自己的 AI 助手。',
   'profile.logout': '退出登录',
   'profile.logoutConfirm': '确定要退出登录吗？退出后将返回登录页面。',
   'profile.logoutDesc': '退出后将返回登录页面',
@@ -677,7 +677,7 @@ const zh = {
   'adminSystemInfo.chinese': '中文',
   'adminSystemInfo.cacheType': '缓存类型',
   'adminSystemInfo.cacheUsage': '缓存占用',
-  'adminSystemInfo.chromadb': 'ChromaDB',
+  'adminSystemInfo.systemTimezone': '系统时区',
   'adminSystemInfo.uploadedFiles': '上传文件',
   'adminSystemInfo.tempFiles': '临时文件',
   'adminSystemInfo.database': '数据库',
