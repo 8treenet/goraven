@@ -47,7 +47,7 @@ Raven 不是一个 KPI 项目，也永远不会是。每一个功能、每一行
 ### 国内镜像（推荐）
 
 ```bash
-docker pull docker.1panel.live/8treenet/raven:v0.1.3
+docker pull docker.1panel.live/8treenet/raven:v0.1.5
 
 docker run -d --restart=always --name raven-agent \
   -p 8000:8000 \
