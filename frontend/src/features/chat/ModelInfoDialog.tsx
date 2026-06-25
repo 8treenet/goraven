@@ -173,7 +173,7 @@ export function ModelInfoDialog({
                         <span className="w-32 shrink-0 text-xs text-text-3">{t('personas.contextLength')}</span>
                         <span className="text-sm text-text-1">{formatK(modelInfo.contextLen)}</span>
                       </div>
-                      {(modelInfo.isDefault || modelInfo.isCompress || modelInfo.isVisual) && (
+                      {(!!modelInfo.isDefault || !!modelInfo.isCompress || !!modelInfo.isVisual) && (
                         <div className="flex items-center">
                           <span className="w-32 shrink-0 text-xs text-text-3">{t('adminModels.labels')}</span>
                           <span className="flex items-center gap-1">
@@ -214,10 +214,10 @@ export function ModelInfoDialog({
                 <div className="rounded-lg border border-border bg-bg-layer-2 px-4 py-3 space-y-2">
                   <div className="flex items-center">
                     <span className="w-32 shrink-0 text-xs text-text-3">{t('personas.currentContext')}</span>
-                    <span className="text-sm text-text-1 tabular-nums">
+                    <span className="text-sm text-highlight tabular-nums">
                       {formatTokensInK(contextTokens)}
                       {modelInfo?.contextLen ? (
-                        <span className="text-text-3"> / {formatK(modelInfo.contextLen)}</span>
+                        <span> / {formatK(modelInfo.contextLen)}</span>
                       ) : null}
                     </span>
                   </div>

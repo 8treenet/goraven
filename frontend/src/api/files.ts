@@ -45,9 +45,21 @@ export function commitUpload(uploadId: string, dir?: string) {
   return http.post<{ path: string }>('/fileManager/upload', { uploadId, dir })
 }
 
-/** GET /api/hfs/private?path= — 构建文件下载 URL（需配合 fetch + Bearer token 使用） */
+/** GET /api/hfs/private/<path> — 构建文件下载 URL（需配合 fetch + Bearer token 使用） */
 export function getDownloadUrl(path: string): string {
-  return `/api/hfs/private?path=${encodeURIComponent(path)}`
+  const segments = path.replace(/^\/+/, '').split('/').filter(Boolean)
+  return `/api/hfs/private/${segments.map(encodeURIComponent).join('/')}`
+}
+
+/** POST /api/hfs/access — 申请临时访问凭证（15 分钟有效） */
+export function createTempAccess(path: string, type: 'file' | 'dir') {
+  return http.post<{ ak: string; expiresAt: number }>('/hfs/access', { path, type })
+}
+
+/** 构建临时凭证下载 URL（无需 Bearer token，ak 在 URL 路径中） */
+export function getAkDownloadUrl(ak: string, path: string): string {
+  const segments = path.replace(/^\/+/, '').split('/').filter(Boolean)
+  return `/api/hfs/ak/${ak}/${segments.map(encodeURIComponent).join('/')}`
 }
 
 /** GET /api/fileManager/profile */

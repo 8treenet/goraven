@@ -86,7 +86,7 @@ export function Component() {
       {/* Sticky toolbar */}
       <div className="sticky top-0 z-10 flex h-10 items-center justify-between border-b border-border-custom bg-bg-base px-4">
         <h1 className="text-[18px] font-semibold text-text-1">{t('personas.title')}</h1>
-        <Button size="default" onClick={handleCreate}>
+        <Button size="default" onClick={handleCreate} className="text-highlight hover:text-highlight">
           <Plus className="size-4" />
           {t('personas.newPersona')}
         </Button>
@@ -119,7 +119,7 @@ export function Component() {
                 className="flex flex-1 items-start gap-3 min-w-0 text-left"
                 onClick={() => handleRowClick(p.personaId)}
               >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-bg-layer-3 text-text-2 mt-0.5">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-interactive/10 text-interactive mt-0.5">
                   <Icon name={p.icon} className="size-3.5" />
                 </span>
 
@@ -259,7 +259,7 @@ function EmptyView({ onCreate }: { onCreate: () => void }) {
       <Icon name="bot" className="size-8 text-text-muted" />
       <p className="mt-3 text-sm text-text-2">{translate('personas.noPersonas')}</p>
       <p className="mt-1 text-xs text-text-3">{translate('personas.noPersonasHint')}</p>
-      <Button size="default" className="mt-4" onClick={onCreate}>
+      <Button size="default" className="mt-4 text-highlight hover:text-highlight" onClick={onCreate}>
         <Plus className="size-4" />
         {translate('personas.newPersona')}
       </Button>

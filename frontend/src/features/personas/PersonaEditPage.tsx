@@ -275,7 +275,7 @@ export function Component() {
           </button>
           <h1 className="text-[18px] font-semibold text-text-1">{pageTitle}</h1>
         </div>
-        <Button size="default" onClick={handleSave} disabled={formState === 'submitting'}>
+        <Button size="default" onClick={handleSave} disabled={formState === 'submitting'} className="text-highlight hover:text-highlight">
           {formState === 'submitting' ? t('personas.saving') : t('personas.save')}
         </Button>
       </div>

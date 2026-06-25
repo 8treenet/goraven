@@ -1366,7 +1366,7 @@ function ModelIcon({ icon, name }: { icon: string; name: string }) {
 
   if (!icon || error) {
     return (
-      <div className="flex size-7 shrink-0 items-center justify-center rounded-sm bg-bg-layer-3 text-xs font-medium text-text-2">
+      <div className="flex size-7 shrink-0 items-center justify-center rounded-sm bg-bg-layer-3 text-xs font-medium text-interactive">
         {name.charAt(0).toUpperCase()}
       </div>
     )
@@ -1843,6 +1843,7 @@ export function Component() {
             variant="default"
             size="sm"
             onClick={() => setDrawerMode('add')}
+            className="text-highlight hover:text-highlight"
           >
             <Plus className="size-3.5" />
             {t('adminModels.addModel')}

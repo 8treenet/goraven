@@ -19,7 +19,7 @@ import {
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useT, t as translate } from '@/i18n'
-import { listFiles, mkdir, rename, deleteFiles, compress, decompress, getDownloadUrl } from '@/api/files'
+import { listFiles, mkdir, rename, deleteFiles, compress, decompress, getDownloadUrl, createTempAccess, getAkDownloadUrl } from '@/api/files'
 import type { FileItem } from '@/api/types'
 import { useFileUpload } from '@/hooks/useFileUpload'
 import { useUserStore } from '@/stores/user-store'
@@ -43,9 +43,11 @@ import {
   type ContextMenuState,
   type PageState,
   type PreviewType,
+  type SheetData,
   type SortField,
   type SortOrder,
 } from './file-helpers'
+import { read as xlsxRead, utils as xlsxUtils } from 'xlsx'
 
 export function Component() {
   const [pageState, setPageState] = useState<PageState>('loading')
@@ -73,6 +75,7 @@ export function Component() {
   const [previewType, setPreviewType] = useState<PreviewType | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [previewText, setPreviewText] = useState<string | null>(null)
+  const [previewSheets, setPreviewSheets] = useState<SheetData[] | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
   const [previewError, setPreviewError] = useState(false)
 
@@ -427,13 +430,14 @@ export function Component() {
     setPreviewType(getPreviewType(item))
     setPreviewUrl(null)
     setPreviewText(null)
+    setPreviewSheets(null)
     setPreviewError(false)
     setPreviewLoading(true)
     const filePath = `${currentDir === '/' ? '' : currentDir}/${item.name}`
     const url = getDownloadUrl(filePath)
     const token = useUserStore.getState().token
 
-    if (getPreviewType(item) === 'text') {
+    if (getPreviewType(item) === 'text' || getPreviewType(item) === 'markdown') {
       fetch(url, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
@@ -443,6 +447,51 @@ export function Component() {
         })
         .then((text) => {
           setPreviewText(text.length > MAX_TEXT_PREVIEW_SIZE ? text.slice(0, MAX_TEXT_PREVIEW_SIZE) + '\n\n... File too large, preview truncated' : text)
+        })
+        .catch(() => {
+          setPreviewError(true)
+        })
+        .finally(() => {
+          setPreviewLoading(false)
+        })
+    } else if (getPreviewType(item) === 'xlsx') {
+      fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error('preview failed')
+          return res.arrayBuffer()
+        })
+        .then((buf) => {
+          const wb = xlsxRead(buf)
+          const sheets: SheetData[] = wb.SheetNames.map((name) => ({
+            name,
+            html: xlsxUtils.sheet_to_html(wb.Sheets[name]),
+          }))
+          setPreviewSheets(sheets)
+        })
+        .catch(() => {
+          setPreviewError(true)
+        })
+        .finally(() => {
+          setPreviewLoading(false)
+        })
+    } else if (getPreviewType(item) === 'html') {
+      createTempAccess(currentDir === '/' ? '/' : currentDir, 'dir')
+        .then((res) => {
+          setPreviewUrl(getAkDownloadUrl(res.ak, filePath))
+        })
+        .catch(() => {
+          setPreviewError(true)
+        })
+        .finally(() => {
+          setPreviewLoading(false)
+        })
+    } else if (getPreviewType(item) === 'office') {
+      createTempAccess(filePath, 'file')
+        .then((res) => {
+          const absUrl = `${window.location.origin}/api/hfs/ak/${res.ak}/${filePath.replace(/^\//, '').split('/').map(encodeURIComponent).join('/')}`
+          setPreviewUrl(`https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(absUrl)}`)
         })
         .catch(() => {
           setPreviewError(true)
@@ -476,6 +525,7 @@ export function Component() {
     setPreviewError(false)
     setPreviewLoading(false)
     setPreviewText(null)
+    setPreviewSheets(null)
     setPreviewUrl((url) => {
       if (url) URL.revokeObjectURL(url)
       return null
@@ -528,11 +578,11 @@ export function Component() {
           </>
         )}
 
-        <Button variant="ghost" size="default" onClick={handleUploadClick}>
+        <Button variant="ghost" size="default" onClick={handleUploadClick} className="text-highlight hover:text-highlight">
           <Upload className="size-4" />
           {t('files.upload')}
         </Button>
-        <Button variant="ghost" size="default" onClick={openNewFolderDialog}>
+        <Button variant="ghost" size="default" onClick={openNewFolderDialog} className="text-highlight hover:text-highlight">
           <FolderPlus className="size-4" />
           {t('files.newFolder')}
         </Button>
@@ -544,6 +594,7 @@ export function Component() {
           size="default"
           onClick={openDeleteDialog}
           disabled={!canDelete}
+          className={cn(!canDelete ? '' : 'text-highlight hover:text-highlight')}
         >
           <Trash2 className="size-4" />
           {t('files.delete')}
@@ -553,6 +604,7 @@ export function Component() {
           size="default"
           onClick={openCompressDialog}
           disabled={!canCompress}
+          className={cn(!canCompress ? '' : 'text-highlight hover:text-highlight')}
         >
           <Archive className="size-4" />
           {t('files.compress')}
@@ -562,6 +614,7 @@ export function Component() {
           size="default"
           onClick={openDecompressDialog}
           disabled={!canDecompress}
+          className={cn(!canDecompress ? '' : 'text-highlight hover:text-highlight')}
         >
           <FolderArchive className="size-4" />
           {t('files.decompress')}
@@ -584,6 +637,7 @@ export function Component() {
           size="icon"
           onClick={handleRefresh}
           title={t('common.refresh')}
+          className="text-highlight hover:text-highlight"
         >
           <RefreshCw className="size-4" />
         </Button>
@@ -710,7 +764,7 @@ export function Component() {
                   </div>
                   <div className="mt-0.5 h-0.5 w-full overflow-hidden rounded-full bg-bg-layer-3">
                     <div
-                      className="h-full bg-bg-hover transition-all duration-200"
+                      className="h-full bg-highlight transition-all duration-200"
                       style={{ width: `${uploadProgress.percentage}%` }}
                     />
                   </div>
@@ -758,7 +812,7 @@ export function Component() {
                   </div>
 
                   <div className="flex flex-1 items-center gap-2.5 min-w-0">
-                    <Icon className="size-4 shrink-0 text-text-3" />
+                    <Icon className={cn('size-4 shrink-0', isSelected ? 'text-highlight' : 'text-text-3')} />
                     {isRenaming ? (
                       <input
                         ref={renameInputRef}
@@ -779,7 +833,7 @@ export function Component() {
                       </span>
                     )}
                     {item.isDefault && (
-                      <Lock className="size-3.5 shrink-0 text-text-muted" />
+                      <Lock className="size-3.5 shrink-0 text-interactive" />
                     )}
                   </div>
 
@@ -795,8 +849,8 @@ export function Component() {
             })}
 
             {isDragOver && (
-              <div className="flex h-20 items-center justify-center border-2 border-dashed border-border-strong mx-3 my-2 rounded-lg">
-                <p className="text-sm text-text-3">
+              <div className="flex h-20 items-center justify-center border-2 border-dashed border-highlight mx-3 my-2 rounded-lg">
+                <p className="text-sm text-highlight">
                   {t('files.dropHint')}
                 </p>
               </div>
@@ -881,9 +935,11 @@ export function Component() {
         type={previewType}
         url={previewUrl}
         text={previewText}
+        sheets={previewSheets}
         loading={previewLoading}
         error={previewError}
         onClose={closePreview}
+        onDownload={previewItem ? () => handleDownload(previewItem) : undefined}
       />
 
       <EnvVarsDialog

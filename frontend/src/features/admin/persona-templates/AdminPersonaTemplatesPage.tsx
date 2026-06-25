@@ -681,7 +681,7 @@ function TemplateRow({
 }) {
   return (
     <tr className={cn(isEven && 'bg-bg-layer-1', 'transition-colors hover:bg-bg-hover')}>
-      <td className="py-2.5 pl-4 pr-2 text-text-2">
+      <td className="py-2.5 pl-4 pr-2 text-interactive">
         {renderIcon(template.icon, 'size-4')}
       </td>
       <td className="py-2.5 pr-4">
@@ -1106,6 +1106,7 @@ export function Component() {
             variant="outline"
             size="sm"
             onClick={() => setCategoryDialogOpen(true)}
+            className="text-highlight hover:text-highlight"
           >
             <Icon name="folder-open" className="size-3.5" />
             {t('adminPersonaTemplates.categoryManagement')}
@@ -1114,6 +1115,7 @@ export function Component() {
             variant="default"
             size="sm"
             onClick={() => setDrawerMode('add')}
+            className="text-highlight hover:text-highlight"
           >
             <Plus className="size-3.5" />
             {t('adminPersonaTemplates.createTemplate')}

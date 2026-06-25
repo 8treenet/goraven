@@ -312,6 +312,7 @@ const en = {
   'files.totalCount': 'Total {n}',
   'files.download': 'Download',
   'files.preview': 'Preview',
+  'files.previewFailedOffice': 'Office document preview failed, please download to view',
   'files.rename': 'Rename',
   'files.envVars': 'Env Vars',
   'files.envVarsTitle': 'Environment Variables',
