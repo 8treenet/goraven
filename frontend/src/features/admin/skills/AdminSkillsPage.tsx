@@ -260,14 +260,14 @@ function SearchBox({ value, onChange, placeholder }: { value: string; onChange: 
 
 function SkillIcon({ icon }: { icon: string }) {
   return (
-    <div className="inline-flex size-8 shrink-0 items-center justify-center rounded bg-bg-layer-3 text-text-2">
+    <div className="inline-flex size-8 shrink-0 items-center justify-center rounded bg-bg-layer-3 text-interactive">
       {renderIcon(icon || 'bot', 'size-4')}
     </div>
   )
 }
 
 function ScopeLabel({ children }: { children: React.ReactNode }) {
-  return <span className="rounded bg-bg-layer-3 px-1.5 py-0.5 text-xs text-text-2">{children}</span>
+  return <span className="rounded bg-interactive/10 px-1.5 py-0.5 text-xs text-interactive">{children}</span>
 }
 
 function StatusText({ children, tone = 'neutral' }: { children: React.ReactNode; tone?: 'neutral' | 'good' | 'warn' }) {
@@ -287,7 +287,7 @@ function StatusText({ children, tone = 'neutral' }: { children: React.ReactNode;
 
 function EmptyState({ title, description, action }: { title: string; description: string; action?: React.ReactNode }) {
   return (
-    <div className="flex min-h-[280px] flex-col items-center justify-center rounded-lg bg-bg-layer-1 px-6 text-center">
+    <div className="flex min-h-[280px] flex-col items-center justify-center rounded-lg border border-border bg-bg-layer-1 px-6 text-center">
       <Archive className="mb-3 size-8 text-text-muted" />
       <h3 className="text-sm font-semibold text-text-1">{title}</h3>
       <p className="mt-1 max-w-sm text-sm text-text-3">{description}</p>
@@ -779,7 +779,7 @@ export function Component() {
             <h1 className="text-xl font-semibold text-text-1">{t('adminSkills.title')}</h1>
             <p className="mt-1 text-sm text-text-3">{t('adminSkills.description')}</p>
           </div>
-          <Button variant="outline" onClick={() => setDrawer('categories')}>
+          <Button variant="outline" onClick={() => setDrawer('categories')} className="text-highlight hover:text-highlight">
             <Settings2 className="size-4" />
             {t('adminSkills.categoryManagement')}
           </Button>
@@ -817,7 +817,7 @@ export function Component() {
                   <option value="1">{t('common.disabled')}</option>
                 </SelectField>
               </div>
-              <Button onClick={() => openSystemEditor()}>
+              <Button onClick={() => openSystemEditor()} className="text-highlight hover:text-highlight">
                 <Plus className="size-4" />
                 {t('adminSkills.newGlobalSkill')}
               </Button>
@@ -830,7 +830,7 @@ export function Component() {
                 action={<Button onClick={() => openSystemEditor()}>{t('adminSkills.newGlobalSkill')}</Button>}
               />
             ) : (
-              <div className="overflow-hidden rounded-lg bg-bg-layer-1">
+              <div className="overflow-hidden rounded-lg border border-border bg-bg-layer-1">
                 <table className="w-full table-fixed text-left text-sm">
                   <colgroup>
                     <col />
@@ -896,11 +896,11 @@ export function Component() {
                 </SelectField>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={() => setDrawer('publish')}>
+                <Button variant="outline" onClick={() => setDrawer('publish')} className="text-highlight hover:text-highlight">
                   <Upload className="size-4" />
                   {t('adminSkills.publishSkill')}
                 </Button>
-                <Button onClick={() => openClawHubDrawer()}>
+                <Button onClick={() => openClawHubDrawer()} className="text-highlight hover:text-highlight">
                   <Download className="size-4" />
                   {t('adminSkills.importFromClawhub')}
                 </Button>
@@ -914,7 +914,7 @@ export function Component() {
                 action={<div className="flex gap-2"><Button onClick={() => openClawHubDrawer()}>{t('adminSkills.importFromClawhub')}</Button><Button variant="outline" onClick={() => setDrawer('publish')}>{t('adminSkills.publishSkill')}</Button></div>}
               />
             ) : (
-              <div className="overflow-hidden rounded-lg bg-bg-layer-1">
+              <div className="overflow-hidden rounded-lg border border-border bg-bg-layer-1">
                 <table className="w-full table-fixed text-left text-sm">
                   <colgroup>
                     <col />

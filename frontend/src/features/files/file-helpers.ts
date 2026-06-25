@@ -4,6 +4,7 @@ import {
   FileText,
   FolderOpen,
   Image,
+  Presentation,
   Table2,
   Video,
   type LucideIcon,
@@ -14,7 +15,12 @@ import { t as translate } from '@/i18n'
 export type SortField = 'name' | 'size' | 'time'
 export type SortOrder = 'asc' | 'desc'
 export type PageState = 'loading' | 'data' | 'empty' | 'error'
-export type PreviewType = 'image' | 'video' | 'audio' | 'text' | 'pdf'
+export type PreviewType = 'image' | 'video' | 'audio' | 'text' | 'pdf' | 'markdown' | 'xlsx' | 'html' | 'office'
+
+export interface SheetData {
+  name: string
+  html: string
+}
 
 export interface ContextMenuState {
   x: number
@@ -30,9 +36,13 @@ export const IMAGE_EXTS = new Set([
 export const VIDEO_EXTS = new Set(['mp4', 'webm', 'mov', 'avi', 'mkv', 'ogv'])
 export const AUDIO_EXTS = new Set(['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma', 'opus'])
 export const PDF_EXTS = new Set(['pdf'])
+export const MARKDOWN_EXTS = new Set(['md', 'markdown'])
+export const EXCEL_EXTS = new Set(['xlsx'])
+export const HTML_EXTS = new Set(['html', 'htm'])
+export const OFFICE_EXTS = new Set(['doc', 'docx', 'ppt', 'pptx', 'xls'])
 export const TEXT_EXTS = new Set([
-  'txt', 'md', 'csv', 'json', 'xml', 'yaml', 'yml', 'toml', 'ini', 'log',
-  'html', 'htm', 'css', 'js', 'ts', 'jsx', 'tsx', 'py', 'go', 'rs', 'java',
+  'txt', 'csv', 'json', 'xml', 'yaml', 'yml', 'toml', 'ini', 'log',
+  'css', 'js', 'ts', 'jsx', 'tsx', 'py', 'go', 'rs', 'java',
   'c', 'cpp', 'h', 'hpp', 'sh', 'bash', 'sql', 'env', 'cfg', 'conf',
   'properties', 'diff', 'patch', 'r', 'rb', 'php', 'swift', 'kt', 'scala',
   'vue', 'svelte', 'graphql', 'gql', 'proto',
@@ -78,6 +88,9 @@ export function getFileIcon(item: FileItem): LucideIcon {
     case 'txt':
     case 'md':
       return FileText
+    case 'ppt':
+    case 'pptx':
+      return Presentation
     case 'png':
     case 'jpg':
     case 'jpeg':
@@ -108,7 +121,7 @@ export function getFileIcon(item: FileItem): LucideIcon {
 export function canPreview(item: FileItem): boolean {
   if (item.isDir) return false
   const ext = item.name.split('.').pop()?.toLowerCase()
-  return !!ext && (IMAGE_EXTS.has(ext) || VIDEO_EXTS.has(ext) || AUDIO_EXTS.has(ext) || TEXT_EXTS.has(ext) || PDF_EXTS.has(ext))
+  return !!ext && (IMAGE_EXTS.has(ext) || VIDEO_EXTS.has(ext) || AUDIO_EXTS.has(ext) || TEXT_EXTS.has(ext) || PDF_EXTS.has(ext) || MARKDOWN_EXTS.has(ext) || EXCEL_EXTS.has(ext) || HTML_EXTS.has(ext) || OFFICE_EXTS.has(ext))
 }
 
 export function getPreviewType(item: FileItem): PreviewType | null {
@@ -117,8 +130,12 @@ export function getPreviewType(item: FileItem): PreviewType | null {
   if (IMAGE_EXTS.has(ext)) return 'image'
   if (VIDEO_EXTS.has(ext)) return 'video'
   if (AUDIO_EXTS.has(ext)) return 'audio'
+  if (MARKDOWN_EXTS.has(ext)) return 'markdown'
+  if (HTML_EXTS.has(ext)) return 'html'
   if (TEXT_EXTS.has(ext)) return 'text'
   if (PDF_EXTS.has(ext)) return 'pdf'
+  if (EXCEL_EXTS.has(ext)) return 'xlsx'
+  if (OFFICE_EXTS.has(ext)) return 'office'
   return null
 }
 

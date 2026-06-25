@@ -69,7 +69,7 @@ function SegmentedControl({
           className={cn(
             'rounded-sm px-3 py-1 text-xs transition-colors',
             value === opt.value
-              ? 'bg-bg-layer-3 text-text-1'
+              ? 'bg-highlight/10 text-highlight'
               : 'text-text-3 hover:text-text-2',
           )}
         >
@@ -115,7 +115,10 @@ function FilterDropdown<T extends string | number | null>({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs text-text-3 transition-colors hover:bg-bg-hover hover:text-text-2"
+        className={cn(
+          'flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs transition-colors hover:bg-bg-hover hover:text-text-2',
+          value !== null ? 'text-highlight' : 'text-text-3',
+        )}
       >
         {current ? current.label : label}
         <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
@@ -132,7 +135,7 @@ function FilterDropdown<T extends string | number | null>({
               className={cn(
                 'w-full px-3 py-1.5 text-left text-xs transition-colors',
                 value === opt.value
-                  ? 'bg-bg-layer-3 text-text-1'
+                  ? 'bg-highlight/10 text-highlight'
                   : 'text-text-3 hover:bg-bg-hover hover:text-text-2',
               )}
             >

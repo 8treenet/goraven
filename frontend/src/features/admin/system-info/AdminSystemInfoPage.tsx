@@ -114,7 +114,7 @@ function FieldRow({ label, value, muted }: { label: string; value: string; muted
 function OverviewPanel({ data }: { data: OverviewInfo }) {
   const t = useT()
   return (
-    <div className="flex flex-1 flex-col rounded-lg bg-bg-layer-1 px-5 py-4">
+    <div className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
       <h3 className="text-xs font-semibold text-text-2">{t('adminDashboard.systemOverview')}</h3>
       <div className="mt-3 flex flex-col">
         <FieldRow label={t('adminSystemInfo.version')} value={data.version} />
@@ -139,7 +139,7 @@ function DatabasePanel({ data }: { data: DatabaseInfo }) {
   const hasWait = pool.waitCount > 0 || pool.waitDurationMs > 0
 
   return (
-    <div className="flex flex-1 flex-col rounded-lg bg-bg-layer-1 px-5 py-4">
+    <div className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
       <h3 className="text-xs font-semibold text-text-2">{t('adminSystemInfo.database')}</h3>
       <div className="mt-3 flex flex-col">
         <FieldRow label={t('common.type')} value={data.type} />
@@ -208,7 +208,7 @@ function McpHealthPanel({ data }: { data: McpHealthItem[] }) {
 
   if (data.length === 0) {
     return (
-      <div className="flex flex-col rounded-lg bg-bg-layer-1 px-5 py-4">
+      <div className="flex flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
         <h3 className="text-xs font-semibold text-text-2">{t('adminSystemInfo.mcpStatus')}</h3>
         <p className="mt-3 text-xs text-text-3">{t('adminSystemInfo.noMcp')}</p>
       </div>
@@ -216,7 +216,7 @@ function McpHealthPanel({ data }: { data: McpHealthItem[] }) {
   }
 
   return (
-    <div className="flex flex-col rounded-lg bg-bg-layer-1 px-5 py-4">
+    <div className="flex flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-semibold text-text-2">{t('adminSystemInfo.mcpStatus')}</h3>
         <span className="text-xs text-text-3">{data.length} {t('adminSystemInfo.services')}</span>
@@ -310,7 +310,7 @@ function DisksPanel({ data }: { data: DiskInfo[] }) {
   const t = useT()
   if (data.length === 0) {
     return (
-      <div className="flex flex-col rounded-lg bg-bg-layer-1 px-5 py-4">
+      <div className="flex flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
         <h3 className="text-xs font-semibold text-text-2">{t('adminSystemInfo.systemDisks')}</h3>
         <p className="mt-3 text-xs text-text-3">{t('adminSystemInfo.noDisks')}</p>
       </div>
@@ -318,7 +318,7 @@ function DisksPanel({ data }: { data: DiskInfo[] }) {
   }
 
   return (
-    <div className="flex flex-col rounded-lg bg-bg-layer-1 px-5 py-4">
+    <div className="flex flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
       <h3 className="text-xs font-semibold text-text-2">{t('adminSystemInfo.systemDisks')}</h3>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full text-xs">
@@ -427,7 +427,7 @@ function EcosystemPanel({ data }: { data: EcosystemInfo }) {
   ]
 
   return (
-    <div className="flex flex-col rounded-lg bg-bg-layer-1 px-5 py-4">
+    <div className="flex flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
       <h3 className="text-xs font-semibold text-text-2">{t('adminSystemInfo.ecosystemOverview')}</h3>
       <div className="mt-3 grid grid-cols-4 gap-x-8 gap-y-3">
         {groups.map((group) => (
@@ -482,7 +482,7 @@ function Skeleton() {
     <div className="flex flex-1 flex-col gap-2 overflow-auto p-2">
       {/* Row 1: Ecosystem */}
       <div className="flex min-h-[120px] gap-2">
-        <div className="flex flex-1 flex-col rounded-lg bg-bg-layer-1 px-5 py-4">
+        <div className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
           <div className="h-3 w-16 animate-pulse rounded bg-bg-layer-2" />
           <div className="mt-3 grid grid-cols-4 gap-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
@@ -497,7 +497,7 @@ function Skeleton() {
 
       {/* Row 2: Overview + Database */}
       <div className="flex min-h-[160px] gap-2">
-        <div className="flex flex-1 flex-col rounded-lg bg-bg-layer-1 px-5 py-4">
+        <div className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
           <div className="h-3 w-14 animate-pulse rounded bg-bg-layer-2" />
           <div className="mt-3 flex-1 space-y-2.5">
             {[1, 2, 3, 4, 5, 6, 7].map((j) => (
@@ -508,7 +508,7 @@ function Skeleton() {
             ))}
           </div>
         </div>
-        <div className="flex flex-1 flex-col rounded-lg bg-bg-layer-1 px-5 py-4">
+        <div className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
           <div className="h-3 w-14 animate-pulse rounded bg-bg-layer-2" />
           <div className="mt-3 flex-1 space-y-2.5">
             {[1, 2, 3, 4].map((j) => (
@@ -524,7 +524,7 @@ function Skeleton() {
 
       {/* Row 3: MCP Health */}
       <div className="flex min-h-[100px] gap-2">
-        <div className="flex flex-1 flex-col rounded-lg bg-bg-layer-1 px-5 py-4">
+        <div className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
           <div className="h-3 w-24 animate-pulse rounded bg-bg-layer-2" />
           <div className="mt-3 space-y-2">
             {[1, 2, 3, 4, 5, 6].map((j) => (
@@ -541,7 +541,7 @@ function Skeleton() {
 
       {/* Row 4: Disks */}
       <div className="flex min-h-[80px] gap-2">
-        <div className="flex flex-1 flex-col rounded-lg bg-bg-layer-1 px-5 py-4">
+        <div className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
           <div className="h-3 w-16 animate-pulse rounded bg-bg-layer-2" />
           <div className="mt-3 flex gap-8">
             <div className="h-2.5 w-28 animate-pulse rounded bg-bg-layer-2" />
@@ -619,7 +619,7 @@ export function Component() {
         <h1 className="text-base font-semibold text-text-1">{t('adminSystemInfo.title')}</h1>
         <button
           onClick={handleRefresh}
-          className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs text-text-3 transition-colors hover:bg-bg-hover hover:text-text-2"
+          className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs text-highlight transition-colors hover:bg-bg-hover"
         >
           <RefreshCw className="size-3" />
           {t('common.refresh')}

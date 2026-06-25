@@ -30,7 +30,7 @@ function getFileExtension(path: string): string {
  * Resolve a path from <raven-file> into a usable URL.
  * - Already a full URL (http/https) → use as-is
  * - Static asset (/assets/...) → use as-is (no auth required)
- * - Sandbox-relative path (/documents/..., /images/..., /videos/...) → use /api/hfs/private?path=...
+ * - Sandbox-relative path (/documents/..., /images/..., /videos/...) → use /api/hfs/private/<path>...
  */
 function resolveUrl(path: string): string {
   if (path.startsWith('http://') || path.startsWith('https://')) return path
@@ -281,7 +281,7 @@ function VideoPlayer({
 
   return (
     <figure className="my-3">
-      <div className="relative overflow-hidden rounded-md bg-bg-layer-1">
+      <div className="relative overflow-hidden rounded-md border border-border bg-bg-layer-1">
         <video
           ref={videoRef}
           src={blobUrl || (!isPrivate ? url : undefined)}

@@ -36,7 +36,7 @@ export function InstalledSkillRow({
       )}
     >
       <div className="shrink-0 mt-0.5">
-        <Icon name={skill.icon} className="size-4 text-text-3" />
+        <Icon name={skill.icon} className="size-4 text-interactive" />
       </div>
 
       <div className="flex-1 min-w-0 mt-0.5">
@@ -52,7 +52,7 @@ export function InstalledSkillRow({
 
       <div className="shrink-0 w-24 flex justify-end mt-0.5">
         {skill.categoryName && (
-          <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs text-text-1 bg-bg-layer-3 truncate max-w-full">
+          <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs text-highlight bg-highlight/10 truncate max-w-full">
             {skill.categoryName}
           </span>
         )}
@@ -110,7 +110,7 @@ export function MarketSkillRow({
       )}
     >
       <div className="shrink-0 mt-0.5">
-        <Icon name={skill.icon} className="size-4 text-text-3" />
+        <Icon name={skill.icon} className="size-4 text-interactive" />
       </div>
 
       <div className="flex-1 min-w-0 mt-0.5">
@@ -124,7 +124,7 @@ export function MarketSkillRow({
 
       <div className="shrink-0 w-24 flex justify-end mt-0.5">
         {skill.categoryName && (
-          <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs text-text-1 bg-bg-layer-3 truncate max-w-full">
+          <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs text-highlight bg-highlight/10 truncate max-w-full">
             {skill.categoryName}
           </span>
         )}
@@ -196,7 +196,7 @@ export function ShareSkillRow({
       )}
     >
       <div className="shrink-0 mt-0.5">
-        <Icon name={skill.icon} className="size-4 text-text-3" />
+        <Icon name={skill.icon} className="size-4 text-interactive" />
       </div>
 
       <div className="flex-1 min-w-0 mt-0.5">
@@ -212,7 +212,7 @@ export function ShareSkillRow({
 
       <div className="shrink-0 w-24 flex justify-end mt-0.5">
         {skill.categoryName && (
-          <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs text-text-1 bg-bg-layer-3 truncate max-w-full">
+          <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs text-highlight bg-highlight/10 truncate max-w-full">
             {skill.categoryName}
           </span>
         )}

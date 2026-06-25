@@ -342,7 +342,7 @@ function UserMenu() {
           {groupedSessions.map((group) => (
             <div key={group.key}>
               <p className="px-2 py-0.5 text-xs text-text-muted">{t(TIME_GROUP_I18N[group.key])}</p>
-              <div className="mt-0.5 space-y-0.5">
+              <div className="mt-0.5 space-y-[3px]">
                 {group.sessions.map((s) => (
                   <SessionItem key={s.sessionId} session={s} collapsed={collapsed} onRename={handleRename} onDelete={handleDelete} />
                 ))}
@@ -450,7 +450,7 @@ function MobileUserMenu() {
       {groupedSessions.map((group) => (
         <div key={group.key}>
           <p className="px-2 py-0.5 text-xs text-text-muted">{t(TIME_GROUP_I18N[group.key])}</p>
-          <div className="mt-0.5 space-y-0.5">
+          <div className="mt-0.5 space-y-[3px]">
             {group.sessions.map((s) => (
               <MobileSessionItem key={s.sessionId} session={s} onRename={handleRename} onDelete={handleDelete} onClose={closeMobile} />
             ))}
@@ -601,8 +601,8 @@ function NavItem({
         'flex w-full items-center gap-2 rounded-md py-1.5 text-sm transition-colors',
         collapsed ? 'justify-center px-0' : indent ? 'pl-7 pr-2' : 'px-2',
         isActive
-          ? 'bg-bg-layer-3 text-text-1'
-          : 'text-text-2 hover:bg-bg-hover hover:text-text-1',
+          ? 'bg-bg-selected text-text-1'
+          : 'text-text-1 hover:bg-bg-hover',
       )}
     >
       <Icon className={cn('size-4 shrink-0', isActive && 'text-highlight')} />
@@ -677,7 +677,7 @@ function SessionItem({
         title={session.title}
         className={cn(
           'flex w-full items-center justify-center rounded-md py-1.5 text-sm text-text-2 transition-colors hover:bg-bg-hover',
-          isActive && 'bg-bg-layer-2 text-text-1',
+          isActive && 'bg-bg-selected text-highlight',
         )}
       >
         {session.title.charAt(0)}
@@ -717,8 +717,8 @@ function SessionItem({
       className={cn(
         'group flex items-center rounded-md transition-colors',
         isActive
-          ? 'bg-bg-layer-2 text-text-1'
-          : 'text-text-2 hover:bg-bg-hover hover:text-text-1',
+          ? 'bg-bg-selected text-highlight'
+          : 'text-text-1 hover:bg-bg-hover',
       )}
     >
       <button

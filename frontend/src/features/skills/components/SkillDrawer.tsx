@@ -287,7 +287,7 @@ export function SkillDrawer({
                 <Button
                   variant="default"
                   size="default"
-                  className="w-full"
+                  className="w-full text-highlight hover:text-highlight"
                   disabled={isShared}
                   onClick={isShared ? undefined : onShare}
                 >
@@ -297,9 +297,9 @@ export function SkillDrawer({
               )}
               {showDeleteButton && onDelete && (
                 <Button
-                  variant="destructive"
+                  variant="default"
                   size="default"
-                  className="w-full"
+                  className="w-full text-highlight hover:text-highlight"
                   onClick={onDelete}
                 >
                   <Trash2 className="size-4" />

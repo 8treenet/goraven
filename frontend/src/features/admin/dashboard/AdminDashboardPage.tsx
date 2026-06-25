@@ -139,7 +139,7 @@ function Skeleton() {
     <div className="flex flex-1 flex-col gap-2 overflow-hidden p-2">
       {/* Row 1: Pulse */}
       <div className="flex min-h-[120px] gap-2">
-        <div className="flex flex-1 flex-col justify-center gap-3 rounded-lg bg-bg-layer-1 px-6 py-4">
+        <div className="flex flex-1 flex-col justify-center gap-3 rounded-lg border border-border bg-bg-layer-1 px-6 py-4">
           <div className="h-3 w-20 animate-pulse rounded bg-bg-layer-2" />
           <div className="flex gap-8">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -155,7 +155,7 @@ function Skeleton() {
 
       {/* Row 2: Token Trend */}
       <div className="flex flex-[2] min-h-[220px] gap-2">
-        <div className="flex flex-1 flex-col rounded-lg bg-bg-layer-1 px-6 py-4">
+        <div className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="h-3 w-28 animate-pulse rounded bg-bg-layer-2" />
             <div className="h-6 w-40 animate-pulse rounded bg-bg-layer-2" />
@@ -170,7 +170,7 @@ function Skeleton() {
 
       {/* Row 3: Model Usage + User Rank */}
       <div className="flex flex-[2] min-h-[220px] gap-2">
-        <div className="flex flex-col rounded-lg bg-bg-layer-1 px-6 py-4" style={{ flex: 3 }}>
+        <div className="flex flex-col rounded-lg border border-border bg-bg-layer-1 px-6 py-4" style={{ flex: 3 }}>
           <div className="h-3 w-20 animate-pulse rounded bg-bg-layer-2" />
           <div className="mt-4 flex-1 space-y-2">
             {[1, 2, 3, 4, 5].map((i) => (
@@ -178,7 +178,7 @@ function Skeleton() {
             ))}
           </div>
         </div>
-        <div className="flex flex-col rounded-lg bg-bg-layer-1 px-6 py-4" style={{ flex: 2 }}>
+        <div className="flex flex-col rounded-lg border border-border bg-bg-layer-1 px-6 py-4" style={{ flex: 2 }}>
           <div className="h-3 w-28 animate-pulse rounded bg-bg-layer-2" />
           <div className="mt-4 flex-1 space-y-2">
             {[1, 2, 3, 4, 5].map((i) => (
@@ -190,7 +190,7 @@ function Skeleton() {
 
       {/* Row 4: Active Trend */}
       <div className="flex min-h-[140px] gap-2">
-        <div className="flex flex-1 flex-col rounded-lg bg-bg-layer-1 px-6 py-4">
+        <div className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="h-3 w-28 animate-pulse rounded bg-bg-layer-2" />
             <div className="h-6 w-40 animate-pulse rounded bg-bg-layer-2" />
@@ -202,7 +202,7 @@ function Skeleton() {
       {/* Row 5: Rankings */}
       <div className="flex flex-[2] min-h-[200px] gap-2">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="flex flex-1 flex-col rounded-lg bg-bg-layer-1 px-6 py-4">
+          <div key={i} className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-6 py-4">
             <div className="h-3 w-16 animate-pulse rounded bg-bg-layer-2" />
             <div className="mt-4 flex-1 space-y-2">
               {[1, 2, 3, 4, 5].map((j) => (
@@ -689,7 +689,7 @@ export function Component() {
         <h1 className="text-base font-semibold text-text-1">{t('adminDashboard.title')}</h1>
         <button
           onClick={handleRetry}
-          className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs text-text-3 transition-colors hover:bg-bg-hover hover:text-text-2"
+          className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs text-highlight transition-colors hover:bg-bg-hover"
         >
           <RefreshCw className="size-3" />
           {t('common.refresh')}
@@ -705,14 +705,14 @@ export function Component() {
         <div className="flex flex-1 flex-col gap-2 overflow-auto p-2">
           {/* Row 1: System Pulse (full width) */}
           <div className="flex min-h-[120px] gap-2">
-            <div className="flex w-full flex-col rounded-lg bg-bg-layer-1">
+            <div className="flex w-full flex-col rounded-lg border border-border bg-bg-layer-1">
               <PulsePanel data={data.overview} />
             </div>
           </div>
 
           {/* Row 2: Token Trend (full width, 2fr) */}
           <div className="flex flex-[2] min-h-[220px] gap-2">
-            <div className="flex flex-1 rounded-lg bg-bg-layer-1">
+            <div className="flex flex-1 rounded-lg border border-border bg-bg-layer-1">
               <TokenTrendPanel
                 data={trendData}
                 trendDays={trendDays}
@@ -723,17 +723,17 @@ export function Component() {
 
           {/* Row 3: Model Usage (3/5) + User Token Rank (2/5) */}
           <div className="flex flex-[2] min-h-[220px] gap-2">
-            <div className="flex rounded-lg bg-bg-layer-1" style={{ flex: 3 }}>
+            <div className="flex rounded-lg border border-border bg-bg-layer-1" style={{ flex: 3 }}>
               <ModelUsagePanel data={data.modelUsage} />
             </div>
-            <div className="flex rounded-lg bg-bg-layer-1" style={{ flex: 2 }}>
+            <div className="flex rounded-lg border border-border bg-bg-layer-1" style={{ flex: 2 }}>
               <UserTokenRankPanel data={data.userTokenRank} />
             </div>
           </div>
 
           {/* Row 4: Active Trend (full width) */}
           <div className="flex min-h-[140px] gap-2">
-            <div className="flex flex-1 rounded-lg bg-bg-layer-1">
+            <div className="flex flex-1 rounded-lg border border-border bg-bg-layer-1">
               <ActiveTrendPanel
                 data={activeData}
                 trendDays={activeDays}
@@ -744,13 +744,13 @@ export function Component() {
 
           {/* Row 5: Rankings (1:1:1) */}
           <div className="flex flex-[2] min-h-[200px] gap-2">
-            <div className="flex flex-1 rounded-lg bg-bg-layer-1">
+            <div className="flex flex-1 rounded-lg border border-border bg-bg-layer-1">
               <RankingPanel title={t('adminDashboard.weeklySkillRank')} data={data.skillUsageRank} />
             </div>
-            <div className="flex flex-1 rounded-lg bg-bg-layer-1">
+            <div className="flex flex-1 rounded-lg border border-border bg-bg-layer-1">
               <RankingPanel title={t('adminDashboard.weeklyMcpRank')} data={data.mcpUsageRank} />
             </div>
-            <div className="flex flex-1 rounded-lg bg-bg-layer-1">
+            <div className="flex flex-1 rounded-lg border border-border bg-bg-layer-1">
               <RankingPanel title={t('adminDashboard.weeklyToolRank')} data={data.toolUsageRank} />
             </div>
           </div>

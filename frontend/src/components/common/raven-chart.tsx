@@ -198,7 +198,7 @@ function ChartRenderer({ attrs }: { attrs: ChartAttrs }) {
   return (
     <figure className="my-3">
       {title && <p className="mb-2 text-xs text-text-2">{title}</p>}
-      <div className="overflow-hidden rounded-md bg-bg-layer-1 p-3">
+      <div className="overflow-hidden rounded-md border border-border bg-bg-layer-1 p-3">
         <div style={{ width: '100%', height }}>
           <ResponsiveContainer>
             {chart}

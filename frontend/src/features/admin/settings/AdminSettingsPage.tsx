@@ -253,7 +253,7 @@ function Skeleton() {
   return (
     <div className="flex-1 overflow-auto p-4 flex flex-col gap-3">
       {[1, 2, 3, 4, 5].map((g) => (
-        <div key={g} className="rounded-lg bg-bg-layer-1">
+        <div key={g} className="rounded-lg border border-border bg-bg-layer-1">
           <div className="px-5 pt-4 pb-3">
             <div className="h-3.5 w-20 animate-pulse rounded bg-bg-layer-2" />
           </div>
@@ -380,6 +380,7 @@ export function Component() {
           size="sm"
           disabled={dirtyKeys.length === 0 || saving}
           onClick={handleSave}
+          className={cn(dirtyKeys.length === 0 || saving ? '' : 'text-highlight hover:text-highlight')}
         >
           {saving ? (
             <>

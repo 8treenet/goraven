@@ -41,11 +41,11 @@ function useChartColors() {
   return useMemo(() => {
     const style = getComputedStyle(document.documentElement)
     return [
-      style.getPropertyValue('--highlight').trim() || '#d99a2c',
-      style.getPropertyValue('--color-bg-hover').trim() || '#8bb5d4',
-      style.getPropertyValue('--color-bg-layer-3').trim() || '#5589ad',
-      style.getPropertyValue('--chart-4').trim() || '#6396ba',
-      style.getPropertyValue('--chart-5').trim() || '#b87d1e',
+      style.getPropertyValue('--chart-1').trim() || '#d99a2c',
+      style.getPropertyValue('--chart-2').trim() || '#4a6fa5',
+      style.getPropertyValue('--chart-3').trim() || '#c9782e',
+      style.getPropertyValue('--chart-4').trim() || '#3a8a8a',
+      style.getPropertyValue('--chart-5').trim() || '#6b9e6b',
     ]
   }, [])
 }
@@ -74,7 +74,7 @@ function DashboardSkeleton() {
       <div className="flex flex-1 flex-col gap-2 p-2">
         {/* Row 1 */}
         <div className="flex min-h-[100px] gap-2">
-          <div className="flex w-1/2 flex-col justify-center gap-3 rounded-lg bg-bg-layer-1 px-6 py-4">
+          <div className="flex w-1/2 flex-col justify-center gap-3 rounded-lg border border-border bg-bg-layer-1 px-6 py-4">
             <div className="h-3 w-20 animate-pulse rounded bg-bg-layer-2" />
             <div className="flex gap-8">
               <div className="h-8 w-16 animate-pulse rounded bg-bg-layer-2" />
@@ -82,7 +82,7 @@ function DashboardSkeleton() {
               <div className="h-8 w-16 animate-pulse rounded bg-bg-layer-2" />
             </div>
           </div>
-          <div className="flex w-1/2 flex-col justify-center gap-3 rounded-lg bg-bg-layer-1 px-6 py-4">
+          <div className="flex w-1/2 flex-col justify-center gap-3 rounded-lg border border-border bg-bg-layer-1 px-6 py-4">
             <div className="h-3 w-16 animate-pulse rounded bg-bg-layer-2" />
             <div className="h-2 w-full animate-pulse rounded bg-bg-layer-2" />
             <div className="flex gap-6">
@@ -95,14 +95,14 @@ function DashboardSkeleton() {
 
         {/* Row 2 */}
         <div className="flex flex-1 gap-2 min-h-[220px]">
-          <div className="flex w-2/3 flex-col rounded-lg bg-bg-layer-1 px-6 py-4">
+          <div className="flex w-2/3 flex-col rounded-lg border border-border bg-bg-layer-1 px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="h-3 w-28 animate-pulse rounded bg-bg-layer-2" />
               <div className="h-6 w-40 animate-pulse rounded bg-bg-layer-2" />
             </div>
             <div className="mt-4 flex-1 animate-pulse rounded bg-bg-layer-2" />
           </div>
-          <div className="flex w-1/3 flex-col rounded-lg bg-bg-layer-1 px-6 py-4">
+          <div className="flex w-1/3 flex-col rounded-lg border border-border bg-bg-layer-1 px-6 py-4">
             <div className="h-3 w-20 animate-pulse rounded bg-bg-layer-2" />
             <div className="mt-4 flex-1 space-y-2">
               {[1, 2, 3, 4, 5].map((i) => (
@@ -117,7 +117,7 @@ function DashboardSkeleton() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="flex flex-1 flex-col rounded-lg bg-bg-layer-1 px-6 py-4"
+              className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-6 py-4"
             >
               <div className="h-3 w-16 animate-pulse rounded bg-bg-layer-2" />
               <div className="mt-4 flex-1 space-y-2">
@@ -479,7 +479,7 @@ export function Component() {
         </h1>
         <button
           onClick={handleRetry}
-          className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs text-text-3 transition-colors hover:bg-bg-hover hover:text-text-2"
+          className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs text-highlight transition-colors hover:bg-bg-hover hover:text-highlight"
         >
           <RefreshCw className="size-3" />
           {t('common.refresh')}
@@ -495,37 +495,37 @@ export function Component() {
         <div className="flex flex-1 flex-col gap-2 overflow-hidden p-2">
           {/* Row 1: Overview + Storage */}
           <div className="flex min-h-[140px] gap-2">
-            <div className="flex w-1/2 rounded-lg bg-bg-layer-1">
+            <div className="flex w-1/2 rounded-lg border border-border bg-bg-layer-1">
               <TokenOverviewPanel data={dashboardData.overview} />
             </div>
-            <div className="flex w-1/2 rounded-lg bg-bg-layer-1">
+            <div className="flex w-1/2 rounded-lg border border-border bg-bg-layer-1">
               <StoragePanel data={dashboardData.storageStats} />
             </div>
           </div>
 
           {/* Row 2: Trend + Model Usage */}
           <div className="flex flex-1 gap-2 min-h-[220px]">
-            <div className="flex w-2/3 rounded-lg bg-bg-layer-1">
+            <div className="flex w-2/3 rounded-lg border border-border bg-bg-layer-1">
               <TrendChartPanel
                 data={trendDataWithDays}
                 trendDays={trendDays}
                 onTrendDaysChange={handleTrendDaysChange}
               />
             </div>
-            <div className="flex w-1/3 rounded-lg bg-bg-layer-1">
+            <div className="flex w-1/3 rounded-lg border border-border bg-bg-layer-1">
               <ModelUsagePanel data={dashboardData.modelUsage} />
             </div>
           </div>
 
           {/* Row 3: Rankings */}
           <div className="flex flex-1 min-h-[200px] gap-2">
-            <div className="flex flex-1 rounded-lg bg-bg-layer-1">
+            <div className="flex flex-1 rounded-lg border border-border bg-bg-layer-1">
               <RankingPanel title={t('dashboard.weeklyToolRank')} data={dashboardData.toolUsageRank} />
             </div>
-            <div className="flex flex-1 rounded-lg bg-bg-layer-1">
+            <div className="flex flex-1 rounded-lg border border-border bg-bg-layer-1">
               <RankingPanel title={t('dashboard.weeklyMcpRank')} data={dashboardData.mcpUsageRank} />
             </div>
-            <div className="flex flex-1 rounded-lg bg-bg-layer-1">
+            <div className="flex flex-1 rounded-lg border border-border bg-bg-layer-1">
               <RankingPanel title={t('dashboard.weeklySkillRank')} data={dashboardData.skillUsageRank} />
             </div>
           </div>

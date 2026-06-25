@@ -87,7 +87,7 @@ function Avatar({ username, avatar }: { username: string; avatar: string }) {
     )
   }
   return (
-    <div className="inline-flex size-7 shrink-0 items-center justify-center rounded-sm bg-bg-layer-3 text-xs font-medium text-text-2">
+    <div className="inline-flex size-7 shrink-0 items-center justify-center rounded-sm bg-bg-layer-3 text-xs font-medium text-interactive">
       {username.charAt(0).toUpperCase()}
     </div>
   )
@@ -220,7 +220,10 @@ function AddUserDrawer({
   }, [open])
 
   const usernameFormatError =
-    form.username.length > 0 && !/^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$/.test(form.username)
+    form.username.length > 0 && (
+      !/^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$/.test(form.username) ||
+      form.username.length < 8
+    )
 
   const isUsernameShapeValid = (val: string) =>
     val.length >= 8 && val.length <= 16 && /^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$/.test(val)
@@ -989,6 +992,7 @@ export function Component() {
             variant="default"
             size="sm"
             onClick={() => setDrawerMode('add')}
+            className="text-highlight hover:text-highlight"
           >
             <Plus className="size-3.5" />
             {t('adminUsers.addUser')}

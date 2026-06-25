@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react'
-import { AlertCircle, Maximize2, Minimize2, RefreshCw } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { AlertCircle, Download, Maximize2, Minimize2, RefreshCw } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,9 @@ import {
 } from '@/components/ui/dialog'
 import { useT } from '@/i18n'
 import { cn } from '@/lib/utils'
-import { formatSize, formatTime, type PreviewType } from './file-helpers'
+import { Button } from '@/components/ui/button'
+import { Markdown } from '@/components/common/markdown'
+import { formatSize, formatTime, type PreviewType, type SheetData } from './file-helpers'
 import type { FileItem } from '@/api/types'
 
 interface PreviewDialogProps {
@@ -17,14 +19,21 @@ interface PreviewDialogProps {
   type: PreviewType | null
   url: string | null
   text: string | null
+  sheets: SheetData[] | null
   loading: boolean
   error: boolean
   onClose: () => void
+  onDownload?: () => void
 }
 
-export function PreviewDialog({ item, type, url, text, loading, error, onClose }: PreviewDialogProps) {
+export function PreviewDialog({ item, type, url, text, sheets, loading, error, onClose, onDownload }: PreviewDialogProps) {
   const t = useT()
   const [maximized, setMaximized] = useState(false)
+  const [activeSheet, setActiveSheet] = useState(0)
+
+  useEffect(() => {
+    setActiveSheet(0)
+  }, [sheets])
 
   const toggleMaximized = useCallback(() => {
     setMaximized((v) => !v)
@@ -78,9 +87,15 @@ export function PreviewDialog({ item, type, url, text, loading, error, onClose }
             </div>
           )}
           {!loading && error && (
-            <div className="flex flex-col items-center gap-2 py-8">
+            <div className="flex flex-col items-center gap-3 py-8">
               <AlertCircle className="size-6 text-text-3" />
-              <p className="text-sm text-text-2">{t('common.loadFailed')}</p>
+              <p className="text-sm text-text-2">{type === 'office' ? t('files.previewFailedOffice') : t('common.loadFailed')}</p>
+              {onDownload && (
+                <Button variant="outline" size="sm" onClick={onDownload}>
+                  <Download className="size-3.5" />
+                  {t('files.download')}
+                </Button>
+              )}
             </div>
           )}
           {!loading && !error && url && type === 'image' && (
@@ -112,12 +127,64 @@ export function PreviewDialog({ item, type, url, text, loading, error, onClose }
               {text}
             </pre>
           )}
+          {!loading && !error && text !== null && type === 'markdown' && (
+            <div
+              className={cn(
+                'w-full overflow-auto text-sm text-text-1 leading-relaxed',
+                maximized ? 'flex-1' : 'max-h-[65vh]',
+              )}
+            >
+              <Markdown mode="static">{text}</Markdown>
+            </div>
+          )}
           {!loading && !error && url && type === 'pdf' && (
             <iframe
               src={url}
               title={item?.name}
               className={cn('w-full rounded-sm bg-white', maximized ? 'h-full' : 'h-[65vh]')}
             />
+          )}
+          {!loading && !error && url && type === 'html' && (
+            <iframe
+              src={url}
+              title={item?.name}
+              sandbox="allow-scripts"
+              className={cn('w-full rounded-sm bg-white', maximized ? 'h-full' : 'h-[65vh]')}
+            />
+          )}
+          {!loading && !error && url && type === 'office' && (
+            <iframe
+              src={url}
+              title={item?.name}
+              className={cn('w-full rounded-sm bg-white', maximized ? 'h-full' : 'h-[65vh]')}
+            />
+          )}
+          {!loading && !error && sheets !== null && type === 'xlsx' && (
+            <div className={cn('flex w-full flex-col', maximized ? 'flex-1 min-h-0' : 'max-h-[65vh]')}>
+              {sheets.length > 1 && (
+                <div className="mb-2 flex flex-wrap gap-3 border-b border-border pb-2">
+                  {sheets.map((s, i) => (
+                    <button
+                      key={s.name}
+                      type="button"
+                      onClick={() => setActiveSheet(i)}
+                      className={cn(
+                        'text-xs transition-colors',
+                        i === activeSheet
+                          ? '-mb-[9px] border-b-2 border-interactive pb-1 text-interactive'
+                          : 'text-text-3 hover:text-text-1',
+                      )}
+                    >
+                      {s.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div
+                className="raven-xlsx flex-1 overflow-auto"
+                dangerouslySetInnerHTML={{ __html: sheets[activeSheet]?.html ?? '' }}
+              />
+            </div>
           )}
         </div>
       </DialogContent>

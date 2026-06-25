@@ -317,7 +317,7 @@ function StatusToggle({
 
 function McpIcon({ icon }: { icon: string }) {
   return (
-    <div className="inline-flex size-8 shrink-0 items-center justify-center rounded bg-bg-layer-3 text-text-2">
+    <div className="inline-flex size-8 shrink-0 items-center justify-center rounded bg-bg-layer-3 text-interactive">
       {renderIcon(icon || DEFAULT_ICON, 'size-4')}
     </div>
   )
@@ -1542,11 +1542,12 @@ export function Component() {
             variant="outline"
             size="sm"
             onClick={handleOpenRecommend}
+            className="text-highlight hover:text-highlight"
           >
             <Lightbulb className="size-3.5" />
             {t('adminMcp.recommendedTemplates')}
           </Button>
-          <Button variant="default" size="sm" onClick={handleOpenAdd}>
+          <Button variant="default" size="sm" onClick={handleOpenAdd} className="text-highlight hover:text-highlight">
             <Plus className="size-3.5" />
             {t('adminMcp.addMcp')}
           </Button>

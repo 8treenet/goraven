@@ -85,8 +85,8 @@ function useAutoScroll(deps: unknown[], resetKey: string | null = null) {
     const el = elRef.current
     console.log(`[scroll/${instanceId}] deps-scroll effect: el=${el ? `present (scrollHeight=${el.scrollHeight}, messages=${(deps[0] as []).length})` : 'null'}, userScrolledUp=${userScrolledUp.current}`)
     if (!el || userScrolledUp.current) return
-    console.log(`[scroll/${instanceId}] deps-scroll → scrollTo(smooth, ${el.scrollHeight})`)
-    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+    console.log(`[scroll/${instanceId}] deps-scroll → scrollTo(auto, ${el.scrollHeight})`)
+    el.scrollTo({ top: el.scrollHeight, behavior: 'auto' as ScrollBehavior })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps)
 
@@ -550,7 +550,7 @@ function ChatToolbar({
               <TooltipTrigger asChild>
                 <button
                   onClick={onCompress}
-                  className="rounded p-1 text-highlight transition-colors hover:bg-bg-layer-2 hover:opacity-90"
+                  className="rounded p-1 text-highlight transition-colors hover:bg-bg-layer-2 hover:text-text-1"
                 >
                   <Shrink className="size-4" />
                 </button>
@@ -564,7 +564,7 @@ function ChatToolbar({
             <TooltipTrigger asChild>
               <button
                 onClick={() => setShareOpen(true)}
-                className="rounded p-1 text-highlight transition-colors hover:bg-bg-layer-2 hover:opacity-90"
+                className="rounded p-1 text-highlight transition-colors hover:bg-bg-layer-2 hover:text-text-1"
               >
                 <Share2 className="size-4" />
               </button>
@@ -881,9 +881,10 @@ function NewChatInput({
                     personaLocked
                       ? 'pointer-events-none text-text-muted/30'
                       : (formMcpIds.length > 0 || formSkillIds.length > 0)
-                        ? 'text-text-1 bg-bg-hover'
-                        : 'text-text-muted hover:bg-bg-hover hover:text-text-2',
-                    plusOpen && !personaLocked && 'bg-bg-hover text-text-2',
+                        ? 'text-highlight bg-highlight/10'
+                        : plusOpen
+                          ? 'bg-bg-hover text-text-2'
+                          : 'text-text-muted hover:bg-bg-hover hover:text-text-2',
                   )}
                 >
                   <Icon name="wrench" className="size-4" />
@@ -964,7 +965,12 @@ function NewChatInput({
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                className="rounded-md p-1 text-text-muted transition-colors hover:bg-bg-hover hover:text-text-2"
+                className={cn(
+                  'rounded-md p-1 transition-colors',
+                  files.length > 0
+                    ? 'text-highlight bg-highlight/10'
+                    : 'text-text-muted hover:bg-bg-hover hover:text-text-2',
+                )}
                 onClick={() => fileInputRef.current?.click()}
               >
                 <Paperclip className="size-3.5" />
@@ -980,7 +986,7 @@ function NewChatInput({
                 className={cn(
                   'rounded-md p-1 transition-colors',
                   formProjectPath
-                    ? 'text-text-1 bg-bg-hover'
+                    ? 'text-highlight bg-highlight/10'
                     : 'text-text-muted hover:bg-bg-hover hover:text-text-2',
                 )}
               >
