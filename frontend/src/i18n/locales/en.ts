@@ -204,9 +204,6 @@ const en = {
   // share dialog
   'share.linkCopied': 'Link copied to clipboard',
   'share.title': 'Generate Share Link',
-  'share.noDomain': 'System domain not configured',
-  'share.noDomainDesc': 'A system domain is required to generate share links. Please follow these steps:',
-  'share.noDomainStep4': 'Go to "System Admin" → "Settings" to configure domain',
   'share.shareTitle': 'Title',
   'share.titlePlaceholder': 'Enter share title',
   'share.titleHint': 'Default is session title, can be changed manually',

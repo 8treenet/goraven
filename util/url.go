@@ -1,6 +1,10 @@
 package util
 
-import "strings"
+import (
+	"net"
+	"net/url"
+	"strings"
+)
 
 // EncodeQuery URL 编码查询参数
 func EncodeQuery(s string) string {
@@ -16,4 +20,27 @@ func EncodeQuery(s string) string {
 // EncodePath URL 编码路径段
 func EncodePath(s string) string {
 	return strings.ReplaceAll(s, "/", "%2F")
+}
+
+func IsLocalOrIPHost(host string) bool {
+	h := host
+	if i := strings.LastIndex(h, ":"); i >= 0 {
+		h = h[:i]
+	}
+	h = strings.TrimSpace(h)
+	if h == "localhost" || strings.HasSuffix(h, ".localhost") {
+		return true
+	}
+	return net.ParseIP(h) != nil
+}
+
+func IsLocalOrIPURL(u string) bool {
+	parsed, err := url.Parse(u)
+	if err != nil {
+		return false
+	}
+	if parsed.Host == "" {
+		return false
+	}
+	return IsLocalOrIPHost(parsed.Host)
 }

@@ -710,7 +710,7 @@ function McpForm({
         </div>
 
         <div className="flex justify-end gap-2 border-t border-border px-4 py-3">
-          <Button variant="ghost" size="default" onClick={onCancel}>
+          <Button variant="ghost" size="default" onClick={onCancel} className="text-highlight hover:text-highlight/80">
             {t('common.cancel')}
           </Button>
           <Button
@@ -718,6 +718,7 @@ function McpForm({
             size="default"
             disabled={!canSave || saving}
             onClick={onSave}
+            className="text-highlight"
           >
             {saving ? (
               <>

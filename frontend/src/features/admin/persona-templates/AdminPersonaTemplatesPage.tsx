@@ -249,10 +249,10 @@ function TemplateDrawer({
         title={mode === 'add' ? t('adminPersonaTemplates.createTemplate') : t('adminPersonaTemplates.editTemplate')}
         footer={
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="default" onClick={onClose}>
+            <Button variant="ghost" size="default" onClick={onClose} className="text-highlight hover:text-highlight/80">
               {t('common.cancel')}
             </Button>
-            <Button variant="default" size="default" onClick={handleSave}>
+            <Button variant="default" size="default" onClick={handleSave} className="text-highlight">
               {t('common.save')}
             </Button>
           </div>
@@ -579,6 +579,7 @@ function CategoryManagementDialog({
                     setEditTarget(null)
                     setFormError('')
                   }}
+                  className="text-highlight hover:text-highlight/80"
                 >
                   {t('common.cancel')}
                 </Button>
@@ -586,6 +587,7 @@ function CategoryManagementDialog({
                   variant="default"
                   size="default"
                   onClick={mode === 'add' ? handleAddSave : handleEditSave}
+                  className="text-highlight"
                 >
                   {t('common.save')}
                 </Button>

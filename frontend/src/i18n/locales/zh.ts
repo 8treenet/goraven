@@ -204,9 +204,6 @@ const zh = {
   // share dialog
   'share.linkCopied': '链接已复制到剪贴板',
   'share.title': '生成分享链接',
-  'share.noDomain': '未配置系统域名',
-  'share.noDomainDesc': '生成分享链接需要先设置系统域名，请按以下步骤操作：',
-  'share.noDomainStep4': '进入「系统管理」→「系统设置」配置域名',
   'share.shareTitle': '标题',
   'share.titlePlaceholder': '输入分享标题',
   'share.titleHint': '默认使用会话标题，可手动修改',

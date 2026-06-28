@@ -292,7 +292,7 @@ export function Component() {
                 <button className="flex h-8 w-full items-center gap-2 rounded-lg border border-input bg-transparent px-2.5 text-sm transition-colors hover:bg-bg-hover">
                   {selectedTemplate ? (
                     <>
-                      <Icon name={selectedTemplate.icon} className="size-4 text-text-2" />
+                      <Icon name={selectedTemplate.icon} className="size-4 text-interactive" />
                       <span className="text-text-1">{selectedTemplate.name}</span>
                       <span className="ml-auto text-[10px] text-highlight font-medium">{t('personas.selected')}</span>
                     </>
@@ -325,7 +325,7 @@ export function Component() {
                   {groupedTemplates.map(group => (
                     <div key={group.categoryId}>
                       <div className="mb-1.5 flex items-center gap-1.5 text-[11px] text-text-3">
-                        <Icon name={group.icon} className="size-3" />
+                        <Icon name={group.icon} className="size-3 text-interactive" />
                         <span>{group.name}</span>
                         <span className="text-text-muted">{group.templates.length}</span>
                       </div>
@@ -341,7 +341,7 @@ export function Component() {
                             )}
                             onClick={() => { handleSelectTemplate(t); setTemplateOpen(false); setTemplateSearch('') }}
                           >
-                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-bg-layer-3 text-text-2">
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-interactive/10 text-interactive">
                               <Icon name={t.icon} className="size-3.5" />
                             </span>
                             <div className="min-w-0 flex-1">
@@ -418,7 +418,7 @@ export function Component() {
                 >
                   {selectedCategory ? (
                     <>
-                      <Icon name={selectedCategory.icon} className="size-4 text-text-2" />
+                      <Icon name={selectedCategory.icon} className="size-4 text-interactive" />
                       <span className="text-text-1">{selectedCategory.name}</span>
                     </>
                   ) : (
@@ -439,7 +439,7 @@ export function Component() {
                           )}
                           onClick={() => { setCategoryId(c.categoryId); setCategoryOpen(false); setErrors(prev => ({ ...prev, categoryId: '' })) }}
                         >
-                          <Icon name={c.icon} className="size-3.5" />
+                          <Icon name={c.icon} className="size-3.5 text-interactive" />
                           {c.name}
                           {categoryId === c.categoryId && <Check className="ml-auto size-3" />}
                         </button>
@@ -555,7 +555,7 @@ export function Component() {
                   )}>
                     {checked && <Check className="size-3" />}
                   </span>
-                  <Icon name={m.icon} className="size-3.5 text-text-3" />
+                  <Icon name={m.icon} className="size-3.5 text-interactive" />
                   <div className="min-w-0 flex-1 flex items-baseline">
                     <span className="text-xs text-text-1 shrink-0">{m.name}</span>
                     <Tooltip>
@@ -615,7 +615,7 @@ export function Component() {
                   )}>
                     {checked && <Check className="size-3" />}
                   </span>
-                  <Icon name={s.icon} className="size-3.5 text-text-3" />
+                  <Icon name={s.icon} className="size-3.5 text-highlight" />
                   <div className="min-w-0 flex-1 flex items-baseline">
                     <span className="text-xs text-text-1 shrink-0">{s.skillName}</span>
                     <Tooltip>

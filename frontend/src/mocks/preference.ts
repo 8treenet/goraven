@@ -8,7 +8,6 @@ export async function getPreference(): Promise<ApiResponse<PreferenceData>> {
     msg: 'ok',
     data: {
       language: 'en',
-      domain: 'https://raven.local',
     },
   }
 }

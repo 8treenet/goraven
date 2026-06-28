@@ -124,7 +124,7 @@ export function SkillDrawer({
                           'inline-flex size-8 items-center justify-center rounded-md transition-colors',
                           iconPickerOpen
                             ? 'bg-bg-layer-3 text-text-1'
-                            : 'text-text-2 hover:bg-bg-hover hover:text-text-1',
+                            : 'text-interactive hover:bg-bg-hover hover:text-text-1',
                         )}
                       >
                         <Icon name={icon} className="size-5" />
@@ -139,7 +139,7 @@ export function SkillDrawer({
                   )}
                 </div>
               ) : (
-                <Icon name={icon} className="size-5 shrink-0 mt-0.5 text-text-2" />
+                <Icon name={icon} className="size-5 shrink-0 mt-0.5 text-interactive" />
               )}
               <div className="min-w-0">
                 <h3 className="text-base font-semibold text-text-1">{name}</h3>

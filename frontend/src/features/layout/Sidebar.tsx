@@ -162,7 +162,7 @@ function SidebarBrand({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile' 
       ) : (
         <button
           onClick={toggleCollapsed}
-          className="shrink-0 text-text-muted transition-colors hover:text-text-3"
+          className="shrink-0 text-interactive transition-colors hover:text-interactive-hover"
         >
           {collapsed ? (
             <PanelLeftOpen className="size-4" />
@@ -824,7 +824,7 @@ function SidebarUserArea({
             {user.avatar ? (
               <img src={user.avatar} alt={displayName} className="h-6 w-6 shrink-0 rounded-full object-cover" />
             ) : (
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-bg-hover text-xs font-semibold text-text-1">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-interactive text-xs font-semibold text-white">
                 {initial}
               </span>
             )}
@@ -848,7 +848,7 @@ function SidebarUserArea({
               {user.avatar ? (
                 <img src={user.avatar} alt={displayName} className="h-8 w-8 shrink-0 rounded-full object-cover" />
               ) : (
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-bg-hover text-sm font-semibold text-text-1">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-interactive text-sm font-semibold text-white">
                   {initial}
                 </span>
               )}

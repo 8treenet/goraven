@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { providersApi, personasApi, mcpApi, skillsApi, chatApi, sessionsApi } from '@/api'
 import { connectChatStream } from '@/api/sse'
 import type { ChatRequest, ChatResponse, SessionDetail, Message as ApiMessage } from '@/api/types'
+import { uuid } from '@/lib/utils'
 
 export type RoleType = 'user' | 'assistant'
 
@@ -237,7 +238,7 @@ function createStreamHandlers(
       const persistSegs = s.streamingThinkingSegments.filter((seg) => seg.type !== 'retry')
       const thinkingSegments = persistSegs.length > 0 ? persistSegs : undefined
       const finalMsg: Message = {
-        id: crypto.randomUUID(),
+        id: uuid(),
         role: 'assistant',
         content: s.streamingContent,
         reasoningContent: persistSegs
@@ -254,7 +255,7 @@ function createStreamHandlers(
           })) || undefined,
         thinkingSegments,
         timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-        roundId: crypto.randomUUID(),
+        roundId: uuid(),
         contextState: 0,
       }
 
@@ -536,11 +537,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     // Optimistically add user message
     const userMsg: Message = {
-      id: crypto.randomUUID(),
+      id: uuid(),
       role: 'user',
       content,
       timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-      roundId: crypto.randomUUID(),
+      roundId: uuid(),
       contextState: 0,
     }
 
@@ -758,7 +759,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const persistSegs = state.streamingThinkingSegments.filter((seg) => seg.type !== 'retry')
     if (state.streamingContent || persistSegs.length > 0) {
       const partialMsg: Message = {
-        id: crypto.randomUUID(),
+        id: uuid(),
         role: 'assistant',
         content: state.streamingContent,
         reasoningContent: persistSegs
@@ -775,7 +776,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           })) || undefined,
         thinkingSegments: persistSegs.length > 0 ? persistSegs : undefined,
         timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-        roundId: crypto.randomUUID(),
+        roundId: uuid(),
         contextState: 1,
       }
       set((prev) => ({

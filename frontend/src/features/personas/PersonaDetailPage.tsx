@@ -94,7 +94,7 @@ export function Component() {
           </button>
           {data && (
             <div className="flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded bg-bg-hover text-text-1">
+              <span className="flex h-6 w-6 items-center justify-center rounded-md bg-interactive/10 text-interactive">
                 <Icon name={data.icon} className="size-3.5" />
               </span>
               <h1 className="text-[18px] font-semibold text-text-1">{data.name}</h1>
@@ -102,11 +102,11 @@ export function Component() {
           )}
         </div>
         <div className="flex items-center gap-1.5">
-          <Button variant="ghost" size="default" onClick={handleEdit}>
+          <Button variant="ghost" size="default" onClick={handleEdit} className="text-highlight hover:text-highlight">
             <Pencil className="size-4" />
             {t('common.edit')}
           </Button>
-          <Button variant="ghost" size="default" onClick={() => setDeleteOpen(true)}>
+          <Button variant="ghost" size="default" onClick={() => setDeleteOpen(true)} className="text-highlight hover:text-highlight">
             <Trash2 className="size-4" />
             {t('common.delete')}
           </Button>
@@ -125,13 +125,13 @@ export function Component() {
               <Row label={t('personas.personaName')} value={data.name} />
               <Row label={t('common.icon')}>
                 <span className="flex items-center gap-1.5">
-                  <Icon name={data.icon} className="size-3.5 text-text-2" />
+                  <Icon name={data.icon} className="size-3.5 text-interactive" />
                   <span className="text-sm text-text-1">{data.icon}</span>
                 </span>
               </Row>
               <Row label={t('common.category')}>
                 <span className="flex items-center gap-1.5">
-                  <Icon name={data.categoryIcon} className="size-3.5 text-text-2" />
+                  <Icon name={data.categoryIcon} className="size-3.5 text-interactive" />
                   <span className="text-sm text-text-1">{data.categoryName}</span>
                 </span>
               </Row>

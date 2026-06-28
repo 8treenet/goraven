@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Share2, Shrink, Paperclip, ArrowUp, CircleStop, Loader2, TriangleAlert, FolderGit2, FolderOpen, FolderClock, Menu } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, uuid } from '@/lib/utils'
 import { listFiles } from '@/api/files'
 import type { FileItem } from '@/api/types'
 import { useChatStore, stopPolling, type Model, type McpEndpoint, type Skill } from '@/stores/chat-store'
@@ -358,7 +358,6 @@ function SessionChat({ sessionId }: { sessionId: string }) {
       <ChatToolbar
         showSession={true}
         sessionTitle={session.title}
-        domainConfigured={true}
         modelName={displayName}
         modelIcon={displayIcon}
         personaName={sessionDetail?.personaName || session.personaName || null}
@@ -430,7 +429,6 @@ function ChatToolbar({
   personaIcon,
   onPersonaClick,
   sessionTitle,
-  domainConfigured,
   personas,
   models,
   formPersonaId,
@@ -453,7 +451,6 @@ function ChatToolbar({
   onPersonaClick?: () => void
   onModelClick?: () => void
   sessionTitle?: string
-  domainConfigured?: boolean
   personas?: Persona[]
   models?: Model[]
   formPersonaId?: number | null
@@ -578,12 +575,12 @@ function ChatToolbar({
             open={shareOpen}
             onOpenChange={setShareOpen}
             sessionTitle={sessionTitle}
-            domainConfigured={domainConfigured}
             onGenerate={async (params) => {
               const share = await sessionsApi.createShare(sessionId, {
                 title: params.title,
                 expiresIn: params.expiresIn,
                 shareType: params.shareType,
+                domain: window.location.origin,
               })
               return `${window.location.origin}/share/${share.shareId}`
             }}
@@ -803,7 +800,7 @@ function NewChatInput({
     if (selected.length === 0) return
 
     const newFiles: UploadedFile[] = selected.map((f) => ({
-      id: crypto.randomUUID(),
+      id: uuid(),
       name: f.name,
       size: f.size,
       type: f.type,
@@ -909,7 +906,7 @@ function NewChatInput({
                             )}>
                               <input type="checkbox" checked={checked}
                                 onChange={() => onMcpToggle(mcp.id)} className="size-3.5 shrink-0" />
-                              <Icon name={mcp.icon} className={cn('size-3.5 shrink-0', checked ? 'text-text-1' : 'text-text-3')} />
+                              <Icon name={mcp.icon} className="size-3.5 shrink-0 text-interactive" />
                               <span className="truncate">{mcp.name}</span>
                             </label>
                           </TooltipTrigger>
@@ -936,7 +933,7 @@ function NewChatInput({
                             )}>
                               <input type="checkbox" checked={checked}
                                 onChange={() => onSkillToggle(skill.id)} className="size-3.5 shrink-0" />
-                              <Icon name={skill.icon} className={cn('size-3.5 shrink-0', checked ? 'text-text-1' : 'text-text-3')} />
+                              <Icon name={skill.icon} className="size-3.5 shrink-0 text-highlight" />
                               <span className="truncate">{skill.name}</span>
                             </label>
                           </TooltipTrigger>
@@ -1140,7 +1137,7 @@ function ChatInput({
     if (selected.length === 0) return
 
     const newFiles: UploadedFile[] = selected.map((f) => ({
-      id: crypto.randomUUID(),
+      id: uuid(),
       name: f.name,
       size: f.size,
       type: f.type,

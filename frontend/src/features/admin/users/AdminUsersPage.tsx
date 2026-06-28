@@ -87,7 +87,7 @@ function Avatar({ username, avatar }: { username: string; avatar: string }) {
     )
   }
   return (
-    <div className="inline-flex size-7 shrink-0 items-center justify-center rounded-sm bg-bg-layer-3 text-xs font-medium text-interactive">
+    <div className="inline-flex size-7 shrink-0 items-center justify-center rounded-sm bg-interactive text-xs font-medium text-white">
       {username.charAt(0).toUpperCase()}
     </div>
   )
@@ -329,8 +329,8 @@ function AddUserDrawer({
         </div>
 
         <div className="mt-2 flex justify-end gap-2">
-          <Button variant="ghost" size="default" onClick={onClose}>{t('common.cancel')}</Button>
-          <Button variant="default" size="default" disabled={!canSave} onClick={() => onSave(form)}>
+          <Button variant="ghost" size="default" onClick={onClose} className="text-highlight hover:text-highlight/80">{t('common.cancel')}</Button>
+          <Button variant="default" size="default" disabled={!canSave} onClick={() => onSave(form)} className="text-highlight">
             {t('common.save')}
           </Button>
         </div>
@@ -422,8 +422,8 @@ function EditUserDrawer({
         </div>
 
         <div className="mt-2 flex justify-end gap-2">
-          <Button variant="ghost" size="default" onClick={onClose}>{t('common.cancel')}</Button>
-          <Button variant="default" size="default" onClick={() => onSave(form)}>
+          <Button variant="ghost" size="default" onClick={onClose} className="text-highlight hover:text-highlight/80">{t('common.cancel')}</Button>
+          <Button variant="default" size="default" onClick={() => onSave(form)} className="text-highlight">
             {t('common.save')}
           </Button>
         </div>

@@ -795,11 +795,11 @@ export function Component() {
               onClick={() => setActiveTab(key)}
               className={cn(
                 'flex h-8 items-center gap-2 rounded-md px-3 text-sm transition-colors',
-                activeTab === key ? 'bg-bg-layer-3 text-text-1' : 'text-text-3 hover:text-text-1',
+                activeTab === key ? 'bg-highlight text-highlight-fg' : 'text-text-3 hover:text-text-1',
               )}
             >
               {label}
-              <span className="text-xs text-text-muted">{count}</span>
+              <span className={cn('text-xs', activeTab === key ? 'text-highlight-fg/70' : 'text-text-muted')}>{count}</span>
             </button>
           ))}
         </div>
@@ -1034,8 +1034,8 @@ export function Component() {
             <div className="flex items-center justify-between border-t border-border px-4 py-3">
               <span className="text-xs text-text-3">{t('adminSkills.effectiveInNew')}</span>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setDrawer(null)}>{t('common.cancel')}</Button>
-                <Button onClick={saveSystemSkill} disabled={saving}>
+                <Button variant="outline" onClick={() => setDrawer(null)} className="text-highlight hover:text-highlight/80">{t('common.cancel')}</Button>
+                <Button onClick={saveSystemSkill} disabled={saving} className="text-highlight">
                   {saving && <Loader2 className="size-4 animate-spin" />}
                   {t('common.save')}
                 </Button>
@@ -1104,8 +1104,8 @@ export function Component() {
               )}
             </div>
             <div className="flex justify-end gap-2 border-t border-border p-4">
-              <Button variant="outline" onClick={() => setDrawer(null)}>{t('common.cancel')}</Button>
-              <Button onClick={saveMarketSkill} disabled={saving}>{saving && <Loader2 className="size-4 animate-spin" />}{t('common.save')}</Button>
+              <Button variant="outline" onClick={() => setDrawer(null)} className="text-highlight hover:text-highlight/80">{t('common.cancel')}</Button>
+              <Button onClick={saveMarketSkill} disabled={saving} className="text-highlight">{saving && <Loader2 className="size-4 animate-spin" />}{t('common.save')}</Button>
             </div>
           </div>
         )}
@@ -1260,8 +1260,8 @@ export function Component() {
                   <div className="border-t border-border p-4">
                     {importing && <div className="mb-3 flex items-center gap-2 text-xs text-text-3"><Loader2 className="size-4 animate-spin" /> {t('adminSkills.downloadingMd')}</div>}
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => setClawHubSelected(null)} disabled={importing}>{t('common.back')}</Button>
-                      <Button onClick={importClawHubSkill} disabled={importing}>{importing && <Loader2 className="size-4 animate-spin" />}{t('adminSkills.confirmImport')}</Button>
+                      <Button variant="outline" onClick={() => setClawHubSelected(null)} disabled={importing} className="text-highlight hover:text-highlight/80">{t('common.back')}</Button>
+                      <Button onClick={importClawHubSkill} disabled={importing} className="text-highlight">{importing && <Loader2 className="size-4 animate-spin" />}{t('adminSkills.confirmImport')}</Button>
                     </div>
                   </div>
                 </>
@@ -1363,8 +1363,8 @@ export function Component() {
             </div>
           </div>
           <div className="flex justify-end gap-2 border-t border-border p-4">
-            <Button variant="outline" onClick={() => setDrawer(null)}>{translate('common.cancel')}</Button>
-            <Button onClick={publishSkill} disabled={publishing || isUploadingZip}>{publishing && <Loader2 className="size-4 animate-spin" />}{translate('adminSkills.publishSkill')}</Button>
+            <Button variant="outline" onClick={() => setDrawer(null)} className="text-highlight hover:text-highlight/80">{translate('common.cancel')}</Button>
+            <Button onClick={publishSkill} disabled={publishing || isUploadingZip} className="text-highlight">{publishing && <Loader2 className="size-4 animate-spin" />}{translate('adminSkills.publishSkill')}</Button>
           </div>
         </div>
       </Drawer>

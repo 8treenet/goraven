@@ -440,7 +440,7 @@ function ThemeSegment() {
             className={cn(
               'flex cursor-pointer items-center gap-1.5 rounded-sm px-3 py-1 text-sm transition-colors',
               active
-                ? 'bg-bg-layer-3 text-text-1 shadow-sm'
+                ? 'bg-highlight text-highlight-fg shadow-sm'
                 : 'text-text-3 hover:text-text-2',
             )}
           >
@@ -639,7 +639,7 @@ export function Component() {
                   className="h-16 w-16 rounded-full object-cover"
                 />
               ) : (
-                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-bg-layer-3 text-xl font-semibold text-text-1">
+                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-interactive text-xl font-semibold text-white">
                   {initial}
                 </span>
               )}
@@ -679,7 +679,7 @@ export function Component() {
 
               <p className="text-sm text-text-3">
                 @{user.username}
-                <span className="ml-2 inline-block rounded bg-bg-layer-3 px-1.5 py-0.5 text-xs text-text-3">
+                <span className="ml-2 inline-block rounded bg-highlight px-1.5 py-0.5 text-xs text-highlight-fg">
                   {roleLabel}
                 </span>
               </p>
@@ -762,7 +762,7 @@ export function Component() {
                 </span>
             </div>
             <div className="flex items-center justify-end">
-              <Button variant="outline" size="default" onClick={() => setPasswordOpen(true)}>
+              <Button variant="outline" size="default" onClick={() => setPasswordOpen(true)} className="border-interactive text-interactive hover:bg-interactive/10">
                 <KeyRound className="size-4" />
                 {t('profile.changePassword')}
               </Button>
@@ -828,7 +828,7 @@ export function Component() {
             <p className="text-sm text-text-3">
               {t('profile.logoutDesc')}
             </p>
-            <Button variant="destructive" size="default" onClick={() => setLogoutOpen(true)}>
+            <Button variant="outline" size="default" onClick={() => setLogoutOpen(true)} className="border-interactive text-interactive hover:bg-interactive/10">
               <LogOut className="size-4" />
               {t('profile.logout')}
             </Button>

@@ -4,14 +4,19 @@ package main
 import (
 	"context"
 	"errors"
+	"html"
 	"net/http"
+	"os"
 	"path/filepath"
 	_ "raven/backend/controller" //Implicit initialization controller
 	"raven/backend/infra"
 	"raven/backend/repository"
 	_ "raven/backend/repository" //Implicit initialization repository
+	"raven/backend/service"
+	"raven/backend/vo"
 	"raven/config"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/8treenet/freedom"
@@ -174,7 +179,7 @@ func frontend(app freedom.Application) {
 	app.Iris().Get("/", func(ctx freedom.Context) {
 		ctx.ServeFile(filepath.Join(config.Get().Paths.FrontendDir, "index.html"), false)
 	})
-
+	app.Iris().Get("/share/{shareId:string}", serveSharePage)
 	app.Iris().OnErrorCode(iris.StatusNotFound, func(ctx iris.Context) {
 		path := ctx.Path()
 		// 如果是 API 请求或者明确带有点（.js, .css）的静态文件真的丢了，返回标准 404
@@ -188,4 +193,65 @@ func frontend(app freedom.Application) {
 	app.Iris().Get("/favicon.svg", func(ctx iris.Context) {
 		ctx.ServeFile(filepath.Join(config.Get().Paths.FrontendDir, "favicon.svg"), false)
 	})
+}
+
+var (
+	indexHTMLOnce  sync.Once
+	indexHTMLBytes []byte
+	indexHTMLErr   error
+)
+
+func loadIndexHTML() []byte {
+	indexHTMLOnce.Do(func() {
+		indexHTMLBytes, indexHTMLErr = os.ReadFile(filepath.Join(config.Get().Paths.FrontendDir, "index.html"))
+	})
+	if indexHTMLErr != nil {
+		return nil
+	}
+	return indexHTMLBytes
+}
+
+func serveBareIndex(ctx iris.Context) {
+	b := loadIndexHTML()
+	if b == nil {
+		ctx.StatusCode(http.StatusNotFound)
+		ctx.WriteString("404 Not Found")
+		return
+	}
+	ctx.ContentType("text/html; charset=utf-8")
+	ctx.StatusCode(http.StatusOK)
+	_, _ = ctx.Write(b)
+}
+
+func serveSharePage(ctx iris.Context) {
+	shareId := ctx.Params().Get("shareId")
+	indexBytes := loadIndexHTML()
+	if indexBytes == nil {
+		serveBareIndex(ctx)
+		return
+	}
+
+	var data *vo.ShareOGData
+	var callErr error
+	_ = freedom.ServiceLocator().Call(func(s *service.ShareLinkService) error {
+		data, callErr = s.GetShareOGData(shareId, ctx)
+		return callErr
+	})
+	if callErr != nil || data == nil {
+		serveBareIndex(ctx)
+		return
+	}
+
+	page := string(indexBytes)
+	if idx := strings.Index(page, "<title>"); idx >= 0 {
+		end := strings.Index(page[idx:], "</title>")
+		if end >= 0 {
+			page = page[:idx] + "<title>" + html.EscapeString(data.Title) + " · Raven</title>" + page[idx+end+len("</title>"):]
+		}
+	}
+	page = strings.Replace(page, "</head>", service.BuildOGHTML(data)+"</head>", 1)
+
+	ctx.ContentType("text/html; charset=utf-8")
+	ctx.StatusCode(http.StatusOK)
+	_, _ = ctx.WriteString(page)
 }

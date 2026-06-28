@@ -110,7 +110,7 @@ export function IconPickerTrigger({ value, onChange, className }: IconPickerTrig
         className="flex h-8 w-full items-center gap-2 rounded-lg border border-input bg-transparent px-2.5 text-sm text-text-1 transition-colors hover:bg-bg-hover"
         onClick={() => setOpen(!open)}
       >
-        <Icon name={value} className="size-4 text-text-2" />
+        <Icon name={value} className="size-4 text-interactive" />
         <span className="text-text-3">{value}</span>
       </button>
 

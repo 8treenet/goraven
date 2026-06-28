@@ -321,6 +321,7 @@ export interface CreateShareRequest {
   title?: string
   expiresIn?: string
   shareType?: ShareType
+  domain?: string
 }
 
 export interface PublicShare {
@@ -387,7 +388,6 @@ export interface DashboardData {
 
 export interface PreferenceData {
   language: 'zh' | 'en'
-  domain: string
 }
 
 /* ---------- Admin: Model ---------- */

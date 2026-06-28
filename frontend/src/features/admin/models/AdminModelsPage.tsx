@@ -879,10 +879,10 @@ function AddModelDrawer({
 
         {/* buttons */}
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" size="default" onClick={onClose} disabled={submitting}>
+          <Button variant="ghost" size="default" onClick={onClose} disabled={submitting} className="text-highlight hover:text-highlight/80">
             {t('common.cancel')}
           </Button>
-          <Button variant="default" size="default" disabled={!canSave} onClick={handleSubmit}>
+          <Button variant="default" size="default" disabled={!canSave} onClick={handleSubmit} className="text-highlight">
             {submitting ? (
               <>
                 <Loader2 className="size-3.5 animate-spin" />
@@ -1191,10 +1191,10 @@ function EditModelDrawer({
 
         {/* buttons */}
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" size="default" onClick={onClose} disabled={submitting}>
+          <Button variant="ghost" size="default" onClick={onClose} disabled={submitting} className="text-highlight hover:text-highlight/80">
             {t('common.cancel')}
           </Button>
-          <Button variant="default" size="default" disabled={!canSave} onClick={handleSubmit}>
+          <Button variant="default" size="default" disabled={!canSave} onClick={handleSubmit} className="text-highlight">
             {submitting ? (
               <>
                 <Loader2 className="size-3.5 animate-spin" />

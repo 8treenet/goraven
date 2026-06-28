@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
-import { TriangleAlert, Copy, Check, Globe, Lock } from 'lucide-react'
+import { Copy, Check, Globe, Lock } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -25,7 +25,6 @@ interface ShareDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   sessionTitle: string
-  domainConfigured?: boolean
   onGenerate: (params: ShareParams) => Promise<string | void>
 }
 
@@ -42,7 +41,7 @@ function formatExpiry(seconds: number): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-export function ShareDialog({ open, onOpenChange, sessionTitle, domainConfigured = true, onGenerate }: ShareDialogProps) {
+export function ShareDialog({ open, onOpenChange, sessionTitle, onGenerate }: ShareDialogProps) {
   const t = useT()
   const expiryLabels: Record<ShareExpiry, string> = {
     '1h': t('share.expire1h'),
@@ -98,54 +97,6 @@ export function ShareDialog({ open, onOpenChange, sessionTitle, domainConfigured
     if (link) {
       setGeneratedLink(link)
     }
-  }
-
-  if (!domainConfigured) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg gap-0">
-          <DialogHeader className="mb-5">
-            <DialogTitle>{t('share.title')}</DialogTitle>
-          </DialogHeader>
-
-          <div className="rounded-lg border border-border px-5 py-5">
-            <div className="flex items-center gap-2.5 mb-3">
-              <TriangleAlert className="size-5 shrink-0 text-highlight" />
-              <span className="text-base font-semibold text-text-1">{t('share.noDomain')}</span>
-            </div>
-
-            <p className="text-sm text-text-2 leading-relaxed mb-3">
-              {t('share.noDomainDesc')}
-            </p>
-
-            <ol className="space-y-1.5 text-sm text-text-2">
-              <li className="flex gap-2">
-                <span className="shrink-0 text-text-muted">1.</span>
-                <span>{t('chat.noModelStep1')}</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="shrink-0 text-text-muted">2.</span>
-                <span>{t('chat.noModelStep2')}</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="shrink-0 text-text-muted">3.</span>
-                <span>{t('chat.noModelStep3')}</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="shrink-0 text-text-muted">4.</span>
-                <span>{t('share.noDomainStep4')}</span>
-              </li>
-            </ol>
-          </div>
-
-          <div className="mt-6 flex items-center justify-end">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              {t('chat.gotIt')}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    )
   }
 
   return (

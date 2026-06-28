@@ -60,7 +60,6 @@ export interface ChangePasswordRequest {
 
 export interface PreferenceData {
   language: 'zh' | 'en'
-  domain: string
 }
 
 /* ---------- Install ---------- */
