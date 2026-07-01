@@ -61,15 +61,15 @@ function SegmentedControl({
   onChange: (v: string) => void
 }) {
   return (
-    <div className="flex rounded-md bg-bg-layer-2 p-0.5 gap-0.5">
+    <div className="flex gap-0 border-b border-border">
       {options.map((opt) => (
         <button
           key={opt.value}
           onClick={() => onChange(opt.value)}
           className={cn(
-            'rounded-sm px-3 py-1 text-xs transition-colors',
+            'relative px-3 py-1 text-xs transition-colors',
             value === opt.value
-              ? 'bg-highlight/10 text-highlight'
+              ? 'text-text-1 font-medium after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[2px] after:bg-highlight after:rounded-full'
               : 'text-text-3 hover:text-text-2',
           )}
         >

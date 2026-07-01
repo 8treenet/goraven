@@ -434,7 +434,7 @@ export interface AdminModelItem {
   contextLen: number
   extraFields: string
   isDefault: number
-  isCompress: number
+  isFlash: number
   isVisual: number
   status: number
   remark: string

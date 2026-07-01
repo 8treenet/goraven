@@ -44,6 +44,16 @@
   --color-interactive: var(--interactive);
   --color-interactive-hover: var(--interactive-hover);
 
+  /* Semantic */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
   /* Font */
   --font-sans: "system-ui", -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
   --font-mono: "Cascadia Code", "Consolas", "JetBrains Mono", "Fira Code", "SF Mono", monospace;
@@ -87,7 +97,17 @@
   --interactive: oklch(0.52 0.10 260);
   --interactive-hover: oklch(0.45 0.12 260);
 
+  --success: oklch(0.50 0.14 150);
+  --success-foreground: #ffffff;
 
+  --warning: oklch(0.55 0.16 50);
+  --warning-foreground: #ffffff;
+
+  --info: oklch(0.50 0.08 210);
+  --info-foreground: #ffffff;
+
+  --destructive: oklch(0.58 0.20 25);
+  --destructive-foreground: #ffffff;
 
   --shadow-soft-val: 0 1px 0 0 rgba(0, 0, 0, 0.02), 0 2px 8px rgba(0, 0, 0, 0.04);
   --shadow-pop-val: 0 1px 0 0 rgba(0, 0, 0, 0.02), 0 8px 24px rgba(0, 0, 0, 0.08);
@@ -121,7 +141,14 @@
   --interactive: oklch(0.65 0.10 260);
   --interactive-hover: oklch(0.72 0.12 260);
 
+  --success: oklch(0.65 0.12 150);
+  --success-foreground: oklch(0.12 0.004 260);
 
+  --warning: oklch(0.70 0.13 50);
+  --warning-foreground: oklch(0.12 0.004 260);
+
+  --info: oklch(0.65 0.07 210);
+  --info-foreground: oklch(0.12 0.004 260);
 
   --destructive: oklch(0.65 0.18 25);
   --destructive-foreground: oklch(0.12 0.004 260);
@@ -157,7 +184,14 @@
   --interactive: oklch(0.65 0.10 260);
   --interactive-hover: oklch(0.72 0.12 260);
 
+  --success: oklch(0.65 0.12 150);
+  --success-foreground: oklch(0.12 0.004 260);
 
+  --warning: oklch(0.70 0.13 50);
+  --warning-foreground: oklch(0.12 0.004 260);
+
+  --info: oklch(0.65 0.07 210);
+  --info-foreground: oklch(0.12 0.004 260);
 
   --destructive: oklch(0.65 0.18 25);
   --destructive-foreground: oklch(0.12 0.004 260);
@@ -192,7 +226,14 @@
   --interactive: oklch(0.52 0.10 260);
   --interactive-hover: oklch(0.45 0.12 260);
 
+  --success: oklch(0.50 0.14 150);
+  --success-foreground: #ffffff;
 
+  --warning: oklch(0.55 0.16 50);
+  --warning-foreground: #ffffff;
+
+  --info: oklch(0.50 0.08 210);
+  --info-foreground: #ffffff;
 
   --destructive: oklch(0.58 0.20 25);
   --destructive-foreground: #ffffff;
@@ -220,8 +261,6 @@
   --muted-foreground: var(--color-text-3);
   --accent: var(--highlight);
   --accent-foreground: var(--highlight-fg);
-  --destructive: oklch(0.58 0.20 25);
-  --destructive-foreground: #ffffff;
   --border: var(--color-border-custom);
   --input: var(--color-border-strong);
   --ring: var(--color-interactive);
@@ -440,14 +479,14 @@
   --normal-bg: var(--color-bg-layer-2);
   --normal-border: var(--color-border-custom);
   --normal-text: var(--color-text-1);
-  --success-bg: var(--color-bg-layer-2);
-  --success-border: var(--color-border-custom);
-  --error-bg: var(--color-bg-layer-2);
-  --error-border: var(--color-border-custom);
-  --warning-bg: var(--color-bg-layer-2);
-  --warning-border: var(--color-border-custom);
-  --info-bg: var(--color-bg-layer-2);
-  --info-border: var(--color-border-custom);
+  --success-bg: color-mix(in oklch, var(--success) 6%, var(--bg-layer-2));
+  --success-border: var(--color-success);
+  --error-bg: color-mix(in oklch, var(--destructive) 6%, var(--bg-layer-2));
+  --error-border: var(--color-destructive);
+  --warning-bg: color-mix(in oklch, var(--warning) 6%, var(--bg-layer-2));
+  --warning-border: var(--color-warning);
+  --info-bg: color-mix(in oklch, var(--info) 6%, var(--bg-layer-2));
+  --info-border: var(--color-info);
   font-family: var(--font-sans);
 }
 
@@ -463,8 +502,22 @@
 }
 
 /* ============================================
-    Base styles
-    ============================================ */
+   Stop button animated ring
+   ============================================ */
+
+@property --stop-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes stop-spin {
+  to { --stop-angle: 360deg; }
+}
+
+/* ============================================
+   Base styles
+   ============================================ */
 
 /* Prevent Recharts SVG overflow from covering UI elements.
    The !important is needed because Recharts sets overflow:visible
@@ -516,4 +569,18 @@
   *::-webkit-scrollbar-thumb:hover {
     background-color: var(--color-border-strong);
   }
+}
+
+/* Hover-reveal scrollbar: hidden by default, shown on container hover.
+   Kept OUT of @layer base so it beats the global `*::-webkit-scrollbar`
+   rule regardless of specificity. */
+/* No-scrollbar region: hide the native scrollbar entirely. Content
+   keeps full width; user scrolls via wheel/trackpad/keyboard. */
+.no-scrollbar {
+  scrollbar-width: none !important;
+}
+.no-scrollbar::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
 }

@@ -53,7 +53,7 @@ interface ModelFormData {
   contextLen: number
   extraFields: string
   isDefault: number
-  isCompress: number
+  isFlash: number
   isVisual: number
   remark: string
 }
@@ -69,7 +69,7 @@ interface ModelEditFormData {
   contextLen: number
   extraFields: string
   isDefault: number
-  isCompress: number
+  isFlash: number
   isVisual: number
   status: number
   remark: string
@@ -380,7 +380,7 @@ function SearchableCombobox({
           {showDropdown && (
             <div className="absolute left-0 top-full z-20 mt-1 max-h-48 w-full overflow-auto rounded-md border border-border bg-bg-layer-1 shadow-pop">
               {fetchError ? (
-                <div className="flex items-center gap-2 px-3 py-2 text-xs text-red-500">
+                <div className="flex items-center gap-2 px-3 py-2 text-xs text-destructive">
                   <AlertCircle className="size-3 shrink-0" />
                   {t('adminModels.fetchFailed')}
                 </div>
@@ -511,7 +511,7 @@ function TestIndicator({ state, errorMsg }: { state: TestState; errorMsg: string
   }
 
   return (
-    <div className="flex items-start gap-2 text-xs text-red-500">
+    <div className="flex items-start gap-2 text-xs text-destructive">
       <AlertCircle className="size-3 shrink-0 mt-px" />
       <span>{errorMsg || t('adminModels.testFailed')}</span>
     </div>
@@ -548,7 +548,7 @@ function AddModelDrawer({
     contextLen: 200,
     extraFields: '',
     isDefault: 0,
-    isCompress: 0,
+    isFlash: 0,
     isVisual: 0,
     remark: '',
   })
@@ -571,7 +571,7 @@ function AddModelDrawer({
         contextLen: 200,
         extraFields: '',
         isDefault: 0,
-        isCompress: 0,
+        isFlash: 0,
         isVisual: 0,
         remark: '',
       })
@@ -595,7 +595,7 @@ function AddModelDrawer({
         contextLen: duplicateModel.contextLen,
         extraFields: '',
         isDefault: 0,
-        isCompress: duplicateModel.isCompress,
+        isFlash: duplicateModel.isFlash,
         isVisual: duplicateModel.isVisual,
         remark: duplicateModel.remark,
       })
@@ -632,7 +632,7 @@ function AddModelDrawer({
         contextLen: 200,
         extraFields: '',
         isDefault: 0,
-        isCompress: 0,
+        isFlash: 0,
         isVisual: 0,
         remark: '',
       })
@@ -713,7 +713,7 @@ function AddModelDrawer({
         <div className="flex flex-col gap-1.5">
           <Label className="text-xs text-text-2">
             {t('adminModels.provider')}
-            <span className="ml-0.5 text-red-500">*</span>
+            <span className="ml-0.5 text-destructive">*</span>
           </Label>
           <Input
             value={form.providerDisplayName}
@@ -752,7 +752,7 @@ function AddModelDrawer({
           <div className="flex flex-col gap-1.5">
             <Label className="text-xs text-text-2">
               API Key
-              {selectedProvider && <span className="ml-0.5 text-red-500">*</span>}
+              {selectedProvider && <span className="ml-0.5 text-destructive">*</span>}
             </Label>
             <ApiKeyField
               value={form.apiKey}
@@ -767,7 +767,7 @@ function AddModelDrawer({
           <div className="flex flex-col gap-1.5">
             <Label className="text-xs text-text-2">
               Base URL
-              <span className="ml-0.5 text-red-500">*</span>
+              <span className="ml-0.5 text-destructive">*</span>
             </Label>
             <Input
               value={form.baseUrl}
@@ -782,7 +782,7 @@ function AddModelDrawer({
         <div className="flex flex-col gap-1.5">
           <Label className="text-xs text-text-2">
             {t('common.model')}
-            <span className="ml-0.5 text-red-500">*</span>
+            <span className="ml-0.5 text-destructive">*</span>
           </Label>
           <SearchableCombobox
             value={form.modelName}
@@ -830,13 +830,13 @@ function AddModelDrawer({
             </label>
             <label className="flex items-center justify-between">
               <span className="text-sm text-text-2">
-                {t('adminModels.compressionModel')}</span>
+                {t('adminModels.flashModel')}</span>
               <StatusToggle
-                checked={form.isCompress === 1}
-                onChange={(v) => setForm((f) => ({ ...f, isCompress: v ? 1 : 0 }))}
+                checked={form.isFlash === 1}
+                onChange={(v) => setForm((f) => ({ ...f, isFlash: v ? 1 : 0 }))}
               />
             </label>
-            <p className="text-xs text-text-muted">{t('adminModels.compressHint')}</p>
+            <p className="text-xs text-text-muted">{t('adminModels.flashHint')}</p>
             <label className="flex items-center justify-between">
               <span className="text-sm text-text-2">
                 {t('adminModels.multimodalModel')}</span>
@@ -925,7 +925,7 @@ function EditModelDrawer({
     contextLen: 200,
     extraFields: '',
     isDefault: 0,
-    isCompress: 0,
+    isFlash: 0,
     isVisual: 0,
     status: 1,
     remark: '',
@@ -949,7 +949,7 @@ function EditModelDrawer({
         contextLen: model.contextLen,
         extraFields: '',
         isDefault: model.isDefault,
-        isCompress: model.isCompress,
+        isFlash: model.isFlash,
         isVisual: model.isVisual,
         status: model.status,
         remark: model.remark,
@@ -1029,7 +1029,7 @@ function EditModelDrawer({
         <div className="flex flex-col gap-1.5">
           <Label className="text-xs text-text-2">
             {t('adminModels.provider')}
-            <span className="ml-0.5 text-red-500">*</span>
+            <span className="ml-0.5 text-destructive">*</span>
           </Label>
           <Input
             value={form.providerDisplayName}
@@ -1097,7 +1097,7 @@ function EditModelDrawer({
         <div className="flex flex-col gap-1.5">
           <Label className="text-xs text-text-2">
             {t('common.model')}
-            <span className="ml-0.5 text-red-500">*</span>
+            <span className="ml-0.5 text-destructive">*</span>
           </Label>
           <Input
             value={form.modelName}
@@ -1144,13 +1144,13 @@ function EditModelDrawer({
             </label>
             <label className="flex items-center justify-between">
               <span className="text-sm text-text-2">
-                {t('adminModels.compressionModel')}</span>
+                {t('adminModels.flashModel')}</span>
               <StatusToggle
-                checked={form.isCompress === 1}
-                onChange={(v) => setForm((f) => ({ ...f, isCompress: v ? 1 : 0 }))}
+                checked={form.isFlash === 1}
+                onChange={(v) => setForm((f) => ({ ...f, isFlash: v ? 1 : 0 }))}
               />
             </label>
-            <p className="text-xs text-text-muted">{t('adminModels.compressHint')}</p>
+            <p className="text-xs text-text-muted">{t('adminModels.flashHint')}</p>
             <label className="flex items-center justify-between">
               <span className="text-sm text-text-2">
                 {t('adminModels.multimodalModel')}</span>
@@ -1255,20 +1255,20 @@ function RowActionsMenu({
   onDelete,
   onDuplicate,
   onSetDefault,
-  onSetCompress,
+  onSetFlash,
   onSetVisual,
   isDefault,
-  isCompress,
+  isFlash,
   isVisual,
 }: {
   onEdit: () => void
   onDelete: () => void
   onDuplicate: () => void
   onSetDefault: () => void
-  onSetCompress: () => void
+  onSetFlash: () => void
   onSetVisual: () => void
   isDefault: boolean
-  isCompress: boolean
+  isFlash: boolean
   isVisual: boolean
 }) {
   const t = useT()
@@ -1323,14 +1323,14 @@ function RowActionsMenu({
               {t('common.default')}
             </button>
           )}
-          {!isCompress && (
+          {!isFlash && (
             <button
-              onClick={() => { onSetCompress(); setOpen(false) }}
+              onClick={() => { onSetFlash(); setOpen(false) }}
               className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text-1 transition-colors hover:bg-bg-hover"
             >
               <Zap className="size-3.5 text-text-3" />
 
-              {t('adminModels.compress')}
+              {t('adminModels.flash')}
             </button>
           )}
           {!isVisual && (
@@ -1346,7 +1346,7 @@ function RowActionsMenu({
           <div className="border-t border-border" />
           <button
             onClick={() => { onDelete(); setOpen(false) }}
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-500 transition-colors hover:bg-bg-hover"
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive transition-colors hover:bg-bg-hover"
           >
             <Trash2 className="size-3.5" />
             {t('common.delete')}
@@ -1391,7 +1391,7 @@ function ModelRow({
   onDelete,
   onDuplicate,
   onSetDefault,
-  onSetCompress,
+  onSetFlash,
   onSetVisual,
 }: {
   model: AdminModelItem
@@ -1400,12 +1400,12 @@ function ModelRow({
   onDelete: () => void
   onDuplicate: () => void
   onSetDefault: () => void
-  onSetCompress: () => void
+  onSetFlash: () => void
   onSetVisual: () => void
 }) {
   const t = useT()
   return (
-    <tr className={cn(isEven && 'bg-bg-layer-1', 'transition-colors hover:bg-bg-hover')}>
+    <tr className={cn(isEven && 'bg-interactive/10 dark:bg-bg-layer-1', 'transition-colors hover:bg-bg-hover')}>
       <td className="py-2.5 pl-4 pr-2">
         <div className="flex items-center gap-2">
           <ModelIcon icon={model.icon} name={model.providerDisplayName} />
@@ -1422,10 +1422,10 @@ function ModelRow({
               {t('common.default')}
             </span>
           )}
-          {model.isCompress === 1 && (
-            <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs bg-bg-layer-3 text-text-2">
+          {model.isFlash === 1 && (
+            <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs bg-interactive text-white">
               <Zap className="size-2.5" />
-              {t('adminModels.compress')}
+              {t('adminModels.flash')}
             </span>
           )}
           {model.isVisual === 1 && (
@@ -1434,7 +1434,7 @@ function ModelRow({
               {t('adminModels.multimodal')}
             </span>
           )}
-          {model.isDefault === 0 && model.isCompress === 0 && model.isVisual === 0 && (
+          {model.isDefault === 0 && model.isFlash === 0 && model.isVisual === 0 && (
             <span className="text-xs text-text-muted">—</span>
           )}
         </div>
@@ -1447,10 +1447,10 @@ function ModelRow({
           onDelete={onDelete}
           onDuplicate={onDuplicate}
           onSetDefault={onSetDefault}
-          onSetCompress={onSetCompress}
+          onSetFlash={onSetFlash}
           onSetVisual={onSetVisual}
           isDefault={model.isDefault === 1}
-          isCompress={model.isCompress === 1}
+          isFlash={model.isFlash === 1}
           isVisual={model.isVisual === 1}
         />
       </td>
@@ -1480,7 +1480,7 @@ function TableSkeleton() {
         </thead>
         <tbody>
           {Array.from({ length: 8 }).map((_, i) => (
-            <tr key={i} className={cn(i % 2 === 0 && 'bg-bg-layer-1')}>
+            <tr key={i} className={cn(i % 2 === 0 && 'bg-interactive/10 dark:bg-bg-layer-1')}>
               <td className="py-2.5 pl-4 pr-2">
                 <div className="flex items-center gap-2">
                   <div className="size-7 animate-pulse rounded-sm bg-bg-layer-3" />
@@ -1764,16 +1764,16 @@ export function Component() {
     [],
   )
 
-  const handleSetCompress = useCallback(
+  const handleSetFlash = useCallback(
     (modelId: number) => {
-      adminModelsApi.setCompressModel(modelId).then(() => {
+      adminModelsApi.setFlashModel(modelId).then(() => {
         setModels((prev) =>
           prev.map((m) => ({
             ...m,
-            isCompress: (m.aiModelId === modelId ? 1 : 0) as number,
+            isFlash: (m.aiModelId === modelId ? 1 : 0) as number,
           })),
         )
-        toast.success(translate('adminModels.setCompress'))
+        toast.success(translate('adminModels.setFlash'))
       }).catch((err: Error) => { toast.error(err.message || translate('common.failed')) })
     },
     [],
@@ -1808,6 +1808,9 @@ export function Component() {
         <h1 className="text-base font-semibold text-text-1">{t('adminModels.title')}</h1>
         <div className="flex items-center gap-2">
           <div className="relative">
+            {/* Hidden dummy fields to prevent Chrome autofill from targeting the search input */}
+            <input type="text" name="username" style={{ position: 'absolute', left: -9999 }} tabIndex={-1} autoComplete="username" />
+            <input type="password" name="password" style={{ position: 'absolute', left: -9999 }} tabIndex={-1} autoComplete="current-password" />
             <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-text-3" />
             <input
               type="text"
@@ -1906,7 +1909,7 @@ export function Component() {
                       setDialogMode('delete')
                     }}
                     onSetDefault={() => handleSetDefault(model.aiModelId)}
-                    onSetCompress={() => handleSetCompress(model.aiModelId)}
+                    onSetFlash={() => handleSetFlash(model.aiModelId)}
                     onSetVisual={() => handleSetVisual(model.aiModelId)}
                   />
                 ))}

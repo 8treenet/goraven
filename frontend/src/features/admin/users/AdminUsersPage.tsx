@@ -282,10 +282,10 @@ function AddUserDrawer({
               )}
             </div>
             {usernameFormatError && (
-              <p className="text-xs text-red-500">{t('adminUsers.usernamePlaceholder')}</p>
+              <p className="text-xs text-destructive">{t('adminUsers.usernamePlaceholder')}</p>
             )}
             {!usernameFormatError && usernameStatus === 'exists' && (
-              <p className="text-xs text-red-500">{t('adminUsers.usernameExists')}</p>
+              <p className="text-xs text-destructive">{t('adminUsers.usernameExists')}</p>
             )}
           </div>
 
@@ -299,7 +299,7 @@ function AddUserDrawer({
             className="h-8 text-sm"
           />
           {passwordError && (
-            <p className="text-xs text-red-500">{t('adminUsers.passwordPlaceholder')}</p>
+            <p className="text-xs text-destructive">{t('adminUsers.passwordPlaceholder')}</p>
           )}
           {!passwordError && (
             <p className="text-xs text-text-muted">{t('adminUsers.passwordHint')}</p>
@@ -478,7 +478,7 @@ function ResetPasswordDialog({
               className="h-8 text-sm"
             />
             {pwdFormatError && (
-              <p className="text-xs text-red-500">{t('adminUsers.passwordPlaceholder')}</p>
+              <p className="text-xs text-destructive">{t('adminUsers.passwordPlaceholder')}</p>
             )}
           </div>
           <div className="flex flex-col gap-1.5">
@@ -490,7 +490,7 @@ function ResetPasswordDialog({
               placeholder={translate('adminUsers.passwordPlaceholder')}
               className="h-8 text-sm"
             />
-            {mismatch && <p className="text-xs text-red-500">{translate('common.confirmPassword')}</p>}
+            {mismatch && <p className="text-xs text-destructive">{translate('common.confirmPassword')}</p>}
           </div>
           <p className="text-xs text-text-muted">{t('adminUsers.passwordHint')}</p>
           <div className="mt-1 flex justify-end gap-2">
@@ -569,7 +569,7 @@ function UserRow({
 }) {
   const t = useT()
   return (
-    <tr className={cn(isEven && 'bg-bg-layer-1', 'transition-colors hover:bg-bg-hover')}>
+    <tr className={cn(isEven && 'bg-interactive/10 dark:bg-bg-layer-1', 'transition-colors hover:bg-bg-hover')}>
       <td className="py-2.5 pl-4 pr-2">
         <Avatar username={user.username} avatar={user.avatar} />
       </td>
@@ -626,7 +626,7 @@ function UserRow({
               </button>
               <button
                 onClick={onDelete}
-                className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-red-500"
+                className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-destructive"
                 title={t('common.delete')}
               >
                 <Trash2 className="size-3.5" />
@@ -663,7 +663,7 @@ function TableSkeleton() {
         </thead>
         <tbody>
           {Array.from({ length: 8 }).map((_, i) => (
-            <tr key={i} className={cn(i % 2 === 0 && 'bg-bg-layer-1')}>
+            <tr key={i} className={cn(i % 2 === 0 && 'bg-interactive/10 dark:bg-bg-layer-1')}>
               <td className="py-2.5 pl-4 pr-2">
                 <div className="size-7 animate-pulse rounded-sm bg-bg-layer-3" />
               </td>
@@ -960,6 +960,9 @@ export function Component() {
         <h1 className="text-base font-semibold text-text-1">{t('adminUsers.title')}</h1>
         <div className="flex items-center gap-2">
           <div className="relative">
+            {/* Hidden dummy fields to prevent Chrome autofill from targeting the search input */}
+            <input type="text" name="username" style={{ position: 'absolute', left: -9999 }} tabIndex={-1} autoComplete="username" />
+            <input type="password" name="password" style={{ position: 'absolute', left: -9999 }} tabIndex={-1} autoComplete="current-password" />
             <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-text-3" />
             <input
               type="text"

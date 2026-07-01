@@ -20,7 +20,7 @@ export function createModel(data: {
   contextLen?: number
   extraFields?: string
   isDefault?: number
-  isCompress?: number
+  isFlash?: number
   isVisual?: number
   remark?: string
 }) {
@@ -41,7 +41,7 @@ export function updateModel(
     contextLen?: number
     extraFields?: string
     isDefault?: number
-    isCompress?: number
+    isFlash?: number
     isVisual?: number
     status?: number
     remark?: string
@@ -70,9 +70,9 @@ export function setDefaultModel(id: number) {
   return http.put(`/admin/models/${id}/default`)
 }
 
-/** PUT /api/admin/models/:id/compress */
-export function setCompressModel(id: number) {
-  return http.put(`/admin/models/${id}/compress`)
+/** PUT /api/admin/models/:id/flash */
+export function setFlashModel(id: number) {
+  return http.put(`/admin/models/${id}/flash`)
 }
 
 /** PUT /api/admin/models/:id/visual */

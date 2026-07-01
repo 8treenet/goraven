@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
-import { Icon, renderIcon } from '@/components/common/Icon'
+import { Icon } from '@/components/common/Icon'
 import { IconPickerTrigger } from '@/components/common/IconPicker'
 import type { IconName } from '@/components/common/icon-registry'
 import {
@@ -265,7 +265,7 @@ function TemplateDrawer({
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs text-text-2">
-                  {t('adminPersonaTemplates.templateName')} <span className="text-red-500">*</span>
+                  {t('adminPersonaTemplates.templateName')} <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   value={form.name}
@@ -274,7 +274,7 @@ function TemplateDrawer({
                   className="h-8 text-sm"
                   maxLength={64}
                 />
-                {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
+                {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -298,7 +298,7 @@ function TemplateDrawer({
 
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs text-text-2">
-                  {t('common.category')} <span className="text-red-500">*</span>
+                  {t('common.category')} <span className="text-destructive">*</span>
                 </Label>
                 <select
                   value={form.categoryId}
@@ -311,7 +311,7 @@ function TemplateDrawer({
                     </option>
                   ))}
                 </select>
-                {errors.categoryId && <p className="text-xs text-red-500">{errors.categoryId}</p>}
+                {errors.categoryId && <p className="text-xs text-destructive">{errors.categoryId}</p>}
               </div>
             </div>
           </div>
@@ -322,7 +322,7 @@ function TemplateDrawer({
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
                 <Label className="text-xs text-text-2">
-                  {t('adminPersonaTemplates.systemPrompt')} <span className="text-red-500">*</span>
+                  {t('adminPersonaTemplates.systemPrompt')} <span className="text-destructive">*</span>
                 </Label>
                 <button
                   type="button"
@@ -342,7 +342,7 @@ function TemplateDrawer({
               />
               <div className="flex items-center justify-between">
                 {errors.roleInfo ? (
-                  <p className="text-xs text-red-500">{errors.roleInfo}</p>
+                  <p className="text-xs text-destructive">{errors.roleInfo}</p>
                 ) : (
                   <span />
                 )}
@@ -479,7 +479,7 @@ function CategoryManagementDialog({
                     {categories.map((cat) => (
                       <tr key={cat.categoryId} className="border-b border-border transition-colors hover:bg-bg-hover">
                         <td className="py-2 pl-1 pr-2 text-text-2">
-                          {renderIcon(cat.icon, 'size-3.5')}
+                          <Icon name={cat.icon} className="size-3.5 text-interactive" />
                         </td>
                         <td className="py-2 pr-4">
                           <div className="flex items-center gap-1.5">
@@ -512,7 +512,7 @@ function CategoryManagementDialog({
                              <button
                                onClick={() => setDeleteTarget(cat)}
                                disabled={cat.isDefault === 1}
-                               className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-red-500 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-text-3"
+                               className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-destructive disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-text-3"
                                title={cat.isDefault === 1 ? translate('adminPersonaTemplates.defaultUndeletable') : translate('common.delete')}
                              >
                               <Trash2 className="size-3.5" />
@@ -559,7 +559,7 @@ function CategoryManagementDialog({
                   className="h-8 text-sm"
                   maxLength={32}
                 />
-                {formError && <p className="text-xs text-red-500">{formError}</p>}
+                {formError && <p className="text-xs text-destructive">{formError}</p>}
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -682,16 +682,16 @@ function TemplateRow({
   onDelete: () => void
 }) {
   return (
-    <tr className={cn(isEven && 'bg-bg-layer-1', 'transition-colors hover:bg-bg-hover')}>
-      <td className="py-2.5 pl-4 pr-2 text-interactive">
-        {renderIcon(template.icon, 'size-4')}
+    <tr className={cn(isEven && 'bg-interactive/10 dark:bg-bg-layer-1', 'transition-colors hover:bg-bg-hover')}>
+      <td className="py-2.5 pl-4 pr-2">
+        <Icon name={template.icon} className="size-5 text-interactive" />
       </td>
       <td className="py-2.5 pr-4">
         <span className="text-sm font-medium text-text-1">{template.name}</span>
       </td>
       <td className="py-2.5 pr-4">
-        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs bg-bg-layer-3 text-text-2">
-          {renderIcon(template.categoryIcon, 'size-3')}
+        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-text-2 border border-border-custom">
+          <Icon name={template.categoryIcon} className="size-3 text-interactive" />
           {template.categoryName}
         </span>
       </td>
@@ -721,7 +721,7 @@ function TemplateRow({
           </button>
           <button
             onClick={onDelete}
-            className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-red-500"
+            className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-destructive"
             title={translate('common.delete')}
           >
             <Trash2 className="size-3.5" />
@@ -755,9 +755,9 @@ function TableSkeleton() {
         </thead>
         <tbody>
           {Array.from({ length: 8 }).map((_, i) => (
-            <tr key={i} className={cn(i % 2 === 0 && 'bg-bg-layer-1')}>
+            <tr key={i} className={cn(i % 2 === 0 && 'bg-interactive/10 dark:bg-bg-layer-1')}>
               <td className="py-2.5 pl-4 pr-2">
-                <div className="size-4 animate-pulse rounded-sm bg-bg-layer-3" />
+                <div className="size-5 animate-pulse rounded-sm bg-bg-layer-3" />
               </td>
               <td className="py-2.5 pr-4">
                 <div className="h-3.5 w-24 animate-pulse rounded bg-bg-layer-2" />

@@ -158,7 +158,7 @@ export function SkillDrawer({
                 <span className="shrink-0 text-xs text-text-muted w-16">
                   {t('skills.source')}
                 </span>
-                <span className="text-xs text-text-2">{sourceLabel}</span>
+                <span className="text-xs text-text-1">{sourceLabel}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="shrink-0 text-xs text-text-muted w-16">
@@ -172,7 +172,7 @@ export function SkillDrawer({
                         'flex items-center gap-1 rounded py-0.5 text-xs transition-colors',
                         categoryPickerOpen
                           ? 'bg-bg-layer-3 text-text-1'
-                          : 'text-text-2 hover:bg-bg-hover hover:text-text-1',
+                          : 'text-text-1 hover:bg-bg-hover',
                       )}
                     >
                       {categoryName || t('skills.noCategory')}
@@ -198,7 +198,7 @@ export function SkillDrawer({
                     )}
                   </div>
                 ) : (
-                  <span className="text-xs text-text-2">
+                  <span className="text-xs text-text-1">
                     {categoryName || t('skills.noCategory')}
                   </span>
                 )}
@@ -208,7 +208,7 @@ export function SkillDrawer({
                   <span className="shrink-0 text-xs text-text-muted w-16">
                     {field.label}
                   </span>
-                  <span className="text-xs text-text-2 tabular-nums">{field.value}</span>
+                  <span className="text-xs text-text-1 tabular-nums">{field.value}</span>
                 </div>
               ))}
               {showAlwaysOn && (
@@ -220,7 +220,7 @@ export function SkillDrawer({
                     <TooltipTrigger asChild>
                       <button
                         onClick={onToggleAlwaysOn}
-                        className="flex items-center gap-1.5 rounded-md py-1 text-xs text-text-2 transition-colors hover:bg-bg-hover"
+                        className="flex items-center gap-1.5 rounded-md py-1 text-xs text-text-1 transition-colors hover:bg-bg-hover"
                       >
                         <span
                           className={cn(

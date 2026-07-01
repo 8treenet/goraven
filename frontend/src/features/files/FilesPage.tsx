@@ -794,7 +794,7 @@ export function Component() {
                     isSelected
                       ? 'bg-bg-layer-3'
                       : i % 2 === 0
-                        ? 'bg-bg-layer-1 hover:bg-bg-hover'
+                        ? 'bg-interactive/10 dark:bg-bg-layer-1 hover:bg-bg-hover'
                         : 'hover:bg-bg-hover',
                   )}
                 >

@@ -35,15 +35,15 @@ func init() {
 }
 
 type ChatService struct {
-	Worker		freedom.Worker
-	MsgSessionRepo	*repository.MsgSessionRepository
-	ModelRepo	*repository.ProviderRepository
-	McpRepo		*repository.MCPRepository
-	SkillRepo	*repository.SkillRepository
-	PersonaRepo	*repository.PersonaRepository
-	SysSettingRepo	*repository.SystemSettingRepository
-	DailyStatsRepo	*repository.DailyStatsRepository
-	HFSRepo		*repository.HFSRepository
+	Worker         freedom.Worker
+	MsgSessionRepo *repository.MsgSessionRepository
+	ModelRepo      *repository.ProviderRepository
+	McpRepo        *repository.MCPRepository
+	SkillRepo      *repository.SkillRepository
+	PersonaRepo    *repository.PersonaRepository
+	SysSettingRepo *repository.SystemSettingRepository
+	DailyStatsRepo *repository.DailyStatsRepository
+	HFSRepo        *repository.HFSRepository
 }
 
 func (service *ChatService) StartChat(
@@ -99,15 +99,15 @@ func (service *ChatService) StartChat(
 	skillNames = util.DedupStrings(append(skillNames, alwaysOnNames...))
 
 	param := agent.AgentParam{
-		Session:		session,
-		MsgRepo:		service.MsgSessionRepo,
-		ChatModel:		chatModel,
-		UserRole:		userRole,
-		SystemSkillProvider:	service.SkillRepo,
-		SysCfg:			sysCfg,
-		DailyStatsRepo:		service.DailyStatsRepo,
-		Project:		session.Project,
-		UserName:		infra.GetUserName(service.Worker),
+		Session:             session,
+		MsgRepo:             service.MsgSessionRepo,
+		ChatModel:           chatModel,
+		UserRole:            userRole,
+		SystemSkillProvider: service.SkillRepo,
+		SysCfg:              sysCfg,
+		DailyStatsRepo:      service.DailyStatsRepo,
+		Project:             session.Project,
+		UserName:            infra.GetUserName(service.Worker),
 	}
 
 	attachmentTags, err := service.processAttachments(userId, req.Attachments)
@@ -135,6 +135,7 @@ func (service *ChatService) StartChat(
 			if r := recover(); r != nil {
 				freedom.Logger().Errorf("StartChat panic: %v", r)
 			}
+			agent.DeleteRunner(session.SessionId)
 		}()
 
 		compressModel, cerr := service.ModelRepo.GetDefaultChatModel()
@@ -154,6 +155,7 @@ func (service *ChatService) StartChat(
 		runner, err := mainAgent.NewRunner(ctx)
 		if err != nil {
 			service.Worker.Logger().Error(err)
+			agent.DeleteRunner(session.SessionId)
 			return
 		}
 
@@ -172,19 +174,19 @@ func (service *ChatService) StartChat(
 	}()
 
 	rsp := &vo.ChatRsp{
-		SessionId:	session.SessionId,
+		SessionId: session.SessionId,
 		Session: &vo.SessionDetailRsp{
-			SessionId:		session.SessionId,
-			Title:			session.Title,
-			Status:			session.Status,
-			PersonaId:		session.PersonaId,
-			Project:		session.Project,
-			AIModelId:		session.AIModelId,
-			PromptTokensCount:	session.PromptTokensCount,
-			CompletionTokensCount:	session.CompletionTokensCount,
-			McpIds:			mcpIds,
-			SkillIds:		skillIds,
-			LastChatTime:		session.LastChatTime,
+			SessionId:             session.SessionId,
+			Title:                 session.Title,
+			Status:                session.Status,
+			PersonaId:             session.PersonaId,
+			Project:               session.Project,
+			AIModelId:             session.AIModelId,
+			PromptTokensCount:     session.PromptTokensCount,
+			CompletionTokensCount: session.CompletionTokensCount,
+			McpIds:                mcpIds,
+			SkillIds:              skillIds,
+			LastChatTime:          session.LastChatTime,
 		},
 	}
 
@@ -281,11 +283,11 @@ func (service *ChatService) resolveSession(
 	}
 
 	session = &po.Session{
-		UserId:		userId,
-		Title:		truncateRunes(req.Content, 30),
-		AIModelId:	req.AIModelId,
-		Project:	req.Project,
-		LastChatTime:	time.Now(),
+		UserId:       userId,
+		Title:        truncateRunes(req.Content, 30),
+		AIModelId:    req.AIModelId,
+		Project:      req.Project,
+		LastChatTime: time.Now(),
 	}
 
 	if req.PersonaId != nil && *req.PersonaId > 0 {
@@ -370,8 +372,8 @@ func (service *ChatService) buildMCPTools(
 }
 
 var imageExtensions = map[string]bool{
-	".jpg":	true, ".jpeg": true, ".png": true, ".gif": true,
-	".bmp":	true, ".webp": true, ".svg": true, ".tiff": true, ".ico": true,
+	".jpg": true, ".jpeg": true, ".png": true, ".gif": true,
+	".bmp": true, ".webp": true, ".svg": true, ".tiff": true, ".ico": true,
 }
 
 func formatFileSize(size int64) string {

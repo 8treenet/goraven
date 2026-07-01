@@ -47,12 +47,12 @@ Raven 不是一个 KPI 项目，也永远不会是。每一个功能、每一行
 ### 国内镜像（推荐）
 
 ```bash
-docker pull docker.1panel.live/8treenet/raven:v0.1.8
+docker pull docker.1panel.live/8treenet/raven:v0.2.0
 
 docker run -d --restart=always --name raven-agent \
   -p 8000:8000 \
   -e RAVEN_CHINA_MIRROR=1 \
-  docker.1panel.live/8treenet/raven:v0.1.8
+  docker.1panel.live/8treenet/raven:v0.2.0
 ```
 
 ### Docker Hub
@@ -72,7 +72,7 @@ docker run -d --restart=always --name raven-agent \
   -p 8000:8000 \
   -v /opt/raven_data:/raven/data \
   -e RAVEN_CHINA_MIRROR=1 \
-  docker.1panel.live/8treenet/raven:v0.1.8
+  docker.1panel.live/8treenet/raven:v0.2.0
 ```
 
 启动后访问 `http://localhost:8000`，按提示完成初始化，创建管理员账户即可使用。

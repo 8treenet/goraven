@@ -111,11 +111,17 @@ export function Component() {
   }
 
   if (error) {
+    const errorStyle =
+      error === 'expired'
+        ? { icon: 'text-warning', text: 'text-warning' }
+        : error === 'notFound'
+          ? { icon: 'text-info', text: 'text-info' }
+          : { icon: 'text-destructive', text: 'text-destructive' }
     return (
       <div className="flex h-screen items-center justify-center bg-bg-base">
         <div className="max-w-sm px-4 text-center">
-          <TriangleAlert className="mx-auto mb-3 size-6 text-text-3" />
-          <p className="text-sm text-text-2">
+          <TriangleAlert className={`mx-auto mb-3 size-6 ${errorStyle.icon}`} />
+          <p className={`text-sm ${errorStyle.text}`}>
             {error === 'expired'
               ? t('share.expired')
               : error === 'notFound'
@@ -138,14 +144,14 @@ export function Component() {
       <div className="flex h-10 shrink-0 items-center gap-3 border-b border-border px-4">
         <span className="truncate text-sm text-text-1">{info.title}</span>
         {info.shareType === 'internal' && (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10px] text-text-3">
+          <span className="inline-flex shrink-0 items-center gap-1 rounded border border-interactive/20 px-1.5 py-0.5 text-[10px] text-interactive">
             <Lock className="size-2.5" />
             {t('share.typeInternal')}
           </span>
         )}
         <div className="flex-1" />
         {info.creator && (
-          <span className="hidden text-xs text-text-3 sm:inline">
+          <span className="hidden text-xs text-text-1 sm:inline">
             {t('share.sharedBy')} {info.creator}
           </span>
         )}
@@ -164,7 +170,7 @@ export function Component() {
       {needsLogin ? (
         <div className="flex flex-1 items-center justify-center px-4">
           <div className="max-w-sm text-center">
-            <Lock className="mx-auto mb-3 size-6 text-text-3" />
+            <Lock className="mx-auto mb-3 size-6 text-interactive" />
             <p className="mb-1.5 text-sm font-semibold text-text-1">
               {t('share.loginRequiredTitle')}
             </p>
@@ -185,12 +191,12 @@ export function Component() {
             <div className="flex flex-col items-center gap-3 pt-10">
               <p className="text-center text-xs text-text-muted">{t('share.tagline')}</p>
               <div className="flex items-center gap-6">
-                <a
-                  href="https://goraven.dev"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs text-text-muted transition-colors hover:text-text-2"
-                >
+                  <a
+                    href="https://goraven.dev"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs text-interactive transition-colors hover:text-interactive-hover"
+                  >
                   <svg className="size-3.5" viewBox="0 0 56 56" fill="none" aria-hidden="true">
                     <polygon points="30,12 42,9 30,17" fill="currentColor" />
                     <rect x="20" y="6" width="12" height="12" fill="currentColor" />
@@ -209,12 +215,12 @@ export function Component() {
                   </svg>
                   goraven.dev
                 </a>
-                <a
-                  href="https://github.com/8treenet/raven"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs text-text-muted transition-colors hover:text-text-2"
-                >
+                  <a
+                    href="https://github.com/8treenet/raven"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs text-interactive transition-colors hover:text-interactive-hover"
+                  >
                   <svg className="size-3.5" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                     <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
                   </svg>

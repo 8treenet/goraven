@@ -140,16 +140,19 @@ export function Component() {
 
           <section>
             <h2 className="mb-3 text-sm font-semibold text-text-1">{t('personas.personaSettings')}</h2>
-            <div className="rounded-lg border border-border-custom bg-bg-layer-2 px-3 py-2.5">
+            <div className="rounded-lg border border-interactive/20 bg-interactive/10 px-3 py-2.5">
               <p className="text-sm text-text-1 whitespace-pre-wrap leading-relaxed">{data.roleInfo}</p>
             </div>
           </section>
 
           <section>
             <h2 className="mb-3 text-sm font-semibold text-text-1">{t('personas.modelConfig')}</h2>
-            <span className="text-sm text-text-1">
-              {data.aiModelId === 0 ? t('personas.useDefaultModel') : data.modelName}
-            </span>
+            <div className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5">
+              <ModelIcon icon={data.modelIcon} />
+              <span className="text-xs text-text-1">
+                {data.aiModelId === 0 ? t('personas.useDefaultModel') : data.modelName}
+              </span>
+            </div>
           </section>
 
           <section>
@@ -226,6 +229,12 @@ export function Component() {
 /* ============================================
    Sub-views
    ============================================ */
+
+function ModelIcon({ icon }: { icon?: string }) {
+  const [err, setErr] = useState(false)
+  if (!icon || err) return <Icon name="brain" className="size-3.5 shrink-0 text-text-3" />
+  return <img src={icon} alt="" className="size-3.5 shrink-0 rounded object-cover" onError={() => setErr(true)} />
+}
 
 function Row({ label, value, children }: { label: string; value?: string; children?: React.ReactNode }) {
   return (

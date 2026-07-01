@@ -18,6 +18,11 @@ export function connectChatStream(sessionId: string, handlers: ChatStreamHandler
   const url = `/api/chat/${sessionId}/stream`
 
   const controller = new AbortController()
+  // Track whether the stream terminated normally. The server closes the
+  // connection after the `end` event, which also triggers onclose — without
+  // this guard, onclose would fire onError and spuriously start background
+  // polling for a session that already finished.
+  let ended = false
 
   fetchEventSource(url, {
     headers: { Authorization: `Bearer ${token}` },
@@ -42,6 +47,7 @@ export function connectChatStream(sessionId: string, handlers: ChatStreamHandler
           handlers.onRetry?.(data.retry.attempt, data.retry.maxRetries, data.retry.error)
           break
         case 'end':
+          ended = true
           handlers.onEnd?.()
           controller.abort()
           break
@@ -63,6 +69,7 @@ export function connectChatStream(sessionId: string, handlers: ChatStreamHandler
       throw error
     },
     onclose() {
+      if (ended) return
       handlers.onError?.(new Error('SSE connection closed'))
     },
   }).catch(() => {})

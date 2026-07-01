@@ -60,7 +60,7 @@ function SettingControl({ item, value, onChange, error }: ControlProps) {
             placeholder={item.placeholder || ''}
           />
           {error && (
-            <span className="text-xs text-red-500">{error}</span>
+            <span className="text-xs text-destructive">{error}</span>
           )}
         </div>
       )
@@ -91,7 +91,7 @@ function SettingControl({ item, value, onChange, error }: ControlProps) {
             }}
           />
           {error && (
-            <span className="text-xs text-red-500">{error}</span>
+            <span className="text-xs text-destructive">{error}</span>
           )}
         </div>
       )
@@ -162,7 +162,7 @@ function SettingControl({ item, value, onChange, error }: ControlProps) {
             placeholder={item.placeholder || ''}
           />
           {error && (
-            <span className="text-xs text-red-500">{error}</span>
+            <span className="text-xs text-destructive">{error}</span>
           )}
         </div>
       )
@@ -181,7 +181,7 @@ function SettingControl({ item, value, onChange, error }: ControlProps) {
             placeholder={item.placeholder || ''}
           />
           {error && (
-            <span className="text-xs text-red-500">{error}</span>
+            <span className="text-xs text-destructive">{error}</span>
           )}
         </div>
       )
@@ -196,7 +196,7 @@ function SettingControl({ item, value, onChange, error }: ControlProps) {
             onChange={(e) => onChange(key, e.target.value)}
           />
           {error && (
-            <span className="text-xs text-red-500">{error}</span>
+            <span className="text-xs text-destructive">{error}</span>
           )}
         </div>
       )
@@ -211,7 +211,7 @@ function SettingControl({ item, value, onChange, error }: ControlProps) {
             onChange={(e) => onChange(key, e.target.value)}
           />
           {error && (
-            <span className="text-xs text-red-500">{error}</span>
+            <span className="text-xs text-destructive">{error}</span>
           )}
         </div>
       )
@@ -229,7 +229,7 @@ function SettingControl({ item, value, onChange, error }: ControlProps) {
             <option value="option3">Option 3</option>
           </select>
           {error && (
-            <span className="text-xs text-red-500">{error}</span>
+            <span className="text-xs text-destructive">{error}</span>
           )}
         </div>
       )
@@ -416,7 +416,7 @@ export function Component() {
                   label={item.displayName}
                   description={item.description}
                   isDirty={values[item.key] !== originals[item.key]}
-                  className={i % 2 === 1 ? 'bg-bg-layer-3/40' : ''}
+                  className={i % 2 === 1 ? 'bg-interactive/10 dark:bg-bg-layer-3/40' : ''}
                 >
                   <SettingControl
                     item={item}

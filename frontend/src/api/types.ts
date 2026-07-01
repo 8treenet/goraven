@@ -53,7 +53,7 @@ export interface ModelInfo {
   icon: string
   contextLen: number
   isDefault: number
-  isCompress: number
+  isFlash: number
   isVisual: number
 }
 
@@ -101,6 +101,7 @@ export interface PersonaDetail extends PersonaSimple {
   categoryName: string
   categoryIcon: string
   modelName: string
+  modelIcon: string
 }
 
 export interface PersonaCategory {
@@ -406,7 +407,7 @@ export interface AdminModelItem {
   contextLen: number
   extraFields: string
   isDefault: number
-  isCompress: number
+  isFlash: number
   isVisual: number
   status: number
   remark: string
@@ -427,7 +428,7 @@ export interface AdminModelDetail {
   contextLen: number
   extraFields: string
   isDefault: number
-  isCompress: number
+  isFlash: number
   isVisual: number
   status: number
   remark: string

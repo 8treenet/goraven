@@ -39,7 +39,7 @@ const DEFAULT_MODEL: ModelInfo = {
   icon: '',
   contextLen: 0,
   isDefault: 0,
-  isCompress: 0,
+  isFlash: 0,
   isVisual: 0,
 }
 
@@ -393,9 +393,9 @@ export function Component() {
                 onChange={e => { setName(e.target.value); setErrors(prev => ({ ...prev, name: '' })) }}
                 placeholder={t('personas.namePlaceholder')}
                 maxLength={50}
-                className={cn(errors.name && 'border-red-400')}
+                className={cn(errors.name && 'border-destructive')}
               />
-              {errors.name && <p className="mt-0.5 text-[11px] text-red-400">{errors.name}</p>}
+              {errors.name && <p className="mt-0.5 text-[11px] text-destructive">{errors.name}</p>}
             </div>
 
             <div>
@@ -411,7 +411,7 @@ export function Component() {
                 <button
                   className={cn(
                     'flex h-8 w-full items-center gap-2 rounded-lg border px-2.5 text-sm transition-colors hover:bg-bg-hover',
-                    errors.categoryId ? 'border-red-400' : 'border-input',
+                    errors.categoryId ? 'border-destructive' : 'border-input',
                     !selectedCategory && 'text-text-3'
                   )}
                   onClick={() => setCategoryOpen(!categoryOpen)}
@@ -448,7 +448,7 @@ export function Component() {
                   </>
                 )}
               </div>
-              {errors.categoryId && <p className="mt-0.5 text-[11px] text-red-400">{errors.categoryId}</p>}
+              {errors.categoryId && <p className="mt-0.5 text-[11px] text-destructive">{errors.categoryId}</p>}
             </div>
           </div>
         </section>
@@ -466,10 +466,10 @@ export function Component() {
             maxLength={500}
             className={cn(
               'w-full rounded-lg border bg-transparent px-2.5 py-2 text-sm text-text-1 placeholder:text-text-muted transition-colors focus:border-ring focus:ring-3 focus:ring-ring/50 focus:outline-none resize-y',
-              errors.roleInfo ? 'border-red-400' : 'border-input'
+              errors.roleInfo ? 'border-destructive' : 'border-input'
             )}
           />
-          {errors.roleInfo && <p className="mt-0.5 text-[11px] text-red-400">{errors.roleInfo}</p>}
+          {errors.roleInfo && <p className="mt-0.5 text-[11px] text-destructive">{errors.roleInfo}</p>}
           <p className="mt-1 text-[11px] text-text-muted text-right">{roleInfo.length}/500</p>
         </section>
 

@@ -199,7 +199,7 @@ export function PersonaInfoDialog({
                         <span className="w-32 shrink-0 text-xs text-text-3">{t('personas.contextLength')}</span>
                         <span className="text-sm text-text-1">{formatK(modelInfo.contextLen)}</span>
                       </div>
-                      {(!!modelInfo.isDefault || !!modelInfo.isCompress || !!modelInfo.isVisual) && (
+                      {(!!modelInfo.isDefault || !!modelInfo.isFlash || !!modelInfo.isVisual) && (
                         <div className="flex items-center">
                           <span className="w-32 shrink-0 text-xs text-text-3">{t('adminModels.labels')}</span>
                           <span className="flex items-center gap-1">
@@ -209,10 +209,10 @@ export function PersonaInfoDialog({
                                 {t('common.default')}
                               </span>
                             )}
-                            {!!modelInfo.isCompress && (
-                              <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs bg-bg-layer-3 text-text-2">
+                            {!!modelInfo.isFlash && (
+                              <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs bg-interactive text-white">
                                 <Zap className="size-2.5" />
-                                {t('adminModels.compress')}
+                                {t('adminModels.flash')}
                               </span>
                             )}
                             {!!modelInfo.isVisual && (

@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Share2, Shrink, Paperclip, ArrowUp, CircleStop, Loader2, TriangleAlert, FolderGit2, FolderOpen, FolderClock, Menu } from 'lucide-react'
+import { Share2, Shrink, Paperclip, ArrowUp, Square, Loader2, TriangleAlert, FolderGit2, FolderOpen, FolderClock, Menu } from 'lucide-react'
 import { cn, uuid } from '@/lib/utils'
 import { listFiles } from '@/api/files'
 import type { FileItem } from '@/api/types'
@@ -198,7 +198,7 @@ function NewChat() {
           <div className="flex h-full flex-col items-center justify-center px-4 pb-20">
             <div className="mb-8 flex w-full max-w-2xl flex-col items-center gap-3">
               <img src="/favicon.svg" alt="Raven" className="size-10 opacity-60" />
-              <p className="text-xl text-text-2">
+              <p className="text-xl text-text-1">
                 What can I help you build?
               </p>
             </div>
@@ -499,7 +499,7 @@ function ChatToolbar({
         <button
           onClick={openMobile}
           aria-label={t('sidebar.menu')}
-          className="shrink-0 text-text-muted transition-colors hover:text-text-3 md:hidden"
+          className="shrink-0 text-text-1 transition-colors md:hidden"
         >
           <Menu className="size-4" />
         </button>
@@ -541,6 +541,13 @@ function ChatToolbar({
               className="rounded p-1 cursor-not-allowed text-text-muted/50"
             >
               <Loader2 className="size-4 animate-spin" />
+            </button>
+          ) : !tokenUsed ? (
+            <button
+              disabled
+              className="rounded p-1 cursor-not-allowed text-text-muted/30"
+            >
+              <Shrink className="size-4" />
             </button>
           ) : (
             <Tooltip>
@@ -595,7 +602,7 @@ function ChatToolbar({
       <button
         onClick={openMobile}
         aria-label={t('sidebar.menu')}
-        className="shrink-0 text-text-muted transition-colors hover:text-text-3 md:hidden"
+        className="shrink-0 text-text-1 transition-colors md:hidden"
       >
         <Menu className="size-4" />
       </button>
@@ -848,7 +855,7 @@ function NewChatInput({
   }, [generating, stopGeneration, onSend])
 
   return (
-    <div className="rounded-lg bg-bg-layer-2">
+    <div className={cn('rounded-lg border bg-bg-base', generating ? 'border-border' : 'border-highlight')}>
       <FilePreviews files={files} onRemove={removeFile} />
       <textarea
         ref={textareaRef}
@@ -881,7 +888,7 @@ function NewChatInput({
                         ? 'text-highlight bg-highlight/10'
                         : plusOpen
                           ? 'bg-bg-hover text-text-2'
-                          : 'text-text-muted hover:bg-bg-hover hover:text-text-2',
+                        : 'text-text-1 hover:bg-bg-hover',
                   )}
                 >
                   <Icon name="wrench" className="size-4" />
@@ -966,7 +973,7 @@ function NewChatInput({
                   'rounded-md p-1 transition-colors',
                   files.length > 0
                     ? 'text-highlight bg-highlight/10'
-                    : 'text-text-muted hover:bg-bg-hover hover:text-text-2',
+                    : 'text-text-1 hover:bg-bg-hover',
                 )}
                 onClick={() => fileInputRef.current?.click()}
               >
@@ -984,7 +991,7 @@ function NewChatInput({
                   'rounded-md p-1 transition-colors',
                   formProjectPath
                     ? 'text-highlight bg-highlight/10'
-                    : 'text-text-muted hover:bg-bg-hover hover:text-text-2',
+                    : 'text-text-1 hover:bg-bg-hover',
                 )}
               >
                 <FolderGit2 className="size-3.5" />
@@ -1008,14 +1015,39 @@ function NewChatInput({
           </label>
         </div>
 
-        <button onClick={handleSendOrStop} disabled={(!generating && !value.trim()) || (generating && stopDisabled)}
-          className={cn(
-            'flex items-center justify-center rounded-md p-1.5 transition-colors bg-highlight text-highlight-fg hover:opacity-90',
-            !value.trim() && !generating && 'pointer-events-none bg-bg-layer-3 text-text-2 opacity-40',
-            generating && stopDisabled && 'opacity-40 cursor-not-allowed',
-          )}>
-          {generating ? <CircleStop className="size-4" /> : <ArrowUp className="size-4" />}
-        </button>
+        {generating ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button onClick={handleSendOrStop} disabled={stopDisabled}
+                className={cn(
+                  'flex items-center justify-center rounded-md p-1.5 transition-colors',
+                  stopDisabled && 'opacity-40 cursor-not-allowed',
+                )}
+                style={{
+                  '--stop-angle': '0deg',
+                  border: '1px solid transparent',
+                  backgroundImage: 'linear-gradient(var(--bg-base), var(--bg-base)), conic-gradient(from var(--stop-angle), var(--highlight), transparent 70%, transparent)',
+                  backgroundOrigin: 'border-box',
+                  backgroundClip: 'padding-box, border-box',
+                  animation: stopDisabled ? 'none' : 'stop-spin 1.5s linear infinite',
+                  color: 'var(--highlight)',
+                } as React.CSSProperties}
+              >
+                <Square className="size-4 fill-current" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>{t('chat.stopTooltip')}</TooltipContent>
+          </Tooltip>
+        ) : (
+          <button onClick={handleSendOrStop} disabled={!value.trim()}
+            className={cn(
+              'flex items-center justify-center rounded-md p-1.5 transition-colors bg-highlight text-highlight-fg hover:opacity-90',
+              !value.trim() && 'pointer-events-none opacity-40',
+            )}
+          >
+            <ArrowUp className="size-4" />
+          </button>
+        )}
       </div>
 
       <Dialog open={projectOpen} onOpenChange={setProjectOpen}>
@@ -1187,7 +1219,7 @@ function ChatInput({
   return (
     <div className="shrink-0 px-4 pb-6 pt-3">
       <div className="mx-auto max-w-3xl">
-        <div className="overflow-hidden rounded-lg bg-bg-layer-2">
+        <div className={cn('overflow-hidden rounded-lg border bg-bg-base', (isGenerating || isBackground || compressing) ? 'border-border' : 'border-highlight')}>
           <FilePreviews files={files} onRemove={removeFile} />
           <textarea
             ref={textareaRef}
@@ -1246,15 +1278,42 @@ function ChatInput({
             </div>
 
             <div className="flex items-center gap-3">
-              <button onClick={handleSendOrStop} disabled={(!isGenerating && !isBackground && (compressing || !value.trim())) || ((isGenerating || isBackground) && stopDisabled)}
-                className={cn(
-                  'flex items-center justify-center rounded-md p-1.5 transition-colors',
-                  compressing && !isGenerating && !isBackground ? 'bg-bg-layer-3 text-text-2' : 'bg-highlight text-highlight-fg hover:opacity-90',
-                  !value.trim() && !isGenerating && !isBackground && !compressing && 'pointer-events-none bg-bg-layer-3 text-text-2 opacity-40',
-                  (isGenerating || isBackground) && stopDisabled && 'opacity-40 cursor-not-allowed',
-                )}>
-                {(isGenerating || isBackground) ? <CircleStop className="size-4" /> : <ArrowUp className="size-4" />}
-              </button>
+              {(isGenerating || isBackground) ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button onClick={handleSendOrStop} disabled={stopDisabled}
+                      className={cn(
+                        'flex items-center justify-center rounded-md p-1.5 transition-colors',
+                        stopDisabled && 'opacity-40 cursor-not-allowed',
+                      )}
+                      style={{
+                        '--stop-angle': '0deg',
+                        border: '1px solid transparent',
+                        backgroundImage: 'linear-gradient(var(--bg-base), var(--bg-base)), conic-gradient(from var(--stop-angle), var(--highlight), transparent 70%, transparent)',
+                        backgroundOrigin: 'border-box',
+                        backgroundClip: 'padding-box, border-box',
+                        animation: stopDisabled ? 'none' : 'stop-spin 1.5s linear infinite',
+                        color: 'var(--highlight)',
+                      } as React.CSSProperties}
+                    >
+                      <Square className="size-4 fill-current" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('chat.stopTooltip')}</TooltipContent>
+                </Tooltip>
+              ) : (
+                <button onClick={handleSendOrStop} disabled={compressing || !value.trim()}
+                  className={cn(
+                    'flex items-center justify-center rounded-md p-1.5 transition-colors',
+                    compressing
+                      ? 'bg-bg-layer-3 text-text-2'
+                      : 'bg-highlight text-highlight-fg hover:opacity-90',
+                    !value.trim() && !compressing && 'pointer-events-none opacity-40',
+                  )}
+                >
+                  <ArrowUp className="size-4" />
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -14,7 +14,7 @@ export interface Model {
   provider: string
   icon: string
   isDefault: boolean
-  isCompress: boolean
+  isFlash: boolean
   isVisual: boolean
 }
 
@@ -129,6 +129,17 @@ const pollIntervals = new Map<string, ReturnType<typeof setInterval>>()
 const backgroundTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 const BACKGROUND_TIMEOUT_MS = 3 * 60 * 1000
 
+const LAST_USED_MODEL_KEY = 'raven.lastUsedModelId'
+
+function getLastUsedModelId(): number {
+  const v = localStorage.getItem(LAST_USED_MODEL_KEY)
+  return v ? Number(v) || 0 : 0
+}
+
+function setLastUsedModelId(id: number) {
+  localStorage.setItem(LAST_USED_MODEL_KEY, String(id))
+}
+
 function startPolling(
   sessionId: string,
   get: () => ChatState,
@@ -147,6 +158,20 @@ function startPolling(
         } else {
           set((s) => ({
             sessions: s.sessions.map((se) => se.id === sessionId ? { ...se, status: 0 } : se),
+          }))
+        }
+      } else {
+        // Defensive: ensure the local session reflects the in-progress status.
+        // Any transition path that forgets to set status=1 is self-corrected here,
+        // so the background UI appears even if the stream silently died.
+        // Skip the set() when already 1 to avoid creating a new sessions array
+        // (which would trigger a re-render) every 3s.
+        const se = get().sessions.find((s) => s.id === sessionId)
+        if (se && se.status !== 1) {
+          set((s) => ({
+            sessions: s.sessions.map((se) =>
+              se.id === sessionId ? { ...se, status: 1 } : se
+            ),
           }))
         }
       }
@@ -284,14 +309,18 @@ function createStreamHandlers(
         if (prev.generatingSessionId !== sessionId) {
           return { generatingSessionId: null, streamController: null }
         }
-        // SSE disconnected (network issue) — keep status 1, clear stream state.
-        // UI will show background state since session.status stays 1 and isGenerating becomes false.
+        // SSE disconnected (network issue) — mark status=1 so the UI shows the
+        // background state (session.status===1 && !isGenerating) while polling
+        // waits for the backend to finish. Clear stream state.
         return {
           generatingSessionId: null,
           streamController: null,
           streamingContent: '',
           streamingThinkingSegments: [],
           streamingRetry: null,
+          sessions: prev.sessions.map((se) =>
+            se.id === sessionId ? { ...se, status: 1 } : se
+          ),
         }
       })
       // Start polling so we detect when the backend finishes generating
@@ -456,14 +485,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
         provider: m.providerDisplayName,
         icon: m.icon,
         isDefault: Boolean(m.isDefault),
-        isCompress: Boolean(m.isCompress),
+        isFlash: Boolean(m.isFlash),
         isVisual: Boolean(m.isVisual),
       }))
       const defaultModel = models.find((m) => m.isDefault)
-      set({
-        models,
-        formModelId: get().formModelId || (defaultModel?.id ?? models[0]?.id ?? 0),
-      })
+      let nextModelId = get().formModelId
+      if (!nextModelId) {
+        const lastId = getLastUsedModelId()
+        nextModelId = lastId && models.some((m) => m.id === lastId)
+          ? lastId
+          : (defaultModel?.id ?? models[0]?.id ?? 0)
+      }
+      set({ models, formModelId: nextModelId })
     } catch {
       // keep empty models on error
     }
@@ -585,7 +618,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set((s) => ({ messages: s.messages.filter((m) => m.id !== userMsg.id) }))
       return undefined
     }
-    if (isNewSession) set({ creatingSession: false })
+    if (isNewSession) {
+      set({ creatingSession: false })
+      const usedModelId = rsp.session?.aiModelId ?? state.formModelId
+      if (usedModelId > 0) setLastUsedModelId(usedModelId)
+    }
 
 
     // For new sessions, build session from chat response (backend returns full detail)
@@ -600,7 +637,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
         mcpIds: d.mcpIds ?? [],
         skillIds: d.skillIds ?? [],
         lastChatTime: d.lastChatTime,
-        status: d.status,
+        // Backend returns status=0 in the ChatRsp because session.Status is read
+        // before the runner goroutine flips the DB to 1. We just initiated a
+        // generation, so treat it as in-progress.
+        status: 1,
         messages: [...state.messages],
         modelName: d.modelName ?? '',
         personaName: d.personaName ?? '',
@@ -640,14 +680,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
         sessionDetail: d ?? null,
       }))
     } else {
-      set({
+      set((s) => ({
         currentSessionId: sessionId,
         generatingSessionId: sessionId,
         streamingContent: '',
         streamingThinkingSegments: [],
         streamingRetry: null,
         formAttachments: [],
-      })
+        // Optimistically mark the session as generating so any transition to
+        // background (timeout / SSE error / navigation) reads status===1.
+        sessions: s.sessions.map((se) =>
+          se.id === sessionId ? { ...se, status: 1 } : se
+        ),
+      }))
     }
 
     // Connect SSE stream
@@ -666,7 +711,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         generatingSessionId: null,
         streamController: null,
         sessions: s.sessions.map((se) =>
-          se.id === sessionId ? { ...se } : se
+          se.id === sessionId ? { ...se, status: 1 } : se
         ),
       })
       controller.abort()
@@ -950,7 +995,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
     clearTimeout(backgroundTimeouts.get(genId))
     backgroundTimeouts.delete(genId)
     get().streamController?.abort()
-    set({ generatingSessionId: null, streamController: null, streamingContent: '', streamingThinkingSegments: [] })
+    set((s) => ({
+      generatingSessionId: null,
+      streamController: null,
+      streamingContent: '',
+      streamingThinkingSegments: [],
+      // The backgrounded session is still generating on the backend; reflect
+      // that locally so the UI renders the background state while polling.
+      sessions: s.sessions.map((se) =>
+        se.id === genId ? { ...se, status: 1 } : se
+      ),
+    }))
     startPolling(genId, get, set)
   },
 }))

@@ -32,7 +32,7 @@ export function InstalledSkillRow({
       className={cn(
         'group flex items-start gap-3 px-4 transition-colors',
         pad,
-        index % 2 === 0 ? 'bg-bg-layer-1 hover:bg-bg-hover' : 'hover:bg-bg-hover',
+        index % 2 === 0 ? 'bg-interactive/10 dark:bg-bg-layer-1 hover:bg-bg-hover' : 'hover:bg-bg-hover',
       )}
     >
       <div className="shrink-0 mt-0.5">
@@ -106,7 +106,7 @@ export function MarketSkillRow({
       className={cn(
         'group flex items-start gap-3 px-4 transition-colors',
         pad,
-        index % 2 === 0 ? 'bg-bg-layer-1 hover:bg-bg-hover' : 'hover:bg-bg-hover',
+        index % 2 === 0 ? 'bg-interactive/10 dark:bg-bg-layer-1 hover:bg-bg-hover' : 'hover:bg-bg-hover',
       )}
     >
       <div className="shrink-0 mt-0.5">
@@ -150,7 +150,7 @@ export function MarketSkillRow({
           <TooltipContent>{t('skills.details')}</TooltipContent>
         </Tooltip>
         {skill.userInstalled ? (
-          <span className="px-1.5 text-xs text-text-muted">{t('common.installed')}</span>
+          <span className="px-1.5 text-xs text-text-muted whitespace-nowrap">{t('common.installed')}</span>
         ) : (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -192,7 +192,7 @@ export function ShareSkillRow({
       className={cn(
         'group flex items-start gap-3 px-4 transition-colors',
         pad,
-        index % 2 === 0 ? 'bg-bg-layer-1 hover:bg-bg-hover' : 'hover:bg-bg-hover',
+        index % 2 === 0 ? 'bg-interactive/10 dark:bg-bg-layer-1 hover:bg-bg-hover' : 'hover:bg-bg-hover',
       )}
     >
       <div className="shrink-0 mt-0.5">
@@ -238,7 +238,7 @@ export function ShareSkillRow({
           <TooltipContent>{t('skills.details')}</TooltipContent>
         </Tooltip>
         {userInstalled ? (
-          <span className="px-1.5 text-xs text-text-muted">{t('common.installed')}</span>
+          <span className="px-1.5 text-xs text-text-muted whitespace-nowrap">{t('common.installed')}</span>
         ) : (
           <Tooltip>
             <TooltipTrigger asChild>

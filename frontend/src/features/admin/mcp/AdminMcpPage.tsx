@@ -20,7 +20,7 @@ import {
   Lightbulb,
   Plug,
 } from 'lucide-react'
-import { renderIcon } from '@/components/common/Icon'
+import { Icon } from '@/components/common/Icon'
 import { IconPickerTrigger, DEFAULT_ICON, type IconName } from '@/components/common/IconPicker'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
@@ -316,11 +316,7 @@ function StatusToggle({
    ============================================ */
 
 function McpIcon({ icon }: { icon: string }) {
-  return (
-    <div className="inline-flex size-8 shrink-0 items-center justify-center rounded bg-bg-layer-3 text-interactive">
-      {renderIcon(icon || DEFAULT_ICON, 'size-4')}
-    </div>
-  )
+  return <Icon name={icon || DEFAULT_ICON} className="size-5 text-interactive" />
 }
 
 /* ============================================
@@ -461,7 +457,7 @@ function McpForm({
               maxLength={64}
             />
             {form.name.length > 0 && !/^[A-Za-z][A-Za-z0-9-]{1,63}$/.test(form.name) && (
-              <p className="text-xs text-red-500">{t('adminMcp.identifierValidation')}</p>
+              <p className="text-xs text-destructive">{t('adminMcp.identifierValidation')}</p>
             )}
           </div>
 
@@ -702,9 +698,9 @@ function McpForm({
           </div>
 
           {error && (
-            <div className="flex items-start gap-2 rounded-md bg-red-500/10 p-3">
-              <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-red-500" />
-              <p className="text-xs text-red-500">{error}</p>
+            <div className="flex items-start gap-2 rounded-md bg-destructive/10 p-3">
+              <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-destructive" />
+              <p className="text-xs text-destructive">{error}</p>
             </div>
           )}
         </div>
@@ -887,7 +883,7 @@ function RecommendDialog({
                   )}
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <span className="inline-flex w-fit items-center gap-1 rounded bg-bg-layer-3 px-1.5 py-0.5 text-xs text-text-2">
+                  <span className="inline-flex w-fit items-center gap-1 rounded px-1.5 py-0.5 text-xs text-text-2 border border-border-custom">
                     {item.transport === 'Stdio' ? (
                       <Terminal className="size-2.5" />
                     ) : (
@@ -979,18 +975,20 @@ function McpRow({
 }) {
   const t = useT()
   return (
-    <tr className={cn(isEven && 'bg-bg-layer-1', 'transition-colors hover:bg-bg-hover')}>
-      <td className="py-2.5 pl-4 pr-2">
-        <McpIcon icon={item.icon} />
-      </td>
-      <td className="py-2.5 pr-4">
-        <div className="flex flex-col gap-0.5">
-          <span className="text-sm font-medium text-text-1">{item.displayName}</span>
-          <span className="text-xs text-text-3">{item.name}</span>
+    <tr className={cn(isEven && 'bg-interactive/10 dark:bg-bg-layer-1', 'transition-colors hover:bg-bg-hover')}>
+      <td className="py-2.5 pl-4 pr-4">
+        <div className="flex items-center gap-3">
+          <div className="shrink-0">
+            <McpIcon icon={item.icon} />
+          </div>
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <span className="text-sm font-medium text-text-1 truncate">{item.displayName}</span>
+            <span className="text-xs text-text-3 truncate">{item.name}</span>
+          </div>
         </div>
       </td>
       <td className="py-2.5 pr-4">
-        <span className="inline-flex items-center gap-1 rounded bg-bg-layer-3 px-1.5 py-0.5 text-xs text-text-2">
+        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-text-2 border border-border-custom">
           {item.transport === 'Stdio' ? (
             <Terminal className="size-3" />
           ) : (
@@ -1001,16 +999,7 @@ function McpRow({
       </td>
       <td className="py-2.5 pr-4">
         {item.healthLatency > 0 ? (
-          <span
-            className={cn(
-              'text-sm tabular-nums',
-              item.healthLatency < 50
-                ? 'text-highlight'
-                : item.healthLatency < 200
-                  ? 'text-text-2'
-                  : 'text-text-3',
-            )}
-          >
+          <span className="text-sm tabular-nums text-highlight">
             {item.healthLatency}ms
           </span>
         ) : (
@@ -1051,7 +1040,7 @@ function McpRow({
           </button>
           <button
             onClick={onDelete}
-            className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-red-500"
+            className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-destructive"
             title={t('common.delete')}
           >
             <Trash2 className="size-3.5" />
@@ -1073,8 +1062,7 @@ function TableSkeleton() {
       <table className="w-full">
         <thead>
           <tr className="border-b border-border text-left text-xs text-text-3">
-            <th className="pb-2 pl-4 pr-2 font-normal" />
-            <th className="pb-2 pr-4 font-normal">{t('common.name')}</th>
+            <th className="pb-2 pl-4 pr-4 font-normal">{t('common.name')}</th>
             <th className="pb-2 pr-4 font-normal">{t('adminMcp.transport')}</th>
             <th className="pb-2 pr-4 font-normal">{t('adminMcp.latency')}</th>
             <th className="pb-2 pr-4 font-normal">{t('adminMcp.checkTime')}</th>
@@ -1086,13 +1074,15 @@ function TableSkeleton() {
         </thead>
         <tbody>
           {Array.from({ length: 8 }).map((_, i) => (
-            <tr key={i} className={cn(i % 2 === 0 && 'bg-bg-layer-1')}>
-              <td className="py-2.5 pl-4 pr-2">
-                <div className="size-8 animate-pulse rounded bg-bg-layer-3" />
-              </td>
-              <td className="py-2.5 pr-4">
-                <div className="h-3.5 w-24 animate-pulse rounded bg-bg-layer-2" />
-                <div className="mt-1 h-2.5 w-16 animate-pulse rounded bg-bg-layer-2" />
+            <tr key={i} className={cn(i % 2 === 0 && 'bg-interactive/10 dark:bg-bg-layer-1')}>
+              <td className="py-2.5 pl-4 pr-4">
+                <div className="flex items-center gap-3">
+                  <div className="size-5 shrink-0 animate-pulse rounded-sm bg-bg-layer-3" />
+                  <div>
+                    <div className="h-3.5 w-24 animate-pulse rounded bg-bg-layer-2" />
+                    <div className="mt-1 h-2.5 w-16 animate-pulse rounded bg-bg-layer-2" />
+                  </div>
+                </div>
               </td>
               <td className="py-2.5 pr-4">
                 <div className="h-5 w-14 animate-pulse rounded bg-bg-layer-2" />
@@ -1572,8 +1562,7 @@ export function Component() {
             <table className="w-full">
               <thead>
                 <tr className="sticky top-0 z-10 border-b border-border bg-bg-base text-left text-xs text-text-3">
-                  <th className="pb-2 pl-4 pr-2 font-normal" />
-                  <th className="pb-2 pr-4 font-normal">{t('common.name')}</th>
+                  <th className="pb-2 pl-4 pr-4 font-normal">{t('common.name')}</th>
                   <th className="pb-2 pr-4 font-normal">{t('adminMcp.transport')}</th>
                   <th className="pb-2 pr-4 font-normal">{t('adminMcp.latency')}</th>
                   <th className="pb-2 pr-4 font-normal">{t('adminMcp.checkTime')}</th>

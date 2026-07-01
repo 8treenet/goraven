@@ -14,7 +14,7 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { renderIcon } from '@/components/common/Icon'
+import { Icon, renderIcon } from '@/components/common/Icon'
 import { IconPickerTrigger } from '@/components/common/IconPicker'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -146,8 +146,8 @@ function parseSkillContent(content: string): { name: string; description: string
   }
 
   const frontmatter = match[1]
-  const name = frontmatter.match(/^name:\s*(.+)$/m)?.[1]?.trim() ?? ''
-  const description = frontmatter.match(/^description:\s*(.+)$/m)?.[1]?.trim() ?? ''
+  const name = frontmatter.match(/^name:[ \t]+(.+)$/m)?.[1]?.trim() ?? ''
+  const description = frontmatter.match(/^description:[ \t]+(.+)$/m)?.[1]?.trim() ?? ''
 
   if (!name) errors.push(translate('adminSkills.errMissingName'))
   if (!description) errors.push(translate('adminSkills.errMissingDescription'))
@@ -159,7 +159,7 @@ function parseSkillContent(content: string): { name: string; description: string
 
 const GLOBAL_TEMPLATE = `---
 name: raven-
-description:
+description: fill skill description here
 ---
 
 `
@@ -848,7 +848,7 @@ export function Component() {
                   </thead>
                   <tbody>
                     {filteredSystemSkills.map((skill, index) => (
-                      <tr key={skill.skillId} className={cn(index % 2 === 0 ? 'bg-bg-layer-2/40' : 'bg-transparent')}>
+                      <tr key={skill.skillId} className={cn(index % 2 === 0 ? 'bg-interactive/10 dark:bg-bg-layer-2/40' : 'bg-transparent')}>
                         <td className="px-4 py-3">
                           <div className="font-medium text-text-1">{skill.description}</div>
                           <div className="mt-1 flex items-center gap-2">
@@ -938,10 +938,10 @@ export function Component() {
                   </thead>
                   <tbody>
                     {filteredMarketSkills.map((skill, index) => (
-                      <tr key={skill.skillId} className={cn(index % 2 === 0 ? 'bg-bg-layer-2/40' : 'bg-transparent')}>
+                      <tr key={skill.skillId} className={cn(index % 2 === 0 ? 'bg-interactive/10 dark:bg-bg-layer-2/40' : 'bg-transparent')}>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <SkillIcon icon={skill.icon} />
+                            <Icon name={skill.icon} className="size-5 text-interactive" />
                             <div>
                               <div className="font-medium text-text-1">{skill.name}</div>
                               <div className="mt-1 max-w-xl truncate text-xs text-text-3">{skill.description}</div>
@@ -951,7 +951,7 @@ export function Component() {
                         <td className="px-4 py-3"><ScopeLabel>{getSourceLabel(skill.source)}</ScopeLabel></td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2 text-text-2">
-                            {renderIcon(skill.categoryIcon, 'size-3.5 shrink-0')}
+                            <Icon name={skill.categoryIcon} className="size-3.5 text-interactive" />
                             <span className="max-w-[100px] truncate">{skill.categoryName}</span>
                           </div>
                         </td>

@@ -25,11 +25,11 @@ func init() {
 }
 
 type PersonaService struct {
-	Worker		freedom.Worker
-	PersonaRepo	*repository.PersonaRepository
-	ModelRepo	*repository.ProviderRepository
-	McpRepo		*repository.MCPRepository
-	SkillRepo	*repository.SkillRepository
+	Worker      freedom.Worker
+	PersonaRepo *repository.PersonaRepository
+	ModelRepo   *repository.ProviderRepository
+	McpRepo     *repository.MCPRepository
+	SkillRepo   *repository.SkillRepository
 }
 
 func (service *PersonaService) ListPersonaTemplates(req *vo.AdminPersonaTemplateListReq) (*infra.PageResponse, error) {
@@ -43,15 +43,15 @@ func (service *PersonaService) ListPersonaTemplates(req *vo.AdminPersonaTemplate
 	items := make([]vo.AdminPersonaTemplateItem, 0, len(templates))
 	for _, t := range templates {
 		item := vo.AdminPersonaTemplateItem{
-			TemplateId:	t.TemplateId,
-			Name:		t.Name,
-			Icon:		t.Icon,
-			Description:	t.Description,
-			RoleInfo:	util.TruncateRunes(t.RoleInfo, 50),
-			CategoryId:	t.CategoryId,
-			UsageCount:	t.UsageCount,
-			SortOrder:	t.SortOrder,
-			Updated:	t.Updated,
+			TemplateId:  t.TemplateId,
+			Name:        t.Name,
+			Icon:        t.Icon,
+			Description: t.Description,
+			RoleInfo:    util.TruncateRunes(t.RoleInfo, 50),
+			CategoryId:  t.CategoryId,
+			UsageCount:  t.UsageCount,
+			SortOrder:   t.SortOrder,
+			Updated:     t.Updated,
 		}
 		if cat, ok := categoryMap[t.CategoryId]; ok {
 			item.CategoryName = cat.Name
@@ -61,11 +61,11 @@ func (service *PersonaService) ListPersonaTemplates(req *vo.AdminPersonaTemplate
 	}
 
 	return &infra.PageResponse{
-		List:		items,
-		TotalPage:	pr.TotalPage,
-		TotalCount:	pr.TotalCount,
-		Page:		pr.Page,
-		PageSize:	pr.PageSize,
+		List:       items,
+		TotalPage:  pr.TotalPage,
+		TotalCount: pr.TotalCount,
+		Page:       pr.Page,
+		PageSize:   pr.PageSize,
 	}, nil
 }
 
@@ -76,16 +76,16 @@ func (service *PersonaService) GetPersonaTemplateDetail(templateId int) (*vo.Adm
 	}
 
 	rsp := &vo.AdminPersonaTemplateDetailRsp{
-		TemplateId:	tmpl.TemplateId,
-		Name:		tmpl.Name,
-		Icon:		tmpl.Icon,
-		Description:	tmpl.Description,
-		RoleInfo:	tmpl.RoleInfo,
-		CategoryId:	tmpl.CategoryId,
-		UsageCount:	tmpl.UsageCount,
-		SortOrder:	tmpl.SortOrder,
-		Created:	tmpl.Created,
-		Updated:	tmpl.Updated,
+		TemplateId:  tmpl.TemplateId,
+		Name:        tmpl.Name,
+		Icon:        tmpl.Icon,
+		Description: tmpl.Description,
+		RoleInfo:    tmpl.RoleInfo,
+		CategoryId:  tmpl.CategoryId,
+		UsageCount:  tmpl.UsageCount,
+		SortOrder:   tmpl.SortOrder,
+		Created:     tmpl.Created,
+		Updated:     tmpl.Updated,
 	}
 
 	if tmpl.CategoryId > 0 {
@@ -110,12 +110,12 @@ func (service *PersonaService) CreatePersonaTemplate(req *vo.AdminCreatePersonaT
 	}
 
 	tmpl := &po.PersonaTemplate{
-		Name:		req.Name,
-		Icon:		req.Icon,
-		Description:	req.Description,
-		RoleInfo:	req.RoleInfo,
-		CategoryId:	req.CategoryId,
-		SortOrder:	req.SortOrder,
+		Name:        req.Name,
+		Icon:        req.Icon,
+		Description: req.Description,
+		RoleInfo:    req.RoleInfo,
+		CategoryId:  req.CategoryId,
+		SortOrder:   req.SortOrder,
 	}
 	return service.PersonaRepo.CreatePersonaTemplate(tmpl)
 }
@@ -178,21 +178,21 @@ func (service *PersonaService) ListPersonaCategories(req *vo.AdminPersonaCategor
 	for _, c := range categories {
 		templateCount, _ := service.PersonaRepo.CountTemplatesByCategoryId(c.CategoryId)
 		items = append(items, vo.AdminPersonaCategoryItem{
-			CategoryId:	c.CategoryId,
-			Name:		c.Name,
-			Icon:		c.Icon,
-			IsDefault:	c.IsDefault,
-			TemplateCount:	templateCount,
-			Updated:	c.Updated,
+			CategoryId:    c.CategoryId,
+			Name:          c.Name,
+			Icon:          c.Icon,
+			IsDefault:     c.IsDefault,
+			TemplateCount: templateCount,
+			Updated:       c.Updated,
 		})
 	}
 
 	return &infra.PageResponse{
-		List:		items,
-		TotalPage:	pr.TotalPage,
-		TotalCount:	pr.TotalCount,
-		Page:		pr.Page,
-		PageSize:	pr.PageSize,
+		List:       items,
+		TotalPage:  pr.TotalPage,
+		TotalCount: pr.TotalCount,
+		Page:       pr.Page,
+		PageSize:   pr.PageSize,
 	}, nil
 }
 
@@ -206,19 +206,19 @@ func (service *PersonaService) GetPersonaCategoryDetail(categoryId int) (*vo.Adm
 		return nil, errs.ErrPersonaCategoryNotFound
 	}
 	return &vo.AdminPersonaCategoryDetailRsp{
-		CategoryId:	cat.CategoryId,
-		Name:		cat.Name,
-		Icon:		cat.Icon,
-		IsDefault:	cat.IsDefault,
-		Created:	cat.Created,
-		Updated:	cat.Updated,
+		CategoryId: cat.CategoryId,
+		Name:       cat.Name,
+		Icon:       cat.Icon,
+		IsDefault:  cat.IsDefault,
+		Created:    cat.Created,
+		Updated:    cat.Updated,
 	}, nil
 }
 
 func (service *PersonaService) CreatePersonaCategory(req *vo.AdminCreatePersonaCategoryReq) error {
 	cat := &po.PersonaCategory{
-		Name:	req.Name,
-		Icon:	req.Icon,
+		Name: req.Name,
+		Icon: req.Icon,
 	}
 	return service.PersonaRepo.CreatePersonaCategory(cat)
 }
@@ -345,18 +345,18 @@ func (service *PersonaService) buildPersonaTools(personaId int, userId string, m
 	tools := make([]po.PersonaTool, 0, len(mcpIds)+len(skillIds))
 	for _, id := range mcpIds {
 		tools = append(tools, po.PersonaTool{
-			PersonaId:	personaId,
-			UserId:		userId,
-			ToolType:	"mcp",
-			ToolId:		id,
+			PersonaId: personaId,
+			UserId:    userId,
+			ToolType:  "mcp",
+			ToolId:    id,
 		})
 	}
 	for _, id := range skillIds {
 		tools = append(tools, po.PersonaTool{
-			PersonaId:	personaId,
-			UserId:		userId,
-			ToolType:	"skill",
-			ToolId:		id,
+			PersonaId: personaId,
+			UserId:    userId,
+			ToolType:  "skill",
+			ToolId:    id,
 		})
 	}
 	return tools
@@ -370,9 +370,9 @@ func (service *PersonaService) ListUserPersonasSimple(userId string) ([]vo.UserP
 	items := make([]vo.UserPersonaSimpleItem, 0, len(personas))
 	for _, p := range personas {
 		items = append(items, vo.UserPersonaSimpleItem{
-			PersonaId:	p.PersonaId,
-			Name:		p.Name,
-			Icon:		p.Icon,
+			PersonaId: p.PersonaId,
+			Name:      p.Name,
+			Icon:      p.Icon,
 		})
 	}
 	return items, nil
@@ -447,15 +447,15 @@ func (service *PersonaService) ListUserPersonas(userId string) ([]vo.UserPersona
 	items := make([]vo.UserPersonaListItem, 0, len(personas))
 	for _, p := range personas {
 		item := vo.UserPersonaListItem{
-			PersonaId:	p.PersonaId,
-			Name:		p.Name,
-			Icon:		p.Icon,
-			RoleInfo:	p.RoleInfo,
-			CategoryId:	p.CategoryId,
-			McpNames:	[]string{},
-			SkillNames:	[]string{},
-			McpIds:		[]int{},
-			SkillIds:	[]int{},
+			PersonaId:  p.PersonaId,
+			Name:       p.Name,
+			Icon:       p.Icon,
+			RoleInfo:   p.RoleInfo,
+			CategoryId: p.CategoryId,
+			McpNames:   []string{},
+			SkillNames: []string{},
+			McpIds:     []int{},
+			SkillIds:   []int{},
 		}
 		if cat, ok := categoryMap[p.CategoryId]; ok {
 			item.CategoryName = cat.Name
@@ -515,16 +515,16 @@ func (service *PersonaService) GetUserPersona(personaId int, userId string) (*vo
 	mcpIds, skillIds := service.splitToolIds(validTools)
 
 	rsp := &vo.UserPersonaDetailRsp{
-		PersonaId:	persona.PersonaId,
-		Name:		persona.Name,
-		Icon:		persona.Icon,
-		RoleInfo:	persona.RoleInfo,
-		CategoryId:	persona.CategoryId,
-		McpIds:		mcpIds,
-		SkillIds:	skillIds,
-		AIModelId:	persona.AIModelId,
-		Created:	persona.Created,
-		Updated:	persona.Updated,
+		PersonaId:  persona.PersonaId,
+		Name:       persona.Name,
+		Icon:       persona.Icon,
+		RoleInfo:   persona.RoleInfo,
+		CategoryId: persona.CategoryId,
+		McpIds:     mcpIds,
+		SkillIds:   skillIds,
+		AIModelId:  persona.AIModelId,
+		Created:    persona.Created,
+		Updated:    persona.Updated,
 	}
 
 	if persona.CategoryId > 0 {
@@ -537,6 +537,7 @@ func (service *PersonaService) GetUserPersona(personaId int, userId string) (*vo
 	if persona.AIModelId > 0 {
 		if model, err := service.ModelRepo.GetModelByID(persona.AIModelId); err == nil {
 			rsp.ModelName = model.ProviderDisplayName + " - " + model.DisplayName
+			rsp.ModelIcon = model.Icon
 		}
 	}
 
@@ -581,12 +582,12 @@ func (service *PersonaService) CreateUserPersona(userId string, req *vo.CreateUs
 	}
 
 	persona := &po.UserPersona{
-		UserId:		userId,
-		Name:		req.Name,
-		Icon:		req.Icon,
-		RoleInfo:	req.RoleInfo,
-		CategoryId:	req.CategoryId,
-		AIModelId:	req.AIModelId,
+		UserId:     userId,
+		Name:       req.Name,
+		Icon:       req.Icon,
+		RoleInfo:   req.RoleInfo,
+		CategoryId: req.CategoryId,
+		AIModelId:  req.AIModelId,
 	}
 	if err := service.PersonaRepo.CreateUserPersona(persona); err != nil {
 		return err
@@ -683,11 +684,11 @@ func (service *PersonaService) ListPersonaTemplatesForUser(categoryId *int) ([]v
 	items := make([]vo.UserPersonaTemplateItem, 0, len(templates))
 	for _, t := range templates {
 		item := vo.UserPersonaTemplateItem{
-			TemplateId:	t.TemplateId,
-			Name:		t.Name,
-			Icon:		t.Icon,
-			Description:	t.Description,
-			CategoryId:	t.CategoryId,
+			TemplateId:  t.TemplateId,
+			Name:        t.Name,
+			Icon:        t.Icon,
+			Description: t.Description,
+			CategoryId:  t.CategoryId,
 		}
 		if cat, ok := categoryMap[t.CategoryId]; ok {
 			item.CategoryName = cat.Name
@@ -705,12 +706,12 @@ func (service *PersonaService) GetPersonaTemplateDetailForUser(templateId int) (
 	}
 
 	rsp := &vo.UserPersonaTemplateDetailRsp{
-		TemplateId:	tmpl.TemplateId,
-		Name:		tmpl.Name,
-		Icon:		tmpl.Icon,
-		Description:	tmpl.Description,
-		RoleInfo:	tmpl.RoleInfo,
-		CategoryId:	tmpl.CategoryId,
+		TemplateId:  tmpl.TemplateId,
+		Name:        tmpl.Name,
+		Icon:        tmpl.Icon,
+		Description: tmpl.Description,
+		RoleInfo:    tmpl.RoleInfo,
+		CategoryId:  tmpl.CategoryId,
 	}
 
 	if tmpl.CategoryId > 0 {
@@ -732,9 +733,9 @@ func (service *PersonaService) ListPersonaCategoriesForUser() ([]vo.UserPersonaC
 	items := make([]vo.UserPersonaCategoryItem, 0, len(categories))
 	for _, c := range categories {
 		items = append(items, vo.UserPersonaCategoryItem{
-			CategoryId:	c.CategoryId,
-			Name:		c.Name,
-			Icon:		c.Icon,
+			CategoryId: c.CategoryId,
+			Name:       c.Name,
+			Icon:       c.Icon,
 		})
 	}
 	return items, nil

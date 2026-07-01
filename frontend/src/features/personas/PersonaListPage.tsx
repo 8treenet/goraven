@@ -112,22 +112,22 @@ export function Component() {
               className={cn(
                 'flex items-start gap-3 px-4 transition-colors',
                 personas.length <= 5 ? 'py-4' : 'py-3',
-                i % 2 === 0 ? 'bg-bg-layer-1 hover:bg-bg-hover' : 'hover:bg-bg-hover',
+                i % 2 === 0 ? 'bg-interactive/10 dark:bg-bg-layer-1 hover:bg-bg-hover' : 'hover:bg-bg-hover',
               )}
             >
               <button
                 className="flex flex-1 items-start gap-3 min-w-0 text-left"
                 onClick={() => handleRowClick(p.personaId)}
               >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-interactive/10 text-interactive mt-0.5">
-                  <Icon name={p.icon} className="size-3.5" />
+                <span className="shrink-0 mt-0.5">
+                  <Icon name={p.icon} className="size-4 text-interactive" />
                 </span>
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="truncate text-sm font-semibold text-text-1">{p.name}</span>
                     {p.categoryName && (
-                      <span className="shrink-0 rounded px-1.5 py-0.5 text-[11px] text-text-3 bg-bg-layer-2 border border-border-custom">
+                      <span className="shrink-0 rounded px-1.5 py-0.5 text-[11px] text-text-2 border border-border-custom">
                         {p.categoryName}
                       </span>
                     )}
@@ -142,15 +142,15 @@ export function Component() {
                       {visibleTags.map((t) => (
                         <span
                           key={t.type + t.label}
-                          className="inline-flex items-center rounded-sm px-1 text-[11px] text-text-muted bg-bg-layer-2"
+                          className="inline-flex items-center rounded-sm px-1 text-[11px] text-interactive bg-interactive/10"
                         >
                           {t.type === 'mcp' ? '@' : ''}{t.label}
                         </span>
                       ))}
                       {overflow > 0 && (
-                        <span className="text-[11px] text-text-muted">
-                          +{overflow}
-                        </span>
+                        <span className="text-[11px] text-interactive">
+                           +{overflow}
+                         </span>
                       )}
                     </div>
                   )}
@@ -232,7 +232,7 @@ function Skeleton() {
     <div>
       {[1, 2, 3, 4, 5].map((i) => (
         <div key={i} className="flex items-start gap-3 border-b border-border-custom px-4 py-4">
-          <span className="mt-0.5 h-7 w-7 shrink-0 rounded-md bg-bg-layer-3 animate-pulse" />
+          <span className="mt-0.5 size-4 shrink-0 rounded-sm bg-bg-layer-3 animate-pulse" />
           <div className="flex-1 space-y-2">
             <div className="flex items-center gap-2">
               <span className="h-4 w-28 rounded bg-bg-layer-3 animate-pulse" />

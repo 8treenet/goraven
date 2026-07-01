@@ -97,7 +97,7 @@ export function Sidebar({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
       >
         <SidebarBrand variant="mobile" />
         {!adminMode && <SidebarNewChat variant="mobile" />}
-        <div className="flex-1 overflow-y-auto px-2">
+        <div className="no-scrollbar flex-1 overflow-y-auto px-2">
           {adminMode ? <AdminMenu collapsed={false} /> : <MobileUserMenu />}
         </div>
         <SidebarUserArea user={user} collapsed={false} variant={variant} />
@@ -114,7 +114,7 @@ export function Sidebar({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
     >
       <SidebarBrand variant="desktop" />
       {!adminMode && <SidebarNewChat variant="desktop" />}
-      <div className="flex-1 overflow-y-auto px-2">
+      <div className="no-scrollbar flex-1 overflow-y-auto px-2">
         {adminMode ? <AdminMenu /> : <UserMenu />}
       </div>
       <SidebarUserArea user={user} variant={variant} />
@@ -195,7 +195,7 @@ function SidebarNewChat({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
       <button
         onClick={handleClick}
         className={cn(
-          'flex w-full items-center gap-2 rounded-md bg-bg-layer-2 py-1.5 text-sm text-text-1 transition-colors hover:bg-bg-layer-3',
+          'flex w-full items-center gap-2 rounded-md py-1.5 text-sm text-text-1 transition-colors hover:bg-bg-hover',
           (variant === 'desktop' && collapsed) ? 'justify-center px-0' : 'px-3',
         )}
       >
@@ -601,7 +601,7 @@ function NavItem({
         'flex w-full items-center gap-2 rounded-md py-1.5 text-sm transition-colors',
         collapsed ? 'justify-center px-0' : indent ? 'pl-7 pr-2' : 'px-2',
         isActive
-          ? 'bg-bg-selected text-text-1'
+          ? 'bg-bg-selected text-highlight'
           : 'text-text-1 hover:bg-bg-hover',
       )}
     >
@@ -831,7 +831,7 @@ function SidebarUserArea({
             {!collapsed && (
               <>
                 <span className="truncate text-text-2">{displayName}</span>
-                <ChevronRight className="ml-auto size-3 shrink-0 text-text-muted" />
+                <ChevronRight className="ml-auto size-3 shrink-0 text-interactive" />
               </>
             )}
           </button>
@@ -913,7 +913,7 @@ function PopoverItem({
           ? 'bg-bg-layer-3 text-text-1'
           : danger
             ? 'text-text-2 hover:bg-bg-layer-3 hover:text-text-3'
-            : 'text-text-2 hover:bg-bg-layer-3 hover:text-text-1',
+            : 'text-text-1 hover:bg-bg-layer-3',
       )}
     >
       <Icon className="size-4 shrink-0" />
