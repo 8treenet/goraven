@@ -176,8 +176,8 @@ We don't chase buzzwords or ride hype cycles. What matters to us is **engineerin
 ## Community
 
 - 💬 [Discord](https://discord.gg/derR7CBYDW) — feedback, discussions, tips
-- 🌐 [8tree.net](https://8tree.net) — Website
-- 🚀 [preview.8tree.net](https://preview.8tree.net) — Live preview
+- 🌐 [goraven.dev](https://goraven.dev) — Website
+- 🚀 [preview.goraven.dev](https://preview.goraven.dev) — Live preview
 
 ---
 
