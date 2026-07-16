@@ -112,6 +112,10 @@ export const router = createBrowserRouter([
         path: 'admin/systemInfo',
         lazy: lazyImport(() => import('@/features/admin/system-info/AdminSystemInfoPage')),
       },
+      {
+        path: 'admin/shared-projects',
+        lazy: lazyImport(() => import('@/features/admin/shared-projects/AdminSharedProjectsPage')),
+      },
     ],
   },
 ])

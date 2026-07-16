@@ -399,7 +399,7 @@ export const MOCK_SYSTEM_INFO = {
     systemSkills: 5, marketSkills: 10,
     personaTemplates: 6,
     totalSessions: 100, totalMessages: 5000,
-    totalFileLinks: 20, activeFileLinks: 15,
+    totalSharedProjects: 3,
     totalShareLinks: 5, activeShareLinks: 3, totalShareViews: 42,
   },
   plugins: [

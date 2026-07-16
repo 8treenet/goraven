@@ -515,6 +515,19 @@
   to { --stop-angle: 360deg; }
 }
 
+@property --tool-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* Rotating highlight arc painted on the border of the active tool
+   circle in the thinking timeline. Mirrors the stop-button technique
+   so long-running tool calls (e.g. file edits) read as "in flight". */
+@keyframes tool-spin {
+  to { --tool-angle: 360deg; }
+}
+
 /* ============================================
    Base styles
    ============================================ */

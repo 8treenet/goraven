@@ -167,7 +167,6 @@ We don't chase buzzwords or ride hype cycles. What matters to us is **engineerin
 ## Roadmap
 
 - [ ] Core code open-sourced
-- [ ] Team collaboration
 - [ ] Security sandbox
 - [ ] Open API
 

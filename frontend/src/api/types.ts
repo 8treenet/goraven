@@ -242,12 +242,21 @@ export interface RefreshSkillsResult {
 
 /* ---------- Session / Chat ---------- */
 
+export interface SharedProjectInfo {
+  id: number
+  ownerId: string
+  ownerName: string
+  projectName: string
+  description: string
+}
+
 export interface SessionSimple {
   sessionId: string
   title: string
   status: number
   personaId: number
   project: string
+  sharedProject?: SharedProjectInfo
   lastChatTime: string
   created: string
 }
@@ -296,6 +305,7 @@ export interface ChatRequest {
   skillIds: number[]
   reasoning: number
   project: string
+  sharedProjectId?: number
 }
 
 export interface ChatResponse {
@@ -714,10 +724,13 @@ export interface InitResponse {
 
 export interface FileItem {
   name: string
+  path: string
   isDir: boolean
   size: number
   modTime: string
   isDefault?: boolean
+  isShared?: boolean
+  sharedId?: number
 }
 
 export interface StorageUsage {
@@ -733,6 +746,50 @@ export interface ProfileEntry {
 
 export interface ProfileListResponse {
   items: ProfileEntry[]
+}
+
+/* ---------- Team Project ---------- */
+
+export interface TeamProjectItem {
+  id: number
+  ownerId: string
+  ownerName: string
+  ownerAvatar: string
+  projectName: string
+  description: string
+  updatedAt: string
+  isOwner: boolean
+}
+
+export interface TeamProjectListRsp {
+  items: TeamProjectItem[]
+}
+
+export interface TeamProjectShareRsp {
+  sharedId: number
+}
+
+/* ---------- Admin Shared Projects ---------- */
+
+export interface AdminSharedProjectItem {
+  id: number
+  ownerId: string
+  ownerName: string
+  ownerAvatar: string
+  projectName: string
+  description: string
+  visitCount: number
+  lastActiveAt: string | null
+  locked: boolean
+  lockedBy: string
+  created: string
+  updated: string
+}
+
+export interface AdminSharedProjectListReq {
+  search?: string
+  page?: number
+  pageSize?: number
 }
 
 /* ---------- Captcha ---------- */

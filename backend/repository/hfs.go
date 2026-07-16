@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"context"
+	"encoding/json"
 	"raven/backend/po"
 	"time"
 
@@ -14,6 +16,18 @@ func init() {
 			return &HFSRepository{}
 		})
 	})
+}
+
+const (
+	tempAkKeyPrefix = "hfs:tempak:"
+	// TempAkTTL 临时访问凭证有效期
+	TempAkTTL = 15 * time.Minute
+)
+
+type TempAccessCache struct {
+	UserName string `json:"userName"`
+	Path     string `json:"path"`
+	Type     string `json:"type"` // "file" 或 "dir"
 }
 
 type HFSRepository struct {
@@ -80,6 +94,12 @@ func (repo *HFSRepository) MarkUploadUsed(uploadId string) error {
 		Updates(map[string]interface{}{
 			"status": po.UploadStatusUsed,
 		}).Error
+}
+
+func (repo *HFSRepository) SetTempAccess(ak string, data *TempAccessCache) error {
+	key := tempAkKeyPrefix + ak
+	val, _ := json.Marshal(data)
+	return repo.Redis().Set(context.Background(), key, val, TempAkTTL).Err()
 }
 
 func (repo *HFSRepository) db() *gorm.DB {

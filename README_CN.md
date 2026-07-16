@@ -108,12 +108,12 @@ Agent 不止生成建议——它直接**读写文件、执行 Shell、调用 MC
 ### 国内镜像（推荐）
 
 ```bash
-docker pull docker.1panel.live/8treenet/raven:v0.2.0
+docker pull docker.1panel.live/8treenet/raven:v0.3.0
 
 docker run -d --restart=always --name raven-agent \
   -p 8000:8000 \
   -e RAVEN_CHINA_MIRROR=1 \
-  docker.1panel.live/8treenet/raven:v0.2.0
+  docker.1panel.live/8treenet/raven:v0.3.0
 ```
 
 ### 持久化数据
@@ -123,7 +123,7 @@ docker run -d --restart=always --name raven-agent \
   -p 8000:8000 \
   -v /opt/raven_data:/raven/data \
   -e RAVEN_CHINA_MIRROR=1 \
-  docker.1panel.live/8treenet/raven:v0.2.0
+  docker.1panel.live/8treenet/raven:v0.3.0
 ```
 
 启动后访问 `http://localhost:8000`，按引导完成初始化，创建管理员账户即可使用。
@@ -169,7 +169,6 @@ Raven 不是 KPI 项目，也永远不会是。
 ## 路线图
 
 - [ ] 核心代码开放
-- [ ] 团队协作
 - [ ] 安全沙盒
 - [ ] 开放 API
 

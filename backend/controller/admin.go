@@ -41,6 +41,7 @@ type AdminController struct {
 	SettingSev   *service.SystemSettingService
 	Request      *infra.Request
 	Worker       freedom.Worker
+	TPSev        *service.TeamProjectService
 }
 
 func (controller *AdminController) BeforeActivation(b freedom.BeforeActivation) {
@@ -119,6 +120,9 @@ func (controller *AdminController) BeforeActivation(b freedom.BeforeActivation) 
 
 	b.Handle("GET", "/settings", "GetSettings")
 	b.Handle("PUT", "/settings", "UpdateSettings")
+
+	b.Handle("GET", "/sharedProjects", "GetSharedProjects")
+	b.Handle("DELETE", "/sharedProjects/{id:int}", "UnshareSharedProject")
 
 	b.Handle("GET", "/dashboard", "GetDashboard")
 	b.Handle("GET", "/dashboard/tokenTrend", "GetTokenTrend")
@@ -930,4 +934,24 @@ func (controller *AdminController) UpdateSettings() freedom.Result {
 	}
 
 	return &infra.JSONResponse{Object: rsp}
+}
+
+func (controller *AdminController) GetSharedProjects() freedom.Result {
+	var req vo.AdminSharedProjectListReq
+	if err := controller.Request.ReadQuery(&req); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+
+	rsp, err := controller.TPSev.AdminListSharedProjects(&req)
+	if err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	return &infra.JSONResponse{Object: rsp}
+}
+
+func (controller *AdminController) UnshareSharedProject(id int) freedom.Result {
+	if err := controller.TPSev.AdminUnshare(id); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
 }

@@ -23,6 +23,7 @@ import {
   Archive,
   Check,
   X,
+  Share2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSidebarStore } from '@/stores/sidebar-store'
@@ -516,6 +517,7 @@ function AdminMenu({ collapsed: collapsedProp }: { collapsed?: boolean }) {
       >
         <NavItem to="/admin/users" icon={Users} label={t('sidebar.users')} collapsed={collapsed} />
         <NavItem to="/admin/settings" icon={Settings} label={t('sidebar.settings')} collapsed={collapsed} />
+        <NavItem to="/admin/shared-projects" icon={Share2} label={t('sidebar.sharedProjects')} collapsed={collapsed} />
       </SidebarGroup>
 
       <SidebarGroup

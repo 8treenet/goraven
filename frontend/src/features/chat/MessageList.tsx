@@ -90,6 +90,21 @@ function AssistantMessage({
 
   const hasThinking = isStreaming || (thinkingSegments && thinkingSegments.length > 0) || !!retry
 
+  const segmentsToShow = isStreaming ? thinkingSegments?.slice(-20) : thinkingSegments
+
+  // A tool is "in flight" only while it is the very last segment AND no
+  // content has started streaming yet. Once any new SSE content arrives
+  // (reasoning, retry, another tool, or the actual reply text), the tool
+  // has finished and the pulse animation should stop.
+  const lastSegIdx = (segmentsToShow?.length ?? 0) - 1
+  const activeToolIdx =
+    isStreaming
+    && segmentsToShow
+    && lastSegIdx >= 0
+    && segmentsToShow[lastSegIdx].type === 'tool'
+      ? lastSegIdx
+      : -1
+
   const renderSegment = (seg: ThinkingSegment, i: number) => {
     switch (seg.type) {
       case 'reasoning':
@@ -107,7 +122,21 @@ function AssistantMessage({
         return (
           <div key={i} className="flex gap-3 pb-2 last:pb-0">
             <div className="relative shrink-0 pt-2">
-              <div className="size-2.5 rounded-full border-2 border-border-custom bg-bg-base" />
+              {i === activeToolIdx ? (
+                <div
+                  className="size-2.5 rounded-full border-2 border-transparent"
+                  style={{
+                    '--tool-angle': '0deg',
+                    backgroundImage:
+                      'linear-gradient(var(--bg-base), var(--bg-base)), conic-gradient(from var(--tool-angle), var(--highlight), transparent 45%, transparent)',
+                    backgroundOrigin: 'border-box',
+                    backgroundClip: 'padding-box, border-box',
+                    animation: 'tool-spin 1.4s linear infinite',
+                  } as React.CSSProperties}
+                />
+              ) : (
+                <div className="size-2.5 rounded-full border-2 border-border-custom bg-bg-base" />
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <ToolCallItem toolCall={seg} />
@@ -159,7 +188,7 @@ function AssistantMessage({
           {thinkingOpen && (
             <div className="relative mt-1.5">
               <div className="absolute left-[5px] top-1.5 bottom-0 w-px bg-border-custom" />
-              {(isStreaming ? thinkingSegments?.slice(-20) : thinkingSegments)?.map(renderSegment)}
+              {segmentsToShow?.map(renderSegment)}
               {hasExtraRetry && (
                 <div className="flex gap-3 pb-1">
                   <div className="relative shrink-0 pt-1.5">

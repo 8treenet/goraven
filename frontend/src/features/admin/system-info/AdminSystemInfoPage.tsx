@@ -70,8 +70,7 @@ interface EcosystemInfo {
   personaTemplates: number
   totalSessions: number
   totalMessages: number
-  totalFileLinks: number
-  activeFileLinks: number
+  totalSharedProjects: number
   totalShareLinks: number
   activeShareLinks: number
   totalShareViews: number
@@ -410,10 +409,9 @@ function EcosystemPanel({ data }: { data: EcosystemInfo }) {
       ],
     },
     {
-      label: t('common.file'),
+      label: t('files.teamProjects'),
       items: [
-        { label: t('adminSystemInfo.total'), value: formatNumber(data.totalFileLinks) },
-        { label: t('adminSystemInfo.activeFiles'), value: formatNumber(data.activeFileLinks) },
+        { label: t('adminSystemInfo.total'), value: formatNumber(data.totalSharedProjects) },
       ],
     },
     {

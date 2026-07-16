@@ -2,9 +2,6 @@ import { useState, useCallback, useMemo, useEffect } from 'react'
 import {
   RefreshCw,
   AlertCircle,
-  TrendingUp,
-  TrendingDown,
-  Minus,
 } from 'lucide-react'
 import {
   ResponsiveContainer,
@@ -22,7 +19,7 @@ import {
   ReferenceLine,
 } from 'recharts'
 import { useT, type TranslationKey } from '@/i18n'
-import { formatNumber, formatDiff } from '@/lib/format'
+import { formatNumber } from '@/lib/format'
 import { SegmentedControl } from '@/components/charts/SegmentedControl'
 import { ChartTooltip } from '@/components/charts/ChartTooltip'
 import { RankingPanel } from '@/components/charts/RankingPanel'
@@ -241,42 +238,13 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
 }
 
 /* ============================================
-   Diff arrow
-   ============================================ */
-
-function DiffArrow({ diff }: { diff: number }) {
-  if (diff > 0) {
-    return (
-      <span className="inline-flex items-center gap-0.5 text-xs text-[oklch(0.55_0.15_145)]">
-        <TrendingUp className="size-3" />
-        {formatDiff(diff)}
-      </span>
-    )
-  }
-  if (diff < 0) {
-    return (
-      <span className="inline-flex items-center gap-0.5 text-xs text-[oklch(0.55_0.18_20)]">
-        <TrendingDown className="size-3" />
-        {formatDiff(diff)}
-      </span>
-    )
-  }
-  return (
-    <span className="inline-flex items-center gap-0.5 text-xs text-text-3">
-      <Minus className="size-3" />
-      0%
-    </span>
-  )
-}
-
-/* ============================================
    Pulse
    ============================================ */
 
 function PulsePanel({ data }: { data: OverviewData }) {
   const t = useT()
   const metrics = [
-    { label: t('adminDashboard.activeUsers'), value: formatNumber(data.activeUsers), extra: <DiffArrow diff={data.activeUsersDiff} /> },
+    { label: t('adminDashboard.activeUsers'), value: formatNumber(data.activeUsers), extra: null },
     { label: t('adminDashboard.totalSessions'), value: formatNumber(data.totalSessions), extra: <span className="text-xs text-text-3">{t('common.total')}</span> },
     { label: t('adminDashboard.newThisWeek'), value: formatNumber(data.newSessions), extra: <span className="text-xs text-text-3">{t('adminDashboard.totalSessions')}</span> },
     { label: t('adminDashboard.weeklyTokens'), value: formatNumber(data.weekTokens), extra: null },

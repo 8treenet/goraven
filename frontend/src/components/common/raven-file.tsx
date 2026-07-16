@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { FileText, Play, File, Download, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { t, useT } from '@/i18n'
-import { getDownloadUrl } from '@/api/files'
+import { getFileUrl } from '@/api/files'
 import { useUserStore } from '@/stores/user-store'
 
 interface RavenFileProps {
@@ -30,12 +30,13 @@ function getFileExtension(path: string): string {
  * Resolve a path from <raven-file> into a usable URL.
  * - Already a full URL (http/https) → use as-is
  * - Static asset (/assets/...) → use as-is (no auth required)
- * - Sandbox-relative path (/documents/..., /images/..., /videos/...) → use /api/hfs/private/<path>...
+ * - Filesystem absolute path (e.g. /raven/data/users/<user>/documents/foo.pdf)
+ *   → use /api/hfs/file/<abs-path>; cross-user sharing supported.
  */
 function resolveUrl(path: string): string {
   if (path.startsWith('http://') || path.startsWith('https://')) return path
   if (path.startsWith('/assets/')) return path
-  return getDownloadUrl(path)
+  return getFileUrl(path)
 }
 
 /**

@@ -24,6 +24,7 @@ interface MarkdownProps {
 const RAVEN_FILE_RE = /<raven-file\s+([^>]*?)\/?>/gi
 const RAVEN_CHART_RE = /<raven-chart\s+([^>]*?)\/?>/gi
 const RAVEN_UPLOAD_RE = /<raven-upload[^>]*>[\s\S]*?<\/raven-upload>/gi
+const RAVEN_REF_RE = /<raven-ref\s+[^>]*>[\s\S]*?<\/raven-ref>/gi
 
 function parseAttrs(attrStr: string): Record<string, string> {
   const attrs: Record<string, string> = {}
@@ -95,7 +96,10 @@ export function Markdown({
 }: MarkdownProps) {
   // Strip <raven-upload> tags — server adds these from user uploads but the frontend
   // doesn't render them (files are already shown as attachment previews in the input)
-  const cleanChildren = children.replace(RAVEN_UPLOAD_RE, '').trim()
+  const cleanChildren = children
+    .replace(RAVEN_UPLOAD_RE, '')
+    .replace(RAVEN_REF_RE, '')
+    .trim()
 
   const hasTag = RAVEN_FILE_RE.test(cleanChildren) || RAVEN_CHART_RE.test(cleanChildren)
   RAVEN_FILE_RE.lastIndex = 0

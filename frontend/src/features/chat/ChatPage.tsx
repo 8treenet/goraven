@@ -1,15 +1,18 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Share2, Shrink, Paperclip, ArrowUp, Square, Loader2, TriangleAlert, FolderGit2, FolderOpen, FolderClock, Menu } from 'lucide-react'
+import { Share2, Shrink, Paperclip, ArrowUp, Square, Loader2, TriangleAlert, FolderGit2, FolderOpen, FolderClock, Menu, Users, AtSign, X } from 'lucide-react'
 import { cn, uuid } from '@/lib/utils'
 import { listFiles } from '@/api/files'
 import type { FileItem } from '@/api/types'
+import { listTeamProjects } from '@/api/team-projects'
+import type { TeamProjectItem } from '@/api/types'
 import { useChatStore, stopPolling, type Model, type McpEndpoint, type Skill } from '@/stores/chat-store'
 import { useSidebarStore } from '@/stores/sidebar-store'
 import { ShareDialog } from './ShareDialog'
 import { MessageList } from './MessageList'
 import { FilePreviews, MAX_FILE_SIZE } from './FilePreviews'
 import type { UploadedFile } from './FilePreviews'
+import { FilePickerDialog, type PickedFile } from './FilePickerDialog'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -120,7 +123,8 @@ function NewChat() {
     messages, sendMessage, input, setInput,
     streamingContent, streamingThinkingSegments,
     loadModels, loadPersonas, loadMcpEndpoints, loadSkills,
-    formProjectPath, setFormProjectPath, generatingSessionId, creatingSession, stopDisabled,
+    formProjectPath, setFormProjectPath, formSharedProjectId,
+    setFormSharedProjectId, generatingSessionId, creatingSession, stopDisabled,
   } = useChatStore()
   const generating = generatingSessionId !== null || creatingSession
 
@@ -136,6 +140,7 @@ function NewChat() {
       formMcpIds: [],
       formSkillIds: [],
       formProjectPath: null,
+      formSharedProjectId: null,
       formModelId: 0,
     })
     loadModels()
@@ -171,17 +176,6 @@ function NewChat() {
     }
   }, [input, generating, navigate, sendMessage])
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      if (isComposingRef.current.composing || e.nativeEvent.isComposing || e.keyCode === 229) {
-        e.preventDefault()
-        return
-      }
-      e.preventDefault()
-      handleSend()
-    }
-  }, [handleSend])
-
   return (
     <div className="flex h-full flex-col bg-bg-base">
       <ChatToolbar
@@ -207,7 +201,6 @@ function NewChat() {
                 value={input}
                 onChange={setInput}
                 onSend={handleSend}
-                onKeyDown={handleKeyDown}
                 generating={generating}
                 plusOpen={plusOpen}
                 onPlusToggle={() => setPlusOpen(!plusOpen)}
@@ -221,6 +214,8 @@ function NewChat() {
                 onSkillToggle={toggleFormSkill}
                 formProjectPath={formProjectPath}
                 onProjectChange={setFormProjectPath}
+                formSharedProjectId={formSharedProjectId}
+                onSharedProjectChange={setFormSharedProjectId}
                 stopDisabled={stopDisabled}
                 isComposingRef={isComposingRef}
               />
@@ -237,7 +232,6 @@ function NewChat() {
           value={input}
           onChange={setInput}
           onSend={handleSend}
-          onKeyDown={handleKeyDown}
           isGenerating={generating}
           isBackground={false}
           stopDisabled={stopDisabled}
@@ -319,17 +313,6 @@ function SessionChat({ sessionId }: { sessionId: string }) {
     sendMessage(trimmed)
   }, [input, isGenerating, isBackground, sendMessage])
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      if (isComposingRef.current.composing || e.nativeEvent.isComposing || e.keyCode === 229) {
-        e.preventDefault()
-        return
-      }
-      e.preventDefault()
-      handleSend()
-    }
-  }, [handleSend])
-
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center bg-bg-base">
@@ -369,6 +352,7 @@ function SessionChat({ sessionId }: { sessionId: string }) {
         compressing={compressing}
         onCompress={compressSession}
         project={session.project}
+        sharedProject={session.sharedProject as { id: number; ownerName: string; projectName: string; description: string } | undefined}
         sessionId={sessionId}
       />
 
@@ -381,7 +365,6 @@ function SessionChat({ sessionId }: { sessionId: string }) {
         value={input}
         onChange={setInput}
         onSend={handleSend}
-        onKeyDown={handleKeyDown}
         isGenerating={isGenerating}
         isBackground={isBackground}
         compressing={compressing}
@@ -441,6 +424,7 @@ function ChatToolbar({
   compressing,
   onCompress,
   project,
+  sharedProject,
   sessionId,
 }: {
   showSession?: boolean
@@ -462,6 +446,7 @@ function ChatToolbar({
   compressing?: boolean
   onCompress?: () => void
   project?: string
+  sharedProject?: { id: number; ownerName: string; projectName: string; description: string }
   sessionId?: string
 }) {
   const t = useT()
@@ -524,7 +509,12 @@ function ChatToolbar({
         <div className="flex-1" />
 
         <div className="hidden items-center gap-2 md:flex">
-          {project ? (
+          {sharedProject ? (
+            <div className="flex items-center gap-1.5 max-w-36 text-xs text-highlight">
+              <Users className="size-3.5 shrink-0" />
+              <span className="truncate">{sharedProject.projectName}</span>
+            </div>
+          ) : project ? (
             <div className="flex items-center gap-1.5 max-w-36 text-xs text-highlight">
               <FolderGit2 className="size-3.5 shrink-0" />
               <span className="truncate">{project}</span>
@@ -720,20 +710,20 @@ function ChatToolbar({
    ============================================ */
 
 function NewChatInput({
-  value, onChange, onSend, onKeyDown, generating,
+  value, onChange, onSend, generating,
   plusOpen, onPlusToggle, plusRef,
   personaLocked,
   mcpEndpoints, skills,
   formMcpIds, formSkillIds,
   onMcpToggle, onSkillToggle,
   formProjectPath, onProjectChange,
+  formSharedProjectId, onSharedProjectChange,
   stopDisabled,
   isComposingRef,
 }: {
   value: string
   onChange: (v: string) => void
   onSend: () => void
-  onKeyDown: (e: React.KeyboardEvent) => void
   generating: boolean
   plusOpen: boolean
   onPlusToggle: () => void
@@ -747,6 +737,8 @@ function NewChatInput({
   onSkillToggle: (id: number) => void
   formProjectPath: string | null
   onProjectChange: (path: string | null) => void
+  formSharedProjectId: number | null
+  onSharedProjectChange: (id: number | null) => void
   stopDisabled: boolean
   isComposingRef: React.MutableRefObject<{ composing: boolean }>
 }) {
@@ -755,6 +747,9 @@ function NewChatInput({
   const setThinking = useChatStore((s) => s.setFormThinking)
   const addFormAttachment = useChatStore((s) => s.addFormAttachment)
   const removeFormAttachment = useChatStore((s) => s.removeFormAttachment)
+  const addFormRef = useChatStore((s) => s.addFormRef)
+  const removeFormRef = useChatStore((s) => s.removeFormRef)
+  const formRefs = useChatStore((s) => s.formRefs)
   const stopGeneration = useChatStore((s) => s.stopGeneration)
   const { upload: chunkUpload } = useChunkUpload()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -764,6 +759,10 @@ function NewChatInput({
   const [projectItems, setProjectItems] = useState<FileItem[]>([])
   const [projectLoading, setProjectLoading] = useState(false)
   const [projectError, setProjectError] = useState(false)
+  const [teamItems, setTeamItems] = useState<TeamProjectItem[]>([])
+  const [teamLoading, setTeamLoading] = useState(false)
+  const [teamError, setTeamError] = useState(false)
+  const [filePickerOpen, setFilePickerOpen] = useState(false)
 
   const loadProjects = useCallback(() => {
     setProjectLoading(true)
@@ -780,10 +779,25 @@ function NewChatInput({
       })
   }, [])
 
+  const loadTeamProjects = useCallback(() => {
+    setTeamLoading(true)
+    setTeamError(false)
+    listTeamProjects()
+      .then((data) => {
+        setTeamItems((data.items ?? []).filter((item) => !item.isOwner))
+        setTeamLoading(false)
+      })
+      .catch(() => {
+        setTeamError(true)
+        setTeamLoading(false)
+      })
+  }, [])
+
   const handleProjectOpen = useCallback(() => {
     setProjectOpen(true)
     loadProjects()
-  }, [loadProjects])
+    loadTeamProjects()
+  }, [loadProjects, loadTeamProjects])
 
   const handleProjectSelect = useCallback((name: string) => {
     if (formProjectPath === name) {
@@ -793,6 +807,15 @@ function NewChatInput({
     }
     setProjectOpen(false)
   }, [formProjectPath, onProjectChange])
+
+  const handleTeamProjectSelect = useCallback((id: number) => {
+    if (formSharedProjectId === id) {
+      onSharedProjectChange(null)
+    } else {
+      onSharedProjectChange(id)
+    }
+    setProjectOpen(false)
+  }, [formSharedProjectId, onSharedProjectChange])
 
   const sidebarCollapsed = useSidebarStore((s) => s.collapsed)
   const dialogLeft = sidebarCollapsed
@@ -854,14 +877,47 @@ function NewChatInput({
     }
   }, [generating, stopGeneration, onSend])
 
+  const removeRef = useCallback((index: number) => {
+    removeFormRef(index)
+  }, [removeFormRef])
+
+  const handlePickFile = useCallback((file: PickedFile | null) => {
+    if (!file) return
+    addFormRef({ type: file.isDir ? 'dir' : 'file', name: file.name, path: file.path })
+  }, [addFormRef])
+
   return (
     <div className={cn('rounded-lg border bg-bg-base', generating ? 'border-border' : 'border-highlight')}>
       <FilePreviews files={files} onRemove={removeFile} />
+      {formRefs.length > 0 && (
+        <div className="flex flex-wrap gap-2 px-3 pt-3">
+          {formRefs.map((rf, i) => (
+            <div key={i} className="group relative flex items-center gap-2 rounded-md bg-bg-layer-3 px-2 py-1.5 pr-7 text-xs text-text-2">
+              <span className="max-w-32 truncate">@{rf.name}</span>
+              <button
+                onClick={() => removeRef(i)}
+                className="absolute right-1 top-1/2 hidden -translate-y-1/2 rounded p-0.5 text-text-muted hover:bg-bg-hover hover:text-text-2 group-hover:block"
+              >
+                <X className="size-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
       <textarea
         ref={textareaRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onKeyDown={onKeyDown}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            if (isComposingRef.current.composing || e.nativeEvent.isComposing || e.keyCode === 229) {
+              e.preventDefault()
+              return
+            }
+            e.preventDefault()
+            handleSendOrStop()
+          }
+        }}
         onCompositionStart={() => { isComposingRef.current.composing = true }}
         onCompositionEnd={() => { isComposingRef.current.composing = false }}
         placeholder={t('chat.inputPlaceholder')}
@@ -987,17 +1043,34 @@ function NewChatInput({
             <TooltipTrigger asChild>
               <button
                 onClick={handleProjectOpen}
-                className={cn(
-                  'rounded-md p-1 transition-colors',
-                  formProjectPath
-                    ? 'text-highlight bg-highlight/10'
-                    : 'text-text-1 hover:bg-bg-hover',
-                )}
+                  className={cn(
+                    'rounded-md p-1 transition-colors',
+                    (formProjectPath || formSharedProjectId)
+                      ? 'text-highlight bg-highlight/10'
+                      : 'text-text-1 hover:bg-bg-hover',
+                  )}
               >
                 <FolderGit2 className="size-3.5" />
               </button>
             </TooltipTrigger>
             <TooltipContent>{t('chat.selectProject')}</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setFilePickerOpen(true)}
+                className={cn(
+                  'rounded-md p-1 transition-colors',
+                  formRefs.length > 0
+                    ? 'text-highlight bg-highlight/10'
+                    : 'text-text-1 hover:bg-bg-hover',
+                )}
+              >
+                <AtSign className="size-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>{t('chat.selectFile')}</TooltipContent>
           </Tooltip>
 
           <label className={cn(
@@ -1052,60 +1125,59 @@ function NewChatInput({
 
       <Dialog open={projectOpen} onOpenChange={setProjectOpen}>
         <DialogContent
-          className="!max-w-lg p-5 md:left-[var(--dialog-left)]"
+          className="!max-w-xl p-5 md:left-[var(--dialog-left)]"
           style={{ '--dialog-left': dialogLeft } as React.CSSProperties}
         >
           <p className="text-base font-semibold text-text-1 mb-3">{t('chat.projectsTitle')}</p>
 
-          {projectLoading ? (
-            <div className="flex items-center justify-center py-10">
-              <Loader2 className="size-4 animate-spin text-text-muted" />
-            </div>
-          ) : projectError ? (
-            <div className="flex flex-col items-center gap-3 py-8">
-              <FolderClock className="size-7 text-text-3" />
-              <p className="text-sm text-text-3">{t('common.loadFailed')}</p>
-              <button
-                onClick={loadProjects}
-                className="rounded-md bg-bg-layer-2 px-3 py-1.5 text-xs text-text-1 transition-colors hover:bg-bg-hover"
-              >
-                {t('common.retry')}
-              </button>
-            </div>
-          ) : projectItems.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-8">
-              <FolderOpen className="size-7 text-text-3" />
-              <p className="text-[13px] text-text-2">{t('chat.noProject')}</p>
-              <p className="text-xs text-text-3">{t('chat.noProjectHint')}</p>
-            </div>
-          ) : (
-            <div className="-mx-5 max-h-64 overflow-y-auto [scrollbar-width:thin] [scrollbar-color:var(--color-bg-layer-3)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-bg-layer-3 [&::-webkit-scrollbar-track]:bg-transparent">
-              <button
-                onClick={() => { onProjectChange(null); setProjectOpen(false) }}
-                className={cn(
-                  'flex w-full items-center gap-2.5 px-5 py-2 text-[13px] transition-colors text-left',
-                  !formProjectPath
-                    ? 'bg-bg-layer-3 text-text-1'
-                    : 'text-text-3 hover:bg-bg-hover hover:text-text-2',
-                )}
-              >
-                <FolderGit2 className={cn(
-                  'size-4 shrink-0',
-                  !formProjectPath ? 'text-text-1' : 'text-text-3',
-                )} />
-                <span>{t('chat.clearProject')}</span>
-                {!formProjectPath && (
-                  <span className="ml-auto shrink-0 text-xs">{'✓'}</span>
-                )}
-              </button>
-              {projectItems.map((item, i) => {
+          <div className="-mx-5 max-h-96 overflow-y-auto [scrollbar-width:thin] [scrollbar-color:var(--color-bg-layer-3)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-bg-layer-3 [&::-webkit-scrollbar-track]:bg-transparent">
+            <button
+              onClick={() => { onProjectChange(null); onSharedProjectChange(null); setProjectOpen(false) }}
+              className={cn(
+                'flex w-full items-center gap-2.5 px-5 py-2 text-[13px] transition-colors text-left outline-none',
+                !formProjectPath && !formSharedProjectId
+                  ? 'bg-bg-layer-3 text-text-1'
+                  : 'text-text-3 hover:bg-bg-hover hover:text-text-2',
+              )}
+            >
+              <FolderGit2 className={cn(
+                'size-4 shrink-0',
+                !formProjectPath && !formSharedProjectId ? 'text-text-1' : 'text-text-3',
+              )} />
+              <span>{t('chat.clearProject')}</span>
+              {!formProjectPath && !formSharedProjectId && (
+                <span className="ml-auto shrink-0 text-xs">{'✓'}</span>
+              )}
+            </button>
+
+            {projectLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="size-4 animate-spin text-text-muted" />
+              </div>
+            ) : projectError ? (
+              <div className="flex flex-col items-center gap-2 py-6">
+                <FolderClock className="size-5 text-text-3" />
+                <button
+                  onClick={loadProjects}
+                  className="rounded-md bg-bg-layer-2 px-3 py-1 text-xs text-text-1 transition-colors hover:bg-bg-hover"
+                >
+                  {t('common.retry')}
+                </button>
+              </div>
+            ) : projectItems.length === 0 ? (
+              <div className="flex flex-col items-center gap-1 py-5">
+                <FolderOpen className="size-5 text-text-3" />
+                <p className="text-xs text-text-3">{t('chat.noProjectHint')}</p>
+              </div>
+            ) : (
+              projectItems.map((item, i) => {
                 const isSelected = formProjectPath === item.name
                 return (
                   <button
                     key={item.name}
                     onClick={() => handleProjectSelect(item.name)}
                     className={cn(
-                      'flex w-full items-center gap-2.5 px-5 py-2 text-[13px] transition-colors text-left',
+                      'flex w-full items-center gap-2.5 px-5 py-2 text-[13px] transition-colors text-left outline-none',
                       isSelected
                         ? 'bg-bg-layer-3 text-text-1'
                         : i % 2 === 0
@@ -1123,11 +1195,74 @@ function NewChatInput({
                     )}
                   </button>
                 )
-              })}
+              })
+            )}
+
+            <div className="mt-3 mb-1 px-5 pt-3 border-t border-border">
+              <p className="text-xs text-text-muted">{t('chat.teamProjectsSection')}</p>
             </div>
-          )}
+
+            {teamLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="size-4 animate-spin text-text-muted" />
+              </div>
+            ) : teamError ? (
+              <div className="flex flex-col items-center gap-2 py-6">
+                <FolderClock className="size-5 text-text-3" />
+                <button
+                  onClick={loadTeamProjects}
+                  className="rounded-md bg-bg-layer-2 px-3 py-1 text-xs text-text-1 transition-colors hover:bg-bg-hover"
+                >
+                  {t('common.retry')}
+                </button>
+              </div>
+            ) : teamItems.length === 0 ? (
+              <div className="flex flex-col items-center gap-1 py-5">
+                <Users className="size-5 text-text-3" />
+                <p className="text-xs text-text-3">{t('chat.noProject')}</p>
+              </div>
+            ) : (
+              teamItems.map((item, i) => {
+                const isSelected = formSharedProjectId === item.id
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleTeamProjectSelect(item.id)}
+                    className={cn(
+                      'flex w-full items-center gap-2.5 px-5 py-2 text-[13px] transition-colors text-left outline-none',
+                      isSelected
+                        ? 'bg-bg-layer-3 text-text-1'
+                        : i % 2 === 0
+                          ? 'bg-bg-layer-1 hover:bg-bg-hover text-text-2'
+                          : 'hover:bg-bg-hover text-text-2',
+                    )}
+                  >
+                    <Users className={cn(
+                      'size-4 shrink-0',
+                      isSelected ? 'text-text-1' : 'text-text-3',
+                    )} />
+                    <div className="min-w-0 flex-1">
+                      <span className="truncate block">{item.projectName}</span>
+                      <span className="text-xs text-text-3">
+                        {item.isOwner ? t('chat.sharedByMe') : t('chat.sharedBy').replace('{name}', item.ownerName)}
+                      </span>
+                    </div>
+                    {isSelected && (
+                      <span className="ml-auto shrink-0 text-xs">{'✓'}</span>
+                    )}
+                  </button>
+                )
+              })
+            )}
+          </div>
         </DialogContent>
       </Dialog>
+
+      <FilePickerDialog
+        open={filePickerOpen}
+        onOpenChange={setFilePickerOpen}
+        onConfirm={handlePickFile}
+      />
     </div>
   )
 }
@@ -1137,13 +1272,12 @@ function NewChatInput({
    ============================================ */
 
 function ChatInput({
-  value, onChange, onSend, onKeyDown, isGenerating, isBackground, compressing, onStop, stopDisabled,
+  value, onChange, onSend, isGenerating, isBackground, compressing, onStop, stopDisabled,
   isComposingRef,
 }: {
   value: string
   onChange: (v: string) => void
   onSend: () => void
-  onKeyDown: (e: React.KeyboardEvent) => void
   isGenerating: boolean
   isBackground: boolean
   compressing?: boolean
@@ -1156,10 +1290,16 @@ function ChatInput({
   const setThinking = useChatStore((s) => s.setFormThinking)
   const addFormAttachment = useChatStore((s) => s.addFormAttachment)
   const removeFormAttachment = useChatStore((s) => s.removeFormAttachment)
+  const addFormRef = useChatStore((s) => s.addFormRef)
+  const removeFormRef = useChatStore((s) => s.removeFormRef)
+  const formRefs = useChatStore((s) => s.formRefs)
+  const formAttachments = useChatStore((s) => s.formAttachments)
   const { upload: chunkUpload } = useChunkUpload()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const prevFormAttachmentsLen = useRef(0)
   const [files, setFiles] = useState<UploadedFile[]>([])
+  const [filePickerOpen, setFilePickerOpen] = useState(false)
 
   const handleFiles = useCallback(async (fileList: FileList) => {
     const remaining = 10 - files.length
@@ -1208,6 +1348,17 @@ function ChatInput({
     }
   }, [value])
 
+  useEffect(() => {
+    if (prevFormAttachmentsLen.current > 0 && formAttachments.length === 0) {
+      setFiles((prev) => {
+        if (prev.some(f => f.status === 'uploading')) return prev
+        prev.forEach(f => { if (f.previewUrl) URL.revokeObjectURL(f.previewUrl) })
+        return []
+      })
+    }
+    prevFormAttachmentsLen.current = formAttachments.length
+  }, [formAttachments.length])
+
   const handleSendOrStop = useCallback(() => {
     if ((isGenerating || isBackground) && onStop) {
       onStop()
@@ -1216,15 +1367,44 @@ function ChatInput({
     }
   }, [isGenerating, isBackground, onStop, onSend])
 
+  const handlePickFile = useCallback((file: PickedFile | null) => {
+    if (!file) return
+    addFormRef({ type: file.isDir ? 'dir' : 'file', name: file.name, path: file.path })
+  }, [addFormRef])
+
   return (
     <div className="shrink-0 px-4 pb-6 pt-3">
       <div className="mx-auto max-w-3xl">
         <div className={cn('overflow-hidden rounded-lg border bg-bg-base', (isGenerating || isBackground || compressing) ? 'border-border' : 'border-highlight')}>
           <FilePreviews files={files} onRemove={removeFile} />
+          {formRefs.length > 0 && (
+            <div className="flex flex-wrap gap-2 px-3 pt-3">
+              {formRefs.map((rf, i) => (
+                <div key={i} className="group relative flex items-center gap-2 rounded-md bg-bg-layer-3 px-2 py-1.5 pr-7 text-xs text-text-2">
+                  <span className="max-w-32 truncate">@{rf.name}</span>
+                  <button
+                    onClick={() => removeFormRef(i)}
+                    className="absolute right-1 top-1/2 hidden -translate-y-1/2 rounded p-0.5 text-text-muted hover:bg-bg-hover hover:text-text-2 group-hover:block"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <textarea
             ref={textareaRef}
             value={value} onChange={(e) => onChange(e.target.value)}
-            onKeyDown={onKeyDown}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                if (isComposingRef.current.composing || e.nativeEvent.isComposing || e.keyCode === 229) {
+                  e.preventDefault()
+                  return
+                }
+                e.preventDefault()
+                handleSendOrStop()
+              }
+            }}
             onCompositionStart={() => { isComposingRef.current.composing = true }}
             onCompositionEnd={() => { isComposingRef.current.composing = false }}
             placeholder={isBackground ? t('chat.backgroundThinkingPlaceholder') : t('chat.inputPlaceholderSession')} disabled={isGenerating || isBackground || compressing} rows={1}
@@ -1260,6 +1440,25 @@ function ChatInput({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>{t('chat.maxFilesHint')}</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setFilePickerOpen(true)}
+                    className={cn(
+                      'rounded-md p-1 transition-colors',
+                      compressing
+                        ? 'cursor-not-allowed text-text-muted/30'
+                        : formRefs.length > 0
+                          ? 'text-highlight bg-highlight/10'
+                          : 'text-text-muted hover:bg-bg-hover hover:text-text-2',
+                    )}
+                  >
+                    <AtSign className="size-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>{t('chat.selectFile')}</TooltipContent>
               </Tooltip>
 
               <label className={cn(
@@ -1319,6 +1518,12 @@ function ChatInput({
         </div>
         <p className="mt-2 text-center text-xs text-text-muted/50">{t('chat.aiDisclaimer')}</p>
       </div>
+
+      <FilePickerDialog
+        open={filePickerOpen}
+        onOpenChange={setFilePickerOpen}
+        onConfirm={handlePickFile}
+      />
     </div>
   )
 }

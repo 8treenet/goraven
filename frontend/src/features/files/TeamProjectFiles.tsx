@@ -9,22 +9,27 @@ import {
   FolderArchive,
   Download,
   Pencil,
-  Lock,
   FolderOpen,
   AlertCircle,
   RefreshCw,
-  Braces,
   Eye,
-  Users,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useT, t as translate } from '@/i18n'
-import { listFiles, mkdir, rename, deleteFiles, compress, decompress } from '@/api/files'
-import { createTempAccess, getDownloadUrl } from '@/api/files'
-import { shareProject, unshareProject } from '@/api/team-projects'
+import {
+  listTeamFiles,
+  commitTeamUpload,
+  teamMkdir,
+  teamRename,
+  teamDeleteFiles,
+  teamCompress,
+  teamDecompress,
+  getTeamDownloadUrl,
+  createTeamTempAccess,
+} from '@/api/team-projects'
 import type { FileItem, TeamProjectItem } from '@/api/types'
-import { useFileUpload } from '@/hooks/useFileUpload'
+import { useChunkUpload } from '@/hooks/useChunkUpload'
 import {
   ContextMenu,
   ContextMenuItem,
@@ -32,10 +37,6 @@ import {
 } from './FileContextMenu'
 import { FileDialogs, type FileDialogMode } from './FileDialogs'
 import { PreviewDialog } from './PreviewDialog'
-import { EnvVarsDialog } from './EnvVarsDialog'
-import { ShareDialog, type ShareDialogMode } from './ShareDialog'
-import { TeamProjectView } from './TeamProjectView'
-import { TeamProjectFiles } from './TeamProjectFiles'
 import { useFilePreview } from './useFilePreview'
 import {
   canPreview,
@@ -50,36 +51,13 @@ import {
   type SortOrder,
 } from './file-helpers'
 
-export function Component() {
-  const [view, setView] = useState<'mine' | 'team' | 'teamProject'>('mine')
-  const [activeTeamProject, setActiveTeamProject] = useState<TeamProjectItem | null>(null)
-
-  if (view === 'team') {
-    return (
-      <TeamProjectView
-        onBack={() => setView('mine')}
-        onEnterProject={(project) => {
-          setActiveTeamProject(project)
-          setView('teamProject')
-        }}
-      />
-    )
-  }
-
-  if (view === 'teamProject' && activeTeamProject) {
-    return (
-      <TeamProjectFiles
-        project={activeTeamProject}
-        onBack={() => setView('team')}
-        onBackToMine={() => setView('mine')}
-      />
-    )
-  }
-
-  return <MineFiles onSwitchToTeam={() => setView('team')} />
+interface TeamProjectFilesProps {
+  project: TeamProjectItem
+  onBack: () => void
+  onBackToMine: () => void
 }
 
-function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
+export function TeamProjectFiles({ project, onBack, onBackToMine }: TeamProjectFilesProps) {
   const [pageState, setPageState] = useState<PageState>('loading')
   const [currentDir, setCurrentDir] = useState('/')
   const [items, setItems] = useState<FileItem[]>([])
@@ -93,18 +71,12 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
   const [isDragOver, setIsDragOver] = useState(false)
   const t = useT()
 
-  const { upload, progress: uploadProgress, isUploading } = useFileUpload()
+  const { upload: chunkUpload, progress: uploadProgress, isUploading } = useChunkUpload()
 
-  const [dialogMode, setDialogMode] = useState<FileDialogMode>(null)
-  const [dialogValue, setDialogValue] = useState('')
-  const [dialogError, setDialogError] = useState<string | null>(null)
-
-  const [envVarsOpen, setEnvVarsOpen] = useState(false)
-
-  const [shareMode, setShareMode] = useState<ShareDialogMode>(null)
-  const [shareProjectName, setShareProjectName] = useState('')
-  const [shareDescription, setShareDescription] = useState('')
-  const [shareSharedId, setShareSharedId] = useState(0)
+  const projectRootPath = useMemo(
+    () => `projects/${project.projectName}`,
+    [project.projectName],
+  )
 
   const {
     previewItem,
@@ -118,10 +90,14 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
     closePreview,
     handleDownload: rawHandleDownload,
   } = useFilePreview({
-    buildDownloadUrl: getDownloadUrl,
-    createAccess: createTempAccess,
-    buildAkPath: (filePath) => filePath,
+    buildDownloadUrl: (filePath) => getTeamDownloadUrl(project.id, filePath),
+    createAccess: (path, type) => createTeamTempAccess(project.id, path, type),
+    buildAkPath: (filePath) => `${projectRootPath}${filePath}`,
   })
+
+  const [dialogMode, setDialogMode] = useState<FileDialogMode>(null)
+  const [dialogValue, setDialogValue] = useState('')
+  const [dialogError, setDialogError] = useState<string | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const renameInputRef = useRef<HTMLInputElement>(null)
@@ -140,10 +116,8 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
   const someSelected = selectedNames.size > 0 && selectedNames.size < items.length
 
   const isRoot = currentDir === '/'
-  const currentDirName = isRoot ? null : currentDir.split('/').pop() || null
-  const inProjectsDir = currentDir === '/projects'
-
-  const canDelete = selectedItems.length > 0 && !selectedItems.some((item) => item.isDefault)
+  const currentDirName = isRoot ? project.projectName : (currentDir.split('/').pop() || null)
+  const canDelete = selectedItems.length > 0
   const canCompress = selectedItems.length > 0
   const canDecompress =
     selectedItems.length === 1 &&
@@ -157,7 +131,7 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
     setContextMenu(null)
     setRenamingItem(null)
 
-    listFiles(dir === '/' ? '' : dir)
+    listTeamFiles(project.id, dir === '/' ? '' : dir)
       .then((data) => {
         setItems(data.items)
         setPageState(data.items.length === 0 ? 'empty' : 'data')
@@ -165,7 +139,7 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
       .catch(() => {
         setPageState('error')
       })
-  }, [])
+  }, [project.id])
 
   useEffect(() => {
     loadDir(currentDir)
@@ -176,10 +150,13 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
   }, [])
 
   const goBack = useCallback(() => {
-    if (isRoot) return
+    if (isRoot) {
+      onBack()
+      return
+    }
     const parent = currentDir.split('/').slice(0, -1).join('/') || '/'
     setCurrentDir(parent)
-  }, [currentDir, isRoot])
+  }, [currentDir, isRoot, onBack])
 
   const handleSort = useCallback(
     (field: SortField) => {
@@ -198,11 +175,8 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
       setSelectedNames((prev) => {
         const next = new Set(prev)
         if (e.metaKey || e.ctrlKey) {
-          if (next.has(name)) {
-            next.delete(name)
-          } else {
-            next.add(name)
-          }
+          if (next.has(name)) next.delete(name)
+          else next.add(name)
         } else if (e.shiftKey && lastSelected) {
           const allNames = sortedItems.map((item) => item.name)
           const start = allNames.indexOf(lastSelected)
@@ -212,9 +186,8 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
             for (const n of range) next.add(n)
           }
         } else {
-          if (next.has(name) && next.size === 1) {
-            next.clear()
-          } else {
+          if (next.has(name) && next.size === 1) next.clear()
+          else {
             next.clear()
             next.add(name)
           }
@@ -229,27 +202,20 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
   const handleCheckboxToggle = useCallback((name: string) => {
     setSelectedNames((prev) => {
       const next = new Set(prev)
-      if (next.has(name)) {
-        next.delete(name)
-      } else {
-        next.add(name)
-      }
+      if (next.has(name)) next.delete(name)
+      else next.add(name)
       return next
     })
     setLastSelected(name)
   }, [])
 
   const handleSelectAll = useCallback(() => {
-    if (allSelected) {
-      setSelectedNames(new Set())
-    } else {
-      setSelectedNames(new Set(items.map((item) => item.name)))
-    }
+    if (allSelected) setSelectedNames(new Set())
+    else setSelectedNames(new Set(items.map((item) => item.name)))
   }, [allSelected, items])
 
   const handleContextMenu = useCallback((item: FileItem, e: React.MouseEvent) => {
     e.preventDefault()
-    if (item.isDir && item.isDefault) return
     setContextMenu({ x: e.clientX, y: e.clientY, item })
   }, [])
 
@@ -272,7 +238,7 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
     }
     const oldPath = `${currentDir === '/' ? '' : currentDir}/${renamingItem}`
     const newPath = `${currentDir === '/' ? '' : currentDir}/${renameValue.trim()}`
-    rename(oldPath, newPath)
+    teamRename(project.id, oldPath, newPath)
       .then(() => {
         setRenamingItem(null)
         toast.success(translate('files.renameSuccess'))
@@ -281,24 +247,23 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
       .catch((err: Error) => {
         toast.error(err.message || translate('files.renameFailed'))
       })
-  }, [renamingItem, renameValue, items, currentDir, loadDir])
+  }, [renamingItem, renameValue, items, currentDir, project.id, loadDir])
 
-  const cancelRename = useCallback(() => {
-    setRenamingItem(null)
-  }, [])
+  const cancelRename = useCallback(() => setRenamingItem(null), [])
 
   const handleUploadFiles = useCallback(
     async (files: FileList | File[]) => {
       const fileArray = Array.from(files)
       for (const file of fileArray) {
         try {
-          await upload(file, currentDir === '/' ? '' : currentDir)
+          const mergeResult = await chunkUpload(file)
+          await commitTeamUpload(project.id, mergeResult.uploadId, currentDir === '/' ? '' : currentDir)
         } catch {
         }
       }
       loadDir(currentDir)
     },
-    [upload, currentDir, loadDir],
+    [chunkUpload, project.id, currentDir, loadDir],
   )
 
   const handleUploadClick = useCallback(() => {
@@ -343,13 +308,9 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
   }, [])
 
   const openDeleteDialog = useCallback(() => {
-    if (selectedItems.some((item) => item.isShared)) {
-      toast.error(translate('files.cannotDeleteShared'))
-      return
-    }
     setDialogMode('delete')
     setDialogError(null)
-  }, [selectedItems])
+  }, [])
 
   const openCompressDialog = useCallback(() => {
     setDialogMode('compress')
@@ -369,16 +330,13 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
   }, [])
 
   const handleCreateFolder = useCallback(() => {
-    const error = validateName(
-      dialogValue,
-      items.map((i) => i.name),
-    )
+    const error = validateName(dialogValue, items.map((i) => i.name))
     if (error) {
       setDialogError(error)
       return
     }
     const dirPath = `${currentDir === '/' ? '' : currentDir}/${dialogValue.trim()}`
-    mkdir(dirPath)
+    teamMkdir(project.id, dirPath)
       .then(() => {
         closeDialog()
         toast.success(translate('files.dirCreated'))
@@ -387,12 +345,12 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
       .catch((err: Error) => {
         toast.error(err.message || translate('files.dirCreateFailed'))
       })
-  }, [dialogValue, items, currentDir, closeDialog, loadDir])
+  }, [dialogValue, items, currentDir, project.id, closeDialog, loadDir])
 
   const handleDelete = useCallback(() => {
     const names = selectedItems.map((i) => i.name)
     const paths = names.map((n) => `${currentDir === '/' ? '' : currentDir}/${n}`)
-    deleteFiles(paths)
+    teamDeleteFiles(project.id, paths)
       .then(() => {
         setSelectedNames(new Set())
         closeDialog()
@@ -402,22 +360,19 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
       .catch((err: Error) => {
         toast.error(err.message || translate('common.deleteFailed'))
       })
-  }, [selectedItems, currentDir, closeDialog, loadDir])
+  }, [selectedItems, currentDir, project.id, closeDialog, loadDir])
 
   const handleCompress = useCallback(() => {
     const name = dialogValue.trim() || 'archive'
     const zipName = name.endsWith('.zip') ? name : `${name}.zip`
-    const error = validateName(
-      zipName,
-      items.map((i) => i.name),
-    )
+    const error = validateName(zipName, items.map((i) => i.name))
     if (error) {
       setDialogError(error)
       return
     }
     const paths = selectedItems.map((i) => `${currentDir === '/' ? '' : currentDir}/${i.name}`)
     const outputName = name.endsWith('.zip') ? name.replace(/\.zip$/i, '') : name
-    compress({ paths, outputName })
+    teamCompress(project.id, { paths, outputName })
       .then(() => {
         closeDialog()
         toast.success(translate('files.compressComplete'))
@@ -426,13 +381,13 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
       .catch((err: Error) => {
         toast.error(err.message || translate('files.compressFailed'))
       })
-  }, [dialogValue, items, selectedItems, currentDir, closeDialog, loadDir])
+  }, [dialogValue, items, selectedItems, currentDir, project.id, closeDialog, loadDir])
 
   const handleDecompress = useCallback(
     (toSubDir: boolean) => {
       const zipItem = selectedItems[0]
       const zipPath = `${currentDir === '/' ? '' : currentDir}/${zipItem.name}`
-      decompress({ path: zipPath, toSubDir })
+      teamDecompress(project.id, { path: zipPath, toSubDir })
         .then(() => {
           const baseName = zipItem.name.replace(/\.zip$/i, '')
           toast.success(toSubDir ? translate('files.extractedToSubdir').replace('{dir}', baseName) : translate('files.extractedToDir'))
@@ -443,8 +398,12 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
           toast.error(err.message || translate('files.extractFailed'))
         })
     },
-    [selectedItems, currentDir, closeDialog, loadDir],
+    [selectedItems, currentDir, project.id, closeDialog, loadDir],
   )
+
+  const handleRefresh = useCallback(() => {
+    loadDir(currentDir)
+  }, [currentDir, loadDir])
 
   const handleDownload = useCallback((item: FileItem) => {
     setContextMenu(null)
@@ -459,8 +418,7 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (dialogMode || renamingItem) return
-
-      if (e.key === 'F2' && selectedItems.length === 1 && !selectedItems[0].isDefault && !selectedItems[0].isShared) {
+      if (e.key === 'F2' && selectedItems.length === 1) {
         e.preventDefault()
         startRename(selectedItems[0])
       }
@@ -468,63 +426,11 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
         e.preventDefault()
         openDeleteDialog()
       }
-      if (e.key === 'Escape') {
-        setContextMenu(null)
-      }
+      if (e.key === 'Escape') setContextMenu(null)
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [dialogMode, renamingItem, selectedItems, canDelete, startRename, openDeleteDialog])
-
-  const handleRefresh = useCallback(() => {
-    loadDir(currentDir)
-  }, [currentDir, loadDir])
-
-  const openShareDialog = useCallback((item: FileItem) => {
-    setContextMenu(null)
-    setShareProjectName(item.name)
-    setShareDescription('')
-    setShareSharedId(0)
-    setShareMode('share')
-  }, [])
-
-  const openUnshareDialog = useCallback((item: FileItem) => {
-    setContextMenu(null)
-    setShareProjectName(item.name)
-    setShareSharedId(item.sharedId || 0)
-    setShareMode('unshare')
-  }, [])
-
-  const closeShareDialog = useCallback(() => {
-    setShareMode(null)
-    setShareProjectName('')
-    setShareDescription('')
-    setShareSharedId(0)
-  }, [])
-
-  const handleShareConfirm = useCallback(() => {
-    if (shareMode === 'share') {
-      shareProject(shareProjectName, shareDescription)
-        .then(() => {
-          toast.success(translate('files.shareSuccess'))
-          closeShareDialog()
-          loadDir(currentDir)
-        })
-        .catch((err: Error) => {
-          toast.error(err.message)
-        })
-    } else if (shareMode === 'unshare') {
-      unshareProject(shareSharedId)
-        .then(() => {
-          toast.success(translate('files.unshareSuccess'))
-          closeShareDialog()
-          loadDir(currentDir)
-        })
-        .catch((err: Error) => {
-          toast.error(err.message)
-        })
-    }
-  }, [shareMode, shareProjectName, shareDescription, shareSharedId, closeShareDialog, loadDir, currentDir])
 
   return (
     <div className="flex h-full flex-col bg-bg-base">
@@ -533,7 +439,6 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
           variant="ghost"
           size="icon"
           onClick={goBack}
-          disabled={isRoot}
           title={t('files.backTooltip')}
         >
           <ArrowLeft className="size-4" />
@@ -595,21 +500,11 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
         <Button
           variant="ghost"
           size="default"
-          onClick={onSwitchToTeam}
+          onClick={onBackToMine}
           className="text-highlight hover:text-highlight"
         >
-          <Users className="size-4" />
-          {t('files.teamProjects')}
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="default"
-          onClick={() => setEnvVarsOpen(true)}
-          className="text-highlight hover:text-highlight"
-        >
-          <Braces className="size-4" />
-          {t('files.envVars')}
+          <FolderOpen className="size-4" />
+          {t('files.myFiles')}
         </Button>
 
         <Button
@@ -657,17 +552,14 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
           <div className="flex h-full flex-col items-center justify-center gap-4">
             <AlertCircle className="size-8 text-text-3" />
             <div className="text-center">
-              <p className="text-sm text-text-2">{t('common.loadFailed')}</p>
-              <p className="mt-1 text-sm text-text-3">
-                {t('files.errReadDir')}
-              </p>
+              <p className="text-sm text-text-2">{t('files.projectNotFound')}</p>
             </div>
             <button
-              onClick={() => loadDir(currentDir)}
+              onClick={onBack}
               className="inline-flex items-center gap-1.5 rounded-md bg-bg-layer-2 px-3 py-1.5 text-sm text-text-1 transition-colors hover:bg-bg-layer-3"
             >
-              <RefreshCw className="size-4" />
-              {t('common.retry')}
+              <ArrowLeft className="size-4" />
+              {t('files.teamProjects')}
             </button>
           </div>
         )}
@@ -676,10 +568,8 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
           <div className="flex h-full flex-col items-center justify-center gap-3">
             <FolderOpen className="size-12 text-text-3" />
             <div className="text-center">
-               <p className="text-sm text-text-2">{t('files.emptyFolder')}</p>
-               <p className="mt-1 text-sm text-text-3">
-                 {t('files.emptyHint')}
-               </p>
+              <p className="text-sm text-text-2">{t('files.emptyFolder')}</p>
+              <p className="mt-1 text-sm text-text-3">{t('files.emptyHint')}</p>
             </div>
           </div>
         )}
@@ -812,12 +702,6 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
                         {item.isDir && '/'}
                       </span>
                     )}
-                    {item.isDefault && (
-                      <Lock className="size-3.5 shrink-0 text-interactive" />
-                    )}
-                    {item.isShared && (
-                      <Users className="size-3.5 shrink-0 text-highlight" />
-                    )}
                   </div>
 
                   <div className="w-[120px] text-right text-sm text-text-3 tabular-nums">
@@ -833,16 +717,14 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
 
             {isDragOver && (
               <div className="flex h-20 items-center justify-center border-2 border-dashed border-highlight mx-3 my-2 rounded-lg">
-                <p className="text-sm text-highlight">
-                  {t('files.dropHint')}
-                </p>
+                <p className="text-sm text-highlight">{t('files.dropHint')}</p>
               </div>
             )}
 
             {!isDragOver && sortedItems.length < 8 && sortedItems.length > 0 && (
               <div className="px-4 py-4 text-xs text-text-muted">
-                 <span className="text-text-3">{t('files.dragPrompt')}</span>{' '}
-                 <span className="text-text-muted">| {t('files.orClick')}</span>
+                <span className="text-text-3">{t('files.dragPrompt')}</span>{' '}
+                <span className="text-text-muted">| {t('files.orClick')}</span>
               </div>
             )}
           </>
@@ -877,37 +759,21 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
               {t('files.download')}
             </ContextMenuItem>
           )}
-          {!contextMenu.item.isDefault && !contextMenu.item.isShared && (
-            <ContextMenuItem onClick={() => startRename(contextMenu.item)}>
-              <Pencil className="size-3.5" />
-              {t('files.rename')}
-            </ContextMenuItem>
-          )}
-          {!contextMenu.item.isDefault && !contextMenu.item.isShared && (
-            <ContextMenuItem
-              onClick={() => {
-                setContextMenu(null)
-                setSelectedNames(new Set([contextMenu.item.name]))
-                setTimeout(() => openDeleteDialog(), 0)
-              }}
-              danger
-            >
-              <Trash2 className="size-3.5" />
-              {t('common.delete')}
-            </ContextMenuItem>
-          )}
-          {inProjectsDir && contextMenu.item.isDir && !contextMenu.item.isShared && (
-            <ContextMenuItem onClick={() => openShareDialog(contextMenu.item)}>
-              <Users className="size-3.5" />
-              {t('files.shareToTeam')}
-            </ContextMenuItem>
-          )}
-          {inProjectsDir && contextMenu.item.isDir && contextMenu.item.isShared && (
-            <ContextMenuItem onClick={() => openUnshareDialog(contextMenu.item)}>
-              <Users className="size-3.5" />
-              {t('files.unshare')}
-            </ContextMenuItem>
-          )}
+          <ContextMenuItem onClick={() => startRename(contextMenu.item)}>
+            <Pencil className="size-3.5" />
+            {t('files.rename')}
+          </ContextMenuItem>
+          <ContextMenuItem
+            onClick={() => {
+              setContextMenu(null)
+              setSelectedNames(new Set([contextMenu.item.name]))
+              setTimeout(() => openDeleteDialog(), 0)
+            }}
+            danger
+          >
+            <Trash2 className="size-3.5" />
+            {t('common.delete')}
+          </ContextMenuItem>
         </ContextMenu>
       )}
 
@@ -935,20 +801,6 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
         error={previewError}
         onClose={closePreview}
         onDownload={previewItem ? () => handleDownload(previewItem) : undefined}
-      />
-
-      <EnvVarsDialog
-        open={envVarsOpen}
-        onOpenChange={setEnvVarsOpen}
-      />
-
-      <ShareDialog
-        mode={shareMode}
-        projectName={shareProjectName}
-        description={shareDescription}
-        onDescriptionChange={setShareDescription}
-        onClose={closeShareDialog}
-        onConfirm={handleShareConfirm}
       />
     </div>
   )

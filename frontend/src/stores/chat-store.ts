@@ -3,13 +3,18 @@ import type { StateCreator } from 'zustand'
 import { toast } from 'sonner'
 import { providersApi, personasApi, mcpApi, skillsApi, chatApi, sessionsApi } from '@/api'
 import { connectChatStream } from '@/api/sse'
-import type { ChatRequest, ChatResponse, SessionDetail, Message as ApiMessage } from '@/api/types'
+import type { ChatRequest, ChatResponse, SessionDetail, Message as ApiMessage, SharedProjectInfo } from '@/api/types'
 import { uuid } from '@/lib/utils'
 
 export type RoleType = 'user' | 'assistant'
 
-export interface Model {
-  id: number
+export interface FileRef {
+  type: 'file' | 'dir'
+  name: string
+  path: string
+}
+
+export interface Model {  id: number
   name: string
   provider: string
   icon: string
@@ -79,6 +84,7 @@ export interface Session {
   modelId: number
   personaId: number | null
   project: string
+  sharedProject?: SharedProjectInfo
   mcpIds: number[]
   skillIds: number[]
   lastChatTime: string
@@ -127,7 +133,7 @@ function mapApiMessage(m: ApiMessage): Message {
 
 const pollIntervals = new Map<string, ReturnType<typeof setInterval>>()
 const backgroundTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
-const BACKGROUND_TIMEOUT_MS = 3 * 60 * 1000
+const BACKGROUND_TIMEOUT_MS = 5 * 60 * 1000
 
 const LAST_USED_MODEL_KEY = 'raven.lastUsedModelId'
 
@@ -350,7 +356,9 @@ interface ChatState {
   formSkillIds: number[]
   formThinking: boolean
   formProjectPath: string | null
+  formSharedProjectId: number | null
   formAttachments: string[]
+  formRefs: FileRef[]
 
   currentSessionId: string | null
   sessionDetail: SessionDetail | null
@@ -371,8 +379,11 @@ interface ChatState {
   toggleFormSkill: (id: number) => void
   setFormThinking: (v: boolean) => void
   setFormProjectPath: (path: string | null) => void
+  setFormSharedProjectId: (id: number | null) => void
   addFormAttachment: (uploadId: string) => void
   removeFormAttachment: (uploadId: string) => void
+  addFormRef: (ref: FileRef) => void
+  removeFormRef: (index: number) => void
 
   loadModels: () => Promise<void>
   loadPersonas: () => Promise<void>
@@ -404,7 +415,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
   formSkillIds: [],
   formThinking: true,
   formProjectPath: null,
+  formSharedProjectId: null,
   formAttachments: [],
+  formRefs: [],
 
   currentSessionId: null,
   sessionDetail: null,
@@ -462,7 +475,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   setFormThinking: (v) => set({ formThinking: v }),
 
-  setFormProjectPath: (path) => set({ formProjectPath: path }),
+  setFormProjectPath: (path) => set({ formProjectPath: path, formSharedProjectId: null }),
+
+  setFormSharedProjectId: (id) => set({ formSharedProjectId: id, formProjectPath: null }),
 
   addFormAttachment: (uploadId) =>
     set((s) => ({
@@ -474,6 +489,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
   removeFormAttachment: (uploadId) =>
     set((s) => ({
       formAttachments: s.formAttachments.filter((id) => id !== uploadId),
+    })),
+
+  addFormRef: (ref) =>
+    set((s) => ({
+      formRefs: [...s.formRefs, ref],
+    })),
+
+  removeFormRef: (index) =>
+    set((s) => ({
+      formRefs: s.formRefs.filter((_, i) => i !== index),
     })),
 
   loadModels: async () => {
@@ -581,16 +606,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set((s) => ({ messages: [...s.messages, userMsg], streamController: null }))
 
     // Build the request
+    const refTags = state.formRefs.map(r => `<raven-ref type="${r.type}" name="${r.name}">${r.path}</raven-ref>`).join('\n')
+    const fullContent = content + (refTags ? '\n' + refTags : '')
     const request: ChatRequest = {
       sessionId: state.currentSessionId || undefined,
-      content,
+      content: fullContent,
       attachments: state.formAttachments,
       aiModelId: state.formModelId,
       personaId: state.formPersonaId || undefined,
       mcpIds: state.formMcpIds,
       skillIds: state.formSkillIds,
       reasoning: state.formThinking ? 1 : 0,
-      project: state.formProjectPath || '',
+      project: state.formSharedProjectId ? '' : (state.formProjectPath || ''),
+      sharedProjectId: state.formSharedProjectId || undefined,
     }
 
     let sessionId: string
@@ -634,6 +662,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         modelId: d.aiModelId,
         personaId: d.personaId > 0 ? d.personaId : null,
         project: d.project,
+        sharedProject: d.sharedProject,
         mcpIds: d.mcpIds ?? [],
         skillIds: d.skillIds ?? [],
         lastChatTime: d.lastChatTime,
@@ -655,6 +684,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         modelId: state.formModelId,
         personaId: state.formPersonaId,
         project: state.formProjectPath || '',
+        sharedProject: undefined,
         mcpIds: state.formMcpIds,
         skillIds: state.formSkillIds,
         lastChatTime: new Date().toISOString(),
@@ -677,6 +707,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         streamingThinkingSegments: [],
         streamingRetry: null,
         formAttachments: [],
+        formRefs: [],
         sessionDetail: d ?? null,
       }))
     } else {
@@ -687,6 +718,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         streamingThinkingSegments: [],
         streamingRetry: null,
         formAttachments: [],
+        formRefs: [],
         // Optimistically mark the session as generating so any transition to
         // background (timeout / SSE error / navigation) reads status===1.
         sessions: s.sessions.map((se) =>
@@ -745,6 +777,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         modelId: detail.aiModelId,
         personaId: detail.personaId > 0 ? detail.personaId : null,
         project: detail.project,
+        sharedProject: detail.sharedProject,
         mcpIds: detail.mcpIds ?? [],
         skillIds: detail.skillIds ?? [],
         lastChatTime: detail.lastChatTime,
@@ -774,6 +807,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           formThinking: true,
           streamController: s.generatingSessionId === id ? s.streamController : null,
           formAttachments: [],
+          formRefs: [],
         }
       })
 
@@ -917,6 +951,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           modelId: prev?.modelId ?? 0,
           personaId: s.personaId > 0 ? s.personaId : (prev?.personaId ?? null),
           project: s.project || prev?.project || '',
+          sharedProject: s.sharedProject || prev?.sharedProject,
           mcpIds: prev?.mcpIds ?? [],
           skillIds: prev?.skillIds ?? [],
           messages: prev?.messages ?? [],
@@ -964,6 +999,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           modelId: 0,
           personaId: s.personaId > 0 ? s.personaId : null,
           project: s.project || '',
+          sharedProject: s.sharedProject,
           mcpIds: [],
           skillIds: [],
           messages: [],
