@@ -32,19 +32,11 @@
 
 ---
 
-## It doesn't just chat. It gets things done.
+## Stop chatting with AI. Let it deliver.
 
-AI chat is everywhere. What's hard is turning it into an engineering system your team can actually rely on.
+Raven gives every team member an independent Agent workspace — not a chat window, a **workstation**. Inside it, the Agent reads files, writes code, runs commands, calls APIs, searches your knowledge base, analyzes data, writes reports, and builds charts. It takes tasks, breaks them down, runs in parallel, and hands you the result.
 
-Raven is an **AI Harness** — every team member gets their own workspace, and inside it the Agent **reads files, writes code, runs commands, calls APIs, and searches your knowledge base**. It takes on tasks, breaks them down, picks the right tools, and delivers results — instead of spitting out text for you to copy-paste.
-
-```
-You describe the goal → Agent understands it → Decomposes into subtasks → Runs in parallel → Delivers results
-                                ↓
-              Reads docs · Writes code · Calls APIs · Searches knowledge · Installs deps
-```
-
-**From "model outputs text" to "agent delivers outcomes."** That's what Raven does.
+**You want outcomes, not another block of text to copy-paste.**
 
 ---
 
