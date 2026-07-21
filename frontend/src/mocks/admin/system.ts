@@ -469,19 +469,6 @@ export const ACTIVE_90 = generateActiveTrend(90)
 
 /* ---- Dashboard data ---- */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const userTokenRankData: any[] = [
-  { userId: '1', username: 'zhangsan', tokenCount: 520000, percentage: 30.5 },
-  { userId: '2', username: 'lisi', tokenCount: 310000, percentage: 18.2 },
-  { userId: '3', username: 'wangwu', tokenCount: 180000, percentage: 10.6 },
-  { userId: '4', username: 'zhaoliu', tokenCount: 145000, percentage: 8.5 },
-  { userId: '5', username: 'sunqi', tokenCount: 98000, percentage: 5.7 },
-  { userId: '6', username: 'zhouba', tokenCount: 87000, percentage: 5.1 },
-  { userId: '7', username: 'wujiu', tokenCount: 65000, percentage: 3.8 },
-  { userId: '8', username: 'zhengshi', tokenCount: 52000, percentage: 3.1 },
-  { userId: '9', username: 'zhengshi2', tokenCount: 2000, percentage: 3.1 }
-]
-
 export const MOCK_ADMIN_DASHBOARD: AdminDashboardData = {
   overview: {
     activeUsers: 42,
@@ -493,16 +480,6 @@ export const MOCK_ADMIN_DASHBOARD: AdminDashboardData = {
     enabledModels: 3,
     sparkline: generateSparkline(),
   },
-  tokenTrend: TREND_30,
-  modelUsage: [
-    { modelName: 'DeepSeek V3', tokenCount: 245600, percentage: 45.2 },
-    { modelName: 'Claude 3.5', tokenCount: 153400, percentage: 28.2 },
-    { modelName: 'Qwen Max', tokenCount: 68700, percentage: 12.6 },
-    { modelName: 'GLM-4 Plus', tokenCount: 45200, percentage: 8.3 },
-    { modelName: 'GPT-4o', tokenCount: 31200, percentage: 5.7 },
-  ],
-  userTokenRank: userTokenRankData,
-  activeTrend: ACTIVE_30,
   skillUsageRank: [
     { name: 'code-review', count: 89 },
     { name: 'pdf-reader', count: 76 },

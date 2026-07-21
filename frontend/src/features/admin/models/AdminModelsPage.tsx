@@ -121,7 +121,7 @@ function IconPicker({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex h-8 w-full items-center gap-2 rounded-lg border border-border-strong bg-transparent px-2.5 text-sm text-text-1 outline-none transition-colors hover:border-border-outer focus:border-interactive focus:ring-3 focus:ring-interactive/50"
+        className="flex h-8 w-full items-center gap-2 rounded-lg border border-border-strong bg-transparent px-2.5 text-sm text-text-1 outline-none transition-colors hover:border-border-outer focus:border-ring focus:ring-3 focus:ring-ring/50"
       >
         {value ? (
           <>
@@ -698,7 +698,7 @@ function AddModelDrawer({
                 baseUrl: p ? p.defaultBaseUrl : '',
               }))
             }}
-            className="h-8 rounded-lg border border-border-strong bg-transparent px-2.5 text-sm text-text-1 outline-none focus:border-interactive focus:ring-3 focus:ring-interactive/50"
+            className="h-8 rounded-lg border border-border-strong bg-transparent px-2.5 text-sm text-text-1 outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
           >
             <option value="">{t('adminModels.selectProvider')}</option>
             {providers.map((p) => (
@@ -858,7 +858,7 @@ function AddModelDrawer({
               onChange={(e) => setForm((f) => ({ ...f, extraFields: e.target.value }))}
               placeholder='{"thinking":{"type":"enabled"}}'
               rows={3}
-              className="min-h-[60px] w-full rounded-lg border border-border-strong bg-transparent px-2.5 py-1.5 font-mono text-xs text-text-1 outline-none placeholder:text-text-muted focus:border-interactive focus:ring-3 focus:ring-interactive/50"
+              className="min-h-[60px] w-full rounded-lg border border-border-strong bg-transparent px-2.5 py-1.5 font-mono text-xs text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-3 focus:ring-ring/50"
             />
           </div>
         )}
@@ -1171,7 +1171,7 @@ function EditModelDrawer({
               value={form.extraFields}
               onChange={(e) => setForm((f) => ({ ...f, extraFields: e.target.value }))}
               rows={3}
-              className="min-h-[60px] w-full rounded-lg border border-border-strong bg-transparent px-2.5 py-1.5 font-mono text-xs text-text-1 outline-none placeholder:text-text-muted focus:border-interactive focus:ring-3 focus:ring-interactive/50"
+              className="min-h-[60px] w-full rounded-lg border border-border-strong bg-transparent px-2.5 py-1.5 font-mono text-xs text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-3 focus:ring-ring/50"
             />
           </div>
         )}
@@ -1386,7 +1386,6 @@ function ModelIcon({ icon, name }: { icon: string; name: string }) {
 
 function ModelRow({
   model,
-  isEven,
   onEdit,
   onDelete,
   onDuplicate,
@@ -1395,7 +1394,6 @@ function ModelRow({
   onSetVisual,
 }: {
   model: AdminModelItem
-  isEven: boolean
   onEdit: () => void
   onDelete: () => void
   onDuplicate: () => void
@@ -1405,7 +1403,7 @@ function ModelRow({
 }) {
   const t = useT()
   return (
-    <tr className={cn(isEven && 'bg-interactive/10 dark:bg-bg-layer-1', 'transition-colors hover:bg-bg-hover')}>
+    <tr className="transition-colors hover:bg-bg-hover">
       <td className="py-2.5 pl-4 pr-2">
         <div className="flex items-center gap-2">
           <ModelIcon icon={model.icon} name={model.providerDisplayName} />
@@ -1480,7 +1478,7 @@ function TableSkeleton() {
         </thead>
         <tbody>
           {Array.from({ length: 8 }).map((_, i) => (
-            <tr key={i} className={cn(i % 2 === 0 && 'bg-interactive/10 dark:bg-bg-layer-1')}>
+            <tr key={i}>
               <td className="py-2.5 pl-4 pr-2">
                 <div className="flex items-center gap-2">
                   <div className="size-7 animate-pulse rounded-sm bg-bg-layer-3" />
@@ -1819,7 +1817,7 @@ export function Component() {
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder={t('adminModels.searchPlaceholder')}
-              className="h-7 w-44 rounded-lg border border-border-strong bg-transparent pl-7 pr-2 text-xs text-text-1 outline-none placeholder:text-text-muted focus:border-interactive focus:ring-2 focus:ring-interactive/30"
+              className="h-7 w-44 rounded-lg border border-border-strong bg-transparent pl-7 pr-2 text-xs text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-2 focus:ring-ring/30"
             />
             {search && (
               <button
@@ -1833,7 +1831,7 @@ export function Component() {
           <select
             value={providerFilter}
             onChange={(e) => setProviderFilter(e.target.value)}
-            className="h-7 rounded-lg border border-border-strong bg-transparent px-2 text-xs text-text-1 outline-none focus:border-interactive focus:ring-2 focus:ring-interactive/30"
+            className="h-7 rounded-lg border border-border-strong bg-transparent px-2 text-xs text-text-1 outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
           >
             <option value="all">{t('adminModels.allProviders')}</option>
             {uniqueProviders.map(([pid, pname]) => (
@@ -1891,11 +1889,10 @@ export function Component() {
                 </tr>
               </thead>
               <tbody>
-                {models.map((model, i) => (
+                {models.map((model) => (
                   <ModelRow
                     key={model.aiModelId}
                     model={model}
-                    isEven={i % 2 === 0}
                     onEdit={() => {
                       setEditTarget(model)
                       setDrawerMode('edit')

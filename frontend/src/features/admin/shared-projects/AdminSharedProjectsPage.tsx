@@ -102,16 +102,14 @@ function DeleteProjectDialog({
 
 function ProjectRow({
   project,
-  isEven,
   onDelete,
 }: {
   project: AdminSharedProjectItem
-  isEven: boolean
   onDelete: () => void
 }) {
   const t = useT()
   return (
-    <tr className={cn(isEven && 'bg-interactive/10 dark:bg-bg-layer-1', 'transition-colors hover:bg-bg-hover')}>
+    <tr className="transition-colors hover:bg-bg-hover">
       <td className="py-2.5 pl-4 pr-2">
         <div className="flex items-center gap-2">
           <Share2 className="size-4 shrink-0 text-text-3" />
@@ -178,7 +176,7 @@ function TableSkeleton() {
         </thead>
         <tbody>
           {Array.from({ length: 8 }).map((_, i) => (
-            <tr key={i} className={cn(i % 2 === 0 && 'bg-interactive/10 dark:bg-bg-layer-1')}>
+            <tr key={i}>
               <td className="py-2.5 pl-4 pr-2">
                 <div className="h-3.5 w-24 animate-pulse rounded bg-bg-layer-2" />
               </td>
@@ -430,11 +428,10 @@ export function Component() {
                 </tr>
               </thead>
               <tbody>
-                {projects.map((project, i) => (
+                {projects.map((project) => (
                   <ProjectRow
                     key={project.id}
                     project={project}
-                    isEven={i % 2 === 0}
                     onDelete={() => setDeleteTarget(project)}
                   />
                 ))}

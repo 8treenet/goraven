@@ -25,15 +25,12 @@ func init() {
 }
 
 type DashboardService struct {
-	Worker		freedom.Worker
-	DashboardRepo	*repository.DashboardRepository
+	Worker        freedom.Worker
+	DashboardRepo *repository.DashboardRepository
 }
 
-func (service *DashboardService) GetAdminDashboard(refresh bool) (*vo.AdminDashboardRsp, error) {
+func (service *DashboardService) GetAdminDashboard() (*vo.AdminDashboardRsp, error) {
 	const cacheKey = "dashboard:admin"
-	if refresh {
-		service.DashboardRepo.InvalidateDashboardCache(cacheKey)
-	}
 
 	rsp := &vo.AdminDashboardRsp{}
 	if service.DashboardRepo.GetDashboardCache(cacheKey, rsp) {
@@ -42,37 +39,12 @@ func (service *DashboardService) GetAdminDashboard(refresh bool) (*vo.AdminDashb
 
 	last7 := util.GenLastNDates(7)
 	thisWeek := util.GenThisWeekDates()
-	last30 := util.GenLastNDates(30)
 
 	overview, err := service.buildAdminOverview(last7, thisWeek)
 	if err != nil {
 		return nil, err
 	}
 	rsp.Overview = *overview
-
-	tokenTrend, err := service.DashboardRepo.GetTokenTrend(last30)
-	if err != nil {
-		return nil, err
-	}
-	rsp.TokenTrend = tokenTrend
-
-	modelUsage, err := service.DashboardRepo.GetModelUsage()
-	if err != nil {
-		return nil, err
-	}
-	rsp.ModelUsage = modelUsage
-
-	userRank, err := service.DashboardRepo.GetUserTokenRank()
-	if err != nil {
-		return nil, err
-	}
-	rsp.UserTokenRank = userRank
-
-	activeTrend, err := service.DashboardRepo.GetActiveUserTrend(last30)
-	if err != nil {
-		return nil, err
-	}
-	rsp.ActiveTrend = activeTrend
 
 	skillRank, err := service.DashboardRepo.GetToolUsageRank("skill", last7)
 	if err != nil {
@@ -92,18 +64,13 @@ func (service *DashboardService) GetAdminDashboard(refresh bool) (*vo.AdminDashb
 	}
 	rsp.ToolUsageRank = toolRank
 
-	rsp.Alerts = buildAlerts(overview.TodayTokens, tokenTrend)
-
 	service.DashboardRepo.SetDashboardCache(cacheKey, rsp)
 	return rsp, nil
 }
 
-func (service *DashboardService) GetAdminTokenTrend(days int, refresh bool) (*vo.TokenTrendRsp, error) {
+func (service *DashboardService) GetAdminTokenTrend(days int) (*vo.TokenTrendRsp, error) {
 	cacheKey := fmt.Sprintf("dashboard:admin:tokenTrend:%d", days)
 
-	if refresh {
-		service.DashboardRepo.InvalidateDashboardCache(cacheKey)
-	}
 	rsp := &vo.TokenTrendRsp{}
 	if service.DashboardRepo.GetDashboardCache(cacheKey, rsp) {
 		return rsp, nil
@@ -119,12 +86,44 @@ func (service *DashboardService) GetAdminTokenTrend(days int, refresh bool) (*vo
 	return rsp, nil
 }
 
-func (service *DashboardService) GetAdminActiveUserTrend(days int, refresh bool) (*vo.ActiveUserTrendRsp, error) {
-	cacheKey := fmt.Sprintf("dashboard:admin:activeUsers:%d", days)
+func (service *DashboardService) GetAdminModelUsage(days int) (*vo.ModelUsageRsp, error) {
+	cacheKey := fmt.Sprintf("dashboard:admin:modelUsage:%d", days)
 
-	if refresh {
-		service.DashboardRepo.InvalidateDashboardCache(cacheKey)
+	rsp := &vo.ModelUsageRsp{}
+	if service.DashboardRepo.GetDashboardCache(cacheKey, rsp) {
+		return rsp, nil
 	}
+
+	dateRange := util.GenLastNDates(days)
+	items, err := service.DashboardRepo.GetModelUsage(dateRange)
+	if err != nil {
+		return nil, err
+	}
+	rsp = &vo.ModelUsageRsp{Items: items}
+	service.DashboardRepo.SetDashboardCache(cacheKey, rsp)
+	return rsp, nil
+}
+
+func (service *DashboardService) GetAdminUserTokenRank(days int) (*vo.UserTokenRankRsp, error) {
+	cacheKey := fmt.Sprintf("dashboard:admin:userTokenRank:%d", days)
+
+	rsp := &vo.UserTokenRankRsp{}
+	if service.DashboardRepo.GetDashboardCache(cacheKey, rsp) {
+		return rsp, nil
+	}
+
+	dateRange := util.GenLastNDates(days)
+	items, err := service.DashboardRepo.GetUserTokenRank(dateRange)
+	if err != nil {
+		return nil, err
+	}
+	rsp = &vo.UserTokenRankRsp{Items: items}
+	service.DashboardRepo.SetDashboardCache(cacheKey, rsp)
+	return rsp, nil
+}
+
+func (service *DashboardService) GetAdminActiveUserTrend(days int) (*vo.ActiveUserTrendRsp, error) {
+	cacheKey := fmt.Sprintf("dashboard:admin:activeUsers:%d", days)
 
 	rsp := &vo.ActiveUserTrendRsp{}
 	if service.DashboardRepo.GetDashboardCache(cacheKey, rsp) {
@@ -192,12 +191,8 @@ func (service *DashboardService) buildAdminOverview(last7, thisWeek []string) (*
 	return overview, nil
 }
 
-func (service *DashboardService) GetUserDashboard(userId string, refresh bool) (*vo.UserDashboardRsp, error) {
+func (service *DashboardService) GetUserDashboard(userId string) (*vo.UserDashboardRsp, error) {
 	cacheKey := fmt.Sprintf("dashboard:user:%s", userId)
-
-	if refresh {
-		service.DashboardRepo.InvalidateDashboardCache(cacheKey)
-	}
 
 	rsp := &vo.UserDashboardRsp{}
 	if service.DashboardRepo.GetDashboardCache(cacheKey, rsp) {
@@ -206,25 +201,12 @@ func (service *DashboardService) GetUserDashboard(userId string, refresh bool) (
 
 	last7 := util.GenLastNDates(7)
 	thisWeek := util.GenThisWeekDates()
-	last30 := util.GenLastNDates(30)
 
 	overview, err := service.buildUserOverview(userId, last7, thisWeek)
 	if err != nil {
 		return nil, err
 	}
 	rsp.Overview = *overview
-
-	tokenTrend, err := service.DashboardRepo.GetUserTokenTrend(userId, last30)
-	if err != nil {
-		return nil, err
-	}
-	rsp.TokenTrend = tokenTrend
-
-	modelUsage, err := service.DashboardRepo.GetUserModelUsage(userId)
-	if err != nil {
-		return nil, err
-	}
-	rsp.ModelUsage = modelUsage
 
 	skillRank, err := service.DashboardRepo.GetUserToolUsageRank(userId, "skill", last7)
 	if err != nil {
@@ -254,12 +236,8 @@ func (service *DashboardService) GetUserDashboard(userId string, refresh bool) (
 	return rsp, nil
 }
 
-func (service *DashboardService) GetUserTokenTrend(userId string, days int, refresh bool) (*vo.TokenTrendRsp, error) {
+func (service *DashboardService) GetUserTokenTrend(userId string, days int) (*vo.TokenTrendRsp, error) {
 	cacheKey := fmt.Sprintf("dashboard:user:%s:tokenTrend:%d", userId, days)
-
-	if refresh {
-		service.DashboardRepo.InvalidateDashboardCache(cacheKey)
-	}
 
 	rsp := &vo.TokenTrendRsp{}
 	if service.DashboardRepo.GetDashboardCache(cacheKey, rsp) {
@@ -272,6 +250,24 @@ func (service *DashboardService) GetUserTokenTrend(userId string, days int, refr
 		return nil, err
 	}
 	rsp = &vo.TokenTrendRsp{Items: items}
+	service.DashboardRepo.SetDashboardCache(cacheKey, rsp)
+	return rsp, nil
+}
+
+func (service *DashboardService) GetUserModelUsage(userId string, days int) (*vo.ModelUsageRsp, error) {
+	cacheKey := fmt.Sprintf("dashboard:user:%s:modelUsage:%d", userId, days)
+
+	rsp := &vo.ModelUsageRsp{}
+	if service.DashboardRepo.GetDashboardCache(cacheKey, rsp) {
+		return rsp, nil
+	}
+
+	dateRange := util.GenLastNDates(days)
+	items, err := service.DashboardRepo.GetUserModelUsage(userId, dateRange)
+	if err != nil {
+		return nil, err
+	}
+	rsp = &vo.ModelUsageRsp{Items: items}
 	service.DashboardRepo.SetDashboardCache(cacheKey, rsp)
 	return rsp, nil
 }
@@ -353,35 +349,15 @@ func (service *DashboardService) buildStorageStats(userId string) (vo.UserStorag
 			pct = float64(u.BytesSize) / float64(totalBytes) * 100
 		}
 		items = append(items, vo.StorageUsageItem{
-			Name:		u.Name,
-			BytesSize:	u.BytesSize,
-			Percentage:	pct,
+			Name:       u.Name,
+			BytesSize:  u.BytesSize,
+			Percentage: pct,
 		})
 	}
 	return vo.UserStorageStats{
-		UsedBytes:	usedBytes,
-		FreeBytes:	freeBytes,
-		TotalBytes:	totalBytes,
-		Items:		items,
+		UsedBytes:  usedBytes,
+		FreeBytes:  freeBytes,
+		TotalBytes: totalBytes,
+		Items:      items,
 	}, nil
-}
-
-func buildAlerts(todayTokens int64, tokenTrend []vo.TokenTrendItem) []vo.DashboardAlert {
-	var alerts []vo.DashboardAlert
-
-	if len(tokenTrend) > 0 && todayTokens > 0 {
-		var totalTokens int64
-		for _, t := range tokenTrend {
-			totalTokens += t.PromptTokens + t.CompletionTokens
-		}
-		avgDaily := totalTokens / int64(len(tokenTrend))
-		if avgDaily > 0 && todayTokens > avgDaily*2 {
-			alerts = append(alerts, vo.DashboardAlert{
-				Level:		"warning",
-				Message:	"当日 Token 消耗异常偏高，已超过近期日均值的 2 倍",
-			})
-		}
-	}
-
-	return alerts
 }

@@ -12,7 +12,7 @@ function rowPadding(total: number) {
 
 export function InstalledSkillRow({
   skill,
-  index,
+  index: _index,
   total,
   onOpenDrawer,
   onDelete,
@@ -32,7 +32,7 @@ export function InstalledSkillRow({
       className={cn(
         'group flex items-start gap-3 px-4 transition-colors',
         pad,
-        index % 2 === 0 ? 'bg-interactive/10 dark:bg-bg-layer-1 hover:bg-bg-hover' : 'hover:bg-bg-hover',
+        'hover:bg-bg-hover',
       )}
     >
       <div className="shrink-0 mt-0.5">
@@ -86,7 +86,7 @@ export function InstalledSkillRow({
 
 export function MarketSkillRow({
   skill,
-  index,
+  index: _index,
   total,
   onOpenDrawer,
   onInstall,
@@ -106,7 +106,7 @@ export function MarketSkillRow({
       className={cn(
         'group flex items-start gap-3 px-4 transition-colors',
         pad,
-        index % 2 === 0 ? 'bg-interactive/10 dark:bg-bg-layer-1 hover:bg-bg-hover' : 'hover:bg-bg-hover',
+        'hover:bg-bg-hover',
       )}
     >
       <div className="shrink-0 mt-0.5">
@@ -168,7 +168,7 @@ export function MarketSkillRow({
 
 export function ShareSkillRow({
   skill,
-  index,
+  index: _index,
   total,
   userInstalled,
   onOpenDrawer,
@@ -192,7 +192,7 @@ export function ShareSkillRow({
       className={cn(
         'group flex items-start gap-3 px-4 transition-colors',
         pad,
-        index % 2 === 0 ? 'bg-interactive/10 dark:bg-bg-layer-1 hover:bg-bg-hover' : 'hover:bg-bg-hover',
+        'hover:bg-bg-hover',
       )}
     >
       <div className="shrink-0 mt-0.5">

@@ -191,7 +191,7 @@ function NewChat() {
         {!chatting ? (
           <div className="flex h-full flex-col items-center justify-center px-4 pb-20">
             <div className="mb-8 flex w-full max-w-2xl flex-col items-center gap-3">
-              <img src="/favicon.svg" alt="Raven" className="size-10 opacity-60" />
+              <img src="/favicon.svg" alt="Raven" className="size-12" />
               <p className="text-xl text-text-1">
                 What can I help you build?
               </p>
@@ -279,6 +279,11 @@ function SessionChat({ sessionId }: { sessionId: string }) {
       setLoading(false)
     })
   }, [sessionId, loadSession])
+
+  // Ensure models are loaded so toolbar can display model icon
+  useEffect(() => {
+    if (models.length === 0) loadModels()
+  }, [models.length, loadModels])
 
   // Fallback: 会话关联的模型可能已被删除（sessionDetail.modelName 为空），
   // 此时拉取模型列表，取默认模型展示在工具栏；若未设置默认模型则取列表第一个。
@@ -896,7 +901,7 @@ function NewChatInput({
               <span className="max-w-32 truncate">@{rf.name}</span>
               <button
                 onClick={() => removeRef(i)}
-                className="absolute right-1 top-1/2 hidden -translate-y-1/2 rounded p-0.5 text-text-muted hover:bg-bg-hover hover:text-text-2 group-hover:block"
+                className="absolute right-1 top-1/2 block -translate-y-1/2 rounded p-0.5 text-text-muted hover:bg-bg-hover hover:text-text-2 md:hidden md:group-hover:block"
               >
                 <X className="size-3" />
               </button>
@@ -1125,30 +1130,40 @@ function NewChatInput({
 
       <Dialog open={projectOpen} onOpenChange={setProjectOpen}>
         <DialogContent
-          className="!max-w-xl p-5 md:left-[var(--dialog-left)]"
+          className="!max-w-xl p-0 gap-0 overflow-hidden md:left-[var(--dialog-left)]"
           style={{ '--dialog-left': dialogLeft } as React.CSSProperties}
         >
-          <p className="text-base font-semibold text-text-1 mb-3">{t('chat.projectsTitle')}</p>
+          <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+            <FolderGit2 className="size-4 text-interactive" />
+            <span className="text-sm font-semibold text-text-1">{t('chat.projectsTitle')}</span>
+          </div>
 
-          <div className="-mx-5 max-h-96 overflow-y-auto [scrollbar-width:thin] [scrollbar-color:var(--color-bg-layer-3)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-bg-layer-3 [&::-webkit-scrollbar-track]:bg-transparent">
+          <div className="max-h-96 overflow-y-auto py-2 [scrollbar-width:thin] [scrollbar-color:var(--color-bg-layer-3)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-bg-layer-3 [&::-webkit-scrollbar-track]:bg-transparent">
             <button
               onClick={() => { onProjectChange(null); onSharedProjectChange(null); setProjectOpen(false) }}
               className={cn(
-                'flex w-full items-center gap-2.5 px-5 py-2 text-[13px] transition-colors text-left outline-none',
+                'flex w-full items-center gap-2.5 px-4 py-2 text-[13px] transition-colors text-left outline-none',
                 !formProjectPath && !formSharedProjectId
-                  ? 'bg-bg-layer-3 text-text-1'
+                  ? 'bg-interactive/10 text-interactive'
                   : 'text-text-3 hover:bg-bg-hover hover:text-text-2',
               )}
             >
               <FolderGit2 className={cn(
                 'size-4 shrink-0',
-                !formProjectPath && !formSharedProjectId ? 'text-text-1' : 'text-text-3',
+                !formProjectPath && !formSharedProjectId ? 'text-interactive' : 'text-text-3',
               )} />
               <span>{t('chat.clearProject')}</span>
               {!formProjectPath && !formSharedProjectId && (
-                <span className="ml-auto shrink-0 text-xs">{'✓'}</span>
+                <span className="ml-auto shrink-0 text-xs text-interactive">{'✓'}</span>
               )}
             </button>
+
+            <div className="mb-1 mt-2 px-4">
+              <p className="flex items-center gap-1.5 text-xs text-text-muted">
+                <FolderOpen className="size-3 text-folder" />
+                {t('files.myFiles')}
+              </p>
+            </div>
 
             {projectLoading ? (
               <div className="flex items-center justify-center py-4">
@@ -1170,36 +1185,37 @@ function NewChatInput({
                 <p className="text-xs text-text-3">{t('chat.noProjectHint')}</p>
               </div>
             ) : (
-              projectItems.map((item, i) => {
+              projectItems.map((item) => {
                 const isSelected = formProjectPath === item.name
                 return (
                   <button
                     key={item.name}
                     onClick={() => handleProjectSelect(item.name)}
                     className={cn(
-                      'flex w-full items-center gap-2.5 px-5 py-2 text-[13px] transition-colors text-left outline-none',
+                      'flex w-full items-center gap-2.5 px-4 py-2 text-[13px] transition-colors text-left outline-none',
                       isSelected
-                        ? 'bg-bg-layer-3 text-text-1'
-                        : i % 2 === 0
-                          ? 'bg-bg-layer-1 hover:bg-bg-hover text-text-2'
-                          : 'hover:bg-bg-hover text-text-2',
+                        ? 'bg-interactive/10 text-interactive'
+                        : 'hover:bg-bg-hover text-text-2',
                     )}
                   >
                     <FolderOpen className={cn(
                       'size-4 shrink-0',
-                      isSelected ? 'text-text-1' : 'text-text-3',
+                      isSelected ? 'text-interactive' : 'text-folder',
                     )} />
                     <span className="truncate">{item.name}</span>
                     {isSelected && (
-                      <span className="ml-auto shrink-0 text-xs">{'✓'}</span>
+                      <span className="ml-auto shrink-0 text-xs text-interactive">{'✓'}</span>
                     )}
                   </button>
                 )
               })
             )}
 
-            <div className="mt-3 mb-1 px-5 pt-3 border-t border-border">
-              <p className="text-xs text-text-muted">{t('chat.teamProjectsSection')}</p>
+            <div className="mb-1 mt-3 px-4">
+              <p className="flex items-center gap-1.5 text-xs text-text-muted">
+                <Users className="size-3 text-interactive" />
+                {t('chat.teamProjectsSection')}
+              </p>
             </div>
 
             {teamLoading ? (
@@ -1222,24 +1238,22 @@ function NewChatInput({
                 <p className="text-xs text-text-3">{t('chat.noProject')}</p>
               </div>
             ) : (
-              teamItems.map((item, i) => {
+              teamItems.map((item) => {
                 const isSelected = formSharedProjectId === item.id
                 return (
                   <button
                     key={item.id}
                     onClick={() => handleTeamProjectSelect(item.id)}
                     className={cn(
-                      'flex w-full items-center gap-2.5 px-5 py-2 text-[13px] transition-colors text-left outline-none',
+                      'flex w-full items-center gap-2.5 px-4 py-2 text-[13px] transition-colors text-left outline-none',
                       isSelected
-                        ? 'bg-bg-layer-3 text-text-1'
-                        : i % 2 === 0
-                          ? 'bg-bg-layer-1 hover:bg-bg-hover text-text-2'
-                          : 'hover:bg-bg-hover text-text-2',
+                        ? 'bg-interactive/10 text-interactive'
+                        : 'hover:bg-bg-hover text-text-2',
                     )}
                   >
                     <Users className={cn(
                       'size-4 shrink-0',
-                      isSelected ? 'text-text-1' : 'text-text-3',
+                      isSelected ? 'text-interactive' : 'text-interactive/50',
                     )} />
                     <div className="min-w-0 flex-1">
                       <span className="truncate block">{item.projectName}</span>
@@ -1248,7 +1262,7 @@ function NewChatInput({
                       </span>
                     </div>
                     {isSelected && (
-                      <span className="ml-auto shrink-0 text-xs">{'✓'}</span>
+                      <span className="ml-auto shrink-0 text-xs text-interactive">{'✓'}</span>
                     )}
                   </button>
                 )
@@ -1384,7 +1398,7 @@ function ChatInput({
                   <span className="max-w-32 truncate">@{rf.name}</span>
                   <button
                     onClick={() => removeFormRef(i)}
-                    className="absolute right-1 top-1/2 hidden -translate-y-1/2 rounded p-0.5 text-text-muted hover:bg-bg-hover hover:text-text-2 group-hover:block"
+                    className="absolute right-1 top-1/2 block -translate-y-1/2 rounded p-0.5 text-text-muted hover:bg-bg-hover hover:text-text-2 md:hidden md:group-hover:block"
                   >
                     <X className="size-3" />
                   </button>

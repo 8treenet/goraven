@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { RefreshCw, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { RefreshCw, AlertCircle, ChevronLeft, ChevronRight, Server, Database, Activity, HardDrive } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatBytes, formatRelativeTime, formatNumber } from '@/lib/format'
 import { adminSystemApi } from '@/api'
@@ -114,7 +114,10 @@ function OverviewPanel({ data }: { data: OverviewInfo }) {
   const t = useT()
   return (
     <div className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
-      <h3 className="text-xs font-semibold text-text-2">{t('adminDashboard.systemOverview')}</h3>
+      <h3 className="flex items-center gap-1.5 text-xs font-semibold text-text-2">
+        <Server className="size-3.5 text-text-3" />
+        {t('adminDashboard.systemOverview')}
+      </h3>
       <div className="mt-3 flex flex-col">
         <FieldRow label={t('adminSystemInfo.version')} value={data.version} />
         <FieldRow label={t('adminSystemInfo.systemLanguage')} value={data.language === 'zh' ? t('adminSystemInfo.chinese') : 'English'} />
@@ -139,7 +142,10 @@ function DatabasePanel({ data }: { data: DatabaseInfo }) {
 
   return (
     <div className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
-      <h3 className="text-xs font-semibold text-text-2">{t('adminSystemInfo.database')}</h3>
+      <h3 className="flex items-center gap-1.5 text-xs font-semibold text-text-2">
+        <Database className="size-3.5 text-text-3" />
+        {t('adminSystemInfo.database')}
+      </h3>
       <div className="mt-3 flex flex-col">
         <FieldRow label={t('common.type')} value={data.type} />
         <FieldRow label={t('common.version')} value={data.version} />
@@ -208,7 +214,10 @@ function McpHealthPanel({ data }: { data: McpHealthItem[] }) {
   if (data.length === 0) {
     return (
       <div className="flex flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
-        <h3 className="text-xs font-semibold text-text-2">{t('adminSystemInfo.mcpStatus')}</h3>
+        <h3 className="flex items-center gap-1.5 text-xs font-semibold text-text-2">
+          <Activity className="size-3.5 text-text-3" />
+          {t('adminSystemInfo.mcpStatus')}
+        </h3>
         <p className="mt-3 text-xs text-text-3">{t('adminSystemInfo.noMcp')}</p>
       </div>
     )
@@ -217,7 +226,10 @@ function McpHealthPanel({ data }: { data: McpHealthItem[] }) {
   return (
     <div className="flex flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-semibold text-text-2">{t('adminSystemInfo.mcpStatus')}</h3>
+        <h3 className="flex items-center gap-1.5 text-xs font-semibold text-text-2">
+          <Activity className="size-3.5 text-text-3" />
+          {t('adminSystemInfo.mcpStatus')}
+        </h3>
         <span className="text-xs text-text-3">{data.length} {t('adminSystemInfo.services')}</span>
       </div>
       <div className="mt-3 overflow-x-auto">
@@ -310,7 +322,10 @@ function DisksPanel({ data }: { data: DiskInfo[] }) {
   if (data.length === 0) {
     return (
       <div className="flex flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
-        <h3 className="text-xs font-semibold text-text-2">{t('adminSystemInfo.systemDisks')}</h3>
+        <h3 className="flex items-center gap-1.5 text-xs font-semibold text-text-2">
+          <HardDrive className="size-3.5 text-text-3" />
+          {t('adminSystemInfo.systemDisks')}
+        </h3>
         <p className="mt-3 text-xs text-text-3">{t('adminSystemInfo.noDisks')}</p>
       </div>
     )
@@ -318,7 +333,10 @@ function DisksPanel({ data }: { data: DiskInfo[] }) {
 
   return (
     <div className="flex flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
-      <h3 className="text-xs font-semibold text-text-2">{t('adminSystemInfo.systemDisks')}</h3>
+      <h3 className="flex items-center gap-1.5 text-xs font-semibold text-text-2">
+        <HardDrive className="size-3.5 text-text-3" />
+        {t('adminSystemInfo.systemDisks')}
+      </h3>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
@@ -435,7 +453,7 @@ function EcosystemPanel({ data }: { data: EcosystemInfo }) {
               {group.items.map((item, i) => (
                 <span key={item.label} className="inline-flex items-baseline gap-1">
                   {i > 0 && <span className="text-text-muted">/</span>}
-                  <span className="text-sm tabular-nums text-text-1">{item.value}</span>
+                  <span className="text-sm font-medium tabular-nums text-interactive">{item.value}</span>
                   <span className="text-xs text-text-3">{item.label}</span>
                 </span>
               ))}

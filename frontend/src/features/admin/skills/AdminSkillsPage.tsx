@@ -847,8 +847,8 @@ export function Component() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredSystemSkills.map((skill, index) => (
-                      <tr key={skill.skillId} className={cn(index % 2 === 0 ? 'bg-interactive/10 dark:bg-bg-layer-2/40' : 'bg-transparent')}>
+                    {filteredSystemSkills.map((skill) => (
+                      <tr key={skill.skillId} className="transition-colors hover:bg-bg-hover">
                         <td className="px-4 py-3">
                           <div className="font-medium text-text-1">{skill.description}</div>
                           <div className="mt-1 flex items-center gap-2">
@@ -937,8 +937,8 @@ export function Component() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredMarketSkills.map((skill, index) => (
-                      <tr key={skill.skillId} className={cn(index % 2 === 0 ? 'bg-interactive/10 dark:bg-bg-layer-2/40' : 'bg-transparent')}>
+                    {filteredMarketSkills.map((skill) => (
+                      <tr key={skill.skillId} className="transition-colors hover:bg-bg-hover">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             <Icon name={skill.icon} className="size-5 text-interactive" />
@@ -1379,8 +1379,8 @@ export function Component() {
             </div>
           </div>
           <div className="flex-1 overflow-auto p-2">
-            {categories.map((category, index) => (
-              <div key={category.categoryId} className={cn('mb-1 flex items-center justify-between rounded-lg px-3 py-2', index % 2 === 0 ? 'bg-bg-layer-2/50' : 'bg-transparent')}>
+            {categories.map((category) => (
+              <div key={category.categoryId} className="mb-1 flex items-center justify-between rounded-lg px-3 py-2 transition-colors hover:bg-bg-hover">
                 <div className="flex items-center gap-3">
                   <SkillIcon icon={category.icon} />
                   <div>
@@ -1433,8 +1433,8 @@ export function Component() {
                   </tr>
                 </thead>
                 <tbody>
-                  {selectedSkillUsers.map((record, index) => (
-                    <tr key={record.recordId} className={cn(index % 2 === 0 ? 'bg-bg-layer-1/50' : 'bg-transparent')}>
+                  {selectedSkillUsers.map((record) => (
+                    <tr key={record.recordId}>
                       <td className="px-3 py-2 text-text-1">{record.userId}</td>
                       <td className="px-3 py-2"><StatusText tone={record.installStatus === 3 ? 'warn' : record.installStatus === 2 ? 'good' : 'neutral'}>{getInstallStatusLabel(record.installStatus)}</StatusText></td>
                       <td className="px-3 py-2 text-text-3">{formatDate(record.created)}</td>

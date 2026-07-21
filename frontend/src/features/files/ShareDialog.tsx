@@ -55,7 +55,7 @@ export function ShareDialog({
                   value={description}
                   onChange={(e) => onDescriptionChange(e.target.value)}
                   placeholder={t('files.descriptionPlaceholder')}
-                  className="mt-1 h-20 w-full resize-none rounded-md border border-border bg-transparent px-3 py-2 text-sm text-text-1 placeholder:text-text-muted outline-none focus:border-border-strong"
+                  className="mt-1 h-20 w-full resize-none rounded-md border border-border bg-transparent px-3 py-2 text-sm text-text-1 placeholder:text-text-muted outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
                   autoFocus
                 />
               </div>

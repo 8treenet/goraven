@@ -57,7 +57,7 @@ function MessageBlock({ message }: { message: Message }) {
 function UserMessage({ content }: { content: string }) {
   return (
     <div className="flex justify-end">
-      <div className="max-w-[75%] rounded-lg bg-interactive/10 px-4 py-2.5">
+      <div className="max-w-[75%] rounded-lg bg-interactive-soft px-4 py-2.5">
         <Markdown mode="static" className="text-base leading-relaxed text-text-1 [&_p]:m-0 [&_p]:whitespace-pre-wrap">
           {content}
         </Markdown>

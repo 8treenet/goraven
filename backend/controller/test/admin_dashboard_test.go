@@ -10,9 +10,9 @@ import (
 func TestAdminDashboard(t *testing.T) {
 
 	var rsp struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	vo.AdminDashboardRsp	`json:"data,omitempty"`
+		Code int                  `json:"code"`
+		Msg  string               `json:"msg"`
+		Data vo.AdminDashboardRsp `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/admin/dashboard").
 		Get().
@@ -29,30 +29,17 @@ func TestAdminDashboard(t *testing.T) {
 	t.Logf("overview: activeUsers=%d diff=%.1f%% sessions=%d newSessions=%d weekTokens=%d todayTokens=%d models=%d sparkline=%d",
 		o.ActiveUsers, o.ActiveUsersDiff, o.TotalSessions, o.NewSessions, o.WeekTokens, o.TodayTokens, o.EnabledModels, len(o.Sparkline))
 
-	t.Logf("tokenTrend: %d points", len(rsp.Data.TokenTrend))
-	if len(rsp.Data.TokenTrend) > 0 {
-		first := rsp.Data.TokenTrend[0]
-		last := rsp.Data.TokenTrend[len(rsp.Data.TokenTrend)-1]
-		t.Logf("  first: date=%s prompt=%d completion=%d", first.Date, first.PromptTokens, first.CompletionTokens)
-		t.Logf("  last:  date=%s prompt=%d completion=%d", last.Date, last.PromptTokens, last.CompletionTokens)
+	t.Logf("tokenTrend: %d points", len(rsp.Data.ToolUsageRank))
+	if len(rsp.Data.ToolUsageRank) > 0 {
+		first := rsp.Data.ToolUsageRank[0]
+		last := rsp.Data.ToolUsageRank[len(rsp.Data.ToolUsageRank)-1]
+		t.Logf("  first: date=%s prompt=%d completion=%d", first.Name, first.Count)
+		t.Logf("  last:  date=%s prompt=%d completion=%d", last.Name, last.Count)
 	}
 
-	t.Logf("modelUsage: %d items", len(rsp.Data.ModelUsage))
-	for _, m := range rsp.Data.ModelUsage {
-		t.Logf("  %s: tokens=%d pct=%.1f%%", m.ModelName, m.TokenCount, m.Percentage)
-	}
-
-	t.Logf("userTokenRank: %d users", len(rsp.Data.UserTokenRank))
-	for _, u := range rsp.Data.UserTokenRank {
-		t.Logf("  %s: tokens=%d pct=%.1f%%", u.Username, u.TokenCount, u.Percentage)
-	}
-
-	t.Logf("activeTrend: %d points", len(rsp.Data.ActiveTrend))
-	if len(rsp.Data.ActiveTrend) > 0 {
-		first := rsp.Data.ActiveTrend[0]
-		last := rsp.Data.ActiveTrend[len(rsp.Data.ActiveTrend)-1]
-		t.Logf("  first: date=%s count=%d", first.Date, first.Count)
-		t.Logf("  last:  date=%s count=%d", last.Date, last.Count)
+	t.Logf("modelUsage: %d items", len(rsp.Data.McpUsageRank))
+	for _, m := range rsp.Data.McpUsageRank {
+		t.Logf("  %s: tokens=%d ", m.Name, m.Count)
 	}
 
 	t.Logf("skillUsageRank: %d items", len(rsp.Data.SkillUsageRank))
@@ -69,18 +56,13 @@ func TestAdminDashboard(t *testing.T) {
 	for _, item := range rsp.Data.ToolUsageRank {
 		t.Logf("  %s: count=%d", item.Name, item.Count)
 	}
-
-	t.Logf("alerts: %d", len(rsp.Data.Alerts))
-	for _, a := range rsp.Data.Alerts {
-		t.Logf("  [%s] %s", a.Level, a.Message)
-	}
 }
 
 func TestAdminDashboardTokenTrend(t *testing.T) {
 	var rsp struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	vo.TokenTrendRsp	`json:"data,omitempty"`
+		Code int              `json:"code"`
+		Msg  string           `json:"msg"`
+		Data vo.TokenTrendRsp `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/admin/dashboard/tokenTrend?days=30").
 		Get().
@@ -102,9 +84,9 @@ func TestAdminDashboardTokenTrend(t *testing.T) {
 	}
 
 	var rsp7 struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	vo.TokenTrendRsp	`json:"data,omitempty"`
+		Code int              `json:"code"`
+		Msg  string           `json:"msg"`
+		Data vo.TokenTrendRsp `json:"data,omitempty"`
 	}
 	httpResp7 := requests.NewHTTPRequest(domain+"/api/admin/dashboard/tokenTrend?days=7").
 		Get().
@@ -119,9 +101,9 @@ func TestAdminDashboardTokenTrend(t *testing.T) {
 	t.Logf("tokenTrend 7d: %d points", len(rsp7.Data.Items))
 
 	var rspDef struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	vo.TokenTrendRsp	`json:"data,omitempty"`
+		Code int              `json:"code"`
+		Msg  string           `json:"msg"`
+		Data vo.TokenTrendRsp `json:"data,omitempty"`
 	}
 	httpRespDef := requests.NewHTTPRequest(domain+"/api/admin/dashboard/tokenTrend").
 		Get().
@@ -138,9 +120,9 @@ func TestAdminDashboardTokenTrend(t *testing.T) {
 
 func TestAdminDashboardActiveUsers(t *testing.T) {
 	var rsp struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	vo.ActiveUserTrendRsp	`json:"data,omitempty"`
+		Code int                   `json:"code"`
+		Msg  string                `json:"msg"`
+		Data vo.ActiveUserTrendRsp `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/admin/dashboard/activeUsers?days=30").
 		Get().
@@ -162,9 +144,9 @@ func TestAdminDashboardActiveUsers(t *testing.T) {
 	}
 
 	var rsp7 struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	vo.ActiveUserTrendRsp	`json:"data,omitempty"`
+		Code int                   `json:"code"`
+		Msg  string                `json:"msg"`
+		Data vo.ActiveUserTrendRsp `json:"data,omitempty"`
 	}
 	httpResp7 := requests.NewHTTPRequest(domain+"/api/admin/dashboard/activeUsers?days=7").
 		Get().
@@ -179,9 +161,9 @@ func TestAdminDashboardActiveUsers(t *testing.T) {
 	t.Logf("activeUsers 7d: %d points", len(rsp7.Data.Items))
 
 	var rspDef struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	vo.ActiveUserTrendRsp	`json:"data,omitempty"`
+		Code int                   `json:"code"`
+		Msg  string                `json:"msg"`
+		Data vo.ActiveUserTrendRsp `json:"data,omitempty"`
 	}
 	httpRespDef := requests.NewHTTPRequest(domain+"/api/admin/dashboard/activeUsers").
 		Get().

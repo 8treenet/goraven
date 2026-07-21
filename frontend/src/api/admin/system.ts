@@ -1,5 +1,5 @@
 import http from '../http'
-import type { SettingGroup, AdminDashboardData, TokenTrendItem, ActiveTrendItem } from '../types'
+import type { SettingGroup, AdminDashboardData, TokenTrendItem, ActiveTrendItem, ModelUsageItem, UserTokenRankItem } from '../types'
 
 /* ---------- System info ---------- */
 
@@ -11,17 +11,27 @@ export function getSystemInfo(params?: { forceRefresh?: boolean }) {
 /* ---------- Dashboard ---------- */
 
 /** GET /api/admin/dashboard */
-export function getDashboard(params?: { refresh?: boolean }) {
-  return http.get<AdminDashboardData>('/admin/dashboard', { params })
+export function getDashboard() {
+  return http.get<AdminDashboardData>('/admin/dashboard')
 }
 
 /** GET /api/admin/dashboard/tokenTrend */
-export function getTokenTrend(params?: { days?: number; refresh?: boolean }) {
+export function getTokenTrend(params?: { days?: number }) {
   return http.get<{ items: TokenTrendItem[] }>('/admin/dashboard/tokenTrend', { params })
 }
 
+/** GET /api/admin/dashboard/modelUsage */
+export function getModelUsage(params?: { days?: number }) {
+  return http.get<{ items: ModelUsageItem[] }>('/admin/dashboard/modelUsage', { params })
+}
+
+/** GET /api/admin/dashboard/userTokenRank */
+export function getUserTokenRank(params?: { days?: number }) {
+  return http.get<{ items: UserTokenRankItem[] }>('/admin/dashboard/userTokenRank', { params })
+}
+
 /** GET /api/admin/dashboard/activeUsers */
-export function getActiveUsers(params?: { days?: number; refresh?: boolean }) {
+export function getActiveUsers(params?: { days?: number }) {
   return http.get<{ items: ActiveTrendItem[] }>('/admin/dashboard/activeUsers', { params })
 }
 

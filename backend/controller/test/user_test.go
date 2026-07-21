@@ -9,8 +9,8 @@ import (
 
 func TestUserLogin(t *testing.T) {
 	req := vo.UserLoginReq{
-		Username:	"admin",
-		Password:	"e10adc3949ba59abbe56e057f20f883e",
+		Username: "admin",
+		Password: "e10adc3949ba59abbe56e057f20f883e",
 	}
 	respBody, resp := requests.NewHTTPRequest(domain + "/api/user/login").Post().SetJSONBody(req).ToString()
 	if resp.Error != nil {
@@ -92,8 +92,8 @@ func TestUpdateProfile(t *testing.T) {
 
 func TestChangePassword(t *testing.T) {
 	req := vo.UserPasswordReq{
-		CurrentPassword:	"e10adc3949ba59abbe56e057f20f883e",
-		NewPassword:		"dddd",
+		CurrentPassword: "e10adc3949ba59abbe56e057f20f883e",
+		NewPassword:     "dddd",
 	}
 	respBody, resp := requests.NewHTTPRequest(domain+"/api/user/password").
 		Put().
@@ -119,9 +119,9 @@ func TestUserLogout(t *testing.T) {
 }
 func TestUserDashboard(t *testing.T) {
 	var rsp struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	vo.UserDashboardRsp	`json:"data,omitempty"`
+		Code int                 `json:"code"`
+		Msg  string              `json:"msg"`
+		Data vo.UserDashboardRsp `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/dashboard?refresh=true").
 		Get().
@@ -137,24 +137,6 @@ func TestUserDashboard(t *testing.T) {
 	o := rsp.Data.Overview
 	t.Logf("overview: todayTokens=%d weekTokens=%d totalSessions=%d newSessions=%d sparkline=%d",
 		o.TodayTokens, o.WeekTokens, o.TotalSessions, o.NewSessions, len(o.Sparkline))
-
-	t.Logf("tokenTrend: %d points", len(rsp.Data.TokenTrend))
-	if len(rsp.Data.TokenTrend) > 0 {
-		first := rsp.Data.TokenTrend[0]
-		last := rsp.Data.TokenTrend[len(rsp.Data.TokenTrend)-1]
-		t.Logf("  first: date=%s prompt=%d completion=%d", first.Date, first.PromptTokens, first.CompletionTokens)
-		t.Logf("  last:  date=%s prompt=%d completion=%d", last.Date, last.PromptTokens, last.CompletionTokens)
-		for i, p := range rsp.Data.TokenTrend {
-			if p.PromptTokens > 0 || p.CompletionTokens > 0 {
-				t.Logf("  #%d: date=%s prompt=%d completion=%d", i, p.Date, p.PromptTokens, p.CompletionTokens)
-			}
-		}
-	}
-
-	t.Logf("modelUsage: %d items", len(rsp.Data.ModelUsage))
-	for _, m := range rsp.Data.ModelUsage {
-		t.Logf("  %s: tokens=%d pct=%.1f%%", m.ModelName, m.TokenCount, m.Percentage)
-	}
 
 	t.Logf("skillUsageRank: %d items", len(rsp.Data.SkillUsageRank))
 	for _, s := range rsp.Data.SkillUsageRank {
@@ -179,9 +161,9 @@ func TestUserDashboard(t *testing.T) {
 
 func TestUserDashboardTokenTrend(t *testing.T) {
 	var rsp struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	vo.TokenTrendRsp	`json:"data,omitempty"`
+		Code int              `json:"code"`
+		Msg  string           `json:"msg"`
+		Data vo.TokenTrendRsp `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/dashboard/tokenTrend?days=30&refresh=true").
 		Get().
@@ -208,9 +190,9 @@ func TestUserDashboardTokenTrend(t *testing.T) {
 	}
 
 	var rsp7 struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	vo.TokenTrendRsp	`json:"data,omitempty"`
+		Code int              `json:"code"`
+		Msg  string           `json:"msg"`
+		Data vo.TokenTrendRsp `json:"data,omitempty"`
 	}
 	httpResp7 := requests.NewHTTPRequest(domain+"/api/dashboard/tokenTrend?days=7").
 		Get().
@@ -225,9 +207,9 @@ func TestUserDashboardTokenTrend(t *testing.T) {
 	t.Logf("tokenTrend 7d: %d points", len(rsp7.Data.Items))
 
 	var rspDef struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	vo.TokenTrendRsp	`json:"data,omitempty"`
+		Code int              `json:"code"`
+		Msg  string           `json:"msg"`
+		Data vo.TokenTrendRsp `json:"data,omitempty"`
 	}
 	httpRespDef := requests.NewHTTPRequest(domain+"/api/dashboard/tokenTrend").
 		Get().

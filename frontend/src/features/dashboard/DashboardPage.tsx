@@ -18,7 +18,7 @@ import {
   Tooltip,
   Cell,
 } from 'recharts'
-import { getDashboard, getTokenTrend } from '@/api/dashboard'
+import { getDashboard, getTokenTrend, getModelUsage } from '@/api/dashboard'
 import type { DashboardData, TokenTrendItem, DashboardOverview, StorageStats, ModelUsageItem } from '@/api'
 
 /* ============================================
@@ -26,6 +26,9 @@ import type { DashboardData, TokenTrendItem, DashboardOverview, StorageStats, Mo
    ============================================ */
 
 function computeTrendStats(data: TokenTrendItem[]) {
+  if (data.length === 0) {
+    return { avg: 0, peakDate: '', peakTotal: 0 }
+  }
   const total = data.reduce((s, d) => s + d.promptTokens + d.completionTokens, 0)
   const avg = Math.round(total / data.length)
   let peak = data[0]
@@ -362,15 +365,35 @@ function TrendChartPanel({
    Panel: Model Usage
    ============================================ */
 
-function ModelUsagePanel({ data }: { data: ModelUsageItem[] }) {
+function ModelUsagePanel({
+  data,
+  trendDays,
+  onTrendDaysChange,
+}: {
+  data: ModelUsageItem[]
+  trendDays: TrendDays
+  onTrendDaysChange: (v: TrendDays) => void
+}) {
   const colors = useChartColors()
   const t = useT()
+  const trendOptions = useMemo(() => [
+    { label: t('dashboard.last7d'), value: 7 as TrendDays },
+    { label: t('dashboard.last30d'), value: 30 as TrendDays },
+    { label: t('dashboard.last90d'), value: 90 as TrendDays },
+  ], [t])
 
   return (
     <div className="flex flex-1 flex-col px-6 py-4">
-      <h3 className="shrink-0 text-xs font-semibold text-text-2">
-        {t('dashboard.modelUsage')}
-      </h3>
+      <div className="flex shrink-0 items-center justify-between">
+        <h3 className="text-xs font-semibold text-text-2">
+          {t('dashboard.modelUsage')}
+        </h3>
+        <SegmentedControl
+          value={trendDays}
+          options={trendOptions}
+          onChange={onTrendDaysChange}
+        />
+      </div>
       <div className="mt-4 flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
@@ -396,9 +419,23 @@ function ModelUsagePanel({ data }: { data: ModelUsageItem[] }) {
               </Bar>
             )}
             <Tooltip
-              content={<ChartTooltip />}
-              cursor={{ fill: 'var(--color-bg-hover)' }}
-              formatter={(value: unknown) => [`${(value as number).toFixed(1)}%`]}
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null
+                  const data = payload[0]?.payload as ModelUsageItem | undefined
+                  if (!data) return null
+                  return (
+                    <div className="rounded-lg border border-border bg-bg-layer-2 px-3 py-2 shadow-pop">
+                      <p className="text-xs text-text-3">{data.modelName}</p>
+                      <p className="text-xs" style={{ color: 'var(--color-interactive)' }}>
+                        Prompt: {formatNumber(data.promptTokens)}
+                      </p>
+                      <p className="text-xs" style={{ color: 'var(--highlight)' }}>
+                        Completion: {formatNumber(data.completionTokens)}
+                      </p>
+                    </div>
+                  )
+                }}
+                cursor={{ fill: 'var(--color-bg-hover)' }}
             />
             {data.length === 0 && (
               <text
@@ -430,15 +467,15 @@ export function Component() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [trendDays, setTrendDays] = useState<TrendDays>(30)
   const [trendData, setTrendData] = useState<TokenTrendItem[]>([])
+  const [modelUsageDays, setModelUsageDays] = useState<TrendDays>(30)
+  const [modelUsageData, setModelUsageData] = useState<ModelUsageItem[]>([])
   const t = useT()
 
-  const loadData = useCallback(async (refresh = false) => {
+  const loadData = useCallback(async () => {
     setState('loading')
     try {
-      const data = await getDashboard(refresh ? { refresh: true } : undefined)
-      const trend = await getTokenTrend({ days: 30, refresh })
+      const data = await getDashboard()
       setDashboardData(data)
-      setTrendData(trend.items)
       setState('data')
     } catch {
       setState('error')
@@ -446,12 +483,16 @@ export function Component() {
   }, [])
 
   useEffect(() => {
-    loadData(false)
+    loadData()
+    getTokenTrend({ days: 30 }).then((t) => setTrendData(t.items))
+    getModelUsage({ days: 30 }).then((m) => setModelUsageData(m.items))
   }, [loadData])
 
   const handleRetry = useCallback(() => {
-    loadData(true)
-  }, [loadData])
+    loadData()
+    getTokenTrend({ days: trendDays }).then((t) => setTrendData(t.items))
+    getModelUsage({ days: modelUsageDays }).then((m) => setModelUsageData(m.items))
+  }, [loadData, trendDays, modelUsageDays])
 
   const handleTrendDaysChange = useCallback(
     async (days: TrendDays) => {
@@ -466,9 +507,18 @@ export function Component() {
     [],
   )
 
-  const trendDataWithDays = useMemo(() => {
-    return trendDays ? trendData : dashboardData?.tokenTrend ?? []
-  }, [trendDays, trendData, dashboardData])
+  const handleModelUsageDaysChange = useCallback(
+    async (days: TrendDays) => {
+      setModelUsageDays(days)
+      try {
+        const modelUsage = await getModelUsage({ days })
+        setModelUsageData(modelUsage.items)
+      } catch {
+        // keep existing data on error
+      }
+    },
+    [],
+  )
 
   return (
     <div className="flex h-full flex-col bg-bg-base">
@@ -477,13 +527,6 @@ export function Component() {
         <h1 className="text-base font-semibold text-text-1">
           {t('dashboard.title')}
         </h1>
-        <button
-          onClick={handleRetry}
-          className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs text-highlight transition-colors hover:bg-bg-hover hover:text-highlight"
-        >
-          <RefreshCw className="size-3" />
-          {t('common.refresh')}
-        </button>
       </div>
 
       {/* Content */}
@@ -507,13 +550,17 @@ export function Component() {
           <div className="flex flex-1 gap-2 min-h-[220px]">
             <div className="flex w-2/3 rounded-lg border border-border bg-bg-layer-1">
               <TrendChartPanel
-                data={trendDataWithDays}
+                data={trendData}
                 trendDays={trendDays}
                 onTrendDaysChange={handleTrendDaysChange}
               />
             </div>
             <div className="flex w-1/3 rounded-lg border border-border bg-bg-layer-1">
-              <ModelUsagePanel data={dashboardData.modelUsage} />
+              <ModelUsagePanel
+                data={modelUsageData}
+                trendDays={modelUsageDays}
+                onTrendDaysChange={handleModelUsageDaysChange}
+              />
             </div>
           </div>
 

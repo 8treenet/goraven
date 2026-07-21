@@ -43,14 +43,6 @@ export const MOCK_DASHBOARD: DashboardData = {
       tokens: Math.round(4000 + Math.sin(i * 0.8) * 2000 + Math.random() * 1500),
     })),
   },
-  tokenTrend: TREND_30,
-  modelUsage: [
-    { modelName: 'DeepSeek V3', tokenCount: 245600, percentage: 45.2 },
-    { modelName: 'Claude 3.5 Sonnet', tokenCount: 153400, percentage: 28.2 },
-    { modelName: 'Qwen Max', tokenCount: 68700, percentage: 12.6 },
-    { modelName: 'GLM-4 Plus', tokenCount: 45200, percentage: 8.3 },
-    { modelName: 'GPT-4o', tokenCount: 31200, percentage: 5.7 },
-  ],
   toolUsageRank: [
     { name: 'filesystem', count: 89 },
     { name: 'execute', count: 45 },

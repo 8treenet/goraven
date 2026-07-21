@@ -153,8 +153,8 @@ export function Component() {
               autoComplete="username"
               disabled={submitting}
               className={cn(
-                'h-8 w-full min-w-0 rounded-lg border-0 bg-bg-layer-2 px-2.5 py-1 text-sm text-text-1 placeholder:text-text-muted outline-none transition-colors md:text-sm',
-                fieldErrors.username && 'ring-1 ring-text-3',
+                'h-8 w-full min-w-0 rounded-lg border border-border-custom bg-transparent px-2.5 py-1 text-sm text-text-1 placeholder:text-text-muted outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30 md:text-sm',
+                fieldErrors.username && 'border-text-3 ring-1 ring-text-3',
               )}
             />
             {fieldErrors.username && (
@@ -175,8 +175,8 @@ export function Component() {
                 autoComplete="current-password"
                 disabled={submitting}
                 className={cn(
-                  'h-8 w-full min-w-0 rounded-lg border-0 bg-bg-layer-2 pr-10 pl-2.5 py-1 text-sm text-text-1 placeholder:text-text-muted outline-none transition-colors md:text-sm',
-                  fieldErrors.password && 'ring-1 ring-text-3',
+                  'h-8 w-full min-w-0 rounded-lg border border-border-custom bg-transparent pr-10 pl-2.5 py-1 text-sm text-text-1 placeholder:text-text-muted outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30 md:text-sm',
+                  fieldErrors.password && 'border-text-3 ring-1 ring-text-3',
                 )}
               />
               <button
@@ -216,8 +216,8 @@ export function Component() {
                   disabled={submitting}
                   autoComplete="off"
                   className={cn(
-                    'h-8 w-16 min-w-0 rounded-lg border-0 bg-bg-layer-2 px-2 py-1 text-sm text-text-1 placeholder:text-text-muted outline-none transition-colors',
-                    captchaError && 'ring-1 ring-text-3',
+                    'h-8 w-16 min-w-0 rounded-lg border border-border-custom bg-transparent px-2 py-1 text-sm text-text-1 placeholder:text-text-muted outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30',
+                    captchaError && 'border-text-3 ring-1 ring-text-3',
                   )}
                 />
               </div>

@@ -200,7 +200,7 @@ function SidebarNewChat({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
           (variant === 'desktop' && collapsed) ? 'justify-center px-0' : 'px-3',
         )}
       >
-        <MessageSquarePlus className="size-4 shrink-0" />
+        <MessageSquarePlus className="size-4 shrink-0 text-amber-500" />
         {!(variant === 'desktop' && collapsed) && <span>{t('sidebar.newChat')}</span>}
       </button>
     </div>
@@ -220,16 +220,7 @@ function UserMenu() {
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    let lastRefresh = 0
-    const refresh = () => {
-      const now = Date.now()
-      if (now - lastRefresh < 30_000) return
-      lastRefresh = now
-      refreshSessions()
-    }
-    refresh()
-    window.addEventListener('focus', refresh)
-    return () => window.removeEventListener('focus', refresh)
+    refreshSessions()
   }, [refreshSessions])
 
   useEffect(() => {
@@ -370,16 +361,7 @@ function MobileUserMenu() {
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    let lastRefresh = 0
-    const refresh = () => {
-      const now = Date.now()
-      if (now - lastRefresh < 30_000) return
-      lastRefresh = now
-      refreshSessions()
-    }
-    refresh()
-    window.addEventListener('focus', refresh)
-    return () => window.removeEventListener('focus', refresh)
+    refreshSessions()
   }, [refreshSessions])
 
   useEffect(() => {
@@ -600,14 +582,14 @@ function NavItem({
     <button
       onClick={() => navigate(to)}
       className={cn(
-        'flex w-full items-center gap-2 rounded-md py-1.5 text-sm transition-colors',
+        'flex w-full items-center gap-2 rounded-md py-1.5 text-sm text-text-1 transition-colors',
         collapsed ? 'justify-center px-0' : indent ? 'pl-7 pr-2' : 'px-2',
         isActive
-          ? 'bg-bg-selected text-highlight'
-          : 'text-text-1 hover:bg-bg-hover',
+          ? 'bg-interactive-soft font-medium text-interactive'
+          : 'hover:bg-bg-hover',
       )}
     >
-      <Icon className={cn('size-4 shrink-0', isActive && 'text-highlight')} />
+      <Icon className={cn('size-4 shrink-0', isActive ? 'text-interactive' : 'text-text-3')} />
       {!collapsed && <span className="truncate">{label}</span>}
     </button>
   )
@@ -679,7 +661,7 @@ function SessionItem({
         title={session.title}
         className={cn(
           'flex w-full items-center justify-center rounded-md py-1.5 text-sm text-text-2 transition-colors hover:bg-bg-hover',
-          isActive && 'bg-bg-selected text-highlight',
+          isActive && 'bg-interactive-soft font-medium text-interactive',
         )}
       >
         {session.title.charAt(0)}
@@ -717,10 +699,10 @@ function SessionItem({
   return (
     <div
       className={cn(
-        'group flex items-center rounded-md transition-colors',
+        'group flex items-center rounded-md text-text-1 transition-colors',
         isActive
-          ? 'bg-bg-selected text-highlight'
-          : 'text-text-1 hover:bg-bg-hover',
+          ? 'bg-interactive-soft text-interactive'
+          : 'hover:bg-bg-hover',
       )}
     >
       <button

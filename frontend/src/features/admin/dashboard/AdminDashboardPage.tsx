@@ -44,6 +44,8 @@ interface ModelUsageItem {
   modelName: string
   tokenCount: number
   percentage: number
+  promptTokens: number
+  completionTokens: number
 }
 
 interface UserTokenRankItem {
@@ -76,10 +78,6 @@ interface OverviewData {
 
 interface DashboardData {
   overview: OverviewData
-  tokenTrend: TokenTrendItem[]
-  modelUsage: ModelUsageItem[]
-  userTokenRank: UserTokenRankItem[]
-  activeTrend: ActiveTrendItem[]
   skillUsageRank: RankItem[]
   mcpUsageRank: RankItem[]
   toolUsageRank: RankItem[]
@@ -318,6 +316,9 @@ function PulsePanel({ data }: { data: OverviewData }) {
    ============================================ */
 
 function computeTrendStats(data: TokenTrendItem[]) {
+  if (data.length === 0) {
+    return { avg: 0, peakDate: '', peakTotal: 0 }
+  }
   const total = data.reduce((s, d) => s + d.promptTokens + d.completionTokens, 0)
   const avg = Math.round(total / data.length)
   let peak = data[0]
@@ -409,13 +410,24 @@ function TokenTrendPanel({
    Panel: Model Usage
    ============================================ */
 
-function ModelUsagePanel({ data }: { data: ModelUsageItem[] }) {
+function ModelUsagePanel({
+  data,
+  trendDays,
+  onTrendDaysChange,
+}: {
+  data: ModelUsageItem[]
+  trendDays: TrendDays
+  onTrendDaysChange: (v: TrendDays) => void
+}) {
   const t = useT()
   const colors = useChartColors()
 
   return (
     <div className="flex flex-1 flex-col px-6 py-4">
-      <h3 className="shrink-0 text-xs font-semibold text-text-2">{t('adminDashboard.modelUsage')}</h3>
+      <div className="flex shrink-0 items-center justify-between">
+        <h3 className="text-xs font-semibold text-text-2">{t('adminDashboard.modelUsage')}</h3>
+        <SegmentedControl value={trendDays} options={getTrendOptions(t)} onChange={onTrendDaysChange} />
+      </div>
       <div className="mt-4 flex-1 min-h-0">
         {data.length === 0 ? (
           <div className="flex h-full items-center justify-center">
@@ -444,9 +456,23 @@ function ModelUsagePanel({ data }: { data: ModelUsageItem[] }) {
                 ))}
               </Bar>
               <Tooltip
-                content={<ChartTooltip />}
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null
+                  const data = payload[0]?.payload as ModelUsageItem | undefined
+                  if (!data) return null
+                  return (
+                    <div className="rounded-lg border border-border bg-bg-layer-2 px-3 py-2 shadow-pop">
+                      <p className="text-xs text-text-3">{data.modelName}</p>
+                      <p className="text-xs" style={{ color: 'var(--color-interactive)' }}>
+                        Prompt: {formatNumber(data.promptTokens)}
+                      </p>
+                      <p className="text-xs" style={{ color: 'var(--highlight)' }}>
+                        Completion: {formatNumber(data.completionTokens)}
+                      </p>
+                    </div>
+                  )
+                }}
                 cursor={{ fill: 'var(--color-bg-hover)' }}
-                formatter={(value: unknown) => [`${(value as number).toFixed(1)}%`]}
               />
             </BarChart>
           </ResponsiveContainer>
@@ -460,7 +486,15 @@ function ModelUsagePanel({ data }: { data: ModelUsageItem[] }) {
    Panel: User Token Rank
    ============================================ */
 
-function UserTokenRankPanel({ data }: { data: UserTokenRankItem[] }) {
+function UserTokenRankPanel({
+  data,
+  trendDays,
+  onTrendDaysChange,
+}: {
+  data: UserTokenRankItem[]
+  trendDays: TrendDays
+  onTrendDaysChange: (v: TrendDays) => void
+}) {
   const t = useT()
   const rankColors = useMemo(
     () => ['var(--highlight)', 'var(--color-interactive)', 'var(--chart-4)'],
@@ -471,7 +505,10 @@ function UserTokenRankPanel({ data }: { data: UserTokenRankItem[] }) {
   if (data.length === 0) {
     return (
       <div className="flex flex-1 flex-col px-6 py-4">
-        <h3 className="shrink-0 text-xs font-semibold text-text-2">{t('adminDashboard.userTokenRank')}</h3>
+        <div className="flex shrink-0 items-center justify-between">
+          <h3 className="text-xs font-semibold text-text-2">{t('adminDashboard.userTokenRank')}</h3>
+          <SegmentedControl value={trendDays} options={getTrendOptions(t)} onChange={onTrendDaysChange} />
+        </div>
         <div className="flex flex-1 items-center justify-center">
           <p className="text-xs text-text-3">{t('common.noData')}</p>
         </div>
@@ -481,7 +518,10 @@ function UserTokenRankPanel({ data }: { data: UserTokenRankItem[] }) {
 
   return (
     <div className="flex flex-1 flex-col px-6 py-4">
-      <h3 className="shrink-0 text-xs font-semibold text-text-2">{t('adminDashboard.userTokenRank')}</h3>
+      <div className="flex shrink-0 items-center justify-between">
+        <h3 className="text-xs font-semibold text-text-2">{t('adminDashboard.userTokenRank')}</h3>
+        <SegmentedControl value={trendDays} options={getTrendOptions(t)} onChange={onTrendDaysChange} />
+      </div>
       <div className="mt-3 flex-1 space-y-2 overflow-hidden">
         {data.map((item, i) => (
           <div key={item.userId} className="flex items-center gap-2">
@@ -610,31 +650,36 @@ export function Component() {
   const [trendData, setTrendData] = useState<TokenTrendItem[]>([])
   const [activeDays, setActiveDays] = useState<TrendDays>(30)
   const [activeData, setActiveData] = useState<ActiveTrendItem[]>([])
+  const [modelUsageDays, setModelUsageDays] = useState<TrendDays>(30)
+  const [modelUsageData, setModelUsageData] = useState<ModelUsageItem[]>([])
+  const [userTokenRankDays, setUserTokenRankDays] = useState<TrendDays>(30)
+  const [userTokenRankData, setUserTokenRankData] = useState<UserTokenRankItem[]>([])
 
   const loadData = useCallback(() => {
     setState('loading')
-    Promise.all([
-      adminSystemApi.getDashboard(),
-      adminSystemApi.getTokenTrend({ days: trendDays }),
-      adminSystemApi.getActiveUsers({ days: activeDays }),
-    ]).then(([dash, trend, active]) => {
+    adminSystemApi.getDashboard().then((dash) => {
       setData(dash)
-      setTrendData(trend.items)
-      setActiveData(active.items)
       setState('data')
     }).catch(() => {
       setState('error')
     })
-  }, [trendDays, activeDays])
+  }, [])
 
   useEffect(() => {
-    const cleanup = loadData()
-    return cleanup
+    loadData()
+    adminSystemApi.getTokenTrend({ days: 30 }).then((t) => setTrendData(t.items))
+    adminSystemApi.getActiveUsers({ days: 30 }).then((a) => setActiveData(a.items))
+    adminSystemApi.getModelUsage({ days: 30 }).then((m) => setModelUsageData(m.items))
+    adminSystemApi.getUserTokenRank({ days: 30 }).then((u) => setUserTokenRankData(u.items))
   }, [loadData])
 
   const handleRetry = useCallback(() => {
     loadData()
-  }, [loadData])
+    adminSystemApi.getTokenTrend({ days: trendDays }).then((t) => setTrendData(t.items))
+    adminSystemApi.getActiveUsers({ days: activeDays }).then((a) => setActiveData(a.items))
+    adminSystemApi.getModelUsage({ days: modelUsageDays }).then((m) => setModelUsageData(m.items))
+    adminSystemApi.getUserTokenRank({ days: userTokenRankDays }).then((u) => setUserTokenRankData(u.items))
+  }, [loadData, trendDays, activeDays, modelUsageDays, userTokenRankDays])
 
   const handleTrendDaysChange = useCallback((days: TrendDays) => {
     setTrendDays(days)
@@ -650,18 +695,25 @@ export function Component() {
     })
   }, [])
 
+  const handleModelUsageDaysChange = useCallback((days: TrendDays) => {
+    setModelUsageDays(days)
+    adminSystemApi.getModelUsage({ days }).then((modelUsage) => {
+      setModelUsageData(modelUsage.items)
+    })
+  }, [])
+
+  const handleUserTokenRankDaysChange = useCallback((days: TrendDays) => {
+    setUserTokenRankDays(days)
+    adminSystemApi.getUserTokenRank({ days }).then((userTokenRank) => {
+      setUserTokenRankData(userTokenRank.items)
+    })
+  }, [])
+
   return (
     <div className="flex h-full flex-col bg-bg-base">
       {/* Toolbar */}
       <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
         <h1 className="text-base font-semibold text-text-1">{t('adminDashboard.title')}</h1>
-        <button
-          onClick={handleRetry}
-          className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs text-highlight transition-colors hover:bg-bg-hover"
-        >
-          <RefreshCw className="size-3" />
-          {t('common.refresh')}
-        </button>
       </div>
 
       {/* Content */}
@@ -692,10 +744,18 @@ export function Component() {
           {/* Row 3: Model Usage (3/5) + User Token Rank (2/5) */}
           <div className="flex flex-[2] min-h-[220px] gap-2">
             <div className="flex rounded-lg border border-border bg-bg-layer-1" style={{ flex: 3 }}>
-              <ModelUsagePanel data={data.modelUsage} />
+              <ModelUsagePanel
+                data={modelUsageData}
+                trendDays={modelUsageDays}
+                onTrendDaysChange={handleModelUsageDaysChange}
+              />
             </div>
             <div className="flex rounded-lg border border-border bg-bg-layer-1" style={{ flex: 2 }}>
-              <UserTokenRankPanel data={data.userTokenRank} />
+              <UserTokenRankPanel
+                data={userTokenRankData}
+                trendDays={userTokenRankDays}
+                onTrendDaysChange={handleUserTokenRankDaysChange}
+              />
             </div>
           </div>
 

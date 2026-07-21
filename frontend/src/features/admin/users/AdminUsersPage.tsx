@@ -321,7 +321,7 @@ function AddUserDrawer({
           <select
             value={form.role}
             onChange={(e) => setForm((f) => ({ ...f, role: Number(e.target.value) as 0 | 1 }))}
-            className="h-8 rounded-lg border border-border-strong bg-transparent px-2.5 text-sm text-text-1 outline-none focus:border-interactive focus:ring-3 focus:ring-interactive/50"
+            className="h-8 rounded-lg border border-border-strong bg-transparent px-2.5 text-sm text-text-1 outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
           >
             <option value={0}>{t('adminUsers.regularUser')}</option>
             <option value={1}>{t('adminUsers.admin')}</option>
@@ -399,7 +399,7 @@ function EditUserDrawer({
           <select
             value={form.role}
             onChange={(e) => setForm((f) => ({ ...f, role: Number(e.target.value) as 0 | 1 }))}
-            className="h-8 rounded-lg border border-border-strong bg-transparent px-2.5 text-sm text-text-1 outline-none focus:border-interactive focus:ring-3 focus:ring-interactive/50"
+            className="h-8 rounded-lg border border-border-strong bg-transparent px-2.5 text-sm text-text-1 outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
           >
             <option value={0}>{t('adminUsers.regularUser')}</option>
             <option value={1}>{t('adminUsers.admin')}</option>
@@ -552,7 +552,6 @@ function DeleteUserDialog({
 
 function UserRow({
   user,
-  isEven,
   isCurrentUser,
   onEdit,
   onDelete,
@@ -560,7 +559,6 @@ function UserRow({
   onToggleStatus,
 }: {
   user: AdminUserItem
-  isEven: boolean
   isCurrentUser: boolean
   onEdit: () => void
   onDelete: () => void
@@ -569,7 +567,7 @@ function UserRow({
 }) {
   const t = useT()
   return (
-    <tr className={cn(isEven && 'bg-interactive/10 dark:bg-bg-layer-1', 'transition-colors hover:bg-bg-hover')}>
+    <tr className="transition-colors hover:bg-bg-hover">
       <td className="py-2.5 pl-4 pr-2">
         <Avatar username={user.username} avatar={user.avatar} />
       </td>
@@ -663,7 +661,7 @@ function TableSkeleton() {
         </thead>
         <tbody>
           {Array.from({ length: 8 }).map((_, i) => (
-            <tr key={i} className={cn(i % 2 === 0 && 'bg-interactive/10 dark:bg-bg-layer-1')}>
+            <tr key={i}>
               <td className="py-2.5 pl-4 pr-2">
                 <div className="size-7 animate-pulse rounded-sm bg-bg-layer-3" />
               </td>
@@ -971,7 +969,7 @@ export function Component() {
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder={t('adminUsers.searchPlaceholder')}
-              className="h-7 w-40 rounded-lg border border-border-strong bg-transparent pl-7 pr-2 text-xs text-text-1 outline-none placeholder:text-text-muted focus:border-interactive focus:ring-2 focus:ring-interactive/30"
+              className="h-7 w-40 rounded-lg border border-border-strong bg-transparent pl-7 pr-2 text-xs text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-2 focus:ring-ring/30"
             />
             {search && (
               <button
@@ -985,7 +983,7 @@ export function Component() {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value as 'all' | '0' | '1')}
-            className="h-7 rounded-lg border border-border-strong bg-transparent px-2 text-xs text-text-1 outline-none focus:border-interactive focus:ring-2 focus:ring-interactive/30"
+            className="h-7 rounded-lg border border-border-strong bg-transparent px-2 text-xs text-text-1 outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
           >
             <option value="all">{t('adminUsers.allRoles')}</option>
             <option value="1">{t('adminUsers.admin')}</option>
@@ -1032,11 +1030,10 @@ export function Component() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((user, i) => (
+                {users.map((user) => (
                   <UserRow
                     key={user.userId}
                     user={user}
-                    isEven={i % 2 === 0}
                     isCurrentUser={isCurrentUser(user)}
                     onEdit={() => {
                       setEditTarget(user)

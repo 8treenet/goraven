@@ -99,8 +99,8 @@ func (repo *DashboardRepository) GetEnabledModelCount() (int64, error) {
 
 func (repo *DashboardRepository) GetTokensInDateRange(dateRange []string) (prompt int64, completion int64, err error) {
 	type result struct {
-		Prompt		int64
-		Completion	int64
+		Prompt     int64
+		Completion int64
 	}
 	var r result
 	err = repo.db().
@@ -113,8 +113,8 @@ func (repo *DashboardRepository) GetTokensInDateRange(dateRange []string) (promp
 
 func (repo *DashboardRepository) GetSparkline(dateRange []string) ([]vo.SparklineItem, error) {
 	var rows []struct {
-		StatDate	string	`gorm:"column:stat_date"`
-		Tokens		int64	`gorm:"column:tokens"`
+		StatDate string `gorm:"column:stat_date"`
+		Tokens   int64  `gorm:"column:tokens"`
 	}
 	err := repo.db().
 		Model(&po.UserDailyStats{}).
@@ -140,9 +140,9 @@ func (repo *DashboardRepository) GetSparkline(dateRange []string) ([]vo.Sparklin
 
 func (repo *DashboardRepository) GetTokenTrend(dateRange []string) ([]vo.TokenTrendItem, error) {
 	var rows []struct {
-		StatDate		string	`gorm:"column:stat_date"`
-		PromptTokens		int64	`gorm:"column:prompt_tokens"`
-		CompletionTokens	int64	`gorm:"column:completion_tokens"`
+		StatDate         string `gorm:"column:stat_date"`
+		PromptTokens     int64  `gorm:"column:prompt_tokens"`
+		CompletionTokens int64  `gorm:"column:completion_tokens"`
 	}
 	err := repo.db().
 		Model(&po.UserDailyStats{}).
@@ -159,9 +159,9 @@ func (repo *DashboardRepository) GetTokenTrend(dateRange []string) ([]vo.TokenTr
 	for i := range rows {
 		ds := rows[i].StatDate
 		dateMap[ds] = &vo.TokenTrendItem{
-			Date:			ds,
-			PromptTokens:		rows[i].PromptTokens,
-			CompletionTokens:	rows[i].CompletionTokens,
+			Date:             ds,
+			PromptTokens:     rows[i].PromptTokens,
+			CompletionTokens: rows[i].CompletionTokens,
 		}
 	}
 
@@ -176,26 +176,33 @@ func (repo *DashboardRepository) GetTokenTrend(dateRange []string) ([]vo.TokenTr
 	return result, nil
 }
 
-func (repo *DashboardRepository) GetModelUsage() ([]vo.ModelUsageItem, error) {
+func (repo *DashboardRepository) GetModelUsage(dateRange []string) ([]vo.ModelUsageItem, error) {
 	deletedLabel := "已删除模型"
 	if config.Get().GetLanguage() == "en" {
 		deletedLabel = "Deleted Model"
 	}
 
 	type row struct {
-		ModelName	string
-		Tokens		int64
+		ModelName        string
+		Tokens           int64
+		PromptTokens     int64
+		CompletionTokens int64
+	}
+
+	query := repo.db().
+		Table("session").
+		Select(fmt.Sprintf("CASE WHEN ai_model.ai_model_id IS NULL OR ai_model.deleted = 1 THEN '%s' ELSE ai_model.display_name END AS model_name, SUM(session.prompt_tokens_count + session.completion_tokens_count) AS tokens, SUM(session.prompt_tokens_count) AS prompt_tokens, SUM(session.completion_tokens_count) AS completion_tokens", deletedLabel)).
+		Joins("LEFT JOIN ai_model ON session.ai_model_id = ai_model.ai_model_id").
+		Where("session.deleted = 0").
+		Group(fmt.Sprintf("CASE WHEN ai_model.ai_model_id IS NULL OR ai_model.deleted = 1 THEN '%s' ELSE ai_model.display_name END", deletedLabel))
+
+	if len(dateRange) > 0 {
+		startDate, endDate := parseDateRange(dateRange)
+		query = query.Where("session.created >= ? AND session.created < ?", startDate, endDate)
 	}
 
 	var rows []row
-	err := repo.db().
-		Table("session").
-		Select(fmt.Sprintf("CASE WHEN ai_model.ai_model_id IS NULL OR ai_model.deleted = 1 THEN '%s' ELSE ai_model.display_name END AS model_name, SUM(session.prompt_tokens_count + session.completion_tokens_count) AS tokens", deletedLabel)).
-		Joins("LEFT JOIN ai_model ON session.ai_model_id = ai_model.ai_model_id").
-		Where("session.deleted = 0").
-		Group(fmt.Sprintf("CASE WHEN ai_model.ai_model_id IS NULL OR ai_model.deleted = 1 THEN '%s' ELSE ai_model.display_name END", deletedLabel)).
-		Order("tokens DESC").
-		Scan(&rows).Error
+	err := query.Order("tokens DESC").Scan(&rows).Error
 	if err != nil {
 		return nil, err
 	}
@@ -217,16 +224,22 @@ func (repo *DashboardRepository) GetModelUsage() ([]vo.ModelUsageItem, error) {
 			pct = float64(rows[i].Tokens) / float64(totalTokens) * 100
 		}
 		result = append(result, vo.ModelUsageItem{
-			ModelName:	rows[i].ModelName,
-			TokenCount:	rows[i].Tokens,
-			Percentage:	pct,
+			ModelName:        rows[i].ModelName,
+			TokenCount:       rows[i].Tokens,
+			Percentage:       pct,
+			PromptTokens:     rows[i].PromptTokens,
+			CompletionTokens: rows[i].CompletionTokens,
 		})
 	}
 
 	if len(rows) > limit {
 		var otherTokens int64
+		var otherPromptTokens int64
+		var otherCompletionTokens int64
 		for i := limit; i < len(rows); i++ {
 			otherTokens += rows[i].Tokens
+			otherPromptTokens += rows[i].PromptTokens
+			otherCompletionTokens += rows[i].CompletionTokens
 		}
 		var pct float64
 		if totalTokens > 0 {
@@ -237,31 +250,42 @@ func (repo *DashboardRepository) GetModelUsage() ([]vo.ModelUsageItem, error) {
 			otherLabel = "Others"
 		}
 		result = append(result, vo.ModelUsageItem{
-			ModelName:	otherLabel,
-			TokenCount:	otherTokens,
-			Percentage:	pct,
+			ModelName:        otherLabel,
+			TokenCount:       otherTokens,
+			Percentage:       pct,
+			PromptTokens:     otherPromptTokens,
+			CompletionTokens: otherCompletionTokens,
 		})
 	}
 
 	return result, nil
 }
 
-func (repo *DashboardRepository) GetUserTokenRank() ([]vo.UserTokenRankItem, error) {
+func parseDateRange(dateRange []string) (time.Time, time.Time) {
+	startDate, _ := time.Parse("2006-01-02", dateRange[0])
+	endDate, _ := time.Parse("2006-01-02", dateRange[len(dateRange)-1])
+	return startDate, endDate.AddDate(0, 0, 1)
+}
+
+func (repo *DashboardRepository) GetUserTokenRank(dateRange []string) ([]vo.UserTokenRankItem, error) {
 	type row struct {
-		UserId		string
-		Username	string
-		TokenCount	int64
+		UserId     string
+		Username   string
+		TokenCount int64
 	}
 
-	var rows []row
-	err := repo.db().
+	query := repo.db().
 		Table("user_daily_stats AS uds").
 		Select("uds.user_id, COALESCE(u.username, uds.user_id) AS username, SUM(uds.prompt_tokens + uds.completion_tokens) AS tokenCount").
 		Joins(fmt.Sprintf("LEFT JOIN %s AS u ON uds.user_id = u.user_id", repo.quoteUser())).
-		Group("uds.user_id, u.username").
-		Order("tokenCount DESC").
-		Limit(9).
-		Scan(&rows).Error
+		Group("uds.user_id, u.username")
+
+	if len(dateRange) > 0 {
+		query = query.Where("uds.stat_date IN ?", dateRange)
+	}
+
+	var rows []row
+	err := query.Order("tokenCount DESC").Limit(9).Scan(&rows).Error
 	if err != nil {
 		return nil, err
 	}
@@ -278,10 +302,10 @@ func (repo *DashboardRepository) GetUserTokenRank() ([]vo.UserTokenRankItem, err
 			pct = float64(r.TokenCount) / float64(totalTokens) * 100
 		}
 		result = append(result, vo.UserTokenRankItem{
-			UserId:		r.UserId,
-			Username:	r.Username,
-			TokenCount:	r.TokenCount,
-			Percentage:	pct,
+			UserId:     r.UserId,
+			Username:   r.Username,
+			TokenCount: r.TokenCount,
+			Percentage: pct,
 		})
 	}
 	return result, nil
@@ -289,8 +313,8 @@ func (repo *DashboardRepository) GetUserTokenRank() ([]vo.UserTokenRankItem, err
 
 func (repo *DashboardRepository) GetActiveUserTrend(dateRange []string) ([]vo.ActiveUserTrendItem, error) {
 	var rows []struct {
-		Date	string
-		Count	int64
+		Date  string
+		Count int64
 	}
 
 	err := repo.db().
@@ -307,7 +331,6 @@ func (repo *DashboardRepository) GetActiveUserTrend(dateRange []string) ([]vo.Ac
 
 	dateMap := make(map[string]int64, len(rows))
 	for _, r := range rows {
-
 		if len(r.Date) >= 10 {
 			dateMap[r.Date[:10]] = r.Count
 		}
@@ -316,8 +339,8 @@ func (repo *DashboardRepository) GetActiveUserTrend(dateRange []string) ([]vo.Ac
 	result := make([]vo.ActiveUserTrendItem, 0, len(dateRange))
 	for _, d := range dateRange {
 		result = append(result, vo.ActiveUserTrendItem{
-			Date:	d,
-			Count:	dateMap[d],
+			Date:  d,
+			Count: dateMap[d],
 		})
 	}
 	return result, nil
@@ -325,8 +348,8 @@ func (repo *DashboardRepository) GetActiveUserTrend(dateRange []string) ([]vo.Ac
 
 func (repo *DashboardRepository) GetToolUsageRank(toolType string, dateRange []string) ([]vo.ToolUsageRankItem, error) {
 	var rows []struct {
-		ToolName	string	`gorm:"column:tool_name"`
-		Count		int64	`gorm:"column:count"`
+		ToolName string `gorm:"column:tool_name"`
+		Count    int64  `gorm:"column:count"`
 	}
 	err := repo.db().
 		Model(&po.ToolDailyStats{}).
@@ -343,8 +366,8 @@ func (repo *DashboardRepository) GetToolUsageRank(toolType string, dateRange []s
 	result := make([]vo.ToolUsageRankItem, 0, len(rows))
 	for _, r := range rows {
 		result = append(result, vo.ToolUsageRankItem{
-			Name:	r.ToolName,
-			Count:	r.Count,
+			Name:  r.ToolName,
+			Count: r.Count,
 		})
 	}
 	return result, nil
@@ -373,8 +396,8 @@ func (repo *DashboardRepository) GetUserTotalTokens(userId string) (int64, error
 
 func (repo *DashboardRepository) GetUserTokensInDateRange(userId string, dateRange []string) (prompt int64, completion int64, err error) {
 	type result struct {
-		Prompt		int64
-		Completion	int64
+		Prompt     int64
+		Completion int64
 	}
 	var r result
 	err = repo.db().
@@ -387,8 +410,8 @@ func (repo *DashboardRepository) GetUserTokensInDateRange(userId string, dateRan
 
 func (repo *DashboardRepository) GetUserSparkline(userId string, dateRange []string) ([]vo.SparklineItem, error) {
 	var rows []struct {
-		StatDate	string	`gorm:"column:stat_date"`
-		Tokens		int64	`gorm:"column:tokens"`
+		StatDate string `gorm:"column:stat_date"`
+		Tokens   int64  `gorm:"column:tokens"`
 	}
 	err := repo.db().
 		Model(&po.UserDailyStats{}).
@@ -414,9 +437,9 @@ func (repo *DashboardRepository) GetUserSparkline(userId string, dateRange []str
 
 func (repo *DashboardRepository) GetUserTokenTrend(userId string, dateRange []string) ([]vo.TokenTrendItem, error) {
 	var rows []struct {
-		StatDate		string	`gorm:"column:stat_date"`
-		PromptTokens		int64	`gorm:"column:prompt_tokens"`
-		CompletionTokens	int64	`gorm:"column:completion_tokens"`
+		StatDate         string `gorm:"column:stat_date"`
+		PromptTokens     int64  `gorm:"column:prompt_tokens"`
+		CompletionTokens int64  `gorm:"column:completion_tokens"`
 	}
 	err := repo.db().
 		Model(&po.UserDailyStats{}).
@@ -433,9 +456,9 @@ func (repo *DashboardRepository) GetUserTokenTrend(userId string, dateRange []st
 	for i := range rows {
 		ds := rows[i].StatDate
 		dateMap[ds] = &vo.TokenTrendItem{
-			Date:			ds,
-			PromptTokens:		rows[i].PromptTokens,
-			CompletionTokens:	rows[i].CompletionTokens,
+			Date:             ds,
+			PromptTokens:     rows[i].PromptTokens,
+			CompletionTokens: rows[i].CompletionTokens,
 		}
 	}
 
@@ -450,26 +473,33 @@ func (repo *DashboardRepository) GetUserTokenTrend(userId string, dateRange []st
 	return result, nil
 }
 
-func (repo *DashboardRepository) GetUserModelUsage(userId string) ([]vo.ModelUsageItem, error) {
+func (repo *DashboardRepository) GetUserModelUsage(userId string, dateRange []string) ([]vo.ModelUsageItem, error) {
 	deletedLabel := "已删除模型"
 	if config.Get().GetLanguage() == "en" {
 		deletedLabel = "Deleted Model"
 	}
 
 	type row struct {
-		ModelName	string
-		Tokens		int64
+		ModelName        string
+		Tokens           int64
+		PromptTokens     int64
+		CompletionTokens int64
+	}
+
+	query := repo.db().
+		Table("session").
+		Select(fmt.Sprintf("CASE WHEN ai_model.ai_model_id IS NULL OR ai_model.deleted = 1 THEN '%s' ELSE ai_model.display_name END AS model_name, SUM(session.prompt_tokens_count + session.completion_tokens_count) AS tokens, SUM(session.prompt_tokens_count) AS prompt_tokens, SUM(session.completion_tokens_count) AS completion_tokens", deletedLabel)).
+		Joins("LEFT JOIN ai_model ON session.ai_model_id = ai_model.ai_model_id").
+		Where("session.deleted = 0 AND session.user_id = ?", userId).
+		Group(fmt.Sprintf("CASE WHEN ai_model.ai_model_id IS NULL OR ai_model.deleted = 1 THEN '%s' ELSE ai_model.display_name END", deletedLabel))
+
+	if len(dateRange) > 0 {
+		startDate, endDate := parseDateRange(dateRange)
+		query = query.Where("session.created >= ? AND session.created < ?", startDate, endDate)
 	}
 
 	var rows []row
-	err := repo.db().
-		Table("session").
-		Select(fmt.Sprintf("CASE WHEN ai_model.ai_model_id IS NULL OR ai_model.deleted = 1 THEN '%s' ELSE ai_model.display_name END AS model_name, SUM(session.prompt_tokens_count + session.completion_tokens_count) AS tokens", deletedLabel)).
-		Joins("LEFT JOIN ai_model ON session.ai_model_id = ai_model.ai_model_id").
-		Where("session.deleted = 0 AND session.user_id = ?", userId).
-		Group(fmt.Sprintf("CASE WHEN ai_model.ai_model_id IS NULL OR ai_model.deleted = 1 THEN '%s' ELSE ai_model.display_name END", deletedLabel)).
-		Order("tokens DESC").
-		Scan(&rows).Error
+	err := query.Order("tokens DESC").Scan(&rows).Error
 	if err != nil {
 		return nil, err
 	}
@@ -491,16 +521,22 @@ func (repo *DashboardRepository) GetUserModelUsage(userId string) ([]vo.ModelUsa
 			pct = float64(rows[i].Tokens) / float64(totalTokens) * 100
 		}
 		result = append(result, vo.ModelUsageItem{
-			ModelName:	rows[i].ModelName,
-			TokenCount:	rows[i].Tokens,
-			Percentage:	pct,
+			ModelName:        rows[i].ModelName,
+			TokenCount:       rows[i].Tokens,
+			Percentage:       pct,
+			PromptTokens:     rows[i].PromptTokens,
+			CompletionTokens: rows[i].CompletionTokens,
 		})
 	}
 
 	if len(rows) > limit {
 		var otherTokens int64
+		var otherPromptTokens int64
+		var otherCompletionTokens int64
 		for i := limit; i < len(rows); i++ {
 			otherTokens += rows[i].Tokens
+			otherPromptTokens += rows[i].PromptTokens
+			otherCompletionTokens += rows[i].CompletionTokens
 		}
 		var pct float64
 		if totalTokens > 0 {
@@ -511,9 +547,11 @@ func (repo *DashboardRepository) GetUserModelUsage(userId string) ([]vo.ModelUsa
 			otherLabel = "Others"
 		}
 		result = append(result, vo.ModelUsageItem{
-			ModelName:	otherLabel,
-			TokenCount:	otherTokens,
-			Percentage:	pct,
+			ModelName:        otherLabel,
+			TokenCount:       otherTokens,
+			Percentage:       pct,
+			PromptTokens:     otherPromptTokens,
+			CompletionTokens: otherCompletionTokens,
 		})
 	}
 
@@ -522,8 +560,8 @@ func (repo *DashboardRepository) GetUserModelUsage(userId string) ([]vo.ModelUsa
 
 func (repo *DashboardRepository) GetUserToolUsageRank(userId, toolType string, dateRange []string) ([]vo.ToolUsageRankItem, error) {
 	var rows []struct {
-		ToolName	string	`gorm:"column:tool_name"`
-		Count		int64	`gorm:"column:count"`
+		ToolName string `gorm:"column:tool_name"`
+		Count    int64  `gorm:"column:count"`
 	}
 	err := repo.db().
 		Model(&po.ToolDailyStats{}).
@@ -540,8 +578,8 @@ func (repo *DashboardRepository) GetUserToolUsageRank(userId, toolType string, d
 	result := make([]vo.ToolUsageRankItem, 0, len(rows))
 	for _, r := range rows {
 		result = append(result, vo.ToolUsageRankItem{
-			Name:	r.ToolName,
-			Count:	r.Count,
+			Name:  r.ToolName,
+			Count: r.Count,
 		})
 	}
 	return result, nil
@@ -584,10 +622,6 @@ func (repo *DashboardRepository) SetDashboardCache(key string, data interface{})
 		return
 	}
 	repo.Redis().Set(context.Background(), key, b, dashboardCacheTTL)
-}
-
-func (repo *DashboardRepository) InvalidateDashboardCache(key string) {
-	repo.Redis().Del(context.Background(), key)
 }
 
 func (repo *DashboardRepository) InvalidateAllDashboardCache() {

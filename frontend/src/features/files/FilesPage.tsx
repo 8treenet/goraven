@@ -754,7 +754,7 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
               </div>
             )}
 
-            {sortedItems.map((item, i) => {
+            {sortedItems.map((item) => {
               const isSelected = selectedNames.has(item.name)
               const isRenaming = renamingItem === item.name
               const Icon = getFileIcon(item)
@@ -773,9 +773,7 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
                     rowH,
                     isSelected
                       ? 'bg-bg-layer-3'
-                      : i % 2 === 0
-                        ? 'bg-interactive/10 dark:bg-bg-layer-1 hover:bg-bg-hover'
-                        : 'hover:bg-bg-hover',
+                      : 'hover:bg-bg-hover',
                   )}
                 >
                   <div className="flex size-4 shrink-0 items-center justify-center">

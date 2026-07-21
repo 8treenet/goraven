@@ -49,28 +49,20 @@ func TestDashboard_GetAdminDashboard(t *testing.T) {
 	var svc *pkg_dashboard.DashboardService
 	unitTest.FetchService(&svc)
 
-	rsp, err := svc.GetAdminDashboard(true)
+	rsp, err := svc.GetAdminDashboard()
 	if err != nil {
 		t.Fatalf("GetAdminDashboard error: %v", err)
 	}
 	t.Logf("overview: activeUsers=%d sessions=%d newSessions=%d weekTokens=%d todayTokens=%d models=%d",
 		rsp.Overview.ActiveUsers, rsp.Overview.TotalSessions, rsp.Overview.NewSessions,
 		rsp.Overview.WeekTokens, rsp.Overview.TodayTokens, rsp.Overview.EnabledModels)
-	t.Logf("tokenTrend: %d points", len(rsp.TokenTrend))
 
 	hasData := false
-	for _, item := range rsp.TokenTrend {
-		if item.PromptTokens > 0 || item.CompletionTokens > 0 {
-			t.Logf("  NONZERO date=%s prompt=%d completion=%d", item.Date, item.PromptTokens, item.CompletionTokens)
-			hasData = true
-		}
-	}
 	if !hasData {
 		t.Log("  (all zero)")
 	}
-	t.Logf("modelUsage: %d items", len(rsp.ModelUsage))
-	for _, m := range rsp.ModelUsage {
-		t.Logf("  %s: tokens=%d pct=%.1f%%", m.ModelName, m.TokenCount, m.Percentage)
+	for _, m := range rsp.McpUsageRank {
+		t.Logf("  %s: tokens=%d pct=%.1f%%", m.Name, m.Count)
 	}
 }
 
@@ -82,7 +74,7 @@ func TestDashboard_GetAdminTokenTrend(t *testing.T) {
 	unitTest.FetchService(&svc)
 
 	for _, days := range []int{7, 30, 90} {
-		rsp, err := svc.GetAdminTokenTrend(days, true)
+		rsp, err := svc.GetAdminTokenTrend(days)
 		if err != nil {
 			t.Fatalf("GetAdminTokenTrend(%d) error: %v", days, err)
 		}
@@ -125,11 +117,11 @@ func TestDashboard_RawTableQuery(t *testing.T) {
 	t.Logf("user_daily_stats total rows: %d", totalCount)
 
 	type rawRow struct {
-		UserId			string
-		StatDate		string
-		PromptTokens		int64
-		CompletionTokens	int64
-		RoundCount		int64
+		UserId           string
+		StatDate         string
+		PromptTokens     int64
+		CompletionTokens int64
+		RoundCount       int64
 	}
 	var todayRows []rawRow
 	rawDB.Raw(
@@ -142,9 +134,9 @@ func TestDashboard_RawTableQuery(t *testing.T) {
 	}
 
 	type aggRow struct {
-		StatDate		string
-		PromptTokens		int64
-		CompletionTokens	int64
+		StatDate         string
+		PromptTokens     int64
+		CompletionTokens int64
 	}
 	var aggRows []aggRow
 	rawDB.Raw(

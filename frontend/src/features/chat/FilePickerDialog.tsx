@@ -313,7 +313,7 @@ export function FilePickerDialog({
               )}
             >
               <span className="inline-flex items-center gap-1">
-                <FolderOpen className="size-3.5" />
+                <FolderOpen className="size-3.5 text-folder" />
                 {t('files.myFiles')}
               </span>
             </button>
@@ -328,7 +328,7 @@ export function FilePickerDialog({
               )}
             >
               <span className="inline-flex items-center gap-1">
-                <Users className="size-3.5" />
+                <Users className="size-3.5 text-interactive" />
                 {t('files.teamProjects')}
               </span>
             </button>
@@ -451,7 +451,7 @@ function MineBreadcrumbs({
         )}
       >
         <span className="inline-flex items-center gap-1">
-          <FolderOpen className="size-3.5" />
+          <FolderOpen className="size-3.5 text-folder" />
           {t('files.myFiles')}
         </span>
       </button>
@@ -587,17 +587,17 @@ function FileList({
 
   return (
     <ul className="py-0.5">
-      {items.map((item, i) => (
+      {items.map((item) => (
         <li
           key={item.name}
           onClick={() => (item.isDir ? onEnterDir(item) : onPickFile(item))}
           className={cn(
             'flex cursor-default items-center gap-3 px-4 transition-colors select-none h-9',
-            i % 2 === 0 ? 'bg-interactive/5 hover:bg-bg-hover' : 'hover:bg-bg-hover',
+            'hover:bg-bg-hover',
           )}
         >
           {item.isDir ? (
-            <Folder className="size-4 shrink-0 text-highlight" />
+            <Folder className="size-4 shrink-0 text-folder" />
           ) : (
             (() => {
               const Icon = getFileIcon(item)

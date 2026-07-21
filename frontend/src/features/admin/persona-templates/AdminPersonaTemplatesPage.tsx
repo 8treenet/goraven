@@ -303,7 +303,7 @@ function TemplateDrawer({
                 <select
                   value={form.categoryId}
                   onChange={(e) => setForm((f) => ({ ...f, categoryId: Number(e.target.value) }))}
-                  className="h-8 rounded-lg border border-border-strong bg-transparent px-2.5 text-sm text-text-1 outline-none focus:border-interactive focus:ring-3 focus:ring-interactive/50"
+                  className="h-8 rounded-lg border border-border-strong bg-transparent px-2.5 text-sm text-text-1 outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
                 >
                   {categories.map((c) => (
                     <option key={c.categoryId} value={c.categoryId}>
@@ -338,7 +338,7 @@ function TemplateDrawer({
                 onChange={(e) => setForm((f) => ({ ...f, roleInfo: e.target.value }))}
                 placeholder={t('adminPersonaTemplates.promptPlaceholder')}
                 maxLength={500}
-                className="min-h-[200px] resize-y rounded-lg border border-border-strong bg-transparent px-2.5 py-2 text-sm text-text-1 outline-none placeholder:text-text-muted focus:border-interactive focus:ring-3 focus:ring-interactive/50 font-mono"
+                className="min-h-[200px] resize-y rounded-lg border border-border-strong bg-transparent px-2.5 py-2 text-sm text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-3 focus:ring-ring/50 font-mono"
               />
               <div className="flex items-center justify-between">
                 {errors.roleInfo ? (
@@ -380,7 +380,7 @@ function TemplateDrawer({
             onChange={(e) => setForm((f) => ({ ...f, roleInfo: e.target.value }))}
             placeholder={t('adminPersonaTemplates.promptPlaceholder')}
             maxLength={500}
-            className="flex-1 resize-none rounded-lg border border-border-strong bg-transparent px-3 py-2.5 text-sm text-text-1 outline-none placeholder:text-text-muted focus:border-interactive focus:ring-3 focus:ring-interactive/50 font-mono"
+            className="flex-1 resize-none rounded-lg border border-border-strong bg-transparent px-3 py-2.5 text-sm text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-3 focus:ring-ring/50 font-mono"
           />
           <div className="flex items-center justify-between pt-2">
             <span className="text-xs text-text-muted tabular-nums">{t('adminPersonaTemplates.charCount').replace('{count}', String(roleInfoCharCount))}</span>
@@ -672,17 +672,15 @@ function DeleteTemplateDialog({
 
 function TemplateRow({
   template,
-  isEven,
   onEdit,
   onDelete,
 }: {
   template: AdminPersonaTemplateItem
-  isEven: boolean
   onEdit: () => void
   onDelete: () => void
 }) {
   return (
-    <tr className={cn(isEven && 'bg-interactive/10 dark:bg-bg-layer-1', 'transition-colors hover:bg-bg-hover')}>
+    <tr className="transition-colors hover:bg-bg-hover">
       <td className="py-2.5 pl-4 pr-2">
         <Icon name={template.icon} className="size-5 text-interactive" />
       </td>
@@ -755,7 +753,7 @@ function TableSkeleton() {
         </thead>
         <tbody>
           {Array.from({ length: 8 }).map((_, i) => (
-            <tr key={i} className={cn(i % 2 === 0 && 'bg-interactive/10 dark:bg-bg-layer-1')}>
+            <tr key={i}>
               <td className="py-2.5 pl-4 pr-2">
                 <div className="size-5 animate-pulse rounded-sm bg-bg-layer-3" />
               </td>
@@ -1079,7 +1077,7 @@ export function Component() {
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder={t('adminPersonaTemplates.searchPlaceholder')}
-              className="h-7 w-44 rounded-lg border border-border-strong bg-transparent pl-7 pr-2 text-xs text-text-1 outline-none placeholder:text-text-muted focus:border-interactive focus:ring-2 focus:ring-interactive/30"
+              className="h-7 w-44 rounded-lg border border-border-strong bg-transparent pl-7 pr-2 text-xs text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-2 focus:ring-ring/30"
             />
             {search && (
               <button
@@ -1095,7 +1093,7 @@ export function Component() {
             onChange={(e) =>
               setCategoryFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))
             }
-            className="h-7 rounded-lg border border-border-strong bg-transparent px-2 text-xs text-text-1 outline-none focus:border-interactive focus:ring-2 focus:ring-interactive/30"
+            className="h-7 rounded-lg border border-border-strong bg-transparent px-2 text-xs text-text-1 outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
           >
             <option value="all">{t('adminPersonaTemplates.allCategories')}</option>
             {sortedCategories.map((c) => (
@@ -1154,11 +1152,10 @@ export function Component() {
                 </tr>
               </thead>
               <tbody>
-                {templates.map((t, i) => (
+                {templates.map((t) => (
                   <TemplateRow
                     key={t.templateId}
                     template={t}
-                    isEven={i % 2 === 0}
                     onEdit={() => {
                       setEditTarget(t)
                       setDrawerMode('edit')

@@ -153,7 +153,7 @@ export function ShareSkillDialog({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder={t('skills.shareNotePlaceholder')}
-              className="mt-1 w-full h-16 rounded-md border border-border bg-transparent px-3 py-2 text-xs text-text-1 placeholder:text-text-muted outline-none focus:border-border-strong resize-none"
+              className="mt-1 w-full h-16 rounded-md border border-border bg-transparent px-3 py-2 text-xs text-text-1 placeholder:text-text-muted outline-none focus:border-ring focus:ring-2 focus:ring-ring/30 resize-none"
             />
           </div>
           <div className="flex justify-end gap-2">

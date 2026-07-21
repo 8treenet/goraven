@@ -98,7 +98,7 @@ export function Component() {
       {state === 'empty' && <EmptyView onCreate={handleCreate} />}
       {state === 'data' && (
         <div>
-          {personas.map((p, i) => {
+          {personas.map((p) => {
             const allTags = [
               ...p.mcpNames.map((n) => ({ label: n, type: 'mcp' as const })),
               ...p.skillNames.map((n) => ({ label: n, type: 'skill' as const })),
@@ -112,7 +112,7 @@ export function Component() {
               className={cn(
                 'flex items-start gap-3 px-4 transition-colors',
                 personas.length <= 5 ? 'py-4' : 'py-3',
-                i % 2 === 0 ? 'bg-interactive/10 dark:bg-bg-layer-1 hover:bg-bg-hover' : 'hover:bg-bg-hover',
+                'hover:bg-bg-hover',
               )}
             >
               <button

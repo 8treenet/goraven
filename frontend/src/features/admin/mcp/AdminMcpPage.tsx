@@ -486,7 +486,7 @@ function McpForm({
               onChange={(e) => updateField('description', e.target.value)}
               placeholder={t('adminMcp.descriptionPlaceholder')}
               rows={3}
-              className="w-full resize-none rounded-lg border border-border-strong bg-transparent px-2.5 py-2 text-sm text-text-1 outline-none placeholder:text-text-muted focus:border-interactive focus:ring-2 focus:ring-interactive/30"
+              className="w-full resize-none rounded-lg border border-border-strong bg-transparent px-2.5 py-2 text-sm text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-2 focus:ring-ring/30"
             />
           </div>
 
@@ -497,7 +497,7 @@ function McpForm({
               onChange={(e) => handleTransportChange(e.target.value as TransportType)}
               disabled={mode === 'edit'}
               className={cn(
-                'h-8 rounded-lg border border-border-strong bg-transparent px-2.5 text-sm text-text-1 outline-none focus:border-interactive focus:ring-3 focus:ring-interactive/50',
+                'h-8 rounded-lg border border-border-strong bg-transparent px-2.5 text-sm text-text-1 outline-none focus:border-ring focus:ring-3 focus:ring-ring/50',
                 mode === 'edit' && 'opacity-50',
               )}
             >
@@ -518,7 +518,7 @@ function McpForm({
                 <select
                   value={form.stdioType}
                   onChange={(e) => updateField('stdioType', e.target.value as StdioType)}
-                  className="h-8 rounded-lg border border-border-strong bg-transparent px-2.5 text-sm text-text-1 outline-none focus:border-interactive focus:ring-3 focus:ring-interactive/50"
+                  className="h-8 rounded-lg border border-border-strong bg-transparent px-2.5 text-sm text-text-1 outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
                 >
                   <option value="npx">{STDIO_TYPE_LABELS.npx}</option>
                   <option value="uvx">{STDIO_TYPE_LABELS.uvx}</option>
@@ -693,7 +693,7 @@ function McpForm({
               onChange={(e) => updateField('remark', e.target.value)}
               placeholder={t('common.optional')}
               rows={2}
-              className="w-full resize-none rounded-lg border border-border-strong bg-transparent px-2.5 py-2 text-sm text-text-1 outline-none placeholder:text-text-muted focus:border-interactive focus:ring-2 focus:ring-interactive/30"
+              className="w-full resize-none rounded-lg border border-border-strong bg-transparent px-2.5 py-2 text-sm text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-2 focus:ring-ring/30"
             />
           </div>
 
@@ -956,7 +956,6 @@ function DeleteMcpDialog({
 
 function McpRow({
   item,
-  isEven,
   onEdit,
   onDelete,
   onToggleStatus,
@@ -965,7 +964,6 @@ function McpRow({
   togglingAlwaysOn,
 }: {
   item: AdminMcpItem
-  isEven: boolean
   onEdit: () => void
   onDelete: () => void
   onToggleStatus: (v: boolean) => void
@@ -975,7 +973,7 @@ function McpRow({
 }) {
   const t = useT()
   return (
-    <tr className={cn(isEven && 'bg-interactive/10 dark:bg-bg-layer-1', 'transition-colors hover:bg-bg-hover')}>
+    <tr className="transition-colors hover:bg-bg-hover">
       <td className="py-2.5 pl-4 pr-4">
         <div className="flex items-center gap-3">
           <div className="shrink-0">
@@ -1074,7 +1072,7 @@ function TableSkeleton() {
         </thead>
         <tbody>
           {Array.from({ length: 8 }).map((_, i) => (
-            <tr key={i} className={cn(i % 2 === 0 && 'bg-interactive/10 dark:bg-bg-layer-1')}>
+            <tr key={i}>
               <td className="py-2.5 pl-4 pr-4">
                 <div className="flex items-center gap-3">
                   <div className="size-5 shrink-0 animate-pulse rounded-sm bg-bg-layer-3" />
@@ -1508,7 +1506,7 @@ export function Component() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('adminMcp.searchPlaceholder')}
-              className="h-7 w-48 rounded-lg border border-border-strong bg-transparent pl-7 pr-2 text-xs text-text-1 outline-none placeholder:text-text-muted focus:border-interactive focus:ring-2 focus:ring-interactive/30"
+              className="h-7 w-48 rounded-lg border border-border-strong bg-transparent pl-7 pr-2 text-xs text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-2 focus:ring-ring/30"
             />
             {search && (
               <button
@@ -1522,7 +1520,7 @@ export function Component() {
           <select
             value={transportFilter}
             onChange={(e) => setTransportFilter(e.target.value as 'all' | TransportType)}
-            className="h-7 rounded-lg border border-border-strong bg-transparent px-2 text-xs text-text-1 outline-none focus:border-interactive focus:ring-2 focus:ring-interactive/30"
+            className="h-7 rounded-lg border border-border-strong bg-transparent px-2 text-xs text-text-1 outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
           >
             <option value="all">{t('adminMcp.allTypes')}</option>
             <option value="Stdio">Stdio</option>
@@ -1582,11 +1580,10 @@ export function Component() {
                 </tr>
               </thead>
               <tbody>
-                {pagedMcps.map((item, i) => (
+                {pagedMcps.map((item) => (
                   <McpRow
                     key={item.mcpId}
                     item={item}
-                    isEven={i % 2 === 0}
                     onEdit={() => handleEdit(item)}
                     onDelete={() => {
                       setDialogTarget(item)

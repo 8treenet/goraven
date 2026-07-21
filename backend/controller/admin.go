@@ -5,8 +5,10 @@ import (
 
 	"raven/backend/infra"
 	"raven/backend/po"
+	"raven/backend/repository/seed"
 	"raven/backend/service"
 	"raven/backend/vo"
+	"raven/config"
 
 	"github.com/8treenet/freedom"
 )
@@ -39,9 +41,9 @@ type AdminController struct {
 	SystemSev    *service.SystemInfoService
 	DashboardSev *service.DashboardService
 	SettingSev   *service.SystemSettingService
+	TPSev        *service.TeamProjectService
 	Request      *infra.Request
 	Worker       freedom.Worker
-	TPSev        *service.TeamProjectService
 }
 
 func (controller *AdminController) BeforeActivation(b freedom.BeforeActivation) {
@@ -60,7 +62,7 @@ func (controller *AdminController) BeforeActivation(b freedom.BeforeActivation) 
 	b.Handle("GET", "/models/{id:string}", "GetModelDetail")
 	b.Handle("PUT", "/models/{id:string}/status", "UpdateModelStatus")
 	b.Handle("PUT", "/models/{id:string}/default", "SetDefaultModel")
-	b.Handle("PUT", "/models/{id:string}/compress", "SetCompressModel")
+	b.Handle("PUT", "/models/{id:string}/flash", "SetFlashModel")
 	b.Handle("PUT", "/models/{id:string}/visual", "SetVisualModel")
 
 	b.Handle("GET", "/providers", "GetProviders")
@@ -72,9 +74,9 @@ func (controller *AdminController) BeforeActivation(b freedom.BeforeActivation) 
 	b.Handle("PUT", "/mcp/{id:int}", "UpdateMCP")
 	b.Handle("DELETE", "/mcp/{id:int}", "DeleteMCP")
 	b.Handle("PUT", "/mcp/{id:int}/status", "UpdateMCPStatus")
+	b.Handle("PUT", "/mcp/{id:int}/alwaysOn", "ToggleMCPAlwaysOn")
 	b.Handle("GET", "/mcp/recommend", "GetRecommendMCPs")
 	b.Handle("POST", "/mcp/healthCheck", "CheckMCPHealth")
-	b.Handle("PUT", "/mcp/{id:int}/alwaysOn", "ToggleMCPAlwaysOn")
 
 	b.Handle("GET", "/systemSkills", "GetSystemSkills")
 	b.Handle("GET", "/systemSkills/{id:int}", "GetSystemSkillDetail")
@@ -126,8 +128,9 @@ func (controller *AdminController) BeforeActivation(b freedom.BeforeActivation) 
 
 	b.Handle("GET", "/dashboard", "GetDashboard")
 	b.Handle("GET", "/dashboard/tokenTrend", "GetTokenTrend")
+	b.Handle("GET", "/dashboard/modelUsage", "GetModelUsage")
+	b.Handle("GET", "/dashboard/userTokenRank", "GetUserTokenRank")
 	b.Handle("GET", "/dashboard/activeUsers", "GetActiveUsers")
-
 }
 
 func (controller *AdminController) GetUsers() freedom.Result {
@@ -280,6 +283,16 @@ func (controller *AdminController) UpdateModelStatus(id string) freedom.Result {
 		return &infra.JSONResponse{Error: err}
 	}
 
+	/*
+		modelId, err := strconv.Atoi(id)
+		if err != nil {
+			return &infra.JSONResponse{Error: err}
+		}
+		if err := controller.ModelSev.UpdateModelStatus(modelId, req.Status); err != nil {
+			return &infra.JSONResponse{Error: err}
+		}
+	*/
+
 	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
 }
 
@@ -310,7 +323,7 @@ func (controller *AdminController) SetDefaultModel(id string) freedom.Result {
 	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
 }
 
-func (controller *AdminController) SetCompressModel(id string) freedom.Result {
+func (controller *AdminController) SetFlashModel(id string) freedom.Result {
 	modelId, err := strconv.Atoi(id)
 	if err != nil {
 		return &infra.JSONResponse{Error: err}
@@ -335,7 +348,6 @@ func (controller *AdminController) SetVisualModel(id string) freedom.Result {
 
 	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
 }
-
 func (controller *AdminController) GetProviders() freedom.Result {
 	list := controller.ModelSev.ListProviders()
 	return &infra.JSONResponse{Object: map[string]interface{}{"list": list}}
@@ -413,11 +425,6 @@ func (controller *AdminController) UpdateMCPStatus(id int) freedom.Result {
 	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
 }
 
-func (controller *AdminController) GetRecommendMCPs() freedom.Result {
-	list := controller.McpSev.GetRecommendMCPs()
-	return &infra.JSONResponse{Object: map[string]interface{}{"list": list}}
-}
-
 func (controller *AdminController) ToggleMCPAlwaysOn(id int) freedom.Result {
 	var req vo.AdminMCPToggleAlwaysOnReq
 	if err := controller.Request.ReadJSON(&req, true); err != nil {
@@ -429,6 +436,11 @@ func (controller *AdminController) ToggleMCPAlwaysOn(id int) freedom.Result {
 	}
 
 	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
+}
+
+func (controller *AdminController) GetRecommendMCPs() freedom.Result {
+	list := controller.McpSev.GetRecommendMCPs()
+	return &infra.JSONResponse{Object: map[string]interface{}{"list": list}}
 }
 
 func (controller *AdminController) CheckMCPHealth() freedom.Result {
@@ -864,8 +876,11 @@ func (controller *AdminController) GetSystemInfo() freedom.Result {
 }
 
 func (controller *AdminController) GetDashboard() freedom.Result {
-	refresh := controller.Worker.IrisContext().URLParam("refresh") == "true"
-	rsp, err := controller.DashboardSev.GetAdminDashboard(refresh)
+	if config.Get().Behavior.PreviewUser != "" {
+		return &infra.JSONResponse{Object: seed.BuildAdminDashboard()}
+	}
+
+	rsp, err := controller.DashboardSev.GetAdminDashboard()
 	if err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
@@ -874,7 +889,6 @@ func (controller *AdminController) GetDashboard() freedom.Result {
 }
 
 func (controller *AdminController) GetTokenTrend() freedom.Result {
-	refresh := controller.Worker.IrisContext().URLParam("refresh") == "true"
 	var req struct {
 		Days int `url:"days"`
 	}
@@ -885,7 +899,57 @@ func (controller *AdminController) GetTokenTrend() freedom.Result {
 		req.Days = 30
 	}
 
-	rsp, err := controller.DashboardSev.GetAdminTokenTrend(req.Days, refresh)
+	if config.Get().Behavior.PreviewUser != "" {
+		return &infra.JSONResponse{Object: seed.BuildAdminTokenTrend(req.Days)}
+	}
+
+	rsp, err := controller.DashboardSev.GetAdminTokenTrend(req.Days)
+	if err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+
+	return &infra.JSONResponse{Object: rsp}
+}
+
+func (controller *AdminController) GetModelUsage() freedom.Result {
+	var req struct {
+		Days int `url:"days"`
+	}
+	if err := controller.Request.ReadQuery(&req); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	if req.Days <= 0 {
+		req.Days = 30
+	}
+
+	if config.Get().Behavior.PreviewUser != "" {
+		return &infra.JSONResponse{Object: seed.BuildAdminModelUsage(req.Days)}
+	}
+
+	rsp, err := controller.DashboardSev.GetAdminModelUsage(req.Days)
+	if err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+
+	return &infra.JSONResponse{Object: rsp}
+}
+
+func (controller *AdminController) GetUserTokenRank() freedom.Result {
+	var req struct {
+		Days int `url:"days"`
+	}
+	if err := controller.Request.ReadQuery(&req); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	if req.Days <= 0 {
+		req.Days = 30
+	}
+
+	if config.Get().Behavior.PreviewUser != "" {
+		return &infra.JSONResponse{Object: seed.BuildAdminUserTokenRank(req.Days)}
+	}
+
+	rsp, err := controller.DashboardSev.GetAdminUserTokenRank(req.Days)
 	if err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
@@ -894,7 +958,6 @@ func (controller *AdminController) GetTokenTrend() freedom.Result {
 }
 
 func (controller *AdminController) GetActiveUsers() freedom.Result {
-	refresh := controller.Worker.IrisContext().URLParam("refresh") == "true"
 	var req struct {
 		Days int `url:"days"`
 	}
@@ -905,7 +968,11 @@ func (controller *AdminController) GetActiveUsers() freedom.Result {
 		req.Days = 30
 	}
 
-	rsp, err := controller.DashboardSev.GetAdminActiveUserTrend(req.Days, refresh)
+	if config.Get().Behavior.PreviewUser != "" {
+		return &infra.JSONResponse{Object: seed.BuildAdminActiveUserTrend(req.Days)}
+	}
+
+	rsp, err := controller.DashboardSev.GetAdminActiveUserTrend(req.Days)
 	if err != nil {
 		return &infra.JSONResponse{Error: err}
 	}

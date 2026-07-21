@@ -367,6 +367,8 @@ export interface ModelUsageItem {
   modelName: string
   tokenCount: number
   percentage: number
+  promptTokens: number
+  completionTokens: number
 }
 
 export interface RankItem {
@@ -398,8 +400,6 @@ export interface DashboardStorageStats {
 
 export interface DashboardData {
   overview: DashboardOverview
-  tokenTrend: TokenTrendItem[]
-  modelUsage: ModelUsageItem[]
   skillUsageRank: RankItem[]
   mcpUsageRank: RankItem[]
   toolUsageRank: RankItem[]
@@ -608,10 +608,6 @@ export interface ActiveTrendItem {
 
 export interface AdminDashboardData {
   overview: AdminDashboardOverview
-  tokenTrend: TokenTrendItem[]
-  modelUsage: ModelUsageItem[]
-  userTokenRank: RankItem[]
-  activeTrend: ActiveTrendItem[]
   skillUsageRank: RankItem[]
   mcpUsageRank: RankItem[]
   toolUsageRank: RankItem[]

@@ -40,9 +40,16 @@
   --color-highlight: var(--highlight);
   --color-highlight-fg: var(--highlight-fg);
 
+  /* Folder icon */
+  --color-folder: var(--folder);
+
   /* Interactive (links, selected indicators) */
   --color-interactive: var(--interactive);
   --color-interactive-hover: var(--interactive-hover);
+  --color-interactive-soft: var(--interactive-soft);
+
+  /* Focus ring */
+  --color-ring: var(--ring);
 
   /* Semantic */
   --color-success: var(--success);
@@ -72,45 +79,50 @@
 
 /* ============================================
    Light mode (primary)
-   Pure white base + neutral gray surfaces
+   All-white surfaces. Depth from borders +
+   shadows only. Gray reserved for micro-areas
+   (hover, badges, code bg) — never large fills.
    ============================================ */
 
 :root {
   --bg-base: #ffffff;
   --bg-layer-1: #ffffff;
-  --bg-layer-2: #f5f5f5;
-  --bg-layer-3: #ebebeb;
-  --bg-hover: #e8e8e8;
-  --bg-selected: #ebebeb;
+  --bg-layer-2: oklch(0.968 0 0);
+  --bg-layer-3: oklch(0.948 0 0);
+  --bg-hover: oklch(0.958 0 0);
+  --bg-selected: oklch(0.948 0 0);
 
-  --text-1: #1a1a1a;
-  --text-2: #555555;
-  --text-3: #737373;
-  --text-muted: #a3a3a3;
+  --text-1: oklch(0.18 0 0);
+  --text-2: oklch(0.39 0 0);
+  --text-3: oklch(0.535 0 0);
+  --text-muted: oklch(0.635 0 0);
 
-  --border-custom: #e5e5e5;
-  --border-strong: #d4d4d4;
+  --border-custom: oklch(0.918 0 0);
+  --border-strong: oklch(0.86 0 0);
 
-  --highlight: oklch(0.68 0.16 80);
+  --highlight: oklch(0.62 0.16 72);
   --highlight-fg: #ffffff;
 
-  --interactive: oklch(0.52 0.10 260);
-  --interactive-hover: oklch(0.45 0.12 260);
+  --folder: oklch(0.70 0.15 75);
 
-  --success: oklch(0.50 0.14 150);
+  --interactive: oklch(0.39 0.13 256);
+  --interactive-hover: oklch(0.32 0.15 256);
+  --interactive-soft: oklch(0.96 0.015 260);
+
+  --success: oklch(0.47 0.12 155);
   --success-foreground: #ffffff;
 
-  --warning: oklch(0.55 0.16 50);
+  --warning: oklch(0.50 0.14 55);
   --warning-foreground: #ffffff;
 
-  --info: oklch(0.50 0.08 210);
+  --info: oklch(0.47 0.08 220);
   --info-foreground: #ffffff;
 
-  --destructive: oklch(0.58 0.20 25);
+  --destructive: oklch(0.52 0.18 25);
   --destructive-foreground: #ffffff;
 
-  --shadow-soft-val: 0 1px 0 0 rgba(0, 0, 0, 0.02), 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-pop-val: 0 1px 0 0 rgba(0, 0, 0, 0.02), 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-soft-val: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-pop-val: 0 4px 8px rgba(0, 0, 0, 0.06), 0 14px 32px rgba(0, 0, 0, 0.09);
 }
 
 /* ============================================
@@ -138,8 +150,11 @@
   --highlight: oklch(0.72 0.14 80);
   --highlight-fg: oklch(0.12 0.004 260);
 
+  --folder: oklch(0.75 0.14 78);
+
   --interactive: oklch(0.65 0.10 260);
   --interactive-hover: oklch(0.72 0.12 260);
+  --interactive-soft: oklch(0.25 0.008 260);
 
   --success: oklch(0.65 0.12 150);
   --success-foreground: oklch(0.12 0.004 260);
@@ -181,8 +196,11 @@
   --highlight: oklch(0.72 0.14 80);
   --highlight-fg: oklch(0.12 0.004 260);
 
+  --folder: oklch(0.75 0.14 78);
+
   --interactive: oklch(0.65 0.10 260);
   --interactive-hover: oklch(0.72 0.12 260);
+  --interactive-soft: oklch(0.25 0.008 260);
 
   --success: oklch(0.65 0.12 150);
   --success-foreground: oklch(0.12 0.004 260);
@@ -207,39 +225,42 @@
 .light {
   --bg-base: #ffffff;
   --bg-layer-1: #ffffff;
-  --bg-layer-2: #f5f5f5;
-  --bg-layer-3: #ebebeb;
-  --bg-hover: #e8e8e8;
-  --bg-selected: #ebebeb;
+  --bg-layer-2: oklch(0.968 0 0);
+  --bg-layer-3: oklch(0.948 0 0);
+  --bg-hover: oklch(0.958 0 0);
+  --bg-selected: oklch(0.948 0 0);
 
-  --text-1: #1a1a1a;
-  --text-2: #555555;
-  --text-3: #737373;
-  --text-muted: #a3a3a3;
+  --text-1: oklch(0.18 0 0);
+  --text-2: oklch(0.39 0 0);
+  --text-3: oklch(0.535 0 0);
+  --text-muted: oklch(0.635 0 0);
 
-  --border-custom: #e5e5e5;
-  --border-strong: #d4d4d4;
+  --border-custom: oklch(0.918 0 0);
+  --border-strong: oklch(0.86 0 0);
 
-  --highlight: oklch(0.68 0.16 80);
+  --highlight: oklch(0.62 0.16 72);
   --highlight-fg: #ffffff;
 
-  --interactive: oklch(0.52 0.10 260);
-  --interactive-hover: oklch(0.45 0.12 260);
+  --folder: oklch(0.70 0.15 75);
 
-  --success: oklch(0.50 0.14 150);
+  --interactive: oklch(0.39 0.13 256);
+  --interactive-hover: oklch(0.32 0.15 256);
+  --interactive-soft: oklch(0.96 0.015 260);
+
+  --success: oklch(0.47 0.12 155);
   --success-foreground: #ffffff;
 
-  --warning: oklch(0.55 0.16 50);
+  --warning: oklch(0.50 0.14 55);
   --warning-foreground: #ffffff;
 
-  --info: oklch(0.50 0.08 210);
+  --info: oklch(0.47 0.08 220);
   --info-foreground: #ffffff;
 
-  --destructive: oklch(0.58 0.20 25);
+  --destructive: oklch(0.52 0.18 25);
   --destructive-foreground: #ffffff;
 
-  --shadow-soft-val: 0 1px 0 0 rgba(0, 0, 0, 0.02), 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-pop-val: 0 1px 0 0 rgba(0, 0, 0, 0.02), 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-soft-val: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-pop-val: 0 4px 8px rgba(0, 0, 0, 0.06), 0 14px 32px rgba(0, 0, 0, 0.09);
 }
 
 /* ============================================
@@ -263,7 +284,7 @@
   --accent-foreground: var(--highlight-fg);
   --border: var(--color-border-custom);
   --input: var(--color-border-strong);
-  --ring: var(--color-interactive);
+  --ring: var(--highlight);
   --radius: 6px;
 
   --sidebar: var(--color-bg-layer-1);
@@ -341,10 +362,10 @@
 }
 
 .raven-markdown .blockquote {
-  border-left: none;
-  background-color: var(--bg-layer-1);
-  border-radius: var(--radius-md);
-  padding: 0.625rem 0.875rem;
+  border-left: 3px solid var(--border-custom);
+  background-color: transparent;
+  border-radius: 0;
+  padding: 0.5rem 0.875rem;
   margin: 0.75rem 0;
   color: var(--text-2);
   font-style: normal;
@@ -385,8 +406,8 @@
   text-align: left;
   font-weight: 600;
   padding: 0.5rem 0.75rem;
-  color: var(--interactive);
-  background-color: var(--bg-layer-1);
+  color: var(--text-2);
+  border-bottom: 1px solid var(--border-strong);
 }
 
 .raven-markdown .table-cell {
@@ -395,7 +416,7 @@
 }
 
 .raven-markdown .table-row:nth-child(even) {
-  background-color: var(--bg-layer-1);
+  background-color: var(--bg-layer-2);
 }
 
 .raven-markdown .ordered-list,
@@ -460,15 +481,15 @@
 .raven-xlsx tr:first-child td,
 .raven-xlsx tr:first-child th {
   font-weight: 600;
-  color: var(--interactive);
-  background-color: var(--bg-layer-1);
+  color: var(--text-2);
+  border-bottom: 1px solid var(--border-strong);
   position: sticky;
   top: 0;
   z-index: 1;
 }
 
 .raven-xlsx tr:nth-child(even) {
-  background-color: var(--bg-layer-1);
+  background-color: var(--bg-layer-2);
 }
 
 /* ============================================

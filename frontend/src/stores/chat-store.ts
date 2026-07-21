@@ -201,6 +201,7 @@ function createStreamHandlers(
   sessionId: string,
   set: Parameters<StateCreator<ChatState>>[0],
   get: () => ChatState,
+  isNewSession = false,
 ) {
   return {
     onReasoning(chunk: string) {
@@ -304,6 +305,11 @@ function createStreamHandlers(
       sessionsApi.getSessionDetail(sessionId)
         .then((detail) => set({ sessionDetail: detail }))
         .catch(() => {})
+
+      // 新会话首轮结束后，后端异步生成标题，延迟 15s 刷新侧边栏
+      if (isNewSession) {
+        setTimeout(() => get().refreshSessions(), 15_000)
+      }
     },
     onError() {
       clearTimeout(backgroundTimeouts.get(sessionId))
@@ -728,7 +734,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
 
     // Connect SSE stream
-    const handlers = createStreamHandlers(sessionId, set, get)
+    const handlers = createStreamHandlers(sessionId, set, get, isNewSession)
     const controller = connectChatStream(sessionId, handlers)
 
     set({ streamController: controller })
