@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Open Source · Self-Hosted · AI Harness</strong><br/>
-  One runtime. Models, tools, knowledge, skills, and workflows — assembled so your Agent delivers results, not just replies.
+  Models, tools, knowledge, skills, workflows — all in one runtime. The Agent doesn't just chat. It actually gets work done.
 </p>
 
 <p align="center">
@@ -32,62 +32,62 @@
 
 ---
 
-## Stop chatting with AI. Let it deliver.
+## What It Is
 
-Raven gives every team member an independent Agent workspace — not a chat window, a **workstation**. Inside it, the Agent reads files, writes code, runs commands, calls APIs, searches your knowledge base, analyzes data, writes reports, and builds charts. It takes tasks, breaks them down, runs in parallel, and hands you the result.
+Raven gives every person on your team an independent Agent workspace. Not a chat window — a workstation. The Agent reads files, writes code, runs commands, calls APIs, searches your knowledge base, analyzes data, writes reports, builds charts. You assign the task; it breaks it down, works in parallel, and delivers the result.
 
-**You want outcomes, not another block of text to copy-paste.**
+What you get is the outcome, not a block of text you have to copy-paste.
 
 ---
 
-## Why Raven?
+## Why Raven
 
 <table>
 <tr>
 <td width="50%">
 
-### 🎯 Team-first, not a solo toy
+### 🎯 Team-first
 
-Every member gets an isolated workspace. The team shares projects and skill libraries. Admins control model quotas, tool permissions, and data access — all in one place.
+Everyone gets an isolated workspace. The team shares projects and skill libraries. Admins control model quotas, tool permissions, and data access. Not a single-player toy.
 
 </td>
 <td width="50%">
 
-### 🔧 Talks less. Does more.
+### 🔧 Actually does things
 
-Agents don't stop at suggestions — they **read and write files, run shell commands, call MCP tools**, connecting your internal APIs, databases, and private services directly.
-
-</td>
-</tr>
-<tr>
-<td>
-
-### 🧩 Skill marketplace — reuse what works
-
-Prompts, scripts, and workflows packaged as installable skills. One-click install, automatic dependency resolution, centralized versioning. One person figures it out — the whole team skips the hard part.
-
-</td>
-<td>
-
-### 📚 Knowledge that participates
-
-Policies, docs, and business data fed into RAG. Agents retrieve context in real time. **Knowledge stops being static documentation and becomes the basis for every decision.**
+Agents directly read/write files, run Shell, call MCP tool chains. Internal APIs, databases, private services — plug them all in. Not just another suggestion paragraph.
 
 </td>
 </tr>
 <tr>
 <td>
 
-### 🔌 Plugin hooks — extend without forking
+### 🧩 Skill Marketplace
 
-Before/after conversations, during tool calls, on event streams — lifecycle hooks let you inject custom logic anywhere. Deep customization without touching a line of core code.
+Prompts, scripts, workflows packaged as skills. One-click install, centralized maintenance. One person hits a wall — the whole team skips it next time.
 
 </td>
 <td>
 
-### 🏠 Your data, your server
+### 📚 Knowledge in the loop
 
-One Docker command and you're running. Model data never leaves your infrastructure. Works with OpenAI, Claude, DeepSeek, Qwen, GLM, and compatible APIs.
+Policies, docs, business materials go into RAG. Agents retrieve context in real time during execution. Answers have sources, not hallucinations.
+
+</td>
+</tr>
+<tr>
+<td>
+
+### 🔌 Plugin Hooks
+
+Before/after conversations, tool calls, SSE event streams — inject custom logic at any lifecycle point. Deep customization without forking core code.
+
+</td>
+<td>
+
+### 🏠 Fully self-hosted
+
+One Docker command and it's running. Data never leaves your server. Works with OpenAI, Claude, DeepSeek, Qwen, GLM, or any compatible API.
 
 </td>
 </tr>
@@ -126,33 +126,19 @@ After startup, visit `http://localhost:8000` and follow the setup wizard to crea
 
 ---
 
-## Capabilities
+## Architecture
 
-| Capability | Description |
-|------------|-------------|
-| 🧠 **Model Orchestration** | No vendor lock-in. Tasks get routed to the right model — expensive ones for precision work, cheap ones for the heavy lifting. Every token counts. |
-| ⚡ **Agent Orchestration** | Complex tasks auto-decomposed, multiple agents running in parallel, context converging on its own. Like an AI project manager running a micro engineering team — you set the goal, it handles the rest. |
-| 🎯 **Skill Marketplace** | Battle-tested prompts, handy scripts, proven workflows — packaged as skills, one-click install for the whole team. One person's experience becomes the team's muscle memory. |
-| 👥 **Team Collaboration** | Everyone gets their own workspace, agents operate in sandboxed environments. Team spaces share skills, files, and sessions — admins keep control, members stay in their lane, no one steps on each other. |
-| 📖 **Knowledge Base** | Feed in docs, specs, and business know-how. When your agent answers, it pulls real sources — no more hallucinating from memory. Every claim has a receipt. |
-| 🛡️ **Security Sandbox** | Fully isolated command execution — minimal permissions, network controls, independent filesystems. Even third-party skills can't touch your host. Security is the foundation, not afterthought. |
-| 🔌 **MCP Toolchain** | Internal APIs, databases, private services, CLI tools — connect them all. Your agent doesn't just suggest — it queries data, invokes services, and takes action. |
-| 🪝 **Plugin Hooks** | Inject logic at any lifecycle point — before/after conversations, on tool calls, on event streams. Deep customization without touching a line of core code. |
-| 📊 **Operations Dashboard** | Who's using what, which model costs the most, how active is your team — one panel to see it all. AI spending you can actually account for. |
+<p align="center">
+  <img src="https://github.com/8treenet/blog/blob/master/img/architecture.svg?raw=true" alt="Raven Architecture" width="90%" />
+</p>
 
 ---
 
-## Small. Beautiful. Uncompromising.
+## Design Principles
 
-Raven is not a KPI project, and it never will be.
+Fewer features is fine, but everything that ships has to earn its place. We're not building a platform stuffed with buttons — just making "team Agent collaboration" one thing done properly.
 
-Every feature, every line of code, even a single button — it earns its place, or it doesn't ship. We build a **sharp, reliable tool**, not a bloated platform padded with checkboxes to please a roadmap committee.
-
-No feature creep. No enterprise vanity.
-
-We don't chase buzzwords or ride hype cycles. What matters to us is **engineering quality and whether the product actually feels good to use**. You open Raven, and where things are and how they work should be obvious at a glance — that's our definition of "good."
-
-> Just a team agent platform that does one thing well.
+Open Raven, and where things are and how they work should be obvious without reading docs. That's our definition of "good."
 
 ---
 
