@@ -148,7 +148,7 @@ Open Raven, and where things are and how they work should be obvious without rea
 
 ## Roadmap
 
-- [ ] Core code open-sourced
+- [ ] `core` directory core code open-sourced (Available at 1k Stars)
 - [ ] Security sandbox
 - [ ] Open API
 
