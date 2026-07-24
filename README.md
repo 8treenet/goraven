@@ -136,7 +136,11 @@ After startup, visit `http://localhost:8000` and follow the setup wizard to crea
 
 ## Design Principles
 
-Fewer features is fine, but everything that ships has to earn its place. We're not building a platform stuffed with buttons — just making "team Agent collaboration" one thing done properly.
+The model is the Way; the Agent is the instrument. The Way evolves on its own — the instrument need only be precise.
+
+We don't do "memory and evolution" — if it can't be distilled into generalizable rules or real-time retrieval augmentation, it's just noise. The model's evolution is the model's own business; the Agent shouldn't overstep.
+
+As a tool, the Agent has only three duties: deterministic workflows, precise tool invocation, and robust execution. Borrow the instrument to let wisdom arise naturally — ask only that the tool fulfill its purpose to the fullest.
 
 Open Raven, and where things are and how they work should be obvious without reading docs. That's our definition of "good."
 
