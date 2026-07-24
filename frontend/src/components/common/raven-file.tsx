@@ -1,9 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { FileText, Play, File, Download, Loader2 } from 'lucide-react'
+import { FileText, Play, File, Download, Loader2, Maximize2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { t, useT } from '@/i18n'
 import { getFileUrl } from '@/api/files'
-import { useUserStore } from '@/stores/user-store'
+import { getCachedBlobUrl, peekCachedBlobUrl } from '@/lib/file-blob-cache'
+import { PreviewDialog } from '@/features/files/PreviewDialog'
+import type { FileItem } from '@/api/types'
 
 interface RavenFileProps {
   kind?: string
@@ -39,27 +41,16 @@ function resolveUrl(path: string): string {
   return getFileUrl(path)
 }
 
-/**
- * Fetch a private file with auth and trigger a browser download.
- */
 async function downloadFile(url: string, filename: string) {
-  const token = useUserStore.getState().token
   try {
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    if (!res.ok) throw new Error('download failed')
-    const blob = await res.blob()
-    const blobUrl = URL.createObjectURL(blob)
+    const { blobUrl } = await getCachedBlobUrl(url)
     const a = document.createElement('a')
     a.href = blobUrl
     a.download = filename
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
-    URL.revokeObjectURL(blobUrl)
   } catch {
-    // Fallback: open in new tab
     window.open(url, '_blank')
   }
 }
@@ -132,20 +123,26 @@ function ImagePreview({ path, name, description }: { path: string; name?: string
   const [blobUrl, setBlobUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(isPrivate)
   const [error, setError] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
 
   useEffect(() => {
     if (!isPrivate) return
     let cancelled = false
-    const token = useUserStore.getState().token
-    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => {
-        if (!res.ok) throw new Error('failed')
-        return res.blob()
-      })
-      .then((blob) => {
+
+    const cached = peekCachedBlobUrl(url)
+    if (cached) {
+      setBlobUrl(cached)
+      setLoading(false)
+      getCachedBlobUrl(url).then(({ blobUrl }) => {
+        if (!cancelled && blobUrl !== cached) setBlobUrl(blobUrl)
+      }).catch(() => {})
+      return () => { cancelled = true }
+    }
+
+    getCachedBlobUrl(url)
+      .then(({ blobUrl }) => {
         if (cancelled) return
-        const objectUrl = URL.createObjectURL(blob)
-        setBlobUrl(objectUrl)
+        setBlobUrl(blobUrl)
         setLoading(false)
       })
       .catch(() => {
@@ -158,14 +155,6 @@ function ImagePreview({ path, name, description }: { path: string; name?: string
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path])
-
-  // Cleanup blob URL on unmount
-  useEffect(() => {
-    return () => {
-      if (blobUrl) URL.revokeObjectURL(blobUrl)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blobUrl])
 
   if (loading) {
     return (
@@ -188,20 +177,44 @@ function ImagePreview({ path, name, description }: { path: string; name?: string
     )
   }
 
+  const displayName = name || getFileName(path)
+  const previewItem: FileItem = {
+    name: displayName,
+    path,
+    isDir: false,
+    size: 0,
+    modTime: new Date().toISOString(),
+  }
+
   return (
-    <figure className="my-3">
-      <img
-        src={blobUrl || url}
-        alt={name || getFileName(path)}
-        className="mx-auto block max-h-80 max-w-full rounded-md object-contain"
+    <>
+      <figure className="group relative my-3 cursor-zoom-in" onClick={() => setDialogOpen(true)}>
+        <img
+          src={blobUrl || url}
+          alt={displayName}
+          className="mx-auto block max-h-80 max-w-full rounded-md object-contain transition-opacity group-hover:opacity-90"
+        />
+        <span className="pointer-events-none absolute right-2 top-2 flex size-7 items-center justify-center rounded-md bg-black/40 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
+          <Maximize2 className="size-3.5" />
+        </span>
+        {(name || description) && (
+          <figcaption className="mt-1.5">
+            {name && <p className="text-xs text-text-2">{name}</p>}
+            {description && <p className="mt-0.5 text-xs text-text-muted">{description}</p>}
+          </figcaption>
+        )}
+      </figure>
+      <PreviewDialog
+        item={dialogOpen ? previewItem : null}
+        type="image"
+        url={blobUrl || (!isPrivate ? url : null)}
+        text={null}
+        sheets={null}
+        loading={isPrivate && !blobUrl && !error}
+        error={error}
+        onClose={() => setDialogOpen(false)}
       />
-      {(name || description) && (
-        <figcaption className="mt-1.5">
-          {name && <p className="text-xs text-text-2">{name}</p>}
-          {description && <p className="mt-0.5 text-xs text-text-muted">{description}</p>}
-        </figcaption>
-      )}
-    </figure>
+    </>
   )
 }
 
@@ -223,20 +236,20 @@ function VideoPlayer({
   const [playing, setPlaying] = useState(false)
   const [blobUrl, setBlobUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [aspectRatio, setAspectRatio] = useState<number | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+
+  const fetchBlob = useCallback(() => {
+    return getCachedBlobUrl(url).then(({ blobUrl }) => blobUrl)
+  }, [url])
 
   const handlePlay = useCallback(() => {
     // For private files, we need to fetch with auth first
     if (isPrivate && !blobUrl) {
       setLoading(true)
-      const token = useUserStore.getState().token
-      fetch(url, { headers: { Authorization: `Bearer ${token}` } })
-        .then((res) => {
-          if (!res.ok) throw new Error('failed')
-          return res.blob()
-        })
-        .then((blob) => {
-          const objectUrl = URL.createObjectURL(blob)
+      fetchBlob()
+        .then((objectUrl) => {
           setBlobUrl(objectUrl)
           setLoading(false)
           // Auto-play after loading
@@ -260,9 +273,36 @@ function VideoPlayer({
       el.pause()
       setPlaying(false)
     }
-  }, [isPrivate, blobUrl, url])
+  }, [isPrivate, blobUrl, url, fetchBlob])
+
+  const handleExpand = useCallback(() => {
+    if (isPrivate && !blobUrl) {
+      setLoading(true)
+      fetchBlob()
+        .then((objectUrl) => {
+          setBlobUrl(objectUrl)
+          setLoading(false)
+          setDialogOpen(true)
+        })
+        .catch(() => setLoading(false))
+      return
+    }
+    setDialogOpen(true)
+  }, [isPrivate, blobUrl, fetchBlob])
 
   const handleEnded = useCallback(() => setPlaying(false), [])
+
+  useEffect(() => {
+    const src = blobUrl || (!isPrivate ? url : null)
+    if (!src) return
+    const el = videoRef.current
+    if (!el) return
+    const onLoaded = () => {
+      if (el.videoWidth && el.videoHeight) setAspectRatio(el.videoWidth / el.videoHeight)
+    }
+    el.addEventListener('loadedmetadata', onLoaded)
+    return () => el.removeEventListener('loadedmetadata', onLoaded)
+  }, [blobUrl, url, isPrivate])
 
   if (loading) {
     return (
@@ -280,33 +320,64 @@ function VideoPlayer({
     )
   }
 
+  const displayName = name || getFileName(path)
+  const previewItem: FileItem = {
+    name: displayName,
+    path,
+    isDir: false,
+    size: 0,
+    modTime: new Date().toISOString(),
+  }
+
   return (
-    <figure className="my-3">
-      <div className="relative overflow-hidden rounded-md border border-border bg-bg-layer-1">
-        <video
-          ref={videoRef}
-          src={blobUrl || (!isPrivate ? url : undefined)}
-          controls={playing}
-          onEnded={handleEnded}
-          className="max-h-80 max-w-full"
-        />
-        {!playing && (
+    <>
+      <figure className="my-3 flex justify-center">
+        <div
+          className="relative max-h-112 w-full overflow-hidden rounded-md border border-border bg-black"
+          style={aspectRatio ? { aspectRatio: String(aspectRatio) } : undefined}
+        >
+          <video
+            ref={videoRef}
+            src={blobUrl || (!isPrivate ? url : undefined)}
+            controls={playing}
+            onEnded={handleEnded}
+            className="block h-full w-full object-contain"
+          />
+          {!playing && (
+            <button
+              onClick={handlePlay}
+              className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-black/20 to-black/40 transition-colors hover:from-black/10 hover:to-black/30"
+            >
+              <span className="flex size-14 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm transition-transform hover:scale-105">
+                <Play className="ml-0.5 size-6 text-white" fill="currentColor" />
+              </span>
+            </button>
+          )}
           <button
-            onClick={handlePlay}
-            className="absolute inset-0 flex items-center justify-center bg-black/30 transition-colors hover:bg-black/20"
+            onClick={(e) => { e.stopPropagation(); handleExpand() }}
+            title={t('common.fullscreen')}
+            className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-md bg-black/40 text-white opacity-0 backdrop-blur-sm transition-opacity hover:bg-black/60 group-hover:opacity-100"
           >
-            <span className="flex size-14 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm transition-transform hover:scale-105">
-              <Play className="ml-0.5 size-6 text-white" fill="currentColor" />
-            </span>
+            <Maximize2 className="size-3.5" />
           </button>
+        </div>
+        {(name || description) && (
+          <figcaption className="mt-1.5">
+            {name && <p className="text-xs text-text-2">{name}</p>}
+            {description && <p className="mt-0.5 text-xs text-text-muted">{description}</p>}
+          </figcaption>
         )}
-      </div>
-      {(name || description) && (
-        <figcaption className="mt-1.5">
-          {name && <p className="text-xs text-text-2">{name}</p>}
-          {description && <p className="mt-0.5 text-xs text-text-muted">{description}</p>}
-        </figcaption>
-      )}
-    </figure>
+      </figure>
+      <PreviewDialog
+        item={dialogOpen ? previewItem : null}
+        type="video"
+        url={blobUrl || (!isPrivate ? url : null)}
+        text={null}
+        sheets={null}
+        loading={isPrivate && !blobUrl && loading}
+        error={false}
+        onClose={() => setDialogOpen(false)}
+      />
+    </>
   )
 }

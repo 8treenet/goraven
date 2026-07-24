@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { t as translate } from '@/i18n'
 import { useUserStore } from '@/stores/user-store'
 import { getAkDownloadUrl } from '@/api/files'
+import { getCachedBlobUrl, peekCachedBlobUrl } from '@/lib/file-blob-cache'
 import type { FileItem } from '@/api/types'
 import {
   getPreviewType,
@@ -38,30 +39,20 @@ export function useFilePreview(options: UseFilePreviewOptions) {
   const [previewError, setPreviewError] = useState(false)
 
   const handleDownload = useCallback(
-    (item: FileItem, currentDir: string) => {
+    async (item: FileItem, currentDir: string) => {
       const filePath = `${currentDir === '/' ? '' : currentDir}/${item.name}`
       const url = buildDownloadUrl(filePath)
-      const token = useUserStore.getState().token
-      fetch(url, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error('Download failed')
-          return res.blob()
-        })
-        .then((blob) => {
-          const blobUrl = URL.createObjectURL(blob)
-          const a = document.createElement('a')
-          a.href = blobUrl
-          a.download = item.name
-          document.body.appendChild(a)
-          a.click()
-          document.body.removeChild(a)
-          URL.revokeObjectURL(blobUrl)
-        })
-        .catch((err: Error) => {
-          toast.error(err.message || translate('files.downloadFailed'))
-        })
+      try {
+        const { blobUrl } = await getCachedBlobUrl(url)
+        const a = document.createElement('a')
+        a.href = blobUrl
+        a.download = item.name
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+      } catch (err: unknown) {
+        toast.error((err instanceof Error ? err.message : '') || translate('files.downloadFailed'))
+      }
     },
     [buildDownloadUrl],
   )
@@ -71,6 +62,24 @@ export function useFilePreview(options: UseFilePreviewOptions) {
       const filePath = `${currentDir === '/' ? '' : currentDir}/${item.name}`
       const ptype = getPreviewType(item)
       const url = buildDownloadUrl(filePath)
+
+      if (!ptype || ptype === 'image' || ptype === 'video' || ptype === 'audio' || ptype === 'pdf') {
+        const cachedUrl = peekCachedBlobUrl(url)
+        if (cachedUrl) {
+          setPreviewItem(item)
+          setPreviewType(ptype)
+          setPreviewText(null)
+          setPreviewSheets(null)
+          setPreviewError(false)
+          setPreviewUrl(cachedUrl)
+          setPreviewLoading(false)
+          getCachedBlobUrl(url).then(({ blobUrl }) => {
+            if (blobUrl !== cachedUrl) setPreviewUrl(blobUrl)
+          }).catch(() => {})
+          return
+        }
+      }
+
       const token = useUserStore.getState().token
 
       setPreviewItem(item)
@@ -127,13 +136,9 @@ export function useFilePreview(options: UseFilePreviewOptions) {
           .catch(() => setPreviewError(true))
           .finally(() => setPreviewLoading(false))
       } else {
-        fetch(url, { headers: bearerHeaders })
-          .then((res) => {
-            if (!res.ok) throw new Error('preview failed')
-            return res.blob()
-          })
-          .then((blob) => {
-            setPreviewUrl(URL.createObjectURL(blob))
+        getCachedBlobUrl(url)
+          .then(({ blobUrl }) => {
+            setPreviewUrl(blobUrl)
           })
           .catch(() => setPreviewError(true))
           .finally(() => setPreviewLoading(false))
@@ -149,10 +154,7 @@ export function useFilePreview(options: UseFilePreviewOptions) {
     setPreviewLoading(false)
     setPreviewText(null)
     setPreviewSheets(null)
-    setPreviewUrl((url) => {
-      if (url) URL.revokeObjectURL(url)
-      return null
-    })
+    setPreviewUrl(null)
   }, [])
 
   return {

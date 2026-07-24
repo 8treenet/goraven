@@ -68,7 +68,7 @@ export function PreviewDialog({ item, type, url, text, sheets, loading, error, o
         <button
           type="button"
           onClick={toggleMaximized}
-          className="absolute right-12 top-4 text-text-3 transition-colors hover:text-text-1"
+          className="absolute right-12 top-4 rounded text-text-3 transition-colors hover:text-text-1 focus:outline-none"
           title={maximized ? t('common.exitFullscreen') : t('common.fullscreen')}
         >
           {maximized ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}

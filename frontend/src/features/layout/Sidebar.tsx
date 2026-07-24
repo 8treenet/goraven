@@ -109,7 +109,7 @@ export function Sidebar({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
   return (
     <aside
       className={cn(
-        'flex h-screen flex-col border-r border-border bg-bg-layer-1 transition-all duration-200 ease-out',
+        'flex h-dvh flex-col border-r border-border bg-bg-layer-1 transition-all duration-200 ease-out',
         collapsed ? 'w-16' : 'w-64',
       )}
     >

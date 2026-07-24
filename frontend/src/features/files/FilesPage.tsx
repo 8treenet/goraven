@@ -25,6 +25,7 @@ import { createTempAccess, getDownloadUrl } from '@/api/files'
 import { shareProject, unshareProject } from '@/api/team-projects'
 import type { FileItem, TeamProjectItem } from '@/api/types'
 import { useFileUpload } from '@/hooks/useFileUpload'
+import { evictCachedBlob } from '@/lib/file-blob-cache'
 import {
   ContextMenu,
   ContextMenuItem,
@@ -274,6 +275,7 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
     const newPath = `${currentDir === '/' ? '' : currentDir}/${renameValue.trim()}`
     rename(oldPath, newPath)
       .then(() => {
+        evictCachedBlob(getDownloadUrl(oldPath))
         setRenamingItem(null)
         toast.success(translate('files.renameSuccess'))
         loadDir(currentDir)
@@ -293,6 +295,8 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
       for (const file of fileArray) {
         try {
           await upload(file, currentDir === '/' ? '' : currentDir)
+          const filePath = `${currentDir === '/' ? '' : currentDir}/${file.name}`
+          evictCachedBlob(getDownloadUrl(filePath))
         } catch {
         }
       }
@@ -394,6 +398,9 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
     const paths = names.map((n) => `${currentDir === '/' ? '' : currentDir}/${n}`)
     deleteFiles(paths)
       .then(() => {
+        for (const p of paths) {
+          evictCachedBlob(getDownloadUrl(p))
+        }
         setSelectedNames(new Set())
         closeDialog()
         toast.success(translate('files.deletedCount').replace('{n}', String(names.length)))

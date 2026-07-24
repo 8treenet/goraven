@@ -16,7 +16,7 @@ function MobileSidebarOverlay() {
 
 export function Component() {
   return (
-    <div className="flex h-screen bg-bg-base">
+    <div className="flex h-dvh bg-bg-base">
       <div className="hidden md:flex">
         <Sidebar variant="desktop" />
       </div>

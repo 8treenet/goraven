@@ -525,6 +525,9 @@ function ChatToolbar({
               <span className="truncate">{project}</span>
             </div>
           ) : null}
+        </div>
+
+        <div className="flex items-center gap-1.5">
           {tokenUsed !== undefined && tokenMax !== undefined && tokenMax > 0 && (
             <span className="text-xs text-highlight tabular-nums">
               {formatTokenK(tokenUsed)} / {formatTokenK(tokenMax)}
