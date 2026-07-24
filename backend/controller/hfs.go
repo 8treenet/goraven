@@ -1,10 +1,12 @@
 package controller
 
 import (
+	"os"
 	"path/filepath"
 	"raven/backend/infra"
 	"raven/backend/service"
 	"raven/backend/vo"
+	"raven/config"
 	"raven/core/sandbox"
 	"strings"
 
@@ -18,15 +20,16 @@ func init() {
 }
 
 type HFSController struct {
-	HFSSev	*service.HFSService
-	Worker	freedom.Worker
-	Request	*infra.Request
+	HFSSev  *service.HFSService
+	Worker  freedom.Worker
+	Request *infra.Request
 }
 
 func (controller *HFSController) BeforeActivation(b freedom.BeforeActivation) {
 
 	b.Handle("GET", "/public/{linkId:string}", "PublicDownload")
 	b.Handle("GET", "/private", "PrivateDownload")
+	b.Handle("GET", "/file/{p:path}", "AbsoluteDownload")
 
 	b.Handle("POST", "/upload/create", "CreateUpload")
 	b.Handle("PUT", "/upload/chunk", "UploadChunk")
@@ -68,8 +71,8 @@ func (controller *HFSController) PublicDownload(linkId string) {
 		controller.Worker.IrisContext().WriteString(err.Error())
 		return
 	}
-	controller.Worker.IrisContext().Header("Cache-Control", "max-age=86400")
-	controller.Worker.IrisContext().SendFile(absPath, fileName)
+
+	infra.ServeFile(controller.Worker.IrisContext(), absPath, fileName)
 }
 
 func (controller *HFSController) PrivateDownload() {
@@ -106,8 +109,40 @@ func (controller *HFSController) PrivateDownload() {
 		return
 	}
 
-	controller.Worker.IrisContext().Header("Cache-Control", "max-age=86400")
-	controller.Worker.IrisContext().SendFile(absPath, filepath.Base(req.Path))
+	infra.ServeFile(controller.Worker.IrisContext(), absPath, filepath.Base(req.Path))
+}
+
+func (controller *HFSController) AbsoluteDownload(p string) {
+	absPath := "/" + strings.TrimPrefix(p, "/")
+	if absPath == "/" {
+		controller.Worker.IrisContext().StatusCode(400)
+		controller.Worker.IrisContext().WriteString("path is required")
+		return
+	}
+	cleanAbs := filepath.Clean(absPath)
+	userSpaceRoot := filepath.Clean(config.Get().Paths.UserSpace)
+	if !strings.HasPrefix(cleanAbs, userSpaceRoot+string(filepath.Separator)) {
+		controller.Worker.IrisContext().StatusCode(403)
+		controller.Worker.IrisContext().WriteString("path is outside user space")
+		return
+	}
+	info, err := os.Stat(cleanAbs)
+	if err != nil {
+		if os.IsNotExist(err) {
+			controller.Worker.IrisContext().StatusCode(404)
+			controller.Worker.IrisContext().WriteString("File not found")
+			return
+		}
+		controller.Worker.IrisContext().StatusCode(500)
+		controller.Worker.IrisContext().WriteString(err.Error())
+		return
+	}
+	if info.IsDir() {
+		controller.Worker.IrisContext().StatusCode(400)
+		controller.Worker.IrisContext().WriteString("path is a directory")
+		return
+	}
+	infra.ServeFile(controller.Worker.IrisContext(), cleanAbs, filepath.Base(cleanAbs))
 }
 
 func (controller *HFSController) CreateUpload() freedom.Result {
