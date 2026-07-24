@@ -140,7 +140,7 @@ The model is the Way; the Agent is the instrument. The Way evolves on its own �
 
 We don't do "memory and evolution" — if it can't be distilled into generalizable rules or real-time retrieval augmentation, it's just noise. The model's evolution is the model's own business; the Agent shouldn't overstep.
 
-As a tool, the Agent has only three duties: deterministic workflows, precise tool invocation, and robust execution. Borrow the instrument to let wisdom arise naturally — ask only that the tool fulfill its purpose to the fullest.
+As a tool, the Agent has only three duties: deterministic workflows, precise tool invocation, and robust execution. Borrow the instrument to let wisdom arise naturally — a true instrument is one that fulfills its purpose to the fullest.
 
 Open Raven, and where things are and how they work should be obvious without reading docs. That's our definition of "good."
 
