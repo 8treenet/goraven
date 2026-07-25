@@ -27,7 +27,7 @@ export const useAppStore = create<AppState>()(
       setTheme: (theme) => set({ theme }),
     }),
     {
-      name: 'raven-app',
+      name: 'goraven-app',
       partialize: (state) => ({
         language: state.language,
         theme: state.theme,

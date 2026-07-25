@@ -1,13 +1,15 @@
 package controller
 
 import (
+	"errors"
+	"goraven/backend/infra"
+	"goraven/backend/service"
+	"goraven/backend/vo"
+	"goraven/backend/vo/errs"
+	"goraven/config"
+	"goraven/core/sandbox"
 	"os"
 	"path/filepath"
-	"raven/backend/infra"
-	"raven/backend/service"
-	"raven/backend/vo"
-	"raven/config"
-	"raven/core/sandbox"
 	"strings"
 
 	"github.com/8treenet/freedom"
@@ -15,7 +17,7 @@ import (
 
 func init() {
 	freedom.Prepare(func(initiator freedom.Initiator) {
-		initiator.BindController("/hfs", &HFSController{}, infra.NewAuth(true, "/public"))
+		initiator.BindController("/hfs", &HFSController{}, infra.NewAuth(true, "/public", "/ak"))
 	})
 }
 
@@ -28,8 +30,13 @@ type HFSController struct {
 func (controller *HFSController) BeforeActivation(b freedom.BeforeActivation) {
 
 	b.Handle("GET", "/public/{linkId:string}", "PublicDownload")
-	b.Handle("GET", "/private", "PrivateDownload")
+	b.Handle("GET", "/private/{p:path}", "PrivateDownload")
+
 	b.Handle("GET", "/file/{p:path}", "AbsoluteDownload")
+
+	b.Handle("GET", "/ak/{ak:string}/{p:path}", "AkDownload")
+
+	b.Handle("POST", "/access", "CreateTempAccess")
 
 	b.Handle("POST", "/upload/create", "CreateUpload")
 	b.Handle("PUT", "/upload/chunk", "UploadChunk")
@@ -71,18 +78,15 @@ func (controller *HFSController) PublicDownload(linkId string) {
 		controller.Worker.IrisContext().WriteString(err.Error())
 		return
 	}
-
 	infra.ServeFile(controller.Worker.IrisContext(), absPath, fileName)
 }
 
-func (controller *HFSController) PrivateDownload() {
+func (controller *HFSController) PrivateDownload(p string) {
 
-	var req struct {
-		Path string `url:"path" validate:"required"`
-	}
-	if err := controller.Request.ReadQuery(&req, true); err != nil {
+	reqPath := "/" + strings.TrimPrefix(p, "/")
+	if reqPath == "/" {
 		controller.Worker.IrisContext().StatusCode(400)
-		controller.Worker.IrisContext().WriteString(err.Error())
+		controller.Worker.IrisContext().WriteString("path is required")
 		return
 	}
 	sb, sberr := sandbox.NewSandbox(controller.Request.GetUserName())
@@ -91,7 +95,7 @@ func (controller *HFSController) PrivateDownload() {
 		controller.Worker.IrisContext().WriteString(sberr.Error())
 		return
 	}
-	exists, err := sb.Exists(filepath.Join(sb.GetWorkspace(), req.Path))
+	exists, err := sb.Exists(filepath.Join(sb.GetWorkspace(), reqPath))
 	if err != nil {
 		controller.Worker.IrisContext().StatusCode(500)
 		controller.Worker.IrisContext().WriteString(err.Error())
@@ -102,14 +106,14 @@ func (controller *HFSController) PrivateDownload() {
 		controller.Worker.IrisContext().WriteString("File not found")
 		return
 	}
-	absPath, err := sb.Download(filepath.Join(sb.GetWorkspace(), req.Path))
+	absPath, err := sb.Download(filepath.Join(sb.GetWorkspace(), reqPath))
 	if err != nil {
 		controller.Worker.IrisContext().StatusCode(400)
 		controller.Worker.IrisContext().WriteString(err.Error())
 		return
 	}
 
-	infra.ServeFile(controller.Worker.IrisContext(), absPath, filepath.Base(req.Path))
+	infra.ServeFile(controller.Worker.IrisContext(), absPath, filepath.Base(reqPath))
 }
 
 func (controller *HFSController) AbsoluteDownload(p string) {
@@ -143,6 +147,46 @@ func (controller *HFSController) AbsoluteDownload(p string) {
 		return
 	}
 	infra.ServeFile(controller.Worker.IrisContext(), cleanAbs, filepath.Base(cleanAbs))
+}
+
+func (controller *HFSController) CreateTempAccess() freedom.Result {
+	var req vo.TempAccessReq
+	if err := controller.Request.ReadJSON(&req, true); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+
+	resp, err := controller.HFSSev.CreateTempAccess(controller.Request.GetUserId(), controller.Request.GetUserName(), &req)
+	if err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+
+	return &infra.JSONResponse{Object: resp}
+}
+
+func (controller *HFSController) AkDownload(ak string, p string) {
+	ctx := controller.Worker.IrisContext()
+	reqPath := "/" + strings.TrimPrefix(p, "/")
+
+	absPath, err := controller.HFSSev.ResolveAkDownload(ak, reqPath)
+	if err != nil {
+		status := 403
+		if errors.Is(err, errs.ErrTempAccessFileNotFound) {
+			status = 404
+		} else if errors.Is(err, errs.ErrTempAccessNotFile) {
+			status = 400
+		}
+		ctx.StatusCode(status)
+		ctx.WriteString(err.Error())
+		return
+	}
+
+	ctx.Header("Access-Control-Allow-Origin", "*")
+	ctx.Header("Cache-Control", "no-cache")
+
+	if err := ctx.ServeFile(absPath, false); err != nil {
+		ctx.StatusCode(500)
+		ctx.WriteString(err.Error())
+	}
 }
 
 func (controller *HFSController) CreateUpload() freedom.Result {

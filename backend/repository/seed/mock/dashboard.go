@@ -1,20 +1,17 @@
-package seed
+package mock
 
 import (
 	"time"
 
-	"raven/backend/vo"
+	"goraven/backend/vo"
 )
 
-// tokenTrendOffsets 定义 30 天 Token 趋势的固定偏移量与数值
-// daysAgo 为距今天的天数（0=今天），prompt/completion 为固定值
-// 刷新页面数据不变，但日期始终跟随当前时间
 var tokenTrendOffsets = []struct {
 	daysAgo          int
 	promptTokens     int64
 	completionTokens int64
 }{
-	// 早期（远→近，与数据库 ORDER BY statDate ASC 一致）
+
 	{29, 15000, 6000},
 	{28, 12000, 5000},
 	{27, 17000, 7000},
@@ -38,7 +35,7 @@ var tokenTrendOffsets = []struct {
 	{9, 20000, 8000},
 	{8, 25000, 10000},
 	{7, 32000, 13000},
-	// 近一周
+
 	{6, 28000, 11000},
 	{5, 35000, 14000},
 	{4, 48000, 20000},
@@ -48,17 +45,14 @@ var tokenTrendOffsets = []struct {
 	{0, 52000, 22000},
 }
 
-// offsetDate 返回 daysAgo 天前的日期字符串 YYYY-MM-DD
 func offsetDate(daysAgo int) string {
 	now := time.Now()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	return today.AddDate(0, 0, -daysAgo).Format("2006-01-02")
 }
 
-// BuildUserDashboard 构建用户仪表盘 mock 数据
-// 日期基于当前时间动态生成，数值固定不变，刷新不跳动
 func BuildUserDashboard() *vo.UserDashboardRsp {
-	// ── Token 趋势（30 天）──
+
 	tokenTrend := make([]vo.TokenTrendItem, 0, 30)
 	for _, t := range tokenTrendOffsets {
 		tokenTrend = append(tokenTrend, vo.TokenTrendItem{
@@ -68,7 +62,6 @@ func BuildUserDashboard() *vo.UserDashboardRsp {
 		})
 	}
 
-	// ── Sparkline（近 7 天）──
 	sparkline := make([]vo.SparklineItem, 0, 7)
 	for _, t := range tokenTrendOffsets {
 		if t.daysAgo > 6 {
@@ -80,7 +73,6 @@ func BuildUserDashboard() *vo.UserDashboardRsp {
 		})
 	}
 
-	// ── Overview 聚合 ──
 	var todayTokens, weekTokens, totalTokens int64
 	for _, t := range tokenTrendOffsets {
 		sum := t.promptTokens + t.completionTokens
@@ -93,7 +85,6 @@ func BuildUserDashboard() *vo.UserDashboardRsp {
 		totalTokens += sum
 	}
 
-	// ── 工具使用排行（近 7 天汇总）──
 	skillUsageRank := []vo.ToolUsageRankItem{
 		{Name: "financial-report-analyzer", Count: 36},
 		{Name: "data-viz-assistant", Count: 27},
@@ -130,11 +121,10 @@ func BuildUserDashboard() *vo.UserDashboardRsp {
 		{Name: "copy_file", Count: 3},
 	}
 
-	// ── 存储空间 ──
 	storageStats := vo.UserStorageStats{
-		UsedBytes:  2_150_000_000,  // ~2 GB
-		FreeBytes:  47_850_000_000, // ~44.6 GB
-		TotalBytes: 50_000_000_000, // ~46.6 GB
+		UsedBytes:  2_150_000_000,
+		FreeBytes:  47_850_000_000,
+		TotalBytes: 50_000_000_000,
 		Items: []vo.StorageUsageItem{
 			{Name: "documents", BytesSize: 1_200_000_000, Percentage: 2.4},
 			{Name: "projects", BytesSize: 680_000_000, Percentage: 1.36},
@@ -147,12 +137,13 @@ func BuildUserDashboard() *vo.UserDashboardRsp {
 
 	return &vo.UserDashboardRsp{
 		Overview: vo.UserDashboardOverview{
-			TodayTokens:   todayTokens,
-			WeekTokens:    weekTokens,
-			TotalTokens:   totalTokens,
-			TotalSessions: 12,
-			NewSessions:   3,
-			Sparkline:     sparkline,
+			TodayTokens:     todayTokens,
+			WeekTokens:      weekTokens,
+			TotalTokens:     totalTokens,
+			DailyTokenLimit: 20,
+			TotalSessions:   12,
+			NewSessions:     3,
+			Sparkline:       sparkline,
 		},
 		SkillUsageRank: skillUsageRank,
 		McpUsageRank:   mcpUsageRank,
@@ -161,12 +152,6 @@ func BuildUserDashboard() *vo.UserDashboardRsp {
 	}
 }
 
-// ──────────────────────────────────────────────
-// 管理员仪表盘 mock 数据
-// ──────────────────────────────────────────────
-
-// activeUserTrendOffsets 定义 30 天活跃用户趋势的固定偏移量与数值
-// daysAgo 为距今天的天数，count 为当日去重活跃用户数
 var activeUserTrendOffsets = []struct {
 	daysAgo int
 	count   int64
@@ -203,10 +188,8 @@ var activeUserTrendOffsets = []struct {
 	{0, 14},
 }
 
-// BuildAdminDashboard 构建管理员仪表盘 mock 数据
-// 日期基于当前时间动态生成，数值固定不变，刷新不跳动
 func BuildAdminDashboard() *vo.AdminDashboardRsp {
-	// ── Token 趋势（30 天）──
+
 	tokenTrend := make([]vo.TokenTrendItem, 0, 30)
 	for _, t := range tokenTrendOffsets {
 		tokenTrend = append(tokenTrend, vo.TokenTrendItem{
@@ -216,7 +199,6 @@ func BuildAdminDashboard() *vo.AdminDashboardRsp {
 		})
 	}
 
-	// ── Sparkline（近 7 天）──
 	sparkline := make([]vo.SparklineItem, 0, 7)
 	for _, t := range tokenTrendOffsets {
 		if t.daysAgo > 6 {
@@ -228,7 +210,6 @@ func BuildAdminDashboard() *vo.AdminDashboardRsp {
 		})
 	}
 
-	// ── Overview 聚合 ──
 	var todayTokens, weekTokens int64
 	var thisWeekActiveUsers, lastWeekActiveUsers int
 	for _, t := range tokenTrendOffsets {
@@ -249,13 +230,11 @@ func BuildAdminDashboard() *vo.AdminDashboardRsp {
 		}
 	}
 
-	// 环比变化率
 	var activeUsersDiff float64
 	if lastWeekActiveUsers > 0 {
 		activeUsersDiff = float64(thisWeekActiveUsers-lastWeekActiveUsers) / float64(lastWeekActiveUsers) * 100
 	}
 
-	// ── 工具使用排行（近 7 天汇总）──
 	skillUsageRank := []vo.ToolUsageRankItem{
 		{Name: "financial-report-analyzer", Count: 142},
 		{Name: "data-viz-assistant", Count: 97},
@@ -309,8 +288,6 @@ func BuildAdminDashboard() *vo.AdminDashboardRsp {
 	}
 }
 
-// BuildAdminTokenTrend 构建管理员 Token 趋势 mock 数据
-// days 参数控制返回的天数范围，日期基于当前时间
 func BuildAdminTokenTrend(days int) *vo.TokenTrendRsp {
 	if days <= 0 {
 		days = 30
@@ -319,7 +296,6 @@ func BuildAdminTokenTrend(days int) *vo.TokenTrendRsp {
 		days = 90
 	}
 
-	// 30 天以内的数据直接从 tokenTrendOffsets 截取
 	if days <= len(tokenTrendOffsets) {
 		items := make([]vo.TokenTrendItem, 0, days)
 		for _, t := range tokenTrendOffsets {
@@ -335,8 +311,6 @@ func BuildAdminTokenTrend(days int) *vo.TokenTrendRsp {
 		return &vo.TokenTrendRsp{Items: items}
 	}
 
-	// 超过 30 天时，先用早期低活跃数据填充 31~90 天，再追加 30 天数据
-	// 顺序：最旧在前（daysAgo 大）→ 最新在后（daysAgo 小），保证日期升序
 	earlyPattern := []struct {
 		prompt, completion int64
 	}{
@@ -350,7 +324,7 @@ func BuildAdminTokenTrend(days int) *vo.TokenTrendRsp {
 	}
 
 	items := make([]vo.TokenTrendItem, 0, days)
-	// 早期：从 daysAgo=days-1（最旧）到 daysAgo=30
+
 	for i := days - 1; i >= len(tokenTrendOffsets); i-- {
 		p := earlyPattern[i%len(earlyPattern)]
 		items = append(items, vo.TokenTrendItem{
@@ -359,7 +333,7 @@ func BuildAdminTokenTrend(days int) *vo.TokenTrendRsp {
 			CompletionTokens: p.completion,
 		})
 	}
-	// 近 30 天：daysAgo 29→0（tokenTrendOffsets 本身已是旧→新顺序）
+
 	for _, t := range tokenTrendOffsets {
 		items = append(items, vo.TokenTrendItem{
 			Date:             offsetDate(t.daysAgo),
@@ -371,8 +345,6 @@ func BuildAdminTokenTrend(days int) *vo.TokenTrendRsp {
 	return &vo.TokenTrendRsp{Items: items}
 }
 
-// BuildAdminActiveUserTrend 构建管理员活跃用户趋势 mock 数据
-// days 参数控制返回的天数范围，日期基于当前时间
 func BuildAdminActiveUserTrend(days int) *vo.ActiveUserTrendRsp {
 	if days <= 0 {
 		days = 30
@@ -381,7 +353,6 @@ func BuildAdminActiveUserTrend(days int) *vo.ActiveUserTrendRsp {
 		days = 90
 	}
 
-	// 30 天以内的数据直接从 activeUserTrendOffsets 截取
 	if days <= len(activeUserTrendOffsets) {
 		items := make([]vo.ActiveUserTrendItem, 0, days)
 		for _, t := range activeUserTrendOffsets {
@@ -396,19 +367,17 @@ func BuildAdminActiveUserTrend(days int) *vo.ActiveUserTrendRsp {
 		return &vo.ActiveUserTrendRsp{Items: items}
 	}
 
-	// 超过 30 天时，先用早期低活跃数据填充 31~90 天，再追加 30 天数据
-	// 顺序：最旧在前（daysAgo 大）→ 最新在后（daysAgo 小），保证日期升序
 	earlyPattern := []int64{2, 1, 3, 1, 2, 2, 1}
 
 	items := make([]vo.ActiveUserTrendItem, 0, days)
-	// 早期：从 daysAgo=days-1（最旧）到 daysAgo=30
+
 	for i := days - 1; i >= len(activeUserTrendOffsets); i-- {
 		items = append(items, vo.ActiveUserTrendItem{
 			Date:  offsetDate(i),
 			Count: earlyPattern[i%len(earlyPattern)],
 		})
 	}
-	// 近 30 天：daysAgo 29→0（activeUserTrendOffsets 本身已是旧→新顺序）
+
 	for _, t := range activeUserTrendOffsets {
 		items = append(items, vo.ActiveUserTrendItem{
 			Date:  offsetDate(t.daysAgo),
@@ -419,8 +388,6 @@ func BuildAdminActiveUserTrend(days int) *vo.ActiveUserTrendRsp {
 	return &vo.ActiveUserTrendRsp{Items: items}
 }
 
-// BuildUserTokenTrend 构建用户 Token 趋势 mock 数据
-// days 参数控制返回的天数范围，日期基于当前时间
 func BuildUserTokenTrend(days int) *vo.TokenTrendRsp {
 	if days <= 0 {
 		days = 30
@@ -429,7 +396,6 @@ func BuildUserTokenTrend(days int) *vo.TokenTrendRsp {
 		days = 90
 	}
 
-	// 30 天以内的数据直接从 tokenTrendOffsets 截取
 	if days <= len(tokenTrendOffsets) {
 		items := make([]vo.TokenTrendItem, 0, days)
 		for _, t := range tokenTrendOffsets {
@@ -445,8 +411,6 @@ func BuildUserTokenTrend(days int) *vo.TokenTrendRsp {
 		return &vo.TokenTrendRsp{Items: items}
 	}
 
-	// 超过 30 天时，先用早期低活跃数据填充 31~90 天，再追加 30 天数据
-	// 顺序：最旧在前（daysAgo 大）→ 最新在后（daysAgo 小），保证日期升序
 	earlyPattern := []struct {
 		prompt, completion int64
 	}{
@@ -460,7 +424,7 @@ func BuildUserTokenTrend(days int) *vo.TokenTrendRsp {
 	}
 
 	items := make([]vo.TokenTrendItem, 0, days)
-	// 早期：从 daysAgo=days-1（最旧）到 daysAgo=30
+
 	for i := days - 1; i >= len(tokenTrendOffsets); i-- {
 		p := earlyPattern[i%len(earlyPattern)]
 		items = append(items, vo.TokenTrendItem{
@@ -469,7 +433,7 @@ func BuildUserTokenTrend(days int) *vo.TokenTrendRsp {
 			CompletionTokens: p.completion,
 		})
 	}
-	// 近 30 天：daysAgo 29→0（tokenTrendOffsets 本身已是旧→新顺序）
+
 	for _, t := range tokenTrendOffsets {
 		items = append(items, vo.TokenTrendItem{
 			Date:             offsetDate(t.daysAgo),
@@ -481,8 +445,6 @@ func BuildUserTokenTrend(days int) *vo.TokenTrendRsp {
 	return &vo.TokenTrendRsp{Items: items}
 }
 
-// BuildAdminModelUsage 构建管理员模型使用分布 Mock 数据
-// days 参数仅影响返回的 items 数量（以模拟时间切片效果），数据内容与日期无关
 func BuildAdminModelUsage(days int) *vo.ModelUsageRsp {
 	items := []vo.ModelUsageItem{
 		{ModelName: "deepseek-v4-flash", TokenCount: 385000, Percentage: 39.9, PromptTokens: 220000, CompletionTokens: 165000},
@@ -497,8 +459,6 @@ func BuildAdminModelUsage(days int) *vo.ModelUsageRsp {
 	return &vo.ModelUsageRsp{Items: items}
 }
 
-// BuildUserModelUsage 构建用户模型使用分布 Mock 数据
-// days 参数仅影响返回的 items 数量（以模拟时间切片效果），数据内容与日期无关
 func BuildUserModelUsage(days int) *vo.ModelUsageRsp {
 	items := []vo.ModelUsageItem{
 		{ModelName: "deepseek-v4-flash", TokenCount: 1250000, Percentage: 32.1, PromptTokens: 700000, CompletionTokens: 550000},
@@ -515,8 +475,6 @@ func BuildUserModelUsage(days int) *vo.ModelUsageRsp {
 	return &vo.ModelUsageRsp{Items: items}
 }
 
-// BuildAdminUserTokenRank 构建管理员用户 Token 消耗排行 Mock 数据
-// days 参数仅影响返回的 items 数量（以模拟时间切片效果），数据内容与日期无关
 func BuildAdminUserTokenRank(days int) *vo.UserTokenRankRsp {
 	items := []vo.UserTokenRankItem{
 		{UserId: "90a431bee756432492c134f510bad949", Username: "demo_admin", TokenCount: 965000, Percentage: 24.8},

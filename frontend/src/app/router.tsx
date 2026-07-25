@@ -4,16 +4,16 @@ function lazyImport<T>(importer: () => Promise<T>): () => Promise<T> {
   return () =>
     importer().then(
       (mod) => {
-        sessionStorage.removeItem('raven:chunk-reload')
+        sessionStorage.removeItem('goraven:chunk-reload')
         return mod
       },
       (err) => {
-        if (!sessionStorage.getItem('raven:chunk-reload')) {
-          sessionStorage.setItem('raven:chunk-reload', '1')
+        if (!sessionStorage.getItem('goraven:chunk-reload')) {
+          sessionStorage.setItem('goraven:chunk-reload', '1')
           window.location.reload()
           return new Promise<T>(() => {})
         }
-        sessionStorage.removeItem('raven:chunk-reload')
+        sessionStorage.removeItem('goraven:chunk-reload')
         throw err
       },
     )

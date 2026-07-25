@@ -1,6 +1,6 @@
 package iface
 
-import "raven/backend/po"
+import "goraven/backend/po"
 
 type MessageRepo interface {
 	SaveChatMessage(sessionId string, msg *po.Message) error

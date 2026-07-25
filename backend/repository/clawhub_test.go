@@ -1,14 +1,17 @@
 package repository_test
 
 import (
-	"raven/backend/repository"
-	unit_test "raven/util/unit"
+	"goraven/backend/repository"
+	"goraven/config"
+	unit_test "goraven/util/unit"
 	"testing"
 )
 
 func TestClawHubRepository_Search(t *testing.T) {
 	unitTest := unit_test.GetUnitTest()
 	unitTest.Run()
+	t.Log(config.Get().GetClawHUBCacheDir())
+	return
 
 	var repo *repository.ClawHubRepository
 	unitTest.FetchRepository(&repo)

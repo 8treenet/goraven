@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"raven/backend/infra"
-	"raven/backend/service"
+	"goraven/backend/infra"
+	"goraven/backend/service"
 
 	"github.com/8treenet/freedom"
 )

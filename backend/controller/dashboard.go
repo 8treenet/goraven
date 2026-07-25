@@ -1,10 +1,10 @@
 package controller
 
 import (
-	"raven/backend/infra"
-	"raven/backend/repository/seed"
-	"raven/backend/service"
-	"raven/config"
+	"goraven/backend/infra"
+	"goraven/backend/repository/seed/mock"
+	"goraven/backend/service"
+	"goraven/config"
 
 	"github.com/8treenet/freedom"
 )
@@ -28,7 +28,7 @@ func (controller *DashboardController) BeforeActivation(b freedom.BeforeActivati
 
 func (controller *DashboardController) Dashboard() freedom.Result {
 	if config.Get().Behavior.PreviewUser != "" {
-		return &infra.JSONResponse{Object: seed.BuildUserDashboard()}
+		return &infra.JSONResponse{Object: mock.BuildUserDashboard()}
 	}
 
 	userId := controller.Request.GetUserId()
@@ -52,7 +52,7 @@ func (controller *DashboardController) GetTokenTrend() freedom.Result {
 	}
 
 	if config.Get().Behavior.PreviewUser != "" {
-		return &infra.JSONResponse{Object: seed.BuildUserTokenTrend(req.Days)}
+		return &infra.JSONResponse{Object: mock.BuildUserTokenTrend(req.Days)}
 	}
 
 	userId := controller.Request.GetUserId()
@@ -77,7 +77,7 @@ func (controller *DashboardController) GetModelUsage() freedom.Result {
 	}
 
 	if config.Get().Behavior.PreviewUser != "" {
-		return &infra.JSONResponse{Object: seed.BuildUserModelUsage(req.Days)}
+		return &infra.JSONResponse{Object: mock.BuildUserModelUsage(req.Days)}
 	}
 
 	userId := controller.Request.GetUserId()

@@ -7,7 +7,7 @@ import { getCachedBlobUrl, peekCachedBlobUrl } from '@/lib/file-blob-cache'
 import { PreviewDialog } from '@/features/files/PreviewDialog'
 import type { FileItem } from '@/api/types'
 
-interface RavenFileProps {
+interface GoRavenFileProps {
   kind?: string
   path?: string
   name?: string
@@ -29,10 +29,10 @@ function getFileExtension(path: string): string {
 }
 
 /**
- * Resolve a path from <raven-file> into a usable URL.
+ * Resolve a path from <goraven-file> into a usable URL.
  * - Already a full URL (http/https) → use as-is
  * - Static asset (/assets/...) → use as-is (no auth required)
- * - Filesystem absolute path (e.g. /raven/data/users/<user>/documents/foo.pdf)
+ * - Filesystem absolute path (e.g. /goraven/data/users/<user>/documents/foo.pdf)
  *   → use /api/hfs/file/<abs-path>; cross-user sharing supported.
  */
 function resolveUrl(path: string): string {
@@ -55,7 +55,7 @@ async function downloadFile(url: string, filename: string) {
   }
 }
 
-export function RavenFile({ kind = 'doc', path = '', name, description }: RavenFileProps) {
+export function GoRavenFile({ kind = 'doc', path = '', name, description }: GoRavenFileProps) {
   const t = useT()
 
   if (kind === 'image') {

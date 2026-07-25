@@ -1,9 +1,9 @@
 package controller
 
 import (
-	"raven/backend/infra"
-	"raven/backend/service"
-	"raven/backend/vo"
+	"goraven/backend/infra"
+	"goraven/backend/service"
+	"goraven/backend/vo"
 	"strings"
 
 	"github.com/8treenet/freedom"
@@ -21,13 +21,14 @@ type TeamProjectController struct {
 	Request *infra.Request
 }
 
-// BeforeActivation 注册路由
 func (controller *TeamProjectController) BeforeActivation(b freedom.BeforeActivation) {
+
 	b.Handle("GET", "/list", "List")
 	b.Handle("GET", "/{id:int}", "Get")
 	b.Handle("POST", "/share", "Share")
 	b.Handle("DELETE", "/{id:int}", "Unshare")
 	b.Handle("PUT", "/{id:int}", "UpdateDescription")
+
 	b.Handle("GET", "/{id:int}/list", "ListFiles")
 	b.Handle("POST", "/{id:int}/upload", "Upload")
 	b.Handle("DELETE", "/{id:int}/delete", "Delete")
@@ -36,7 +37,7 @@ func (controller *TeamProjectController) BeforeActivation(b freedom.BeforeActiva
 	b.Handle("POST", "/{id:int}/compress", "Compress")
 	b.Handle("POST", "/{id:int}/decompress", "Decompress")
 	b.Handle("GET", "/{id:int}/usage", "Usage")
-	// 下载与预览
+
 	b.Handle("GET", "/{id:int}/download/{p:path}", "Download")
 	b.Handle("POST", "/{id:int}/access", "CreateTempAccess")
 }

@@ -9,28 +9,25 @@ import (
 	"strings"
 )
 
-// IsSystemZipEntry 判断是否为系统/隐藏元数据条目
-// 包括：__MACOSX/、._*、.DS_Store、以及 . 开头的顶层文件或目录
 func IsSystemZipEntry(name string) bool {
-	// __MACOSX 目录
+
 	if strings.HasPrefix(name, "__MACOSX/") {
 		return true
 	}
-	// macOS 资源分支文件
+
 	if strings.HasPrefix(name, "._") || strings.Contains(name, "/._") {
 		return true
 	}
-	// 检查首个路径组件是否以 . 开头（隐藏文件/目录）
+
 	firstSlash := strings.Index(name, "/")
 	if firstSlash == -1 {
-		// 根级文件
+
 		return strings.HasPrefix(name, ".")
 	}
-	// 根级目录
+
 	return strings.HasPrefix(name[:firstSlash], ".")
 }
 
-// ExtractZip 解压 zip 到目标目录（包含 Zip Slip 安全校验）
 func ExtractZip(zipPath, destDir string) error {
 	reader, err := zip.OpenReader(zipPath)
 	if err != nil {
@@ -43,7 +40,7 @@ func ExtractZip(zipPath, destDir string) error {
 	}
 
 	for _, f := range reader.File {
-		// 跳过 macOS Finder 生成的元数据目录
+
 		if strings.HasPrefix(f.Name, "__MACOSX/") {
 			continue
 		}

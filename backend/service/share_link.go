@@ -2,14 +2,14 @@ package service
 
 import (
 	"fmt"
+	"goraven/backend/infra"
+	"goraven/backend/po"
+	"goraven/backend/repository"
+	"goraven/backend/vo"
+	"goraven/backend/vo/errs"
+	"goraven/config"
+	"goraven/util"
 	"html"
-	"raven/backend/infra"
-	"raven/backend/po"
-	"raven/backend/repository"
-	"raven/backend/vo"
-	"raven/backend/vo/errs"
-	"raven/config"
-	"raven/util"
 	"strings"
 	"time"
 
@@ -29,7 +29,6 @@ func init() {
 	})
 }
 
-// ShareLinkService 对话分享链接服务
 type ShareLinkService struct {
 	SessionService
 	ShareLinkRepo *repository.ShareLinkRepository
@@ -37,7 +36,6 @@ type ShareLinkService struct {
 	SysCfgRepo    *repository.SystemSettingRepository
 }
 
-// expiresInMapping 过期时间选项到 Duration 的映射
 var expiresInMapping = map[string]time.Duration{
 	"1h":  time.Hour,
 	"24h": 24 * time.Hour,
@@ -45,8 +43,6 @@ var expiresInMapping = map[string]time.Duration{
 	"30d": 30 * 24 * time.Hour,
 }
 
-// buildShareTitle 生成分享标题
-// 优先使用传入的 title，其次取 session.title，最后取用户第一条消息前 30 字
 func (service *ShareLinkService) buildShareTitle(title string, session *po.Session) string {
 	if strings.TrimSpace(title) != "" {
 		title = strings.TrimSpace(title)
@@ -60,7 +56,6 @@ func (service *ShareLinkService) buildShareTitle(title string, session *po.Sessi
 		return session.Title
 	}
 
-	// 取用户第一条消息前 30 字
 	firstMsg, err := service.MsgSessionRepo.GetFirstUserMessage(session.SessionId)
 	if err == nil && firstMsg.Content != "" {
 		content := firstMsg.Content
@@ -71,18 +66,16 @@ func (service *ShareLinkService) buildShareTitle(title string, session *po.Sessi
 		return content
 	}
 
-	return "Raven 对话分享"
+	return "GoRaven 对话分享"
 }
 
-// CreateShare 创建分享链接
 func (service *ShareLinkService) CreateShare(userId string, sessionId string, req *vo.CreateShareReq) (*vo.ShareLinkRsp, error) {
-	// 校验会话归属
+
 	session, err := service.MsgSessionRepo.GetUserSession(sessionId, userId)
 	if err != nil {
 		return nil, errs.ErrShareSessionNotFound
 	}
 
-	// 计算过期时间
 	expiresIn := req.ExpiresIn
 	if expiresIn == "" {
 		expiresIn = "24h"
@@ -99,10 +92,8 @@ func (service *ShareLinkService) CreateShare(userId string, sessionId string, re
 
 	title := service.buildShareTitle(req.Title, session)
 
-	// 如果系统域名未配置，尝试用前端传过来的域名自动补全
 	service.autoConfigureDomain(req.Domain)
 
-	// 若已有有效分享，更新它
 	existing, err := service.ShareLinkRepo.GetSessionShare(sessionId, userId)
 	if err == nil && existing != nil && !existing.IsExpired() {
 		updated, err := service.ShareLinkRepo.UpdateShareLink(existing.ShareId, title, shareType, time.Now().Add(duration))
@@ -145,7 +136,6 @@ func (service *ShareLinkService) CreateShare(userId string, sessionId string, re
 	}, nil
 }
 
-// GetSessionShare 获取会话的分享链接
 func (service *ShareLinkService) GetSessionShare(sessionId string, userId string) (*vo.ShareLinkRsp, error) {
 	shareLink, err := service.ShareLinkRepo.GetSessionShare(sessionId, userId)
 	if err != nil {
@@ -163,12 +153,10 @@ func (service *ShareLinkService) GetSessionShare(sessionId string, userId string
 	}, nil
 }
 
-// DeleteShare 删除会话的分享链接
 func (service *ShareLinkService) DeleteShare(sessionId string, userId string) error {
 	return service.ShareLinkRepo.DeleteShareLink(sessionId, userId)
 }
 
-// ListUserShares 获取用户分享链接分页列表
 func (service *ShareLinkService) ListUserShares(userId string, req *vo.UserShareListReq) (*infra.PageResponse, error) {
 	shareLinks, pr, err := service.ShareLinkRepo.ListUserShareLinks(userId, req)
 	if err != nil {
@@ -197,7 +185,6 @@ func (service *ShareLinkService) ListUserShares(userId string, req *vo.UserShare
 	}, nil
 }
 
-// GetShareInfo 获取分享信息（无鉴权）
 func (service *ShareLinkService) GetShareInfo(shareId string) (*vo.PublicShareRsp, error) {
 	shareLink, err := service.ShareLinkRepo.GetShareLink(shareId)
 	if err != nil {
@@ -314,19 +301,19 @@ func (service *ShareLinkService) GetShareOGData(shareId string, ctx iris.Context
 
 	title := strings.TrimSpace(shareLink.Title)
 	if creator == "" {
-		creator = "Raven"
+		creator = "GoRaven"
 	}
 	var description string
 	if lang == "zh" {
 		if title == "" {
-			title = "Raven 对话分享"
+			title = "GoRaven 对话分享"
 		}
-		description = fmt.Sprintf("%s 在 Raven 的 AI 对话分享 · %s", creator, shareLink.Created.Format("2006-01-02 15:04"))
+		description = fmt.Sprintf("%s 在 GoRaven 的 AI 对话分享 · %s", creator, shareLink.Created.Format("2006-01-02 15:04"))
 	} else {
 		if title == "" {
-			title = "Raven Conversation Share"
+			title = "GoRaven Conversation Share"
 		}
-		description = fmt.Sprintf("%s's AI conversation on Raven · %s", creator, shareLink.Created.Format("2006-01-02 15:04"))
+		description = fmt.Sprintf("%s's AI conversation on GoRaven · %s", creator, shareLink.Created.Format("2006-01-02 15:04"))
 	}
 
 	var imageURL, pageURL string
@@ -359,7 +346,7 @@ func BuildOGHTML(d *vo.ShareOGData) string {
 		fmt.Fprintf(&b, "<meta property=\"og:url\" content=\"%s\"/>\n", u)
 	}
 	b.WriteString("<meta property=\"og:type\" content=\"website\"/>\n")
-	b.WriteString("<meta property=\"og:site_name\" content=\"Raven\"/>\n")
+	b.WriteString("<meta property=\"og:site_name\" content=\"GoRaven\"/>\n")
 	b.WriteString("<meta name=\"twitter:card\" content=\"summary_large_image\"/>\n")
 	fmt.Fprintf(&b, "<meta name=\"twitter:title\" content=\"%s\"/>\n", t)
 	fmt.Fprintf(&b, "<meta name=\"twitter:description\" content=\"%s\"/>\n", desc)

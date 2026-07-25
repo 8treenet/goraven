@@ -2,9 +2,10 @@ package repository
 
 import (
 	"fmt"
-	"raven/backend/po"
-	"raven/backend/vo"
-	"raven/util"
+	"goraven/backend/po"
+	"goraven/backend/repository/seed"
+	"goraven/backend/vo"
+	"goraven/util"
 	"time"
 
 	"github.com/8treenet/freedom"
@@ -29,10 +30,24 @@ func (repo *MCPRepository) FindEnabledMCPEndpoints() ([]po.MCPEndpoint, error) {
 	return endpoints, err
 }
 
+func (repo *MCPRepository) FindUserSelectableMCPEndpoints() ([]po.MCPEndpoint, error) {
+	var endpoints []po.MCPEndpoint
+	err := repo.db().Where("status = ? AND deleted = ? AND always_on = ?", 1, 0, 0).Find(&endpoints).Error
+	return endpoints, err
+}
+
 func (repo *MCPRepository) FindEnabledMCPEndpointsByIDs(mcpIds []int) ([]po.MCPEndpoint, error) {
 	var endpoints []po.MCPEndpoint
 	err := repo.db().Where("status = ? AND deleted = ? AND mcp_id IN ?", 1, 0, mcpIds).Find(&endpoints).Error
 	return endpoints, err
+}
+
+func (repo *MCPRepository) FindAlwaysOnMcpIds() ([]int, error) {
+	var ids []int
+	err := repo.db().Model(&po.MCPEndpoint{}).
+		Where("status = ? AND deleted = ? AND always_on = ?", 1, 0, 1).
+		Pluck("mcp_id", &ids).Error
+	return ids, err
 }
 
 func (repo *MCPRepository) UpdateMCPEndpointStatus(mcpId int, status uint8) error {
@@ -73,6 +88,7 @@ func (repo *MCPRepository) PaginateMCPEndpoints(req *vo.AdminMCPListReq) ([]vo.A
 			StdioEnv:        util.MaskJSONValues(ep.StdioEnv),
 			StdioArgs:       ep.StdioArgs,
 			Status:          ep.Status,
+			AlwaysOn:        ep.AlwaysOn,
 			HealthLatency:   ep.HealthLatency,
 			HealthCheckedAt: ep.HealthCheckedAt,
 			Remark:          ep.Remark,
@@ -134,7 +150,7 @@ func (repo *MCPRepository) FindAllActiveMCPEndpoints() ([]po.MCPEndpoint, error)
 }
 
 func (repo *MCPRepository) GetRecommendMCPEndpoints() ([]po.MCPEndpoint, error) {
-	return nil, nil
+	return seed.RecommendMCPEndpoints, nil
 }
 
 func (repo *MCPRepository) GetMCPEndpointsByIDs(mcpIds []int) ([]po.MCPEndpoint, error) {
@@ -144,23 +160,6 @@ func (repo *MCPRepository) GetMCPEndpointsByIDs(mcpIds []int) ([]po.MCPEndpoint,
 	var endpoints []po.MCPEndpoint
 	err := repo.db().Where("mcp_id IN ? AND status = 1 AND deleted = 0", mcpIds).Find(&endpoints).Error
 	return endpoints, err
-}
-
-// FindUserSelectableMCPEndpoints 查询用户可选的 MCP 端点（启用且未删除且非始终启用）
-// 始终启用的 MCP 由管理员配置，用户无需也无需选择，故从可选列表排除
-func (repo *MCPRepository) FindUserSelectableMCPEndpoints() ([]po.MCPEndpoint, error) {
-	var endpoints []po.MCPEndpoint
-	err := repo.db().Where("status = ? AND deleted = ? AND always_on = ?", 1, 0, 0).Find(&endpoints).Error
-	return endpoints, err
-}
-
-// FindAlwaysOnMcpIds 获取始终启用的 MCP 端点 ID 列表（启用且未删除且 always_on=1）
-func (repo *MCPRepository) FindAlwaysOnMcpIds() ([]int, error) {
-	var ids []int
-	err := repo.db().Model(&po.MCPEndpoint{}).
-		Where("status = ? AND deleted = ? AND always_on = ?", 1, 0, 1).
-		Pluck("mcp_id", &ids).Error
-	return ids, err
 }
 
 func (repo *MCPRepository) db() *gorm.DB {

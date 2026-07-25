@@ -37,7 +37,12 @@ type AssetsRsp struct {
 	Path string `json:"path"`
 }
 
+type TempAccessReq struct {
+	Path string `json:"path" validate:"required"`
+	Type string `json:"type" validate:"required"`
+}
+
 type TempAccessRsp struct {
 	Ak        string `json:"ak"`
-	ExpiresAt int64  `json:"expiresAt"` // 过期时间（unix 秒）
+	ExpiresAt int64  `json:"expiresAt"`
 }

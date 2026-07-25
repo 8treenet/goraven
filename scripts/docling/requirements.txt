@@ -1,0 +1,12 @@
+# Docling document converter dependencies
+# Install: pip install -r requirements.txt
+
+# Core library
+docling>=2.97.0
+
+# OCR support (optional - only needed when using --ocr on Linux)
+# macOS uses native OcrMacOptions instead
+easyocr>=1.7
+
+# GPU acceleration (optional - auto-detected by docling)
+# torch>=2.0  # Uncomment if GPU acceleration needed

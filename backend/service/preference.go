@@ -1,9 +1,8 @@
 package service
 
 import (
-	"raven/backend/repository"
-	"raven/backend/vo"
-	"raven/config"
+	"goraven/backend/vo"
+	"goraven/config"
 
 	"github.com/8treenet/freedom"
 )
@@ -21,17 +20,11 @@ func init() {
 }
 
 type PreferenceService struct {
-	Worker		freedom.Worker
-	SysCfgRepo	*repository.SystemSettingRepository
+	Worker freedom.Worker
 }
 
 func (service *PreferenceService) GetPreference() *vo.PreferenceRsp {
-	domain := ""
-	if sysconf, err := service.SysCfgRepo.LoadConfig(); err == nil {
-		domain = sysconf.GeneralDomain
-	}
 	return &vo.PreferenceRsp{
-		Language:	config.Get().GetLanguage(),
-		Domain:		domain,
+		Language: config.Get().GetLanguage(),
 	}
 }

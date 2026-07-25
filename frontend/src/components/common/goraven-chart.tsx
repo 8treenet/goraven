@@ -209,7 +209,7 @@ function ChartRenderer({ attrs }: { attrs: ChartAttrs }) {
   )
 }
 
-export function RavenChart({ attrs }: { attrs: Record<string, string> }) {
+export function GoRavenChart({ attrs }: { attrs: Record<string, string> }) {
   const type = (attrs.type || 'bar').toLowerCase()
   if (!['bar', 'line', 'pie', 'area', 'scatter'].includes(type)) return null
 

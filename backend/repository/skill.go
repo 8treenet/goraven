@@ -2,9 +2,9 @@ package repository
 
 import (
 	"fmt"
-	"raven/backend/po"
-	"raven/backend/vo"
-	"raven/core/iface"
+	"goraven/backend/po"
+	"goraven/backend/vo"
+	"goraven/core/iface"
 	"time"
 
 	"github.com/8treenet/freedom"
@@ -269,6 +269,11 @@ func (repo *SkillRepository) ReassignUserSkillsToCategory(oldCategoryId, newCate
 		Updates(map[string]interface{}{"category_id": newCategoryId}).Error
 }
 
+func (repo *SkillRepository) ReassignSkillSharesToCategory(oldCategoryId, newCategoryId int) error {
+	return repo.db().Model(&po.SkillShare{}).Where("category_id = ?", oldCategoryId).
+		Updates(map[string]interface{}{"category_id": newCategoryId}).Error
+}
+
 func (repo *SkillRepository) GetAllSkillCategories() ([]vo.AdminSkillCategoryItem, error) {
 	var categories []po.SkillCategory
 	err := repo.db().Where("deleted = 0").Order("category_id DESC").Find(&categories).Error
@@ -423,7 +428,6 @@ func (repo *SkillRepository) GetUserSkillNameMapByIDs(userId string, skillIds []
 	return m, nil
 }
 
-// PaginateSkillShares 团队共享技能分页列表
 func (repo *SkillRepository) PaginateSkillShares(req *vo.SkillShareListReq) ([]po.SkillShare, *PageResult, error) {
 	query := repo.db().Model(&po.SkillShare{})
 	if req.Search != "" {

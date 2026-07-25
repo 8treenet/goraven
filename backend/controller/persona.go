@@ -1,9 +1,9 @@
 package controller
 
 import (
-	"raven/backend/infra"
-	"raven/backend/vo"
-	"raven/backend/service"
+	"goraven/backend/infra"
+	"goraven/backend/service"
+	"goraven/backend/vo"
 
 	"github.com/8treenet/freedom"
 )
@@ -15,10 +15,10 @@ func init() {
 }
 
 type PersonaController struct {
-	PersonaSev	*service.PersonaService
-	McpSev		*service.McpService
-	SkillSev	*service.SkillService
-	Request		*infra.Request
+	PersonaSev *service.PersonaService
+	McpSev     *service.McpService
+	SkillSev   *service.SkillService
+	Request    *infra.Request
 }
 
 func (controller *PersonaController) BeforeActivation(b freedom.BeforeActivation) {

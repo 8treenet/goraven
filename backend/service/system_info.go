@@ -1,10 +1,12 @@
 package service
 
 import (
-	"raven/backend/repository"
-	"raven/backend/vo"
-	"raven/config"
-	"raven/util/disk"
+	"goraven/backend/repository"
+	"goraven/backend/vo"
+	"goraven/config"
+	"goraven/core/plugin"
+	"goraven/util/disk"
+	"os"
 	"time"
 
 	"github.com/8treenet/freedom"
@@ -23,8 +25,8 @@ func init() {
 }
 
 type SystemInfoService struct {
-	Worker	freedom.Worker
-	SysRepo	*repository.SystemInfoRepository
+	Worker  freedom.Worker
+	SysRepo *repository.SystemInfoRepository
 }
 
 func (service *SystemInfoService) GetSystemInfo(forceRefresh bool) (*vo.SystemInfoRsp, error) {
@@ -61,13 +63,18 @@ func (service *SystemInfoService) collectOverview() vo.OverviewInfo {
 	cacheType, cacheMemory := service.SysRepo.GetCacheInfo()
 
 	info := vo.OverviewInfo{
-		Version:	cfg.GetBuildInfo().Version,
-		Language:	cfg.GetLanguage(),
-		CacheType:	cacheType,
-		CacheMemory:	cacheMemory,
+		Version:     cfg.GetBuildInfo().Version,
+		Language:    cfg.GetLanguage(),
+		CacheType:   cacheType,
+		CacheMemory: cacheMemory,
 	}
 
-	info.ChromaDbBytes = disk.DirSize(cfg.Paths.ChromaDIR)
+	info.Timezone = func() string {
+		if tz := os.Getenv("TZ"); tz != "" {
+			return tz
+		}
+		return time.Local.String()
+	}()
 
 	uploadDir := cfg.GetUploadDir()
 	if uploadDir != "" {
@@ -83,9 +90,9 @@ func (service *SystemInfoService) collectDatabase() vo.DatabaseInfo {
 	dbType := config.Get().System.DBType
 
 	info := vo.DatabaseInfo{
-		Type:		dbType,
-		Version:	service.SysRepo.GetDBVersion(dbType),
-		Name:		service.SysRepo.GetDBName(dbType),
+		Type:    dbType,
+		Version: service.SysRepo.GetDBVersion(dbType),
+		Name:    service.SysRepo.GetDBName(dbType),
 	}
 
 	info.DataSizeBytes = service.SysRepo.GetDBDataSize(dbType)
@@ -102,19 +109,26 @@ func (service *SystemInfoService) collectDisks() []vo.DiskInfo {
 	result := make([]vo.DiskInfo, 0, len(disks))
 	for _, d := range disks {
 		result = append(result, vo.DiskInfo{
-			MountPoint:	d.MountPoint,
-			FSType:		d.FSType,
-			Device:		d.Device,
-			TotalBytes:	d.TotalBytes,
-			UsedBytes:	d.UsedBytes,
-			FreeBytes:	d.FreeBytes,
-			UsedPercent:	d.UsedPercent,
+			MountPoint:  d.MountPoint,
+			FSType:      d.FSType,
+			Device:      d.Device,
+			TotalBytes:  d.TotalBytes,
+			UsedBytes:   d.UsedBytes,
+			FreeBytes:   d.FreeBytes,
+			UsedPercent: d.UsedPercent,
 		})
 	}
 	return result
 }
 
 func (service *SystemInfoService) collectPlugins() []vo.PluginInfo {
-	result := make([]vo.PluginInfo, 0, 0)
+	pis := plugin.GetAllPluginInfo()
+	result := make([]vo.PluginInfo, 0, len(pis))
+	for _, pi := range pis {
+		result = append(result, vo.PluginInfo{
+			Name:    pi.Name,
+			Version: pi.Version,
+		})
+	}
 	return result
 }

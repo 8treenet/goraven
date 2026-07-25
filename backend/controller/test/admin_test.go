@@ -1,7 +1,7 @@
 package test
 
 import (
-	"raven/backend/vo"
+	"goraven/backend/vo"
 	"testing"
 
 	"github.com/8treenet/freedom/infra/requests"
@@ -9,13 +9,13 @@ import (
 
 func TestAdminListUsers(t *testing.T) {
 	var rsp struct {
-		Code	int	`json:"code"`
-		Msg	string	`json:"msg"`
-		Data	struct {
-			List		[]vo.AdminUserItem	`json:"list"`
-			TotalPage	int			`json:"totalPage"`
-			TotalCount	int			`json:"totalCount"`
-		}	`json:"data,omitempty"`
+		Code int    `json:"code"`
+		Msg  string `json:"msg"`
+		Data struct {
+			List       []vo.AdminUserItem `json:"list"`
+			TotalPage  int                `json:"totalPage"`
+			TotalCount int                `json:"totalCount"`
+		} `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/admin/users").
 		Get().
@@ -32,13 +32,13 @@ func TestAdminListUsers(t *testing.T) {
 
 func TestAdminListUsersWithSearch(t *testing.T) {
 	var rsp struct {
-		Code	int	`json:"code"`
-		Msg	string	`json:"msg"`
-		Data	struct {
-			List		[]vo.AdminUserItem	`json:"list"`
-			TotalPage	int			`json:"totalPage"`
-			TotalCount	int			`json:"totalCount"`
-		}	`json:"data,omitempty"`
+		Code int    `json:"code"`
+		Msg  string `json:"msg"`
+		Data struct {
+			List       []vo.AdminUserItem `json:"list"`
+			TotalPage  int                `json:"totalPage"`
+			TotalCount int                `json:"totalCount"`
+		} `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/admin/users?search=admin").
 		Get().
@@ -55,13 +55,13 @@ func TestAdminListUsersWithSearch(t *testing.T) {
 
 func TestAdminListUsersWithRoleFilter(t *testing.T) {
 	var rsp struct {
-		Code	int	`json:"code"`
-		Msg	string	`json:"msg"`
-		Data	struct {
-			List		[]vo.AdminUserItem	`json:"list"`
-			TotalPage	int			`json:"totalPage"`
-			TotalCount	int			`json:"totalCount"`
-		}	`json:"data,omitempty"`
+		Code int    `json:"code"`
+		Msg  string `json:"msg"`
+		Data struct {
+			List       []vo.AdminUserItem `json:"list"`
+			TotalPage  int                `json:"totalPage"`
+			TotalCount int                `json:"totalCount"`
+		} `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/admin/users?role=1").
 		Get().
@@ -79,9 +79,9 @@ func TestAdminListUsersWithRoleFilter(t *testing.T) {
 func TestAdminGetUserDetail(t *testing.T) {
 	userId := "999"
 	var rsp struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	vo.AdminUserDetailRsp	`json:"data,omitempty"`
+		Code int                   `json:"code"`
+		Msg  string                `json:"msg"`
+		Data vo.AdminUserDetailRsp `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/admin/users/"+userId).
 		Get().
@@ -102,11 +102,11 @@ func TestAdminBatchGetUsers(t *testing.T) {
 		UserIds: []string{"999", "8dde3252e54d43ecbc0d981b038c311c"},
 	}
 	var rsp struct {
-		Code	int	`json:"code"`
-		Msg	string	`json:"msg"`
-		Data	struct {
+		Code int    `json:"code"`
+		Msg  string `json:"msg"`
+		Data struct {
 			List []vo.AdminUserItem `json:"list"`
-		}	`json:"data,omitempty"`
+		} `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/admin/users/batch").
 		Post().
@@ -127,14 +127,14 @@ func TestAdminBatchGetUsers(t *testing.T) {
 
 func TestAdminCreateUser(t *testing.T) {
 	req := vo.AdminCreateUserReq{
-		Username:	"testuser_333" + t.Name(),
-		Password:	"e10adc3949ba59abbe56e057f20f883e",
-		Nickname:	"Test User",
-		Role:		1,
+		Username: "testuser_333" + t.Name(),
+		Password: "e10adc3949ba59abbe56e057f20f883e",
+		Nickname: "Test User",
+		Role:     1,
 	}
 	var rsp struct {
-		Code	int	`json:"code"`
-		Msg	string	`json:"msg"`
+		Code int    `json:"code"`
+		Msg  string `json:"msg"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/admin/users").
 		Post().
@@ -155,8 +155,8 @@ func TestAdminUpdateUser(t *testing.T) {
 		Nickname: "啊哈哈哈",
 	}
 	var rsp struct {
-		Code	int	`json:"code"`
-		Msg	string	`json:"msg"`
+		Code int    `json:"code"`
+		Msg  string `json:"msg"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/admin/users/b68af727c9eb49a4b262e3b430db623f").
 		Put().
@@ -175,12 +175,12 @@ func TestAdminUpdateUser(t *testing.T) {
 func TestAdminUpdateUserStatus(t *testing.T) {
 	status := uint8(0)
 	req := vo.AdminUpdateUserReq{
-		Nickname:	"Test User",
-		Status:		&status,
+		Nickname: "Test User",
+		Status:   &status,
 	}
 	var rsp struct {
-		Code	int	`json:"code"`
-		Msg	string	`json:"msg"`
+		Code int    `json:"code"`
+		Msg  string `json:"msg"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/admin/users/b68af727c9eb49a4b262e3b430db623f").
 		Put().
@@ -221,8 +221,8 @@ func TestAdminResetPassword(t *testing.T) {
 		Password: "e10adc3949ba59abbe56e057f20f883e",
 	}
 	var rsp struct {
-		Code	int	`json:"code"`
-		Msg	string	`json:"msg"`
+		Code int    `json:"code"`
+		Msg  string `json:"msg"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/admin/users/b68af727c9eb49a4b262e3b430db623f/reset-password").
 		Put().
@@ -261,11 +261,11 @@ func TestAdminSystemInfoForceRefresh(t *testing.T) {
 
 func TestAdminGetSettings(t *testing.T) {
 	var rsp struct {
-		Code	int	`json:"code"`
-		Msg	string	`json:"msg"`
-		Data	struct {
+		Code int    `json:"code"`
+		Msg  string `json:"msg"`
+		Data struct {
 			Groups []vo.AdminSettingGroup `json:"groups"`
-		}	`json:"data,omitempty"`
+		} `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/admin/settings").
 		Get().

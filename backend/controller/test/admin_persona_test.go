@@ -1,7 +1,7 @@
 package test
 
 import (
-	"raven/backend/vo"
+	"goraven/backend/vo"
 	"testing"
 
 	"github.com/8treenet/freedom/infra/requests"
@@ -33,12 +33,12 @@ func TestGetPersonaTemplatesWithCategoryFilter(t *testing.T) {
 
 func TestCreatePersonaTemplate(t *testing.T) {
 	req := vo.AdminCreatePersonaTemplateReq{
-		Name:		"编程助手",
-		Icon:		"code",
-		Description:	"擅长代码编写、调试和架构设计",
-		RoleInfo:	"你是一个专业的编程助手，擅长多种编程语言和技术栈。帮助用户编写高质量代码、调试问题并提供架构建议。",
-		CategoryId:	7,
-		SortOrder:	0,
+		Name:        "编程助手",
+		Icon:        "code",
+		Description: "擅长代码编写、调试和架构设计",
+		RoleInfo:    "你是一个专业的编程助手，擅长多种编程语言和技术栈。帮助用户编写高质量代码、调试问题并提供架构建议。",
+		CategoryId:  7,
+		SortOrder:   0,
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/personaTemplates").
 		Post().
@@ -50,12 +50,12 @@ func TestCreatePersonaTemplate(t *testing.T) {
 
 func TestCreatePersonaTemplate2(t *testing.T) {
 	req := vo.AdminCreatePersonaTemplateReq{
-		Name:		"翻译专家",
-		Icon:		"languages",
-		Description:	"精通多语言翻译",
-		RoleInfo:	"你是一个专业的翻译专家，精通中英日韩等多种语言。帮助用户进行准确的翻译，保持原文的语气和风格。",
-		CategoryId:	1,
-		SortOrder:	0,
+		Name:        "翻译专家",
+		Icon:        "languages",
+		Description: "精通多语言翻译",
+		RoleInfo:    "你是一个专业的翻译专家，精通中英日韩等多种语言。帮助用户进行准确的翻译，保持原文的语气和风格。",
+		CategoryId:  1,
+		SortOrder:   0,
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/personaTemplates").
 		Post().
@@ -75,10 +75,10 @@ func TestGetPersonaTemplateDetail(t *testing.T) {
 
 func TestUpdatePersonaTemplate(t *testing.T) {
 	req := vo.AdminUpdatePersonaTemplateReq{
-		Name:		stringPtr("高级编程助手"),
-		Icon:		stringPtr("code-2"),
-		Description:	stringPtr("擅长全栈开发和系统架构"),
-		SortOrder:	intPtr(1),
+		Name:        stringPtr("高级编程助手"),
+		Icon:        stringPtr("code-2"),
+		Description: stringPtr("擅长全栈开发和系统架构"),
+		SortOrder:   intPtr(1),
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/personaTemplates/1").
 		Put().
@@ -110,10 +110,10 @@ func TestGetPersonaTemplateNotFound(t *testing.T) {
 
 func TestCreatePersonaTemplateMissingRoleInfo(t *testing.T) {
 	req := vo.AdminCreatePersonaTemplateReq{
-		Name:		"空提示词模板",
-		Icon:		"bot",
-		RoleInfo:	"",
-		CategoryId:	1,
+		Name:       "空提示词模板",
+		Icon:       "bot",
+		RoleInfo:   "",
+		CategoryId: 1,
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/personaTemplates").
 		Post().
@@ -157,8 +157,8 @@ func TestGetPersonaCategoryDetail(t *testing.T) {
 
 func TestCreatePersonaCategory(t *testing.T) {
 	req := vo.AdminCreatePersonaCategoryReq{
-		Name:	"自定义分类",
-		Icon:	"sparkles",
+		Name: "自定义分类",
+		Icon: "sparkles",
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/personaCategories").
 		Post().
@@ -170,8 +170,8 @@ func TestCreatePersonaCategory(t *testing.T) {
 
 func TestUpdatePersonaCategory(t *testing.T) {
 	req := vo.AdminUpdatePersonaCategoryReq{
-		Name:	stringPtr("更新分类名"),
-		Icon:	stringPtr("star"),
+		Name: stringPtr("更新分类名"),
+		Icon: stringPtr("star"),
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/personaCategories/7").
 		Put().

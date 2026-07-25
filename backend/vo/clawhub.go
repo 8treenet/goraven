@@ -1,8 +1,8 @@
 package vo
 
 type ClawHubSearchReq struct {
-	Query	string	`url:"q"`
-	Limit	int	`url:"limit"`
+	Query string `url:"q"`
+	Limit int    `url:"limit"`
 }
 
 type ClawHubExploreReq struct {
@@ -10,9 +10,9 @@ type ClawHubExploreReq struct {
 }
 
 type AdminClawHubSkillDetailRsp struct {
-	Slug		string	`json:"slug"`
-	Name		string	`json:"name"`
-	Description	string	`json:"description"`
-	Content		string	`json:"content"`
-	Version		string	`json:"version"`
+	Slug        string `json:"slug"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Content     string `json:"content"`
+	Version     string `json:"version"`
 }

@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"raven/backend/po"
+	"goraven/backend/po"
 	"strconv"
 	"sync"
 	"time"
@@ -19,10 +19,10 @@ func init() {
 }
 
 var (
-	configCache	*SystemConfig
-	configCacheTime	time.Time
-	configCacheMu	sync.RWMutex
-	configCacheTTL	= 20 * time.Minute
+	configCache     *SystemConfig
+	configCacheTime time.Time
+	configCacheMu   sync.RWMutex
+	configCacheTTL  = 20 * time.Minute
 )
 
 type SystemSettingRepository struct {
@@ -48,26 +48,26 @@ func (repo *SystemSettingRepository) LoadConfig() (*SystemConfig, error) {
 	}
 
 	cfg := &SystemConfig{
-		GeneralDomain:			getString(m, "general.domain", ""),
-		ClawHubAPIURL:			getString(m, "clawhub.api_url", "https://clawhub.ai"),
-		ClawHubToken:			getString(m, "clawhub.token", ""),
-		CompressThresholdPercent:	getInt(m, "agent.compress_threshold_percent", 80),
-		CompressKeepRounds:		getInt(m, "agent.compress_keep_rounds", 4),
-		MaxIterations:			getInt(m, "agent.max_iterations", 150),
-		PruningTokenThreshold:		getInt(m, "agent.pruning_token_threshold", 96),
-		PruningMaxToolResultLength:	getInt(m, "agent.pruning_max_tool_result_length", 2000),
-		PruningHeadTruncateLength:	getInt(m, "agent.pruning_head_truncate_length", 1000),
-		PruningTailTruncateLength:	getInt(m, "agent.pruning_tail_truncate_length", 1000),
-		LLMRequestDelayMs:		getInt(m, "agent.llm_request_delay_ms", 500),
-		FileLinkExpiresHours:		getInt(m, "sharing.file_expires_hours", 72),
-		KnowledgeEnableOCR:		getBool(m, "knowledge.enable_ocr", false),
-		WebFetchEnabled:		getBool(m, "tools.webfetch_enabled", true),
-		VisualEnabled:			getBool(m, "tools.visual_enabled", false),
-		ShellTimeoutMinutes:		getInt(m, "tools.shell_timeout_minutes", 5),
-		ModelMaxRetries:		getInt(m, "agent.max_retries", 3),
-		ModelRateLimitWaitSec:		getInt(m, "agent.rate_limit_wait_sec", 8),
-		ModelBackoffBaseSec:		getInt(m, "agent.backoff_base_sec", 3),
-		MainAgentTimeoutMinutes:	getInt(m, "agent.main_agent_timeout_minutes", 20),
+		GeneralDomain:              getString(m, "general.domain", ""),
+		ClawHubAPIURL:              getString(m, "clawhub.api_url", "https://clawhub.ai"),
+		ClawHubToken:               getString(m, "clawhub.token", ""),
+		CompressThresholdPercent:   getInt(m, "agent.compress_threshold_percent", 80),
+		CompressKeepRounds:         getInt(m, "agent.compress_keep_rounds", 4),
+		MaxIterations:              getInt(m, "agent.max_iterations", 150),
+		PruningTokenThreshold:      getInt(m, "agent.pruning_token_threshold", 96),
+		PruningMaxToolResultLength: getInt(m, "agent.pruning_max_tool_result_length", 2000),
+		PruningHeadTruncateLength:  getInt(m, "agent.pruning_head_truncate_length", 1000),
+		PruningTailTruncateLength:  getInt(m, "agent.pruning_tail_truncate_length", 1000),
+		LLMRequestDelayMs:          getInt(m, "agent.llm_request_delay_ms", 500),
+		FileLinkExpiresHours:       getInt(m, "sharing.file_expires_hours", 72),
+		KnowledgeEnableOCR:         getBool(m, "knowledge.enable_ocr", false),
+		WebFetchEnabled:            getBool(m, "tools.webfetch_enabled", true),
+		VisualEnabled:              getBool(m, "tools.visual_enabled", false),
+		ShellTimeoutMinutes:        getInt(m, "tools.shell_timeout_minutes", 5),
+		ModelMaxRetries:            getInt(m, "agent.max_retries", 3),
+		ModelRateLimitWaitSec:      getInt(m, "agent.rate_limit_wait_sec", 8),
+		ModelBackoffBaseSec:        getInt(m, "agent.backoff_base_sec", 3),
+		MainAgentTimeoutMinutes:    getInt(m, "agent.main_agent_timeout_minutes", 20),
 	}
 
 	configCache = cfg

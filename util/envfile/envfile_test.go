@@ -7,7 +7,7 @@ import (
 )
 
 func TestParse(t *testing.T) {
-	data, err := os.ReadFile("/Users/ysmini/work/config/raven/user/90a431bee756432492c134f510bad949/.profile")
+	data, err := os.ReadFile("/Users/ysmini/work/config/goraven/user/90a431bee756432492c134f510bad949/.profile")
 	if err != nil {
 		panic(err)
 	}

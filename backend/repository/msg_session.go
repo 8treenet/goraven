@@ -2,10 +2,9 @@ package repository
 
 import (
 	"context"
-	"raven/backend/po"
-	"raven/backend/vo"
-	"raven/core/iface"
-	"raven/util"
+	"goraven/backend/po"
+	"goraven/backend/vo"
+	"goraven/util"
 	"time"
 
 	"github.com/8treenet/freedom"
@@ -19,8 +18,6 @@ func init() {
 		})
 	})
 }
-
-var _ iface.MessageRepo = new(MsgSessionRepository)
 
 type MsgSessionRepository struct {
 	freedom.Repository
@@ -43,10 +40,10 @@ func (repo *MsgSessionRepository) AddSessionTokens(sessionId string, promptToken
 	return repo.db().Model(&po.Session{}).
 		Where("session_id = ?", sessionId).
 		Updates(map[string]interface{}{
-			"prompt_tokens_count":		gorm.Expr("prompt_tokens_count + ?", promptTokens),
-			"completion_tokens_count":	gorm.Expr("completion_tokens_count + ?", completionTokens),
-			"prompt_cached_tokens":		gorm.Expr("prompt_cached_tokens + ?", promptCachedTokens),
-			"updated":			time.Now(),
+			"prompt_tokens_count":     gorm.Expr("prompt_tokens_count + ?", promptTokens),
+			"completion_tokens_count": gorm.Expr("completion_tokens_count + ?", completionTokens),
+			"prompt_cached_tokens":    gorm.Expr("prompt_cached_tokens + ?", promptCachedTokens),
+			"updated":                 time.Now(),
 		}).Error
 }
 
@@ -54,15 +51,15 @@ func (repo *MsgSessionRepository) SetContextTokens(sessionId string, tokens int)
 	return repo.db().Model(&po.Session{}).
 		Where("session_id = ?", sessionId).
 		Updates(map[string]interface{}{
-			"context_tokens":	tokens,
-			"updated":		time.Now(),
+			"context_tokens": tokens,
+			"updated":        time.Now(),
 		}).Error
 }
 
 func (repo *MsgSessionRepository) UpdateSessionStatus(sessionId string, status int) error {
 	updates := map[string]interface{}{
-		"status":	status,
-		"updated":	time.Now(),
+		"status":  status,
+		"updated": time.Now(),
 	}
 	if status == 1 {
 		updates["last_chat_time"] = time.Now()
@@ -143,8 +140,8 @@ func (repo *MsgSessionRepository) SoftDeleteSession(sessionId string, userId str
 	}
 
 	return repo.db().Model(&po.Session{}).Where("session_id = ? AND user_id = ? AND deleted = 0", sessionId, userId).Updates(map[string]interface{}{
-		"deleted":	1,
-		"updated":	time.Now(),
+		"deleted": 1,
+		"updated": time.Now(),
 	}).Error
 }
 

@@ -5,8 +5,8 @@ import (
 )
 
 type PageQuery struct {
-	Page		int
-	PageSize	int
+	Page     int
+	PageSize int
 }
 
 func (q *PageQuery) Normalize() {
@@ -23,10 +23,10 @@ func (q *PageQuery) Offset() int {
 }
 
 type PageResult struct {
-	TotalPage	int
-	TotalCount	int
-	Page		int
-	PageSize	int
+	TotalPage  int
+	TotalCount int
+	Page       int
+	PageSize   int
 }
 
 func Paginate[T any](db *gorm.DB, query *PageQuery, result *[]T) (*PageResult, error) {
@@ -47,9 +47,9 @@ func Paginate[T any](db *gorm.DB, query *PageQuery, result *[]T) (*PageResult, e
 	}
 
 	return &PageResult{
-		TotalPage:	totalPage,
-		TotalCount:	int(totalCount),
-		Page:		query.Page,
-		PageSize:	query.PageSize,
+		TotalPage:  totalPage,
+		TotalCount: int(totalCount),
+		Page:       query.Page,
+		PageSize:   query.PageSize,
 	}, nil
 }

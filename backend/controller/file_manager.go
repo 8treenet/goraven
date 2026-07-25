@@ -2,10 +2,10 @@ package controller
 
 import (
 	"fmt"
+	"goraven/backend/infra"
+	"goraven/backend/service"
+	"goraven/backend/vo"
 	"path/filepath"
-	"raven/backend/infra"
-	"raven/backend/service"
-	"raven/backend/vo"
 	"strings"
 
 	"github.com/8treenet/freedom"
@@ -18,9 +18,9 @@ func init() {
 }
 
 type FileManagerController struct {
-	FMSev	*service.FileManagerService
-	Worker	freedom.Worker
-	Request	*infra.Request
+	FMSev   *service.FileManagerService
+	Worker  freedom.Worker
+	Request *infra.Request
 }
 
 func (controller *FileManagerController) BeforeActivation(b freedom.BeforeActivation) {

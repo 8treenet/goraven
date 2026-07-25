@@ -1,7 +1,7 @@
 package test
 
 import (
-	"raven/backend/vo"
+	"goraven/backend/vo"
 	"testing"
 
 	"github.com/8treenet/freedom/infra/requests"
@@ -49,8 +49,8 @@ func TestGetMarketSkillDetail(t *testing.T) {
 
 func TestUpdateMarketSkill(t *testing.T) {
 	req := vo.AdminUpdateMarketSkillReq{
-		Icon:		stringPtr("folder-git"),
-		SortOrder:	intPtr(10),
+		Icon:      stringPtr("folder-git"),
+		SortOrder: intPtr(10),
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/marketSkills/5").
 		Put().
@@ -98,9 +98,9 @@ func TestGetMarketSkillUsers(t *testing.T) {
 
 func TestPublishMarketSkill(t *testing.T) {
 	req := vo.AdminPublishMarketSkillReq{
-		UploadId:	"ba2805e64f394547b9777b9d69f5ca33",
-		Icon:		"eino-guide",
-		CategoryId:	1,
+		UploadId:   "ba2805e64f394547b9777b9d69f5ca33",
+		Icon:       "eino-guide",
+		CategoryId: 1,
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/marketSkills/publish").
 		Post().
@@ -112,9 +112,9 @@ func TestPublishMarketSkill(t *testing.T) {
 
 func TestImportClawHubSkill(t *testing.T) {
 	req := vo.AdminImportClawHubSkillReq{
-		Slug:		"bloomberg-headlines",
-		Icon:		"book-open-text",
-		CategoryId:	1,
+		Slug:       "bloomberg-headlines",
+		Icon:       "book-open-text",
+		CategoryId: 1,
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/marketSkills/import").
 		Post().
@@ -164,8 +164,8 @@ func TestGetMarketSkillNotFound(t *testing.T) {
 	t.Log(str, httpResp)
 }
 
-func stringPtr(s string) *string	{ return &s }
-func intPtr(i int) *int			{ return &i }
+func stringPtr(s string) *string { return &s }
+func intPtr(i int) *int          { return &i }
 
 func TestGetSkillCategories(t *testing.T) {
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/skillCategories").
@@ -185,8 +185,8 @@ func TestGetAllSkillCategories(t *testing.T) {
 
 func TestCreateSkillCategory(t *testing.T) {
 	req := vo.AdminCreateSkillCategoryReq{
-		Name:	"Development Tools",
-		Icon:	"code",
+		Name: "Development Tools",
+		Icon: "code",
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/skillCategories").
 		Post().
@@ -198,8 +198,8 @@ func TestCreateSkillCategory(t *testing.T) {
 
 func TestUpdateSkillCategory(t *testing.T) {
 	req := vo.AdminUpdateSkillCategoryReq{
-		Name:	stringPtr("Updated Category"),
-		Icon:	stringPtr("wrench"),
+		Name: stringPtr("Updated Category"),
+		Icon: stringPtr("wrench"),
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/skillCategories/1").
 		Put().

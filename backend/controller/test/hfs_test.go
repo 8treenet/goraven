@@ -6,18 +6,18 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"goraven/backend/vo"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
-	"raven/backend/vo"
 	"testing"
 
 	"github.com/8treenet/freedom/infra/requests"
 )
 
 var (
-	token = "rvn_2d2291c9fe6b49998e8d9b310f076e31"
+	token = "rvn_2362ce1a2d8d41f4b89be1b4036ed92d"
 )
 
 func TestHfsPublicDownload(t *testing.T) {
@@ -31,7 +31,7 @@ func TestHfsPublicDownload(t *testing.T) {
 }
 
 func TestHfsPrivateDownload(t *testing.T) {
-	respBody, resp := requests.NewHTTPRequest(domain+"/api/hfs/private?path=/documents/go_concurrency_plan_2026-04-25_47291.md").
+	respBody, resp := requests.NewHTTPRequest(domain+"/api/hfs/private/documents/go_concurrency_plan_2026-04-25_47291.md").
 		Get().
 		SetHeaderValue("Authorization", "Bearer "+"rvn_8931423dce414667bff8ddfcb3b11ff3").ToBytes()
 	if resp.Error != nil {
@@ -63,10 +63,10 @@ func TestHfsCreateUpload(t *testing.T) {
 	}
 
 	req := vo.ChunkUploadCreateReq{
-		FileName:	fileName,
-		FileSize:	fileSize,
-		ChunkSize:	chunkSize,
-		TotalChunks:	totalChunks,
+		FileName:    fileName,
+		FileSize:    fileSize,
+		ChunkSize:   chunkSize,
+		TotalChunks: totalChunks,
 	}
 
 	bodystr, httpresp := requests.NewHTTPRequest(domain+"/api/hfs/upload/create").Post().SetJSONBody(req).SetHeaderValue("Authorization", "Bearer "+token).ToString()
@@ -143,8 +143,8 @@ func TestHfsUploadChunk(t *testing.T) {
 		resp.Body.Close()
 
 		var chunkRsp struct {
-			Code	int	`json:"code"`
-			Msg	string	`json:"msg"`
+			Code int    `json:"code"`
+			Msg  string `json:"msg"`
 		}
 		json.Unmarshal(respBody, &chunkRsp)
 		if chunkRsp.Code != 0 {
@@ -167,9 +167,9 @@ func TestHfsMergeUpload(t *testing.T) {
 	}
 
 	var rsp struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	vo.ChunkMergeRsp	`json:"data,omitempty"`
+		Code int              `json:"code"`
+		Msg  string           `json:"msg"`
+		Data vo.ChunkMergeRsp `json:"data,omitempty"`
 	}
 
 	resp := requests.NewHTTPRequest(domain+"/api/hfs/upload/merge").
@@ -194,9 +194,9 @@ func TestHfsAssets(t *testing.T) {
 		UploadId: uploadId,
 	}
 	var rsp struct {
-		Code	int		`json:"code"`
-		Msg	string		`json:"msg"`
-		Data	vo.AssetsRsp	`json:"data,omitempty"`
+		Code int          `json:"code"`
+		Msg  string       `json:"msg"`
+		Data vo.AssetsRsp `json:"data,omitempty"`
 	}
 
 	resp := requests.NewHTTPRequest(domain+"/api/hfs/assets").

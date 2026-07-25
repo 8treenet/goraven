@@ -191,7 +191,7 @@ function NewChat() {
         {!chatting ? (
           <div className="flex h-full flex-col items-center justify-center px-4 pb-20">
             <div className="mb-8 flex w-full max-w-2xl flex-col items-center gap-3">
-              <img src="/favicon.svg" alt="Raven" className="size-12" />
+              <img src="/favicon.svg" alt="GoRaven" className="size-12" />
               <p className="text-xl text-text-1">
                 What can I help you build?
               </p>

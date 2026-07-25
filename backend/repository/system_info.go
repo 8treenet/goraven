@@ -5,11 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"goraven/backend/po"
+	"goraven/backend/vo"
+	"goraven/config"
 	"os"
 	"path/filepath"
-	"raven/backend/po"
-	"raven/backend/vo"
-	"raven/config"
 	"strings"
 	"time"
 
@@ -111,14 +111,14 @@ func (repo *SystemInfoRepository) GetDBPoolStats() (*vo.DBPoolInfo, error) {
 	}
 	stats := sqlDB.Stats()
 	info := &vo.DBPoolInfo{
-		MaxOpenConnections:	stats.MaxOpenConnections,
-		OpenConnections:	stats.OpenConnections,
-		InUse:			stats.InUse,
-		Idle:			stats.Idle,
-		WaitCount:		stats.WaitCount,
-		WaitDurationMs:		stats.WaitDuration.Milliseconds(),
-		MaxIdleClosed:		stats.MaxIdleClosed,
-		MaxLifetimeClosed:	stats.MaxLifetimeClosed,
+		MaxOpenConnections: stats.MaxOpenConnections,
+		OpenConnections:    stats.OpenConnections,
+		InUse:              stats.InUse,
+		Idle:               stats.Idle,
+		WaitCount:          stats.WaitCount,
+		WaitDurationMs:     stats.WaitDuration.Milliseconds(),
+		MaxIdleClosed:      stats.MaxIdleClosed,
+		MaxLifetimeClosed:  stats.MaxLifetimeClosed,
 	}
 	return info, nil
 }
@@ -151,8 +151,7 @@ func (repo *SystemInfoRepository) GetEcosystemCounts() (*vo.EcosystemInfo, error
 	db.Model(&po.Session{}).Where("deleted = 0").Count(&info.TotalSessions)
 	db.Model(&po.Message{}).Count(&info.TotalMessages)
 
-	db.Model(&po.FileLink{}).Count(&info.TotalFileLinks)
-	db.Model(&po.FileLink{}).Where("expires_at > ?", time.Now()).Count(&info.ActiveFileLinks)
+	db.Model(&po.SharedProject{}).Count(&info.TotalSharedProjects)
 
 	db.Model(&po.ShareLink{}).Where("deleted = 0").Count(&info.TotalShareLinks)
 	db.Model(&po.ShareLink{}).Where("deleted = 0 AND (expires_at IS NULL OR expires_at > ?)", time.Now()).Count(&info.ActiveShareLinks)
@@ -168,12 +167,12 @@ func (repo *SystemInfoRepository) GetMCPHealthList() []vo.MCPHealthItem {
 	items := make([]vo.MCPHealthItem, 0, len(endpoints))
 	for _, ep := range endpoints {
 		items = append(items, vo.MCPHealthItem{
-			McpId:			ep.McpId,
-			Name:			ep.Name,
-			DisplayName:		ep.DisplayName,
-			Icon:			ep.Icon,
-			HealthLatency:		ep.HealthLatency,
-			HealthCheckedAt:	ep.HealthCheckedAt,
+			McpId:           ep.McpId,
+			Name:            ep.Name,
+			DisplayName:     ep.DisplayName,
+			Icon:            ep.Icon,
+			HealthLatency:   ep.HealthLatency,
+			HealthCheckedAt: ep.HealthCheckedAt,
 		})
 	}
 	return items

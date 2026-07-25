@@ -1,7 +1,7 @@
 package test
 
 import (
-	"raven/backend/vo"
+	"goraven/backend/vo"
 	"testing"
 
 	"github.com/8treenet/freedom/infra/requests"
@@ -29,19 +29,6 @@ func TestAdminDashboard(t *testing.T) {
 	t.Logf("overview: activeUsers=%d diff=%.1f%% sessions=%d newSessions=%d weekTokens=%d todayTokens=%d models=%d sparkline=%d",
 		o.ActiveUsers, o.ActiveUsersDiff, o.TotalSessions, o.NewSessions, o.WeekTokens, o.TodayTokens, o.EnabledModels, len(o.Sparkline))
 
-	t.Logf("tokenTrend: %d points", len(rsp.Data.ToolUsageRank))
-	if len(rsp.Data.ToolUsageRank) > 0 {
-		first := rsp.Data.ToolUsageRank[0]
-		last := rsp.Data.ToolUsageRank[len(rsp.Data.ToolUsageRank)-1]
-		t.Logf("  first: date=%s prompt=%d completion=%d", first.Name, first.Count)
-		t.Logf("  last:  date=%s prompt=%d completion=%d", last.Name, last.Count)
-	}
-
-	t.Logf("modelUsage: %d items", len(rsp.Data.McpUsageRank))
-	for _, m := range rsp.Data.McpUsageRank {
-		t.Logf("  %s: tokens=%d ", m.Name, m.Count)
-	}
-
 	t.Logf("skillUsageRank: %d items", len(rsp.Data.SkillUsageRank))
 	for _, s := range rsp.Data.SkillUsageRank {
 		t.Logf("  %s: count=%d", s.Name, s.Count)
@@ -56,6 +43,7 @@ func TestAdminDashboard(t *testing.T) {
 	for _, item := range rsp.Data.ToolUsageRank {
 		t.Logf("  %s: count=%d", item.Name, item.Count)
 	}
+
 }
 
 func TestAdminDashboardTokenTrend(t *testing.T) {

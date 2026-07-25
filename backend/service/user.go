@@ -1,13 +1,13 @@
 package service
 
 import (
-	"raven/backend/infra"
-	"raven/backend/po"
-	"raven/backend/repository"
-	"raven/backend/vo"
-	"raven/backend/vo/errs"
-	"raven/core/sandbox"
-	"raven/util"
+	"goraven/backend/infra"
+	"goraven/backend/po"
+	"goraven/backend/repository"
+	"goraven/backend/vo"
+	"goraven/backend/vo/errs"
+	"goraven/core/sandbox"
+	"goraven/util"
 
 	"github.com/8treenet/freedom"
 )
@@ -25,9 +25,9 @@ func init() {
 }
 
 type UserService struct {
-	Worker		freedom.Worker
-	UserRepo	*repository.UserRepository
-	Request		*infra.Request
+	Worker   freedom.Worker
+	UserRepo *repository.UserRepository
+	Request  *infra.Request
 }
 
 func (service *UserService) Login(req *vo.UserLoginReq) (*vo.UserLoginRsp, error) {
@@ -79,7 +79,7 @@ func (service *UserService) GetCaptcha(req *vo.CaptchaReq) (*vo.CaptchaRsp, erro
 	}
 
 	if failureCount > 120 {
-		return &vo.CaptchaRsp{Required: true, Image1: "raven", Image2: "good"}, nil
+		return &vo.CaptchaRsp{Required: true, Image1: "goraven", Image2: "good"}, nil
 	}
 
 	a, b, err := util.RandCaptchaPair()
@@ -98,9 +98,9 @@ func (service *UserService) GetCaptcha(req *vo.CaptchaReq) (*vo.CaptchaRsp, erro
 	service.UserRepo.SaveCaptchaAnswer(req.Username, a+b)
 
 	return &vo.CaptchaRsp{
-		Required:	true,
-		Image1:		img1,
-		Image2:		img2,
+		Required: true,
+		Image1:   img1,
+		Image2:   img2,
 	}, nil
 }
 
@@ -116,14 +116,14 @@ func (service *UserService) GetUserInfo() (*vo.UserInfoRsp, error) {
 	}
 
 	return &vo.UserInfoRsp{
-		UserId:		user.UserId,
-		Username:	user.Username,
-		Email:		user.Email,
-		Role:		user.Role,
-		Status:		user.Status,
-		Nickname:	user.Nickname,
-		Avatar:		user.Avatar,
-		Created:	user.Created,
+		UserId:   user.UserId,
+		Username: user.Username,
+		Email:    user.Email,
+		Role:     user.Role,
+		Status:   user.Status,
+		Nickname: user.Nickname,
+		Avatar:   user.Avatar,
+		Created:  user.Created,
 	}, nil
 }
 
@@ -136,17 +136,18 @@ func (service *UserService) AdminGetUserDetail(userId string) (*vo.AdminUserDeta
 	sessionCount, lastActiveTime := service.UserRepo.GetUserSessionStats(userId)
 
 	return &vo.AdminUserDetailRsp{
-		UserId:		user.UserId,
-		Username:	user.Username,
-		Nickname:	user.Nickname,
-		Email:		user.Email,
-		Avatar:		user.Avatar,
-		Role:		user.Role,
-		Status:		user.Status,
-		SessionCount:	sessionCount,
-		LastActiveTime:	lastActiveTime,
-		Created:	user.Created,
-		Updated:	user.Updated,
+		UserId:          user.UserId,
+		Username:        user.Username,
+		Nickname:        user.Nickname,
+		Email:           user.Email,
+		Avatar:          user.Avatar,
+		Role:            user.Role,
+		Status:          user.Status,
+		DailyTokenLimit: user.DailyTokenLimit,
+		SessionCount:    sessionCount,
+		LastActiveTime:  lastActiveTime,
+		Created:         user.Created,
+		Updated:         user.Updated,
 	}, nil
 }
 
@@ -156,11 +157,11 @@ func (service *UserService) AdminListUsers(req *vo.AdminUserListReq) (*infra.Pag
 		return nil, err
 	}
 	return &infra.PageResponse{
-		List:		items,
-		TotalPage:	pr.TotalPage,
-		TotalCount:	pr.TotalCount,
-		Page:		pr.Page,
-		PageSize:	pr.PageSize,
+		List:       items,
+		TotalPage:  pr.TotalPage,
+		TotalCount: pr.TotalCount,
+		Page:       pr.Page,
+		PageSize:   pr.PageSize,
 	}, nil
 }
 
@@ -173,14 +174,14 @@ func (service *UserService) AdminBatchGetUsers(req *vo.AdminBatchUserReq) ([]vo.
 	items := make([]vo.AdminUserItem, 0, len(users))
 	for _, u := range users {
 		items = append(items, vo.AdminUserItem{
-			UserId:		u.UserId,
-			Username:	u.Username,
-			Nickname:	u.Nickname,
-			Email:		u.Email,
-			Avatar:		u.Avatar,
-			Role:		u.Role,
-			Status:		u.Status,
-			Created:	u.Created,
+			UserId:   u.UserId,
+			Username: u.Username,
+			Nickname: u.Nickname,
+			Email:    u.Email,
+			Avatar:   u.Avatar,
+			Role:     u.Role,
+			Status:   u.Status,
+			Created:  u.Created,
 		})
 	}
 	return items, nil
@@ -197,12 +198,12 @@ func (service *UserService) AdminCreateUser(req *vo.AdminCreateUserReq) error {
 	}
 
 	user := &po.User{
-		UserId:		util.UUID(),
-		Username:	req.Username,
-		Password:	util.MD5(req.Password),
-		Nickname:	req.Nickname,
-		Role:		req.Role,
-		Status:		po.UserStatusEnabled,
+		UserId:   util.UUID(),
+		Username: req.Username,
+		Password: util.MD5(req.Password),
+		Nickname: req.Nickname,
+		Role:     req.Role,
+		Status:   po.UserStatusEnabled,
 	}
 
 	return service.UserRepo.CreateUser(user)
@@ -213,7 +214,13 @@ func (service *UserService) AdminUpdateUser(userId string, req *vo.AdminUpdateUs
 	if err != nil {
 		return errs.ErrUserNotFound
 	}
-	if user.SuperAdmin == po.UserIsSuperAdmin {
+	if user.SuperAdmin == po.UserIsSuperAdmin && req.DailyTokenLimit != nil {
+		user.DailyTokenLimit = *req.DailyTokenLimit
+		if err := service.UserRepo.UpdateUser(user); err != nil {
+			return err
+		}
+	}
+	if user.SuperAdmin == po.UserIsSuperAdmin && req.DailyTokenLimit == nil {
 		return errs.ErrCannotEditSuperAdmin
 	}
 
@@ -224,6 +231,9 @@ func (service *UserService) AdminUpdateUser(userId string, req *vo.AdminUpdateUs
 	}
 	if req.Status != nil {
 		user.Status = *req.Status
+	}
+	if req.DailyTokenLimit != nil {
+		user.DailyTokenLimit = *req.DailyTokenLimit
 	}
 
 	if err := service.UserRepo.UpdateUser(user); err != nil {

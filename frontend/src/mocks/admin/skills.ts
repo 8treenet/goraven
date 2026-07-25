@@ -82,7 +82,7 @@ interface ClawHubItemFull {
    ============================================ */
 
 export const GLOBAL_TEMPLATE = `---
-name: raven-
+name: goraven-
 description:
 ---
 
@@ -181,14 +181,14 @@ function generateSystemSkillFulls(): SystemSkillFull[] {
   return [
     {
       systemSkillId: 1,
-      name: 'raven-code-review',
+      name: 'goraven-code-review',
       description: '审查代码变更，指出风险、边界条件和可维护性问题',
       icon: 'code',
       status: 0,
       created: '2026-05-30T10:30:00Z',
       updated: '2026-05-30T10:30:00Z',
       content: `---
-name: raven-code-review
+name: goraven-code-review
 description: 审查代码变更，指出风险、边界条件和可维护性问题
 ---
 
@@ -196,14 +196,14 @@ description: 审查代码变更，指出风险、边界条件和可维护性问�
     },
     {
       systemSkillId: 2,
-      name: 'raven-db-migration',
+      name: 'goraven-db-migration',
       description: '规划数据库迁移步骤，检查兼容性和回滚策略',
       icon: 'database',
       status: 0,
       created: '2026-05-28T15:12:00Z',
       updated: '2026-05-28T15:12:00Z',
       content: `---
-name: raven-db-migration
+name: goraven-db-migration
 description: 规划数据库迁移步骤，检查兼容性和回滚策略
 ---
 
@@ -211,14 +211,14 @@ description: 规划数据库迁移步骤，检查兼容性和回滚策略
     },
     {
       systemSkillId: 3,
-      name: 'raven-finance-audit',
+      name: 'goraven-finance-audit',
       description: '辅助财务数据核对，强调来源、口径和异常解释',
       icon: 'calculator',
       status: 1,
       created: '2026-05-21T09:48:00Z',
       updated: '2026-05-21T09:48:00Z',
       content: `---
-name: raven-finance-audit
+name: goraven-finance-audit
 description: 辅助财务数据核对，强调来源、口径和异常解释
 ---
 
@@ -226,14 +226,14 @@ description: 辅助财务数据核对，强调来源、口径和异常解释
     },
     {
       systemSkillId: 4,
-      name: 'raven-incident-response',
+      name: 'goraven-incident-response',
       description: '将故障信息整理为排查路径、影响评估和复盘条目',
       icon: 'alert-triangle',
       status: 0,
       created: '2026-05-18T18:20:00Z',
       updated: '2026-05-18T18:20:00Z',
       content: `---
-name: raven-incident-response
+name: goraven-incident-response
 description: 将故障信息整理为排查路径、影响评估和复盘条目
 ---
 
@@ -246,7 +246,7 @@ export function generateSystemSkills(): SystemSkillItem[] {
   return [
     {
       systemSkillId: 1,
-      name: 'raven-code-review',
+      name: 'goraven-code-review',
       description: '审查代码变更，指出风险、边界条件和可维护性问题',
       icon: 'code',
       status: 0,
@@ -255,7 +255,7 @@ export function generateSystemSkills(): SystemSkillItem[] {
     },
     {
       systemSkillId: 2,
-      name: 'raven-db-migration',
+      name: 'goraven-db-migration',
       description: '规划数据库迁移步骤，检查兼容性和回滚策略',
       icon: 'database',
       status: 0,
@@ -264,7 +264,7 @@ export function generateSystemSkills(): SystemSkillItem[] {
     },
     {
       systemSkillId: 3,
-      name: 'raven-finance-audit',
+      name: 'goraven-finance-audit',
       description: '辅助财务数据核对，强调来源、口径和异常解释',
       icon: 'calculator',
       status: 1,
@@ -273,7 +273,7 @@ export function generateSystemSkills(): SystemSkillItem[] {
     },
     {
       systemSkillId: 4,
-      name: 'raven-incident-response',
+      name: 'goraven-incident-response',
       description: '将故障信息整理为排查路径、影响评估和复盘条目',
       icon: 'alert-triangle',
       status: 0,
@@ -1510,9 +1510,9 @@ function parseSkillContent(content: string): {
 
   if (!name) errors.push('缺少 name')
   if (!description) errors.push('缺少 description')
-  if (name && !name.startsWith('raven-'))
-    errors.push('name 必须以 raven- 开头')
-  if (name && !/^raven-[a-z0-9][a-z0-9-]*$/.test(name))
+  if (name && !name.startsWith('goraven-'))
+    errors.push('name 必须以 goraven- 开头')
+  if (name && !/^goraven-[a-z0-9][a-z0-9-]*$/.test(name))
     errors.push('name 只能使用小写英文、数字和连字符')
 
   return { name, description, errors }

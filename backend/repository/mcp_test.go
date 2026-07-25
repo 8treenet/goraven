@@ -1,8 +1,8 @@
 package repository_test
 
 import (
-	"raven/backend/repository"
-	unit_test "raven/util/unit"
+	"goraven/backend/repository"
+	unit_test "goraven/util/unit"
 	"testing"
 )
 

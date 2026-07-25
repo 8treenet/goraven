@@ -3,16 +3,16 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"goraven/backend/infra"
+	"goraven/backend/po"
+	"goraven/backend/repository"
+	"goraven/backend/vo"
+	"goraven/backend/vo/errs"
+	"goraven/config"
+	"goraven/core/sandbox"
+	"goraven/core/tools"
+	"goraven/util"
 	"math/rand"
-	"raven/backend/infra"
-	"raven/backend/po"
-	"raven/backend/repository"
-	"raven/backend/vo"
-	"raven/backend/vo/errs"
-	"raven/config"
-	"raven/core/sandbox"
-	"raven/core/tools"
-	"raven/util"
 	"regexp"
 	"time"
 
@@ -96,7 +96,7 @@ func (service *McpService) CheckAllMCPHealth() {
 }
 
 func (service *McpService) ListEnabledMCPs() ([]vo.UserMCPItem, error) {
-	endpoints, err := service.McpRepo.FindEnabledMCPEndpoints()
+	endpoints, err := service.McpRepo.FindUserSelectableMCPEndpoints()
 	if err != nil {
 		return nil, err
 	}
@@ -166,6 +166,7 @@ func (service *McpService) GetMCPEndpointDetail(mcpId int) (*vo.AdminMCPDetailRs
 		StdioEnv:        endpoint.StdioEnv,
 		StdioArgs:       endpoint.StdioArgs,
 		Status:          endpoint.Status,
+		AlwaysOn:        endpoint.AlwaysOn,
 		HealthLatency:   endpoint.HealthLatency,
 		HealthCheckedAt: endpoint.HealthCheckedAt,
 		Remark:          endpoint.Remark,
@@ -373,6 +374,16 @@ func (service *McpService) UpdateMCPEndpointStatus(mcpId int, status uint8) erro
 	return nil
 }
 
+func (service *McpService) ToggleMCPAlwaysOn(mcpId int, req *vo.AdminMCPToggleAlwaysOnReq) error {
+	if _, err := service.McpRepo.GetMCPEndpointByID(mcpId); err != nil {
+		return errs.ErrMCPNotFound
+	}
+
+	return service.McpRepo.UpdateMCPEndpoint(mcpId, map[string]interface{}{
+		"always_on": req.AlwaysOn,
+	})
+}
+
 func (service *McpService) GetRecommendMCPs() []vo.MCPRecommendItem {
 	activeEndpoints, _ := service.McpRepo.FindAllActiveMCPEndpoints()
 	installedMap := make(map[string]*po.MCPEndpoint)
@@ -535,15 +546,4 @@ func (service *McpService) buildMCPObject(transport, httpUrl, httpHeader, proxyU
 	}
 
 	return mcpObj
-}
-
-// ToggleMCPAlwaysOn 切换 MCP 端点始终启用状态
-func (service *McpService) ToggleMCPAlwaysOn(mcpId int, req *vo.AdminMCPToggleAlwaysOnReq) error {
-	if _, err := service.McpRepo.GetMCPEndpointByID(mcpId); err != nil {
-		return errs.ErrMCPNotFound
-	}
-
-	return service.McpRepo.UpdateMCPEndpoint(mcpId, map[string]interface{}{
-		"always_on": req.AlwaysOn,
-	})
 }

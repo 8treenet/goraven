@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"time"
 
-	"raven/backend/infra"
-	"raven/backend/repository"
-	"raven/backend/vo"
-	"raven/backend/vo/errs"
-	"raven/core/provider"
+	"goraven/backend/infra"
+	"goraven/backend/po"
+	"goraven/backend/repository"
+	"goraven/backend/repository/seed"
+	"goraven/backend/vo"
+	"goraven/backend/vo/errs"
+	"goraven/config"
+	"goraven/core/provider"
 
 	"github.com/8treenet/freedom"
 	"github.com/cloudwego/eino/schema"
@@ -28,13 +31,32 @@ func init() {
 }
 
 type AIModelService struct {
-	Worker		freedom.Worker
-	ModelRepo	*repository.ProviderRepository
-	DashboardRepo	*repository.DashboardRepository
+	Worker        freedom.Worker
+	ModelRepo     *repository.ProviderRepository
+	DashboardRepo *repository.DashboardRepository
 }
 
 func (svc *AIModelService) ListProviders() []vo.ProviderItem {
-	return nil
+	lang := config.Get().GetLanguage()
+	items := make([]vo.ProviderItem, 0, len(seed.ProviderDefs))
+	for _, def := range seed.ProviderDefs {
+		var defaultBaseURL string
+		if lang == "en" {
+			defaultBaseURL = def.DefaultBaseURLEn
+		} else {
+			defaultBaseURL = def.DefaultBaseURLZh
+		}
+		items = append(items, vo.ProviderItem{
+			ProviderID:            def.ID,
+			ProviderDisplayNameZh: def.DisplayNameZh,
+			ProviderDisplayNameEn: def.DisplayNameEn,
+			Icon:                  def.Icon,
+			DefaultBaseURL:        defaultBaseURL,
+			RequireAPIKey:         def.RequireAPIKey,
+			RequireBaseURL:        def.RequireBaseURL,
+		})
+	}
+	return items
 }
 
 func (svc *AIModelService) ListModels(req *vo.AdminModelListReq) (*infra.PageResponse, error) {
@@ -43,11 +65,11 @@ func (svc *AIModelService) ListModels(req *vo.AdminModelListReq) (*infra.PageRes
 		return nil, err
 	}
 	return &infra.PageResponse{
-		List:		items,
-		TotalPage:	pr.TotalPage,
-		TotalCount:	pr.TotalCount,
-		Page:		pr.Page,
-		PageSize:	pr.PageSize,
+		List:       items,
+		TotalPage:  pr.TotalPage,
+		TotalCount: pr.TotalCount,
+		Page:       pr.Page,
+		PageSize:   pr.PageSize,
 	}, nil
 }
 
@@ -60,15 +82,15 @@ func (service *AIModelService) ListEnabledModels() ([]vo.UserModelItem, error) {
 	items := make([]vo.UserModelItem, 0, len(models))
 	for _, m := range models {
 		items = append(items, vo.UserModelItem{
-			AIModelId:		m.AIModelId,
-			ProviderDisplayName:	m.ProviderDisplayName,
-			DisplayName:		m.DisplayName,
-			ModelName:		m.ModelName,
-			Icon:			m.Icon,
-			ContextLen:		m.ContextLen,
-			IsDefault:		m.IsDefault,
-			IsCompress:		m.IsCompress,
-			IsVisual:		m.IsVisual,
+			AIModelId:           m.AIModelId,
+			ProviderDisplayName: m.ProviderDisplayName,
+			DisplayName:         m.DisplayName,
+			ModelName:           m.ModelName,
+			Icon:                m.Icon,
+			ContextLen:          m.ContextLen,
+			IsDefault:           m.IsDefault,
+			IsFlash:             m.IsFlash,
+			IsVisual:            m.IsVisual,
 		})
 	}
 	return items, nil
@@ -81,19 +103,74 @@ func (service *AIModelService) GetEnabledModelByID(id int) (*vo.UserModelItem, e
 	}
 
 	return &vo.UserModelItem{
-		AIModelId:		model.AIModelId,
-		ProviderDisplayName:	model.ProviderDisplayName,
-		DisplayName:		model.DisplayName,
-		ModelName:		model.ModelName,
-		Icon:			model.Icon,
-		ContextLen:		model.ContextLen,
-		IsDefault:		model.IsDefault,
-		IsCompress:		model.IsCompress,
-		IsVisual:		model.IsVisual,
+		AIModelId:           model.AIModelId,
+		ProviderDisplayName: model.ProviderDisplayName,
+		DisplayName:         model.DisplayName,
+		ModelName:           model.ModelName,
+		Icon:                model.Icon,
+		ContextLen:          model.ContextLen,
+		IsDefault:           model.IsDefault,
+		IsFlash:             model.IsFlash,
+		IsVisual:            model.IsVisual,
 	}, nil
 }
 
 func (svc *AIModelService) CreateModel(req *vo.AdminCreateModelReq) error {
+	def := svc.findProviderDef(req.ProviderID)
+	if def == nil {
+		return errs.ErrProviderNotFound
+	}
+
+	if def.RequireAPIKey && req.APIKey == "" {
+		return errs.ErrAPIKeyRequired
+	}
+	baseURL := req.BaseURL
+	if baseURL == "" {
+		baseURL = def.CurrentDefaultBaseURL()
+	}
+	if def.RequireBaseURL && baseURL == "" {
+		return errs.ErrBaseURLRequired
+	}
+	if err := svc.validateExtraFields(req.ExtraFields); err != nil {
+		return err
+	}
+
+	if err := svc.testModelKeys(req.ProviderID, req.APIKey, baseURL, req.ExtraFields, req.ProxyURL, req.ModelName, req.ContextLen); err != nil {
+		return err
+	}
+
+	contextLen := req.ContextLen
+	if contextLen <= 0 {
+		contextLen = 200
+	}
+
+	displayName := req.DisplayName
+	if displayName == "" {
+		displayName = req.ModelName
+	}
+
+	model := &po.AIModel{
+		ProviderDisplayName: req.ProviderDisplayName,
+		DisplayName:         displayName,
+		ProviderID:          req.ProviderID,
+		ModelName:           req.ModelName,
+		Icon:                req.Icon,
+		APIKey:              req.APIKey,
+		BaseURL:             baseURL,
+		ExtraFields:         req.ExtraFields,
+		ProxyURL:            req.ProxyURL,
+		ContextLen:          contextLen,
+		IsDefault:           req.IsDefault,
+		IsFlash:             req.IsFlash,
+		IsVisual:            req.IsVisual,
+		Status:              1,
+		Remark:              req.Remark,
+	}
+
+	if err := svc.ModelRepo.CreateModel(model); err != nil {
+		return err
+	}
+	svc.invalidateDashboardCache()
 	return nil
 }
 
@@ -153,8 +230,8 @@ func (svc *AIModelService) UpdateModel(id int, req *vo.AdminUpdateModelReq) erro
 	if req.IsDefault != nil {
 		updates["is_default"] = int(*req.IsDefault)
 	}
-	if req.IsCompress != nil {
-		updates["is_compress"] = *req.IsCompress
+	if req.IsFlash != nil {
+		updates["is_flash"] = *req.IsFlash
 	}
 	if req.IsVisual != nil {
 		updates["is_visual"] = *req.IsVisual
@@ -209,8 +286,8 @@ func (svc *AIModelService) DeleteModel(id int) error {
 	if existing.IsDefault == 1 {
 		return errs.ErrCannotDeleteDefaultModel
 	}
-	if existing.IsCompress == 1 {
-		return errs.ErrCannotDeleteCompressModel
+	if existing.IsFlash == 1 {
+		return errs.ErrCannotDeleteFlashModel
 	}
 	if existing.IsVisual == 1 {
 		return errs.ErrCannotDeleteVisualModel
@@ -241,24 +318,24 @@ func (svc *AIModelService) GetModelDetail(id int) (*vo.AdminModelDetailRsp, erro
 		return nil, errs.ErrModelNotFound
 	}
 	return &vo.AdminModelDetailRsp{
-		AIModelId:		model.AIModelId,
-		ProviderDisplayName:	model.ProviderDisplayName,
-		DisplayName:		model.DisplayName,
-		ProviderID:		model.ProviderID,
-		ModelName:		model.ModelName,
-		Icon:			model.Icon,
-		APIKey:			model.APIKey,
-		BaseURL:		model.BaseURL,
-		ExtraFields:		model.ExtraFields,
-		ProxyURL:		model.ProxyURL,
-		ContextLen:		model.ContextLen,
-		IsDefault:		model.IsDefault,
-		IsCompress:		model.IsCompress,
-		IsVisual:		model.IsVisual,
-		Status:			model.Status,
-		Remark:			model.Remark,
-		Created:		model.Created,
-		Updated:		model.Updated,
+		AIModelId:           model.AIModelId,
+		ProviderDisplayName: model.ProviderDisplayName,
+		DisplayName:         model.DisplayName,
+		ProviderID:          model.ProviderID,
+		ModelName:           model.ModelName,
+		Icon:                model.Icon,
+		APIKey:              model.APIKey,
+		BaseURL:             model.BaseURL,
+		ExtraFields:         model.ExtraFields,
+		ProxyURL:            model.ProxyURL,
+		ContextLen:          model.ContextLen,
+		IsDefault:           model.IsDefault,
+		IsFlash:             model.IsFlash,
+		IsVisual:            model.IsVisual,
+		Status:              model.Status,
+		Remark:              model.Remark,
+		Created:             model.Created,
+		Updated:             model.Updated,
 	}, nil
 }
 
@@ -273,11 +350,11 @@ func (svc *AIModelService) SetDefaultModel(id int) error {
 	return nil
 }
 
-func (svc *AIModelService) SetCompressModel(id int) error {
+func (svc *AIModelService) SetFlashModel(id int) error {
 	if _, err := svc.ModelRepo.GetModelByID(id); err != nil {
 		return errs.ErrModelNotFound
 	}
-	if err := svc.ModelRepo.UpdateModel(id, map[string]interface{}{"is_compress": 1}); err != nil {
+	if err := svc.ModelRepo.UpdateModel(id, map[string]interface{}{"is_flash": 1}); err != nil {
 		return err
 	}
 	svc.invalidateDashboardCache()
@@ -308,8 +385,8 @@ func (svc *AIModelService) RecommendModels(providerID string, apiKey string, bas
 	}
 
 	pv, err := provider.GetProviderByName(providerID, provider.ProviderConfig{
-		APIKey:		apiKey,
-		BaseURL:	baseURL,
+		APIKey:  apiKey,
+		BaseURL: baseURL,
 	})
 	if err != nil {
 		return nil, nil
@@ -323,9 +400,9 @@ func (svc *AIModelService) RecommendModels(providerID string, apiKey string, bas
 	items := make([]vo.RecommendModelItem, 0, len(models))
 	for _, m := range models {
 		items = append(items, vo.RecommendModelItem{
-			ID:		m.ID,
-			Object:		m.Object,
-			OwnedBy:	m.OwnedBy,
+			ID:      m.ID,
+			Object:  m.Object,
+			OwnedBy: m.OwnedBy,
 		})
 	}
 	return items, nil
@@ -337,9 +414,9 @@ func (svc *AIModelService) testModelKeys(providerID, apiKey, baseURL, extraField
 	}
 
 	cfg := provider.ProviderConfig{
-		APIKey:		apiKey,
-		BaseURL:	baseURL,
-		ExtraFields:	extraFields,
+		APIKey:      apiKey,
+		BaseURL:     baseURL,
+		ExtraFields: extraFields,
 	}
 	pv, err := provider.GetProviderByName(providerID, cfg)
 	if err != nil {
@@ -374,7 +451,12 @@ func (svc *AIModelService) testSingleKey(pv provider.Provider, modelName string,
 	return nil
 }
 
-func (svc *AIModelService) findProviderDef(id string) *vo.OverviewInfo {
+func (svc *AIModelService) findProviderDef(id string) *seed.ProviderDef {
+	for i := range seed.ProviderDefs {
+		if seed.ProviderDefs[i].ID == id {
+			return &seed.ProviderDefs[i]
+		}
+	}
 	return nil
 }
 

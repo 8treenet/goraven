@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"raven/backend/infra"
-	"raven/backend/service"
+	"goraven/backend/infra"
+	"goraven/backend/service"
 
 	"github.com/8treenet/freedom"
 )
@@ -14,8 +14,8 @@ func init() {
 }
 
 type MCPController struct {
-	McpSev	*service.McpService
-	Request	*infra.Request
+	McpSev  *service.McpService
+	Request *infra.Request
 }
 
 func (controller *MCPController) BeforeActivation(b freedom.BeforeActivation) {

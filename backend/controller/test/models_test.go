@@ -1,7 +1,7 @@
 package test
 
 import (
-	"raven/backend/vo"
+	"goraven/backend/vo"
 	"testing"
 
 	"github.com/8treenet/freedom/infra/requests"
@@ -57,17 +57,17 @@ func TestGetModelDetail(t *testing.T) {
 
 func TestCreateModel(t *testing.T) {
 	req := vo.AdminCreateModelReq{
-		ProviderDisplayName:	"火山3",
-		ProviderID:		"openai_compatible",
-		ModelName:		"deepseek-v3-1-terminus",
-		APIKey:			"ddd-8a36-4dfd-a026-bed断点c",
-		BaseURL:		"https://ark.cn-beijing.volces.com/api/v3",
-		ExtraFields:		"{\"thinking\":{\"type\":\"enabled\"}}",
+		ProviderDisplayName: "火山3",
+		ProviderID:          "openai_compatible",
+		ModelName:           "deepseek-v3-1-terminus",
+		APIKey:              "ddd-8a36-4dfd-a026-bed断点c",
+		BaseURL:             "https://ark.cn-beijing.volces.com/api/v3",
+		ExtraFields:         "{\"thinking\":{\"type\":\"enabled\"}}",
 
-		ContextLen:	200,
-		IsDefault:	0,
-		IsCompress:	0,
-		Remark:		"test model",
+		ContextLen: 200,
+		IsDefault:  0,
+		IsFlash:    0,
+		Remark:     "test model",
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/models").
 		Post().
@@ -110,8 +110,8 @@ func TestSetDefaultModel(t *testing.T) {
 	t.Log(str, httpResp)
 }
 
-func TestSetCompressModel(t *testing.T) {
-	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/models/1/compress").
+func TestSetFlashModel(t *testing.T) {
+	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/models/1/flash").
 		Put().
 		SetHeaderValue("Authorization", "Bearer "+token).
 		ToString()

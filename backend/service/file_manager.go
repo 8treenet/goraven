@@ -2,14 +2,14 @@ package service
 
 import (
 	"fmt"
+	"goraven/backend/infra"
+	"goraven/backend/po"
+	"goraven/backend/repository"
+	"goraven/backend/vo"
+	"goraven/core/sandbox"
+	"goraven/util/envfile"
 	"os"
 	"path/filepath"
-	"raven/backend/infra"
-	"raven/backend/po"
-	"raven/backend/repository"
-	"raven/backend/vo"
-	"raven/core/sandbox"
-	"raven/util/envfile"
 	"strings"
 
 	"github.com/8treenet/freedom"
@@ -28,12 +28,13 @@ func init() {
 }
 
 type FileManagerService struct {
-	Worker	freedom.Worker
-	HFSRepo	*repository.HFSRepository
+	Worker    freedom.Worker
+	HFSRepo   *repository.HFSRepository
+	ShareRepo *repository.SharedProjectRepository
 }
 
 func (service *FileManagerService) List(userID string, req *vo.FileManagerListReq) (*vo.FileManagerListRsp, error) {
-	fm, err := service.newFileManager(userID)
+	fm, workspace, err := service.newFileManager(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -54,6 +55,18 @@ func (service *FileManagerService) List(userID string, req *vo.FileManagerListRe
 
 	listItems := make([]vo.FileManagerListItem, 0, len(items))
 	isRoot := req.Dir == "" || req.Dir == "/"
+
+	var sharedSet map[string]int
+	if strings.TrimPrefix(strings.TrimSpace(req.Dir), "/") == "projects" {
+		sharedProjects, err := service.ShareRepo.ListByOwner(userID)
+		if err == nil && len(sharedProjects) > 0 {
+			sharedSet = make(map[string]int, len(sharedProjects))
+			for _, sp := range sharedProjects {
+				sharedSet[sp.ProjectName] = sp.Id
+			}
+		}
+	}
+
 	for _, fi := range items {
 
 		if isRoot && fi.IsDir && fi.Name == "skills" {
@@ -70,12 +83,24 @@ func (service *FileManagerService) List(userID string, req *vo.FileManagerListRe
 				isDefault = true
 			}
 		}
+
+		isShared := false
+		sharedId := 0
+		if sharedSet != nil && fi.IsDir {
+			if id, ok := sharedSet[fi.Name]; ok {
+				isShared = true
+				sharedId = id
+			}
+		}
 		listItems = append(listItems, vo.FileManagerListItem{
-			Name:		fi.Name,
-			IsDir:		fi.IsDir,
-			Size:		fi.Size,
-			ModTime:	fi.ModTime,
-			IsDefault:	isDefault,
+			Name:      fi.Name,
+			Path:      filepath.Join(workspace, req.Dir, fi.Name),
+			IsDir:     fi.IsDir,
+			Size:      fi.Size,
+			ModTime:   fi.ModTime,
+			IsDefault: isDefault,
+			IsShared:  isShared,
+			SharedId:  sharedId,
 		})
 	}
 
@@ -123,7 +148,7 @@ func (service *FileManagerService) Upload(userID string, req *vo.FileManagerUplo
 }
 
 func (service *FileManagerService) Mkdir(userID string, req *vo.FileManagerMkdirReq) error {
-	fm, err := service.newFileManager(userID)
+	fm, _, err := service.newFileManager(userID)
 	if err != nil {
 		return err
 	}
@@ -135,7 +160,7 @@ func (service *FileManagerService) Rename(userID string, req *vo.FileManagerRena
 	if _, ok := protectedPaths[cleaned]; ok {
 		return fmt.Errorf("%s is a system directory and cannot be renamed", cleaned)
 	}
-	fm, err := service.newFileManager(userID)
+	fm, _, err := service.newFileManager(userID)
 	if err != nil {
 		return err
 	}
@@ -143,14 +168,14 @@ func (service *FileManagerService) Rename(userID string, req *vo.FileManagerRena
 }
 
 var protectedPaths = map[string]struct{}{
-	"documents":	{},
-	"temp":		{},
-	"downloads":	{},
-	"images":	{},
-	"videos":	{},
-	"projects":	{},
-	"skills":	{},
-	".profile":	{},
+	"documents": {},
+	"temp":      {},
+	"downloads": {},
+	"images":    {},
+	"videos":    {},
+	"projects":  {},
+	"skills":    {},
+	".profile":  {},
 }
 
 func (service *FileManagerService) Delete(userID string, req *vo.FileManagerDeleteReq) error {
@@ -160,7 +185,7 @@ func (service *FileManagerService) Delete(userID string, req *vo.FileManagerDele
 			return fmt.Errorf("%s is a system directory and cannot be deleted", cleaned)
 		}
 	}
-	fm, err := service.newFileManager(userID)
+	fm, _, err := service.newFileManager(userID)
 	if err != nil {
 		return err
 	}
@@ -168,7 +193,7 @@ func (service *FileManagerService) Delete(userID string, req *vo.FileManagerDele
 }
 
 func (service *FileManagerService) Compress(userID string, req *vo.FileManagerCompressReq) (*vo.FileManagerCompressRsp, error) {
-	fm, err := service.newFileManager(userID)
+	fm, _, err := service.newFileManager(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +205,7 @@ func (service *FileManagerService) Compress(userID string, req *vo.FileManagerCo
 }
 
 func (service *FileManagerService) Decompress(userID string, req *vo.FileManagerDecompressReq) error {
-	fm, err := service.newFileManager(userID)
+	fm, _, err := service.newFileManager(userID)
 	if err != nil {
 		return err
 	}
@@ -188,7 +213,7 @@ func (service *FileManagerService) Decompress(userID string, req *vo.FileManager
 }
 
 func (service *FileManagerService) Usage(userID string) (*vo.FileManagerUsageRsp, error) {
-	fm, err := service.newFileManager(userID)
+	fm, _, err := service.newFileManager(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -212,18 +237,18 @@ func (service *FileManagerService) Usage(userID string) (*vo.FileManagerUsageRsp
 	}
 
 	return &vo.FileManagerUsageRsp{
-		TotalSize:	totalSize,
-		UsedSize:	usedSize,
-		FileCount:	fileCount,
+		TotalSize: totalSize,
+		UsedSize:  usedSize,
+		FileCount: fileCount,
 	}, nil
 }
 
-func (service *FileManagerService) newFileManager(userID string) (sandbox.FileManager, error) {
+func (service *FileManagerService) newFileManager(userID string) (sandbox.FileManager, string, error) {
 	sb, err := sandbox.NewSandbox(infra.GetUserName(service.Worker))
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	return sb.NewFileManager(), nil
+	return sb.NewFileManager(), sb.GetWorkspace(), nil
 }
 
 const profileFileName = ".profile"
@@ -292,7 +317,7 @@ func (service *FileManagerService) ProfileDelete(userID string, req *vo.FileMana
 }
 
 func (service *FileManagerService) readProfile(userID string) ([]string, error) {
-	fm, err := service.newFileManager(userID)
+	fm, _, err := service.newFileManager(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -316,7 +341,7 @@ func (service *FileManagerService) writeProfile(userID string, entries []string)
 	if err != nil {
 		return err
 	}
-	fm, err := service.newFileManager(userID)
+	fm, _, err := service.newFileManager(userID)
 	if err != nil {
 		return err
 	}

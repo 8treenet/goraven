@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"goraven/config"
+	"goraven/util"
 	"os"
 	"path/filepath"
-	"raven/config"
-	"raven/util"
 	"strings"
 	"time"
 
@@ -25,17 +25,17 @@ func init() {
 
 type ClawHubRepository struct {
 	freedom.Repository
-	ClawHubAPIURL	string
-	ClawHubToken	string
+	ClawHubAPIURL string
+	ClawHubToken  string
 }
 
 type ClawHubSearchResult struct {
-	Slug		string	`json:"slug"`
-	DisplayName	string	`json:"display_name"`
-	Summary		string	`json:"summary"`
-	Version		string	`json:"version"`
-	Score		float64	`json:"score"`
-	UpdatedAt	int64	`json:"updatedAt"`
+	Slug        string  `json:"slug"`
+	DisplayName string  `json:"displayName"`
+	Summary     string  `json:"summary"`
+	Version     string  `json:"version"`
+	Score       float64 `json:"score"`
+	UpdatedAt   int64   `json:"updatedAt"`
 }
 
 type ClawHubSearchResponse struct {
@@ -43,26 +43,26 @@ type ClawHubSearchResponse struct {
 }
 
 type ClawHubSkillListItem struct {
-	Slug		string			`json:"slug"`
-	DisplayName	string			`json:"display_name"`
-	Summary		string			`json:"summary"`
-	Stats		ClawHubSkillStats	`json:"stats"`
-	CreatedAt	int64			`json:"createdAt"`
-	UpdatedAt	int64			`json:"updatedAt"`
+	Slug        string            `json:"slug"`
+	DisplayName string            `json:"displayName"`
+	Summary     string            `json:"summary"`
+	Stats       ClawHubSkillStats `json:"stats"`
+	CreatedAt   int64             `json:"createdAt"`
+	UpdatedAt   int64             `json:"updatedAt"`
 }
 
 type ClawHubSkillStats struct {
-	Comments	int	`json:"comments"`
-	Downloads	int	`json:"downloads"`
-	InstallsAllTime	int	`json:"installsAllTime"`
-	InstallsCurrent	int	`json:"installsCurrent"`
-	Stars		int	`json:"stars"`
-	Versions	int	`json:"versions"`
+	Comments        int `json:"comments"`
+	Downloads       int `json:"downloads"`
+	InstallsAllTime int `json:"installsAllTime"`
+	InstallsCurrent int `json:"installsCurrent"`
+	Stars           int `json:"stars"`
+	Versions        int `json:"versions"`
 }
 
 type ClawHubExploreResponse struct {
-	Items		[]ClawHubSkillListItem	`json:"items"`
-	NextCursor	string			`json:"nextCursor"`
+	Items      []ClawHubSkillListItem `json:"items"`
+	NextCursor string                 `json:"nextCursor"`
 }
 
 func (repo *ClawHubRepository) Search(query string, limit int) (*ClawHubSearchResponse, error) {

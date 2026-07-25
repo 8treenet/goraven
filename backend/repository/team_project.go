@@ -3,8 +3,8 @@ package repository
 import (
 	"context"
 	"fmt"
-	"raven/backend/po"
-	"raven/backend/vo"
+	"goraven/backend/po"
+	"goraven/backend/vo"
 	"time"
 
 	"github.com/8treenet/freedom"

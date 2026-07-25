@@ -1,8 +1,8 @@
 package service_test
 
 import (
-	"raven/backend/service"
-	unit_test "raven/util/unit"
+	"goraven/backend/service"
+	unit_test "goraven/util/unit"
 	"testing"
 )
 
@@ -13,5 +13,5 @@ func TestAIModelService_RecommendModels(t *testing.T) {
 	var service *service.AIModelService
 	unitTest.FetchService(&service)
 
-	t.Log(service.RecommendModels("deepseek", "sk-mock", ""))
+	t.Log(service.RecommendModels("deepseek", "sk-ccec93010d58433699b4abda77bc372f", ""))
 }

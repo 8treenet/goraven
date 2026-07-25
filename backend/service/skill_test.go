@@ -1,9 +1,9 @@
 package service_test
 
 import (
-	"raven/backend/service"
-	"raven/backend/vo"
-	unit_test "raven/util/unit"
+	"goraven/backend/service"
+	"goraven/backend/vo"
+	unit_test "goraven/util/unit"
 	"testing"
 	"time"
 )

@@ -11,7 +11,7 @@ import (
 
 type CacheWrapper struct {
 	*redis.Client
-	cache	*cache.Cache
+	cache *cache.Cache
 }
 
 type PatternDeleter interface {
@@ -20,8 +20,8 @@ type PatternDeleter interface {
 
 func NewCacheWrapper(defaultExpiration, cleanupInterval time.Duration) *CacheWrapper {
 	return &CacheWrapper{
-		Client:	&redis.Client{},
-		cache:	cache.New(defaultExpiration, cleanupInterval),
+		Client: &redis.Client{},
+		cache:  cache.New(defaultExpiration, cleanupInterval),
 	}
 }
 

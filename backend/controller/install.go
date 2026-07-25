@@ -1,10 +1,10 @@
 package controller
 
 import (
-	"raven/backend/infra"
-	"raven/backend/service"
-	"raven/backend/vo"
-	"raven/config"
+	"goraven/backend/infra"
+	"goraven/backend/service"
+	"goraven/backend/vo"
+	"goraven/config"
 
 	"github.com/8treenet/freedom"
 )
@@ -19,8 +19,8 @@ func init() {
 }
 
 type InstallController struct {
-	InstallSev	*service.InstallService
-	Request		*infra.Request
+	InstallSev *service.InstallService
+	Request    *infra.Request
 }
 
 func (controller *InstallController) BeforeActivation(b freedom.BeforeActivation) {

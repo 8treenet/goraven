@@ -67,7 +67,7 @@ function generateMockUsers(): AdminUserItem[] {
     userId: `u-${String(i).padStart(3, '0')}`,
     username: n.username,
     nickname: n.nickname,
-    email: `${n.username}@raven.local`,
+    email: `${n.username}@goraven.local`,
     avatar:
       i % 3 === 0
         ? `https://api.dicebear.com/9.x/initials/svg?seed=${n.username}&backgroundColor=${avatarColors[i % avatarColors.length]}`
@@ -183,7 +183,7 @@ export async function createUser(req: CreateUserRequest): Promise<AdminUserItem>
     userId: `u-${String(users.length).padStart(3, '0')}`,
     username: req.username,
     nickname: req.nickname,
-    email: `${req.username}@raven.local`,
+    email: `${req.username}@goraven.local`,
     avatar: '',
     role: req.role,
     status: 1,

@@ -2,9 +2,9 @@ package agent
 
 import (
 	"errors"
-	"raven/backend/po"
-	"raven/backend/repository"
-	"raven/core/iface"
+	"goraven/backend/po"
+	"goraven/backend/repository"
+	"goraven/core/iface"
 )
 
 type AgentParam struct {

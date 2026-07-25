@@ -359,7 +359,7 @@ export const MOCK_SYSTEM_INFO = {
   database: {
     type: 'sqlite',
     version: '3.45.0',
-    name: '/data/raven.db',
+    name: '/data/goraven.db',
     dataSizeBytes: 10485760,
     pool: {
       maxOpenConnections: 25,

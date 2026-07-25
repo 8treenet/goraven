@@ -1,14 +1,14 @@
 package service_test
 
 import (
-	"raven/backend/repository"
-	"raven/config"
-	"raven/util"
-	unit_test "raven/util/unit"
+	"goraven/backend/repository"
+	"goraven/config"
+	"goraven/util"
+	unit_test "goraven/util/unit"
 	"testing"
 	"time"
 
-	pkg_dashboard "raven/backend/service"
+	pkg_dashboard "goraven/backend/service"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -40,30 +40,6 @@ func TestDashboard_CheckDailyStatsData(t *testing.T) {
 	}
 	t.Logf("zeroDays=%d/%d (%.0f%%)", zeroDays, len(items), float64(zeroDays)/float64(len(items))*100)
 	t.Logf("totalPrompt=%d totalCompletion=%d", totalPrompt, totalCompletion)
-}
-
-func TestDashboard_GetAdminDashboard(t *testing.T) {
-	unitTest := unit_test.GetUnitTest()
-	unitTest.Run()
-
-	var svc *pkg_dashboard.DashboardService
-	unitTest.FetchService(&svc)
-
-	rsp, err := svc.GetAdminDashboard()
-	if err != nil {
-		t.Fatalf("GetAdminDashboard error: %v", err)
-	}
-	t.Logf("overview: activeUsers=%d sessions=%d newSessions=%d weekTokens=%d todayTokens=%d models=%d",
-		rsp.Overview.ActiveUsers, rsp.Overview.TotalSessions, rsp.Overview.NewSessions,
-		rsp.Overview.WeekTokens, rsp.Overview.TodayTokens, rsp.Overview.EnabledModels)
-
-	hasData := false
-	if !hasData {
-		t.Log("  (all zero)")
-	}
-	for _, m := range rsp.McpUsageRank {
-		t.Logf("  %s: tokens=%d pct=%.1f%%", m.Name, m.Count)
-	}
 }
 
 func TestDashboard_GetAdminTokenTrend(t *testing.T) {

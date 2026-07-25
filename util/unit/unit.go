@@ -3,9 +3,9 @@ package unit_test
 import (
 	"context"
 	"encoding/json"
-	"raven/backend/infra"
-	"raven/backend/repository"
-	"raven/config"
+	"goraven/backend/infra"
+	"goraven/backend/repository"
+	"goraven/config"
 	"time"
 
 	"github.com/8treenet/freedom"
@@ -16,9 +16,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// set RAVEN_CONF from config.go -> ParseConfigPath
 func GetUnitTest() freedom.UnitTest {
-	//Create unit testing tools
+
 	unitTest := freedom.NewUnitTest()
 	unitTest.InstallDB(func() interface{} {
 		dbConf := config.Get().DB
@@ -31,7 +30,7 @@ func GetUnitTest() freedom.UnitTest {
 			dialector = mysql.Open(dbConfAddr)
 		case "pg":
 			dialector = postgres.Open(dbConfAddr)
-		default: // sqlite
+		default:
 			dbConfAddr = config.Get().Paths.SqliteDB
 			dialector = sqlite.Open(dbConfAddr)
 		}

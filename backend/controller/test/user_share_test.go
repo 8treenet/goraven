@@ -1,7 +1,7 @@
 package test
 
 import (
-	"raven/backend/vo"
+	"goraven/backend/vo"
 	"testing"
 
 	"github.com/8treenet/freedom/infra/requests"
@@ -29,8 +29,8 @@ func TestCreateShare(t *testing.T) {
 
 func TestCreateShareWithTitle(t *testing.T) {
 	req := vo.CreateShareReq{
-		Title:		"自定义分享标题",
-		ExpiresIn:	"7d",
+		Title:     "自定义分享标题",
+		ExpiresIn: "7d",
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/sessions/3d1cd0291e804fa5bdfc201b0cae407a/share").
 		Post().

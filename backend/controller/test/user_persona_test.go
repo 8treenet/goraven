@@ -1,7 +1,7 @@
 package test
 
 import (
-	"raven/backend/vo"
+	"goraven/backend/vo"
 	"testing"
 
 	"github.com/8treenet/freedom/infra/requests"
@@ -58,14 +58,14 @@ func TestGetUserPersonas(t *testing.T) {
 func TestCreateUserPersona(t *testing.T) {
 	tmplId := 1
 	req := vo.CreateUserPersonaReq{
-		Name:		"代码审查助手",
-		Icon:		"code-2",
-		RoleInfo:	"你是一个专业的代码审查助手，擅长发现代码中的潜在问题并提供改进建议。请用简洁清晰的语言指出问题并给出修改方案。",
-		CategoryId:	2,
-		McpIds:		[]int{1, 3},
-		SkillIds:	[]int{1, 2},
-		AIModelId:	0,
-		TemplateId:	&tmplId,
+		Name:       "代码审查助手",
+		Icon:       "code-2",
+		RoleInfo:   "你是一个专业的代码审查助手，擅长发现代码中的潜在问题并提供改进建议。请用简洁清晰的语言指出问题并给出修改方案。",
+		CategoryId: 2,
+		McpIds:     []int{1, 3},
+		SkillIds:   []int{1, 2},
+		AIModelId:  0,
+		TemplateId: &tmplId,
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/personas").
 		Post().
@@ -77,13 +77,13 @@ func TestCreateUserPersona(t *testing.T) {
 
 func TestCreateUserPersona2(t *testing.T) {
 	req := vo.CreateUserPersonaReq{
-		Name:		"翻译助手",
-		Icon:		"languages",
-		RoleInfo:	"你是一个专业的翻译助手，精通中文、英文、日文等多种语言。请提供准确、流畅的翻译服务。",
-		CategoryId:	3,
-		McpIds:		[]int{},
-		SkillIds:	[]int{3},
-		AIModelId:	0,
+		Name:       "翻译助手",
+		Icon:       "languages",
+		RoleInfo:   "你是一个专业的翻译助手，精通中文、英文、日文等多种语言。请提供准确、流畅的翻译服务。",
+		CategoryId: 3,
+		McpIds:     []int{},
+		SkillIds:   []int{3},
+		AIModelId:  0,
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/personas").
 		Post().
@@ -95,13 +95,13 @@ func TestCreateUserPersona2(t *testing.T) {
 
 func TestCreateUserPersona3(t *testing.T) {
 	req := vo.CreateUserPersonaReq{
-		Name:		"数据探索者",
-		Icon:		"bar-chart-3",
-		RoleInfo:	"你是一个专业的数据分析师，擅长从数据中发现洞察并提供可视化建议。",
-		CategoryId:	5,
-		McpIds:		[]int{4},
-		SkillIds:	[]int{10, 11},
-		AIModelId:	0,
+		Name:       "数据探索者",
+		Icon:       "bar-chart-3",
+		RoleInfo:   "你是一个专业的数据分析师，擅长从数据中发现洞察并提供可视化建议。",
+		CategoryId: 5,
+		McpIds:     []int{4},
+		SkillIds:   []int{10, 11},
+		AIModelId:  0,
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/personas").
 		Post().
@@ -124,9 +124,9 @@ func TestUpdateUserPersona(t *testing.T) {
 	icon := "shield-check"
 	roleInfo := "你是一位资深的代码审查专家，精通多种编程语言和框架。请严格审查代码的安全性、性能和可维护性。"
 	req := vo.UpdateUserPersonaReq{
-		Name:		&name,
-		Icon:		&icon,
-		RoleInfo:	&roleInfo,
+		Name:     &name,
+		Icon:     &icon,
+		RoleInfo: &roleInfo,
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/personas/1").
 		Put().
@@ -172,10 +172,10 @@ func TestGetUserPersonaNotFound(t *testing.T) {
 
 func TestCreateUserPersonaMissingRoleInfo(t *testing.T) {
 	req := vo.CreateUserPersonaReq{
-		Name:		"空提示词角色",
-		Icon:		"bot",
-		RoleInfo:	"",
-		CategoryId:	1,
+		Name:       "空提示词角色",
+		Icon:       "bot",
+		RoleInfo:   "",
+		CategoryId: 1,
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/personas").
 		Post().
@@ -187,10 +187,10 @@ func TestCreateUserPersonaMissingRoleInfo(t *testing.T) {
 
 func TestCreateUserPersonaMissingCategory(t *testing.T) {
 	req := vo.CreateUserPersonaReq{
-		Name:		"无分类角色",
-		Icon:		"bot",
-		RoleInfo:	"你是一个测试角色。",
-		CategoryId:	0,
+		Name:       "无分类角色",
+		Icon:       "bot",
+		RoleInfo:   "你是一个测试角色。",
+		CategoryId: 0,
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/personas").
 		Post().

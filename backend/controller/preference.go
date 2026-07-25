@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"raven/backend/infra"
-	"raven/backend/service"
+	"goraven/backend/infra"
+	"goraven/backend/service"
 
 	"github.com/8treenet/freedom"
 )
@@ -14,9 +14,9 @@ func init() {
 }
 
 type PreferenceController struct {
-	PrefSev	*service.PreferenceService
-	Worker	freedom.Worker
-	Request	*infra.Request
+	PrefSev *service.PreferenceService
+	Worker  freedom.Worker
+	Request *infra.Request
 }
 
 func (controller *PreferenceController) BeforeActivation(b freedom.BeforeActivation) {

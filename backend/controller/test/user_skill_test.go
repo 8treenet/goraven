@@ -1,7 +1,7 @@
 package test
 
 import (
-	"raven/backend/vo"
+	"goraven/backend/vo"
 	"testing"
 
 	"github.com/8treenet/freedom/infra/requests"
@@ -159,8 +159,8 @@ func TestUserUpdateUserSkill(t *testing.T) {
 	icon := "globe"
 	categoryId := 2
 	req := vo.UserSkillUpdateReq{
-		Icon:		&icon,
-		CategoryId:	&categoryId,
+		Icon:       &icon,
+		CategoryId: &categoryId,
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/skills/user/9").
 		Put().

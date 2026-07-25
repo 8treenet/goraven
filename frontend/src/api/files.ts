@@ -52,7 +52,7 @@ export function getDownloadUrl(path: string): string {
 }
 
 /** GET /api/hfs/file/<abs-path> — 按文件系统绝对路径构建下载 URL（需配合 fetch + Bearer token 使用）
- *  用于聊天内 <raven-file> 跨用户共享场景，任意已登录用户均可访问 user_space 下的文件。 */
+ *  用于聊天内 <goraven-file> 跨用户共享场景，任意已登录用户均可访问 user_space 下的文件。 */
 export function getFileUrl(absPath: string): string {
   const segments = absPath.replace(/^\/+/, '').split('/').filter(Boolean)
   return `/api/hfs/file/${segments.map(encodeURIComponent).join('/')}`

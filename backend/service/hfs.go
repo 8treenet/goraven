@@ -4,17 +4,18 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"goraven/backend/po"
+	"goraven/backend/repository"
+	"goraven/backend/vo"
+	"goraven/backend/vo/errs"
+	"goraven/config"
+	"goraven/core/iface"
+	"goraven/core/sandbox"
+	"goraven/util"
 	"io"
 	"math/rand"
 	"os"
 	"path/filepath"
-	"raven/backend/po"
-	"raven/backend/repository"
-	"raven/backend/vo"
-	"raven/config"
-	"raven/core/iface"
-	"raven/core/sandbox"
-	"raven/util"
 	"strings"
 	"time"
 
@@ -41,10 +42,10 @@ func init() {
 }
 
 type HFSService struct {
-	Worker		freedom.Worker
-	HFSRepo		*repository.HFSRepository
-	SysCfgRepo	*repository.SystemSettingRepository
-	UserRepository	*repository.UserRepository
+	Worker         freedom.Worker
+	HFSRepo        *repository.HFSRepository
+	SysCfgRepo     *repository.SystemSettingRepository
+	UserRepository *repository.UserRepository
 }
 
 var _ iface.FileURLGenerator = (*HFSService)(nil)
@@ -81,11 +82,11 @@ func (service *HFSService) GenerateURL(userID string, filePath string) (string, 
 	expiresHours := sysconf.FileLinkExpiresHours
 
 	link := &po.FileLink{
-		LinkId:		linkId,
-		UserId:		userID,
-		FilePath:	filePath,
-		FileName:	fileName,
-		ExpiresAt:	time.Now().Add(time.Duration(expiresHours) * time.Hour),
+		LinkId:    linkId,
+		UserId:    userID,
+		FilePath:  filePath,
+		FileName:  fileName,
+		ExpiresAt: time.Now().Add(time.Duration(expiresHours) * time.Hour),
 	}
 	if err := service.HFSRepo.CreateFileLink(link); err != nil {
 		return "", fmt.Errorf("创建外链记录失败: %w", err)
@@ -118,6 +119,99 @@ func (service *HFSService) buildURL(linkId string, filePath, domain string) stri
 	return fmt.Sprintf("%s/api/hfs/public/%s%s", strings.TrimSuffix(domain, "/"), linkId, ext)
 }
 
+const tempAkPrefix = "rvnt_"
+
+func (service *HFSService) CreateTempAccess(userID, userName string, req *vo.TempAccessReq) (*vo.TempAccessRsp, error) {
+	if req.Type != "file" && req.Type != "dir" {
+		return nil, errs.ErrTempAccessTypeInvalid
+	}
+
+	sb, sberr := sandbox.NewSandbox(userName)
+	if sberr != nil {
+		return nil, sberr
+	}
+
+	absPath := filepath.Join(sb.GetWorkspace(), req.Path)
+	cleanPath := filepath.Clean(absPath)
+	workspace := filepath.Clean(sb.GetWorkspace())
+	if !strings.HasPrefix(cleanPath, workspace+string(filepath.Separator)) && cleanPath != workspace {
+		return nil, errs.ErrTempAccessPathInvalid
+	}
+
+	info, err := os.Stat(cleanPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, errs.NewFormatError("path not found: %s", "路径不存在: %s", req.Path)
+		}
+		return nil, fmt.Errorf("stat path: %w", err)
+	}
+	if req.Type == "file" && info.IsDir() {
+		return nil, errs.ErrTempAccessNotFile
+	}
+	if req.Type == "dir" && !info.IsDir() {
+		return nil, errs.ErrTempAccessNotDir
+	}
+
+	ak := tempAkPrefix + util.UUID()
+	cache := &repository.TempAccessCache{
+		UserName: userName,
+		Path:     req.Path,
+		Type:     req.Type,
+	}
+	if err := service.HFSRepo.SetTempAccess(ak, cache); err != nil {
+		return nil, fmt.Errorf("create temp access: %w", err)
+	}
+
+	return &vo.TempAccessRsp{
+		Ak:        ak,
+		ExpiresAt: time.Now().Add(repository.TempAkTTL).Unix(),
+	}, nil
+}
+
+func (service *HFSService) ResolveAkDownload(ak, reqPath string) (string, error) {
+	cache, err := service.HFSRepo.GetTempAccess(ak)
+	if err != nil || cache == nil {
+		return "", errs.ErrTempAccessInvalid
+	}
+
+	sb, sberr := sandbox.NewSandbox(cache.UserName)
+	if sberr != nil {
+		return "", sberr
+	}
+
+	cleanReq := filepath.Clean(reqPath)
+	cleanBound := filepath.Clean(cache.Path)
+
+	if cache.Type == "file" {
+		if cleanReq != cleanBound {
+			return "", errs.ErrTempAccessPathNotAllowed
+		}
+	} else {
+
+		if cleanReq == cleanBound || !strings.HasPrefix(cleanReq, cleanBound+string(filepath.Separator)) {
+			return "", errs.ErrTempAccessPathNotAllowed
+		}
+	}
+
+	absPath := filepath.Join(sb.GetWorkspace(), cleanReq)
+	info, serr := os.Stat(absPath)
+	if serr != nil {
+		if os.IsNotExist(serr) {
+			return "", errs.ErrTempAccessFileNotFound
+		}
+		return "", serr
+	}
+	if !info.IsDir() {
+
+		validated, verr := sb.Download(absPath)
+		if verr != nil {
+			return "", errs.ErrTempAccessPathNotAllowed
+		}
+		return validated, nil
+	}
+	return "", errs.ErrTempAccessNotFile
+}
+
 func (service *HFSService) CreateUpload(userID string, req *vo.ChunkUploadCreateReq) (*vo.ChunkUploadCreateRsp, error) {
 	uploadId := util.UUID()
 	tempBase := config.Get().GetUploadTempDir()
@@ -136,14 +230,14 @@ func (service *HFSService) CreateUpload(userID string, req *vo.ChunkUploadCreate
 	}
 
 	upload := &po.ChunkUpload{
-		UploadId:	uploadId,
-		UserId:		userID,
-		FileName:	req.FileName,
-		FileSize:	req.FileSize,
-		ChunkSize:	req.ChunkSize,
-		TotalChunks:	totalChunks,
-		TempDir:	tempDir,
-		Status:		po.UploadStatusPending,
+		UploadId:    uploadId,
+		UserId:      userID,
+		FileName:    req.FileName,
+		FileSize:    req.FileSize,
+		ChunkSize:   req.ChunkSize,
+		TotalChunks: totalChunks,
+		TempDir:     tempDir,
+		Status:      po.UploadStatusPending,
 	}
 
 	if err := service.HFSRepo.CreateUpload(upload); err != nil {
@@ -152,8 +246,8 @@ func (service *HFSService) CreateUpload(userID string, req *vo.ChunkUploadCreate
 	}
 
 	return &vo.ChunkUploadCreateRsp{
-		UploadId:	uploadId,
-		TempDir:	tempDir,
+		UploadId: uploadId,
+		TempDir:  tempDir,
 	}, nil
 }
 
@@ -245,10 +339,10 @@ func (service *HFSService) MergeUpload(userID string, uploadId string) (*vo.Chun
 	}
 
 	return &vo.ChunkMergeRsp{
-		UploadId:	uploadId,
-		FilePath:	mergedPath,
-		FileName:	upload.FileName,
-		FileSize:	upload.FileSize,
+		UploadId: uploadId,
+		FilePath: mergedPath,
+		FileName: upload.FileName,
+		FileSize: upload.FileSize,
 	}, nil
 }
 

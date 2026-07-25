@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"raven/backend/po"
-	"raven/config"
+	"goraven/backend/po"
+	"goraven/config"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -32,7 +32,7 @@ func TestSeedSystemSkillsUsesEnglishWhenConfigured(t *testing.T) {
 	}
 
 	var installSkill po.SystemSkill
-	if err := db.Where("name = ?", "raven-install-skill").First(&installSkill).Error; err != nil {
+	if err := db.Where("name = ?", "goraven-install-skill").First(&installSkill).Error; err != nil {
 		t.Fatalf("load install skill: %v", err)
 	}
 	if installSkill.Description != "Guide users through installing skills in chat: create SKILL.md, configure directory structure and environment variables" {
@@ -43,10 +43,10 @@ func TestSeedSystemSkillsUsesEnglishWhenConfigured(t *testing.T) {
 	}
 
 	var chartSkill po.SystemSkill
-	if err := db.Where("name = ?", "raven-chart").First(&chartSkill).Error; err != nil {
+	if err := db.Where("name = ?", "goraven-chart").First(&chartSkill).Error; err != nil {
 		t.Fatalf("load chart skill: %v", err)
 	}
-	if chartSkill.Description != "Generate statistical charts with <raven-chart> tags" {
+	if chartSkill.Description != "Generate statistical charts with <goraven-chart> tags" {
 		t.Fatalf("unexpected chart skill description: %q", chartSkill.Description)
 	}
 	if !strings.Contains(chartSkill.Content, "# Statistical Chart Generation") {

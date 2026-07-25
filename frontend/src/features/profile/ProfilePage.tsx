@@ -806,7 +806,7 @@ export function Component() {
           </p>
           <p className="mt-2 text-sm text-text-3">
             <a
-              href="https://github.com/8treenet/raven"
+              href="https://github.com/8treenet/goraven"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-text-3 transition-colors hover:text-text-1"

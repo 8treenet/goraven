@@ -10,24 +10,24 @@ import (
 )
 
 type PageResponse struct {
-	List		interface{}	`json:"list"`
-	TotalPage	int		`json:"totalPage"`
-	TotalCount	int		`json:"totalCount"`
-	Page		int		`json:"page,omitempty"`
-	PageSize	int		`json:"pageSize,omitempty"`
+	List       interface{} `json:"list"`
+	TotalPage  int         `json:"totalPage"`
+	TotalCount int         `json:"totalCount"`
+	Page       int         `json:"page,omitempty"`
+	PageSize   int         `json:"pageSize,omitempty"`
 }
 
 type JSONResponse struct {
-	Code			int
-	Error			error
-	Object			interface{}
-	DisableLogOutput	bool
+	Code      int
+	Error     error
+	Object    interface{}
+	LogOutput bool
 }
 
 type ResBodyObject struct {
-	Code	int		`json:"code"`
-	Msg	string		`json:"msg"`
-	Data	interface{}	`json:"data,omitempty"`
+	Code int         `json:"code"`
+	Msg  string      `json:"msg"`
+	Data interface{} `json:"data,omitempty"`
 }
 
 func (jrep JSONResponse) Dispatch(ctx freedom.Context) {
@@ -55,7 +55,7 @@ func (jrep JSONResponse) Dispatch(ctx freedom.Context) {
 	}
 
 	ctx.Values().Set("code", strconv.Itoa(body.Code))
-	if !jrep.DisableLogOutput {
+	if jrep.LogOutput {
 		ctx.Values().Set("response", string(content))
 	}
 
@@ -75,8 +75,8 @@ func WrapperErrorf(code int, contentFormat string, a ...interface{}) error {
 }
 
 type wrapperError struct {
-	err	error
-	code	int
+	err  error
+	code int
 }
 
 func (e *wrapperError) Error() string {

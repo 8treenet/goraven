@@ -1,9 +1,9 @@
 package repository
 
 import (
-	"raven/backend/po"
-	"raven/backend/vo"
-	"raven/util"
+	"goraven/backend/po"
+	"goraven/backend/vo"
+	"goraven/util"
 	"time"
 
 	"github.com/8treenet/freedom"
@@ -41,15 +41,6 @@ func (repo *ShareLinkRepository) GetSessionShare(sessionId string, userId string
 	return &shareLink, err
 }
 
-func (repo *ShareLinkRepository) DeleteShareLink(sessionId string, userId string) error {
-	return repo.db().Model(&po.ShareLink{}).
-		Where("session_id = ? AND user_id = ? AND deleted = 0", sessionId, userId).
-		Updates(map[string]interface{}{
-			"deleted": 1,
-			"updated": time.Now(),
-		}).Error
-}
-
 func (repo *ShareLinkRepository) UpdateShareLink(shareId string, title string, shareType string, expiresAt time.Time) (*po.ShareLink, error) {
 	if err := repo.db().Model(&po.ShareLink{}).
 		Where("share_id = ? AND deleted = 0", shareId).
@@ -67,6 +58,15 @@ func (repo *ShareLinkRepository) UpdateShareLink(shareId string, title string, s
 		return nil, err
 	}
 	return &shareLink, nil
+}
+
+func (repo *ShareLinkRepository) DeleteShareLink(sessionId string, userId string) error {
+	return repo.db().Model(&po.ShareLink{}).
+		Where("session_id = ? AND user_id = ? AND deleted = 0", sessionId, userId).
+		Updates(map[string]interface{}{
+			"deleted": 1,
+			"updated": time.Now(),
+		}).Error
 }
 
 func (repo *ShareLinkRepository) ListUserShareLinks(userId string, req *vo.UserShareListReq) ([]po.ShareLink, *PageResult, error) {

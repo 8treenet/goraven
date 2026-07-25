@@ -216,7 +216,7 @@ export function Component() {
                   goraven.dev
                 </a>
                   <a
-                    href="https://github.com/8treenet/raven"
+                    href="https://github.com/8treenet/goraven"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs text-interactive transition-colors hover:text-interactive-hover"

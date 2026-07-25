@@ -1,7 +1,7 @@
 package test
 
 import (
-	"raven/backend/vo"
+	"goraven/backend/vo"
 	"testing"
 
 	"github.com/8treenet/freedom/infra/requests"
@@ -49,15 +49,15 @@ func TestGetMCPDetail(t *testing.T) {
 
 func TestCreateMCPStdio(t *testing.T) {
 	req := vo.AdminCreateMCPReq{
-		Name:		"sequential-thinking-test",
-		DisplayName:	"Sequential Thinking Test",
-		Icon:		"🧠",
-		Description:	"顺序思考和任务拆解（测试）",
-		Transport:	"Stdio",
-		StdioType:	"npx",
-		StdioArgs:	[]string{"@modelcontextprotocol/server-sequential-thinking"},
-		StdioEnv:	map[string]string{},
-		Remark:		"test mcp",
+		Name:        "sequential-thinking-test",
+		DisplayName: "Sequential Thinking Test",
+		Icon:        "🧠",
+		Description: "顺序思考和任务拆解（测试）",
+		Transport:   "Stdio",
+		StdioType:   "npx",
+		StdioArgs:   []string{"@modelcontextprotocol/server-sequential-thinking"},
+		StdioEnv:    map[string]string{},
+		Remark:      "test mcp",
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/mcp").
 		Post().
@@ -69,15 +69,15 @@ func TestCreateMCPStdio(t *testing.T) {
 
 func TestCreateMCPStdioUvx(t *testing.T) {
 	req := vo.AdminCreateMCPReq{
-		Name:		"mcp-server-fetch-test",
-		DisplayName:	"MCP Server Fetch Test",
-		Icon:		"🌐",
-		Description:	"网页抓取工具（测试）",
-		Transport:	"Stdio",
-		StdioType:	"uvx",
-		StdioArgs:	[]string{"mcp-server-fetch"},
-		StdioEnv:	map[string]string{},
-		Remark:		"test mcp uvx",
+		Name:        "mcp-server-fetch-test",
+		DisplayName: "MCP Server Fetch Test",
+		Icon:        "🌐",
+		Description: "网页抓取工具（测试）",
+		Transport:   "Stdio",
+		StdioType:   "uvx",
+		StdioArgs:   []string{"mcp-server-fetch"},
+		StdioEnv:    map[string]string{},
+		Remark:      "test mcp uvx",
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/mcp").
 		Post().
@@ -89,15 +89,15 @@ func TestCreateMCPStdioUvx(t *testing.T) {
 
 func TestCreateMCPSSE(t *testing.T) {
 	req := vo.AdminCreateMCPReq{
-		Name:		"sse-mcp-test",
-		DisplayName:	"SSE MCP Test",
-		Icon:		"📡",
-		Description:	"SSE 传输类型测试",
-		Transport:	"SSE",
-		HttpUrl:	"https://mcp.example.com/sse",
-		HttpHeader:	map[string]string{"Authorization": "Bearer test-token"},
-		HttpProxyUrl:	"http://127.0.0.1:7890",
-		Remark:		"test sse mcp",
+		Name:         "sse-mcp-test",
+		DisplayName:  "SSE MCP Test",
+		Icon:         "📡",
+		Description:  "SSE 传输类型测试",
+		Transport:    "SSE",
+		HttpUrl:      "https://mcp.example.com/sse",
+		HttpHeader:   map[string]string{"Authorization": "Bearer test-token"},
+		HttpProxyUrl: "http://127.0.0.1:7890",
+		Remark:       "test sse mcp",
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/mcp").
 		Post().
@@ -109,15 +109,15 @@ func TestCreateMCPSSE(t *testing.T) {
 
 func TestCreateMCPHTTP(t *testing.T) {
 	req := vo.AdminCreateMCPReq{
-		Name:		"web-search1",
-		DisplayName:	"WebSearch2",
-		Icon:		"🔗",
-		Description:	"HTTP 传输类型测试",
-		Transport:	"StreamableHttp",
-		HttpUrl:	"https://dashscope.aliyuncs.com/api/v1/mcps/WebSearch/mcp",
-		HttpHeader:	map[string]string{"Authorization": "Bearer sk-ba11bbf24d034b94b8e47b38d95f158c"},
-		HttpProxyUrl:	"",
-		Remark:		"test http mcp",
+		Name:         "web-search1",
+		DisplayName:  "WebSearch2",
+		Icon:         "🔗",
+		Description:  "HTTP 传输类型测试",
+		Transport:    "StreamableHttp",
+		HttpUrl:      "https://dashscope.aliyuncs.com/api/v1/mcps/WebSearch/mcp",
+		HttpHeader:   map[string]string{"Authorization": "Bearer sk-ba11bbf24d034b94b8e47b38d95f158c"},
+		HttpProxyUrl: "",
+		Remark:       "test http mcp",
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/mcp").
 		Post().
@@ -129,17 +129,17 @@ func TestCreateMCPHTTP(t *testing.T) {
 
 func TestCreateMCPWithEnv(t *testing.T) {
 	req := vo.AdminCreateMCPReq{
-		Name:		"github-mcp-test",
-		DisplayName:	"GitHub MCP Test",
-		Icon:		"🐙",
-		Description:	"GitHub 操作工具（测试）",
-		Transport:	"Stdio",
-		StdioType:	"npx",
-		StdioArgs:	[]string{"@modelcontextprotocol/server-github"},
+		Name:        "github-mcp-test",
+		DisplayName: "GitHub MCP Test",
+		Icon:        "🐙",
+		Description: "GitHub 操作工具（测试）",
+		Transport:   "Stdio",
+		StdioType:   "npx",
+		StdioArgs:   []string{"@modelcontextprotocol/server-github"},
 		StdioEnv: map[string]string{
 			"GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_test_token_xxx",
 		},
-		Remark:	"test mcp with env",
+		Remark: "test mcp with env",
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/mcp").
 		Post().
@@ -151,11 +151,11 @@ func TestCreateMCPWithEnv(t *testing.T) {
 
 func TestUpdateMCP(t *testing.T) {
 	req := vo.AdminUpdateMCPReq{
-		DisplayName:	"WebSearch234",
-		Icon:		"🎯",
-		Description:	"更新后的描述",
-		Remark:		"updated",
-		HttpProxyUrl:	"http://127.0.0.1:7897",
+		DisplayName:  "WebSearch234",
+		Icon:         "🎯",
+		Description:  "更新后的描述",
+		Remark:       "updated",
+		HttpProxyUrl: "http://127.0.0.1:7897",
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/mcp/3").
 		Put().

@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"raven/backend/po"
+	"goraven/backend/po"
 
 	"gorm.io/gorm"
 )
@@ -28,6 +28,8 @@ func Merge(db *gorm.DB) error {
 		&po.ChunkUpload{},
 		&po.ToolDailyStats{},
 		&po.PersonaTool{},
+		&po.SkillShare{},
+		&po.SharedProject{},
 	); err != nil {
 		return err
 	}

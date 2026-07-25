@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 )
 
-// CopyDir 递归复制目录，保留文件权限
 func CopyDir(src, dst string) error {
 	srcInfo, err := os.Stat(src)
 	if err != nil {

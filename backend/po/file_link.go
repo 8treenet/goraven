@@ -7,14 +7,14 @@ import (
 )
 
 type FileLink struct {
-	LinkId		string		`gorm:"primaryKey;column:link_id;type:varchar(64)"`
-	UserId		string		`gorm:"index;column:user_id;type:varchar(64)"`
-	FilePath	string		`gorm:"column:file_path;type:varchar(512)"`
-	FileName	string		`gorm:"column:file_name;type:varchar(255)"`
-	ExpiresAt	time.Time	`gorm:"column:expires_at"`
-	Deleted		uint8		`gorm:"column:deleted;default:0"`
-	Created		time.Time	`gorm:"not null;column:created"`
-	Updated		time.Time	`gorm:"not null;column:updated"`
+	LinkId    string    `gorm:"primaryKey;column:link_id;type:varchar(64)"`
+	UserId    string    `gorm:"index;column:user_id;type:varchar(64)"`
+	FilePath  string    `gorm:"column:file_path;type:varchar(512)"`
+	FileName  string    `gorm:"column:file_name;type:varchar(255)"`
+	ExpiresAt time.Time `gorm:"column:expires_at"`
+	Deleted   uint8     `gorm:"column:deleted;default:0"`
+	Created   time.Time `gorm:"not null;column:created"`
+	Updated   time.Time `gorm:"not null;column:updated"`
 }
 
 func (f *FileLink) TableName() string {

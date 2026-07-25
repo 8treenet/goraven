@@ -1,10 +1,10 @@
 package controller
 
 import (
-	"raven/backend/infra"
-	"raven/backend/service"
-	"raven/backend/vo"
-	"raven/backend/vo/errs"
+	"goraven/backend/infra"
+	"goraven/backend/service"
+	"goraven/backend/vo"
+	"goraven/backend/vo/errs"
 
 	"github.com/8treenet/freedom"
 )
@@ -16,8 +16,8 @@ func init() {
 }
 
 type UserController struct {
-	UserSev	*service.UserService
-	Request	*infra.Request
+	UserSev *service.UserService
+	Request *infra.Request
 }
 
 func (controller *UserController) BeforeActivation(b freedom.BeforeActivation) {

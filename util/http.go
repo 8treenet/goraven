@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	ravenHTTPClient = &http.Client{
-		Transport: &ravenTransport{
+	goravenHTTPClient = &http.Client{
+		Transport: &goravenTransport{
 			debug:     false,
 			Transport: http.DefaultTransport,
 		},
@@ -24,20 +24,19 @@ var (
 	proxyClientsMutex sync.Mutex
 )
 
-func GetRavenHTTPClient() *http.Client {
-	return ravenHTTPClient
+func GetGoRavenHTTPClient() *http.Client {
+	return goravenHTTPClient
 }
 
 func NewDebugHTTPClient() *http.Client {
 	return &http.Client{
-		Transport: &ravenTransport{
+		Transport: &goravenTransport{
 			debug:     true,
 			Transport: http.DefaultTransport,
 		},
 	}
 }
 
-// GetProxyHTTPClient
 // proxyURL: http://127.0.0.1:33210
 func GetProxyHTTPClient(proxyURL string) *http.Client {
 	proxyClientsMutex.Lock()
@@ -60,7 +59,7 @@ func GetProxyHTTPClient(proxyURL string) *http.Client {
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 	}
-	ts := &ravenTransport{
+	ts := &goravenTransport{
 		debug:     false,
 		Transport: transport,
 	}
@@ -69,15 +68,15 @@ func GetProxyHTTPClient(proxyURL string) *http.Client {
 	return client
 }
 
-type ravenTransport struct {
+type goravenTransport struct {
 	debug     bool
 	Transport http.RoundTripper
 }
 
-func (t *ravenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t *goravenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set("HTTP-Referer", "https://goraven.dev")
-	req.Header.Set("X-Title", "Raven")
-	req.Header.Set("X-OpenRouter-Title", "Raven")
+	req.Header.Set("X-Title", "GoRaven")
+	req.Header.Set("X-OpenRouter-Title", "GoRaven")
 	if !t.debug {
 		return t.Transport.RoundTrip(req)
 	}

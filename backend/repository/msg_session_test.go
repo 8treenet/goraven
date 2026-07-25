@@ -1,10 +1,10 @@
 package repository_test
 
 import (
-	"raven/backend/po"
-	"raven/backend/repository"
-	"raven/util"
-	unit_test "raven/util/unit"
+	"goraven/backend/po"
+	"goraven/backend/repository"
+	"goraven/util"
+	unit_test "goraven/util/unit"
 	"testing"
 	"time"
 )
@@ -17,16 +17,16 @@ func TestMsgSessionRepository_SaveChatMessage(t *testing.T) {
 	unitTest.FetchRepository(&repo)
 
 	msg := &po.Message{
-		SessionId:		"0011",
-		Timestamp:		util.Millisecond(),
-		ContextState:		0,
-		Content:		"大家都好",
-		RoleType:		po.RoleTypeUser,
-		PromptTokensCount:	11,
-		CompletionTokensCount:	22,
-		Duration:		3,
-		AsstError:		"",
-		Created:		time.Now(),
+		SessionId:             "0011",
+		Timestamp:             util.Millisecond(),
+		ContextState:          0,
+		Content:               "大家都好",
+		RoleType:              po.RoleTypeUser,
+		PromptTokensCount:     11,
+		CompletionTokensCount: 22,
+		Duration:              3,
+		AsstError:             "",
+		Created:               time.Now(),
 	}
 	t.Log(repo.SaveChatMessage(msg.SessionId, msg))
 }
@@ -49,9 +49,9 @@ func TestMsgSessionRepository_SaveSession(t *testing.T) {
 	unitTest.FetchRepository(&repo)
 
 	session := &po.Session{
-		SessionId:	"0011",
-		UserId:		"999",
-		Title:		"你好",
+		SessionId: "0011",
+		UserId:    "999",
+		Title:     "你好",
 	}
 	t.Log(repo.SaveSession(session))
 }

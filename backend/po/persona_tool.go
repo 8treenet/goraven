@@ -7,13 +7,13 @@ import (
 )
 
 type PersonaTool struct {
-	Id		int		`gorm:"primaryKey;column:id;type:int;autoIncrement"`
-	PersonaId	int		`gorm:"uniqueIndex:idx_persona_type_tool;column:persona_id;type:int;not null"`
-	UserId		string		`gorm:"index:idx_user_type_tool;column:user_id;type:varchar(64);not null"`
-	ToolType	string		`gorm:"uniqueIndex:idx_persona_type_tool;index:idx_user_type_tool;column:tool_type;type:varchar(16);not null"`
-	ToolId		int		`gorm:"uniqueIndex:idx_persona_type_tool;index:idx_user_type_tool;column:tool_id;type:int;not null"`
-	Created		time.Time	`gorm:"not null;column:created"`
-	Updated		time.Time	`gorm:"not null;column:updated"`
+	Id        int       `gorm:"primaryKey;column:id;type:int;autoIncrement"`
+	PersonaId int       `gorm:"uniqueIndex:idx_persona_type_tool;column:persona_id;type:int;not null"`
+	UserId    string    `gorm:"index:idx_user_type_tool;column:user_id;type:varchar(64);not null"`
+	ToolType  string    `gorm:"uniqueIndex:idx_persona_type_tool;index:idx_user_type_tool;column:tool_type;type:varchar(16);not null"`
+	ToolId    int       `gorm:"uniqueIndex:idx_persona_type_tool;index:idx_user_type_tool;column:tool_id;type:int;not null"`
+	Created   time.Time `gorm:"not null;column:created"`
+	Updated   time.Time `gorm:"not null;column:updated"`
 }
 
 func (PersonaTool) TableName() string {

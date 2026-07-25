@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"raven/backend/po"
-	"raven/config"
-	"raven/util"
+	"goraven/backend/po"
+	"goraven/config"
+	"goraven/util"
 
 	"github.com/8treenet/freedom"
 	"gorm.io/gorm"
@@ -27,16 +27,16 @@ func init() {
 }
 
 const (
-	UserIdStoreKey		= "auth-user_id"
-	UserRoleStoreKey	= "auth-userRole"
-	UserNameStoreKey	= "auth-user_name"
-	authCacheKeyPrefix	= "auth:token:"
+	UserIdStoreKey     = "auth-user_id"
+	UserRoleStoreKey   = "auth-userRole"
+	UserNameStoreKey   = "auth-user_name"
+	authCacheKeyPrefix = "auth:token:"
 )
 
 type cachedAuth struct {
-	UserId		string	`json:"userId"`
-	UserName	string	`json:"userName"`
-	Role		uint8	`json:"role"`
+	UserId   string `json:"userId"`
+	UserName string `json:"userName"`
+	Role     uint8  `json:"role"`
 }
 
 type Auth struct {
@@ -47,7 +47,7 @@ func NewAuth(allMethod bool, skipPaths ...string) func(freedom.Context) {
 	return func(ctx freedom.Context) {
 		skip := !allMethod
 		for _, v := range skipPaths {
-			if strings.Contains(ctx.Request().URL.Path, v) {
+			if matchSkipPath(ctx.Request().URL.Path, v) {
 				skip = allMethod
 				break
 			}
@@ -62,6 +62,34 @@ func NewAuth(allMethod bool, skipPaths ...string) func(freedom.Context) {
 		}
 		ctx.Next()
 	}
+}
+
+func matchSkipPath(urlPath, v string) bool {
+	if v == "" {
+		return false
+	}
+
+	needle := strings.TrimPrefix(v, "/")
+	if needle == "" {
+		return false
+	}
+	for from := 0; from <= len(urlPath)-len(needle); {
+		idx := strings.Index(urlPath[from:], needle)
+		if idx < 0 {
+			return false
+		}
+		start := from + idx
+
+		boundaryBefore := start == 0 || urlPath[start-1] == '/'
+		end := start + len(needle)
+
+		boundaryAfter := end == len(urlPath) || urlPath[end] == '/'
+		if boundaryBefore && boundaryAfter {
+			return true
+		}
+		from = start + 1
+	}
+	return false
 }
 
 func (a *Auth) InvalidateUserCache(userId string) error {
@@ -116,11 +144,11 @@ func (a *Auth) GenerateAccessToken(userId string, expiresAt time.Time, clientIP,
 	token := "rvn_" + util.UUID()
 
 	userAuth := &po.UserAuth{
-		UserId:		userId,
-		AccessToken:	token,
-		ExpiresAt:	expiresAt,
-		ClientIP:	clientIP,
-		ClientUA:	clientUA,
+		UserId:      userId,
+		AccessToken: token,
+		ExpiresAt:   expiresAt,
+		ClientIP:    clientIP,
+		ClientUA:    clientUA,
 	}
 
 	if err := a.db().Create(userAuth).Error; err != nil {
@@ -137,7 +165,7 @@ func (a *Auth) auth(ctx freedom.Context) bool {
 	if previewUser != "" {
 		worker.Store().Set(UserIdStoreKey, previewUser)
 		worker.Store().Set(UserRoleStoreKey, uint8(1))
-		worker.Store().Set(UserNameStoreKey, "raven_agent")
+		worker.Store().Set(UserNameStoreKey, "goraven_agent")
 		return true
 	}
 

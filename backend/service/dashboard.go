@@ -3,11 +3,11 @@ package service
 import (
 	"fmt"
 
-	"raven/backend/infra"
-	"raven/backend/repository"
-	"raven/backend/vo"
-	"raven/core/sandbox"
-	"raven/util"
+	"goraven/backend/infra"
+	"goraven/backend/repository"
+	"goraven/backend/vo"
+	"goraven/core/sandbox"
+	"goraven/util"
 
 	"github.com/8treenet/freedom"
 )
@@ -195,44 +195,56 @@ func (service *DashboardService) GetUserDashboard(userId string) (*vo.UserDashbo
 	cacheKey := fmt.Sprintf("dashboard:user:%s", userId)
 
 	rsp := &vo.UserDashboardRsp{}
-	if service.DashboardRepo.GetDashboardCache(cacheKey, rsp) {
-		return rsp, nil
+	cacheHit := service.DashboardRepo.GetDashboardCache(cacheKey, rsp)
+
+	if !cacheHit {
+		last7 := util.GenLastNDates(7)
+		thisWeek := util.GenThisWeekDates()
+
+		overview, err := service.buildUserOverview(userId, last7, thisWeek)
+		if err != nil {
+			return nil, err
+		}
+		rsp.Overview = *overview
+
+		skillRank, err := service.DashboardRepo.GetUserToolUsageRank(userId, "skill", last7)
+		if err != nil {
+			return nil, err
+		}
+		rsp.SkillUsageRank = skillRank
+
+		mcpRank, err := service.DashboardRepo.GetUserToolUsageRank(userId, "mcp", last7)
+		if err != nil {
+			return nil, err
+		}
+		rsp.McpUsageRank = mcpRank
+
+		toolRank, err := service.DashboardRepo.GetUserToolUsageRank(userId, "tool", last7)
+		if err != nil {
+			return nil, err
+		}
+		rsp.ToolUsageRank = toolRank
+
+		storageStats, err := service.buildStorageStats(userId)
+		if err != nil {
+			return nil, err
+		}
+		rsp.StorageStats = storageStats
+
+		service.DashboardRepo.SetDashboardCache(cacheKey, rsp)
 	}
 
-	last7 := util.GenLastNDates(7)
-	thisWeek := util.GenThisWeekDates()
-
-	overview, err := service.buildUserOverview(userId, last7, thisWeek)
+	dailyLimit, err := service.DashboardRepo.GetUserDailyTokenLimit(userId)
 	if err != nil {
 		return nil, err
 	}
-	rsp.Overview = *overview
-
-	skillRank, err := service.DashboardRepo.GetUserToolUsageRank(userId, "skill", last7)
+	todayUsed, err := service.DashboardRepo.GetUserTodayTokens(userId)
 	if err != nil {
 		return nil, err
 	}
-	rsp.SkillUsageRank = skillRank
+	rsp.Overview.DailyTokenLimit = dailyLimit
+	rsp.Overview.TodayTokens = todayUsed
 
-	mcpRank, err := service.DashboardRepo.GetUserToolUsageRank(userId, "mcp", last7)
-	if err != nil {
-		return nil, err
-	}
-	rsp.McpUsageRank = mcpRank
-
-	toolRank, err := service.DashboardRepo.GetUserToolUsageRank(userId, "tool", last7)
-	if err != nil {
-		return nil, err
-	}
-	rsp.ToolUsageRank = toolRank
-
-	storageStats, err := service.buildStorageStats(userId)
-	if err != nil {
-		return nil, err
-	}
-	rsp.StorageStats = storageStats
-
-	service.DashboardRepo.SetDashboardCache(cacheKey, rsp)
 	return rsp, nil
 }
 

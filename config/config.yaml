@@ -1,32 +1,36 @@
 paths:
-  sqlite_db: "/raven/data/raven.db"
-  chroma_dir: "/raven/data/chroma"
+  sqlite_db: "./data/goraven.db"
+  chroma_dir: "./data/chroma"
   # User space root directory
-  user_space: "/raven/data/users"
+  user_space: "./data/users"
   # Frontend static files directory
-  frontend_dir: "/raven/frontend"
+  frontend_dir: "./frontend/dist"
   # Python scripts directory
-  scripts: "/raven/scripts"
+  scripts: "./scripts"
   # Hub skills cache directory - central storage for admin-managed skills before per-user install
-  skills_hub: "/raven/data/skills_hub"
+  skills_hub: "./data/skills_hub"
+  # Team skill share directory - central storage for user-shared team skills
+  skill_share_dir: "./data/skill_share"
   # Upload directory for user file uploads
-  upload_dir: "/raven/data/upload"
+  upload_dir: "./data/upload"
   # Skill dependency install records directory
-  skill_installed_dir: "/raven/skill_installed"
+  skill_installed_dir: "./data/skill_installed"
 
 other:
   listen_addr: ":8000"
-  service_name: "raven"
+  service_name: "goraven"
   repository_request_timeout: 10
   prometheus_listen_addr: ":9090"
   # "fatal" "error" "warn" "info"  "debug"
-  logger_level: "debug"
+  logger_level: "info"
   # shutdown_second : Elegant lying off for the longest time
   shutdown_second: 3
 
 behavior:
   # preview_user: when set to a valid user ID, skips login and runs as that user (preview/demo mode)
   preview_user: ""
+  # docker: whether running inside a Docker container
+  docker: false
 
 tools:
   # HTTP 工具超时时间（秒），默认 60。用于 MCP HTTP 客户端、WebFetch 等
@@ -52,9 +56,9 @@ redis:
   pool_timeout: 8
 
 db:
-  # SQLite: addr = "/raven/data/raven.db"
+  # SQLite: addr = "/goraven/data/goraven.db"
   # MySQL: addr = "user:password@tcp(host:port)/dbname?charset=utf8mb4&parseTime=True&loc=Local"
-  # PostgreSQL: addr = "host=localhost user=postgres password=postgres dbname=raven port=5432 sslmode=disable"
+  # PostgreSQL: addr = "host=localhost user=postgres password=postgres dbname=goraven port=5432 sslmode=disable"
   # Defaults to [paths].sqlite_db when empty.
   addr: ""
   max_open_conns: 4

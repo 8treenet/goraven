@@ -3,12 +3,12 @@ package controller
 import (
 	"strconv"
 
-	"raven/backend/infra"
-	"raven/backend/po"
-	"raven/backend/repository/seed"
-	"raven/backend/service"
-	"raven/backend/vo"
-	"raven/config"
+	"goraven/backend/infra"
+	"goraven/backend/po"
+	"goraven/backend/repository/seed/mock"
+	"goraven/backend/service"
+	"goraven/backend/vo"
+	"goraven/config"
 
 	"github.com/8treenet/freedom"
 )
@@ -283,16 +283,6 @@ func (controller *AdminController) UpdateModelStatus(id string) freedom.Result {
 		return &infra.JSONResponse{Error: err}
 	}
 
-	/*
-		modelId, err := strconv.Atoi(id)
-		if err != nil {
-			return &infra.JSONResponse{Error: err}
-		}
-		if err := controller.ModelSev.UpdateModelStatus(modelId, req.Status); err != nil {
-			return &infra.JSONResponse{Error: err}
-		}
-	*/
-
 	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
 }
 
@@ -329,7 +319,7 @@ func (controller *AdminController) SetFlashModel(id string) freedom.Result {
 		return &infra.JSONResponse{Error: err}
 	}
 
-	if err := controller.ModelSev.SetCompressModel(modelId); err != nil {
+	if err := controller.ModelSev.SetFlashModel(modelId); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
 
@@ -348,6 +338,7 @@ func (controller *AdminController) SetVisualModel(id string) freedom.Result {
 
 	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
 }
+
 func (controller *AdminController) GetProviders() freedom.Result {
 	list := controller.ModelSev.ListProviders()
 	return &infra.JSONResponse{Object: map[string]interface{}{"list": list}}
@@ -877,7 +868,7 @@ func (controller *AdminController) GetSystemInfo() freedom.Result {
 
 func (controller *AdminController) GetDashboard() freedom.Result {
 	if config.Get().Behavior.PreviewUser != "" {
-		return &infra.JSONResponse{Object: seed.BuildAdminDashboard()}
+		return &infra.JSONResponse{Object: mock.BuildAdminDashboard()}
 	}
 
 	rsp, err := controller.DashboardSev.GetAdminDashboard()
@@ -900,7 +891,7 @@ func (controller *AdminController) GetTokenTrend() freedom.Result {
 	}
 
 	if config.Get().Behavior.PreviewUser != "" {
-		return &infra.JSONResponse{Object: seed.BuildAdminTokenTrend(req.Days)}
+		return &infra.JSONResponse{Object: mock.BuildAdminTokenTrend(req.Days)}
 	}
 
 	rsp, err := controller.DashboardSev.GetAdminTokenTrend(req.Days)
@@ -923,7 +914,7 @@ func (controller *AdminController) GetModelUsage() freedom.Result {
 	}
 
 	if config.Get().Behavior.PreviewUser != "" {
-		return &infra.JSONResponse{Object: seed.BuildAdminModelUsage(req.Days)}
+		return &infra.JSONResponse{Object: mock.BuildAdminModelUsage(req.Days)}
 	}
 
 	rsp, err := controller.DashboardSev.GetAdminModelUsage(req.Days)
@@ -946,7 +937,7 @@ func (controller *AdminController) GetUserTokenRank() freedom.Result {
 	}
 
 	if config.Get().Behavior.PreviewUser != "" {
-		return &infra.JSONResponse{Object: seed.BuildAdminUserTokenRank(req.Days)}
+		return &infra.JSONResponse{Object: mock.BuildAdminUserTokenRank(req.Days)}
 	}
 
 	rsp, err := controller.DashboardSev.GetAdminUserTokenRank(req.Days)
@@ -969,7 +960,7 @@ func (controller *AdminController) GetActiveUsers() freedom.Result {
 	}
 
 	if config.Get().Behavior.PreviewUser != "" {
-		return &infra.JSONResponse{Object: seed.BuildAdminActiveUserTrend(req.Days)}
+		return &infra.JSONResponse{Object: mock.BuildAdminActiveUserTrend(req.Days)}
 	}
 
 	rsp, err := controller.DashboardSev.GetAdminActiveUserTrend(req.Days)

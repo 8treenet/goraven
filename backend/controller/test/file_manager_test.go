@@ -2,23 +2,23 @@ package test
 
 import (
 	"encoding/json"
-	"raven/backend/vo"
+	"goraven/backend/vo"
 	"testing"
 
 	"github.com/8treenet/freedom/infra/requests"
 )
 
 type apiRsp struct {
-	Code	int		`json:"code"`
-	Msg	string		`json:"msg"`
-	Data	json.RawMessage	`json:"data,omitempty"`
+	Code int             `json:"code"`
+	Msg  string          `json:"msg"`
+	Data json.RawMessage `json:"data,omitempty"`
 }
 
 func TestFileManagerListRoot(t *testing.T) {
 	var rsp struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	vo.FileManagerListRsp	`json:"data,omitempty"`
+		Code int                   `json:"code"`
+		Msg  string                `json:"msg"`
+		Data vo.FileManagerListRsp `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/list").
 		Get().
@@ -38,9 +38,9 @@ func TestFileManagerListRoot(t *testing.T) {
 
 func TestFileManagerListDocuments(t *testing.T) {
 	var rsp struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	vo.FileManagerListRsp	`json:"data,omitempty"`
+		Code int                   `json:"code"`
+		Msg  string                `json:"msg"`
+		Data vo.FileManagerListRsp `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/list?dir=documents").
 		Get().
@@ -60,9 +60,9 @@ func TestFileManagerListDocuments(t *testing.T) {
 
 func TestFileManagerListSortBySize(t *testing.T) {
 	var rsp struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	vo.FileManagerListRsp	`json:"data,omitempty"`
+		Code int                   `json:"code"`
+		Msg  string                `json:"msg"`
+		Data vo.FileManagerListRsp `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/list?dir=documents&sort=size&order=desc").
 		Get().
@@ -100,9 +100,9 @@ func TestFileManagerMkdirAndDelete(t *testing.T) {
 	t.Log("mkdir success: test_mkdir_dir")
 
 	var listRsp struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	vo.FileManagerListRsp	`json:"data,omitempty"`
+		Code int                   `json:"code"`
+		Msg  string                `json:"msg"`
+		Data vo.FileManagerListRsp `json:"data,omitempty"`
 	}
 	requests.NewHTTPRequest(domain+"/api/fileManager/list").
 		Get().
@@ -151,8 +151,8 @@ func TestFileManagerRename(t *testing.T) {
 	}
 
 	renameReq := vo.FileManagerRenameReq{
-		OldPath:	"test_rename_before",
-		NewPath:	"test_rename_after",
+		OldPath: "test_rename_before",
+		NewPath: "test_rename_after",
 	}
 	var renameRsp apiRsp
 	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/rename").
@@ -186,13 +186,13 @@ func TestFileManagerCompressAndDecompress(t *testing.T) {
 		ToJSON(&apiRsp{})
 
 	compressReq := vo.FileManagerCompressReq{
-		Paths:		[]string{"test_compress_src"},
-		OutputName:	"test_compress_src.zip",
+		Paths:      []string{"test_compress_src"},
+		OutputName: "test_compress_src.zip",
 	}
 	var compressRsp struct {
-		Code	int				`json:"code"`
-		Msg	string				`json:"msg"`
-		Data	vo.FileManagerCompressRsp	`json:"data,omitempty"`
+		Code int                       `json:"code"`
+		Msg  string                    `json:"msg"`
+		Data vo.FileManagerCompressRsp `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/compress").
 		Post().
@@ -208,8 +208,8 @@ func TestFileManagerCompressAndDecompress(t *testing.T) {
 	t.Logf("compress success: zipPath=%s", compressRsp.Data.ZipPath)
 
 	decompressReq := vo.FileManagerDecompressReq{
-		Path:		compressRsp.Data.ZipPath,
-		ToSubDir:	true,
+		Path:     compressRsp.Data.ZipPath,
+		ToSubDir: true,
 	}
 	var decompressRsp apiRsp
 	httpResp = requests.NewHTTPRequest(domain+"/api/fileManager/decompress").
@@ -237,9 +237,9 @@ func TestFileManagerCompressAndDecompress(t *testing.T) {
 
 func TestFileManagerUsage(t *testing.T) {
 	var rsp struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	vo.FileManagerUsageRsp	`json:"data,omitempty"`
+		Code int                    `json:"code"`
+		Msg  string                 `json:"msg"`
+		Data vo.FileManagerUsageRsp `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/usage").
 		Get().
@@ -263,13 +263,13 @@ func TestFileManagerUpload(t *testing.T) {
 	}
 
 	uploadReq := vo.FileManagerUploadReq{
-		UploadId:	uploadId,
-		Dir:		"documents",
+		UploadId: uploadId,
+		Dir:      "documents",
 	}
 	var rsp struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	vo.FileManagerUploadRsp	`json:"data,omitempty"`
+		Code int                     `json:"code"`
+		Msg  string                  `json:"msg"`
+		Data vo.FileManagerUploadRsp `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/upload").
 		Post().

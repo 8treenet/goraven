@@ -2,9 +2,9 @@ package repository
 
 import (
 	"context"
-	"raven/backend/infra"
-	"raven/backend/po"
-	"raven/backend/vo"
+	"goraven/backend/infra"
+	"goraven/backend/po"
+	"goraven/backend/vo"
 	"strconv"
 	"time"
 
@@ -13,11 +13,11 @@ import (
 )
 
 const (
-	LoginFailKey		= "auth:login_fail"
-	CaptchaAnswerKeyPrefix	= "auth:captcha:"
-	LoginFailWindow		= 5 * time.Minute
-	CaptchaTTL		= 5 * time.Minute
-	CaptchaThreshold	= 30
+	LoginFailKey           = "auth:login_fail"
+	CaptchaAnswerKeyPrefix = "auth:captcha:"
+	LoginFailWindow        = 5 * time.Minute
+	CaptchaTTL             = 5 * time.Minute
+	CaptchaThreshold       = 30
 )
 
 func init() {
@@ -30,7 +30,7 @@ func init() {
 
 type UserRepository struct {
 	freedom.Repository
-	Auth	*infra.Auth
+	Auth *infra.Auth
 }
 
 func (repo *UserRepository) FindByUsername(username string) (*po.User, error) {
@@ -71,16 +71,17 @@ func (repo *UserRepository) PaginateUsers(req *vo.AdminUserListReq) ([]vo.AdminU
 		sessionCount, lastActiveTime := repo.GetUserSessionStats(u.UserId)
 
 		items = append(items, vo.AdminUserItem{
-			UserId:		u.UserId,
-			Username:	u.Username,
-			Nickname:	u.Nickname,
-			Email:		u.Email,
-			Avatar:		u.Avatar,
-			Role:		u.Role,
-			Status:		u.Status,
-			SessionCount:	int(sessionCount),
-			LastActiveTime:	lastActiveTime,
-			Created:	u.Created,
+			UserId:          u.UserId,
+			Username:        u.Username,
+			Nickname:        u.Nickname,
+			Email:           u.Email,
+			Avatar:          u.Avatar,
+			Role:            u.Role,
+			Status:          u.Status,
+			DailyTokenLimit: u.DailyTokenLimit,
+			SessionCount:    int(sessionCount),
+			LastActiveTime:  lastActiveTime,
+			Created:         u.Created,
 		})
 	}
 
@@ -110,10 +111,11 @@ func (repo *UserRepository) CreateUser(user *po.User) error {
 
 func (repo *UserRepository) UpdateUser(user *po.User) error {
 	return repo.db().Model(&po.User{}).Where("user_id = ? AND deleted = 0", user.UserId).Updates(map[string]interface{}{
-		"nickname":	user.Nickname,
-		"email":	user.Email,
-		"role":		user.Role,
-		"status":	user.Status,
+		"nickname":          user.Nickname,
+		"email":             user.Email,
+		"role":              user.Role,
+		"status":            user.Status,
+		"daily_token_limit": user.DailyTokenLimit,
 	}).Error
 }
 
@@ -191,5 +193,3 @@ func (repo *UserRepository) PopCaptchaAnswer(username string) (int, bool) {
 	}
 	return n, true
 }
-
-

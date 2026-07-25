@@ -1,12 +1,12 @@
 package repository
 
 import (
-	"raven/backend/po"
-	"raven/backend/vo"
-	"raven/backend/vo/errs"
-	"raven/core/iface"
-	"raven/core/provider"
-	"raven/util"
+	"goraven/backend/po"
+	"goraven/backend/vo"
+	"goraven/backend/vo/errs"
+	"goraven/core/iface"
+	"goraven/core/provider"
+	"goraven/util"
 	"time"
 
 	"github.com/8treenet/freedom"
@@ -43,24 +43,24 @@ func (repo *ProviderRepository) PaginateModels(req *vo.AdminModelListReq) ([]vo.
 	items := make([]vo.AdminModelItem, 0, len(models))
 	for _, m := range models {
 		items = append(items, vo.AdminModelItem{
-			AIModelId:		m.AIModelId,
-			ProviderDisplayName:	m.ProviderDisplayName,
-			DisplayName:		m.DisplayName,
-			ProviderID:		m.ProviderID,
-			ModelName:		m.ModelName,
-			Icon:			m.Icon,
-			APIKeyMasked:		maskAPIKey(m.APIKey),
-			BaseURL:		m.BaseURL,
-			ProxyURL:		m.ProxyURL,
-			ContextLen:		m.ContextLen,
-			ExtraFields:		m.ExtraFields,
-			IsDefault:		m.IsDefault,
-			IsCompress:		m.IsCompress,
-			IsVisual:		m.IsVisual,
-			Status:			m.Status,
-			Remark:			m.Remark,
-			Created:		m.Created,
-			Updated:		m.Updated,
+			AIModelId:           m.AIModelId,
+			ProviderDisplayName: m.ProviderDisplayName,
+			DisplayName:         m.DisplayName,
+			ProviderID:          m.ProviderID,
+			ModelName:           m.ModelName,
+			Icon:                m.Icon,
+			APIKeyMasked:        maskAPIKey(m.APIKey),
+			BaseURL:             m.BaseURL,
+			ProxyURL:            m.ProxyURL,
+			ContextLen:          m.ContextLen,
+			ExtraFields:         m.ExtraFields,
+			IsDefault:           m.IsDefault,
+			IsFlash:             m.IsFlash,
+			IsVisual:            m.IsVisual,
+			Status:              m.Status,
+			Remark:              m.Remark,
+			Created:             m.Created,
+			Updated:             m.Updated,
 		})
 	}
 
@@ -74,8 +74,8 @@ func (repo *ProviderRepository) CreateModel(model *po.AIModel) error {
 				return err
 			}
 		}
-		if model.IsCompress == 1 {
-			if err := tx.Model(&po.AIModel{}).Where("is_compress = 1 AND deleted = 0").Update("is_compress", 0).Error; err != nil {
+		if model.IsFlash == 1 {
+			if err := tx.Model(&po.AIModel{}).Where("is_flash = 1 AND deleted = 0").Update("is_flash", 0).Error; err != nil {
 				return err
 			}
 		}
@@ -110,8 +110,8 @@ func (repo *ProviderRepository) UpdateModel(id int, updates map[string]interface
 				return err
 			}
 		}
-		if v, ok := updates["is_compress"]; ok && util.IntFromIFace(v) == 1 {
-			if err := tx.Model(&po.AIModel{}).Where("is_compress = 1 AND deleted = 0").Update("is_compress", 0).Error; err != nil {
+		if v, ok := updates["is_flash"]; ok && util.IntFromIFace(v) == 1 {
+			if err := tx.Model(&po.AIModel{}).Where("is_flash = 1 AND deleted = 0").Update("is_flash", 0).Error; err != nil {
 				return err
 			}
 		}
@@ -131,11 +131,11 @@ func (repo *ProviderRepository) SoftDeleteModel(id int) error {
 		if err := tx.Model(&po.AIModel{}).
 			Where("ai_model_id = ? AND deleted = 0", id).
 			Updates(map[string]interface{}{
-				"is_default":	0,
-				"is_compress":	0,
-				"is_visual":	0,
-				"deleted":	1,
-				"updated":	time.Now(),
+				"is_default": 0,
+				"is_flash":   0,
+				"is_visual":  0,
+				"deleted":    1,
+				"updated":    time.Now(),
 			}).Error; err != nil {
 			return err
 		}
@@ -163,10 +163,10 @@ func (repo *ProviderRepository) GetDefaultChatModel() (iface.BaseChatModel, erro
 	return repo.createChatModelFromPO(model, false)
 }
 
-func (repo *ProviderRepository) GetCompressChatModel(fallbackModelId int) (iface.BaseChatModel, error) {
+func (repo *ProviderRepository) GetFlashChatModel(fallbackModelId int) (iface.BaseChatModel, error) {
 
 	var model po.AIModel
-	if err := repo.db().Where("is_compress = 1 AND status = 1 AND deleted = 0").First(&model).Error; err == nil {
+	if err := repo.db().Where("is_flash = 1 AND status = 1 AND deleted = 0").First(&model).Error; err == nil {
 		return repo.createChatModelFromPO(&model, false)
 	}
 
@@ -197,9 +197,9 @@ func (repo *ProviderRepository) GetVisualChatModel() (iface.BaseChatModel, error
 
 func (repo *ProviderRepository) createChatModelFromPO(model *po.AIModel, reasoning bool) (iface.BaseChatModel, error) {
 	pv, err := provider.GetProviderByName(model.ProviderID, provider.ProviderConfig{
-		APIKey:		model.APIKey,
-		BaseURL:	model.BaseURL,
-		ExtraFields:	model.ExtraFields,
+		APIKey:      model.APIKey,
+		BaseURL:     model.BaseURL,
+		ExtraFields: model.ExtraFields,
 	})
 	if err != nil {
 		return nil, err

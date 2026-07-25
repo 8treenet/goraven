@@ -8,21 +8,21 @@ import (
 )
 
 const (
-	ValueTypeString		= "string"
-	ValueTypeInt		= "int"
-	ValueTypeFloat		= "float"
-	ValueTypeBool		= "bool"
-	ValueTypeDate		= "date"
-	ValueTypeDatetime	= "datetime"
+	ValueTypeString   = "string"
+	ValueTypeInt      = "int"
+	ValueTypeFloat    = "float"
+	ValueTypeBool     = "bool"
+	ValueTypeDate     = "date"
+	ValueTypeDatetime = "datetime"
 )
 
 type SystemSetting struct {
-	ID		int		`gorm:"primaryKey;autoIncrement"`
-	Key		string		`gorm:"uniqueIndex;column:config_key;type:varchar(128);not null"`
-	Value		string		`gorm:"column:config_value;type:text"`
-	ValueType	string		`gorm:"column:value_type;type:varchar(16);default:string"`
-	GroupName	string		`gorm:"index;column:group_name;type:varchar(32)"`
-	Updated		time.Time	`gorm:"not null;column:updated"`
+	ID        int       `gorm:"primaryKey;autoIncrement"`
+	Key       string    `gorm:"uniqueIndex;column:config_key;type:varchar(128);not null"`
+	Value     string    `gorm:"column:config_value;type:text"`
+	ValueType string    `gorm:"column:value_type;type:varchar(16);default:string"`
+	GroupName string    `gorm:"index;column:group_name;type:varchar(32)"`
+	Updated   time.Time `gorm:"not null;column:updated"`
 }
 
 func (s *SystemSetting) TableName() string {

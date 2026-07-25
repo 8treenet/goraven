@@ -1,7 +1,7 @@
 package sandbox
 
 import (
-	"raven/core/sandbox/types"
+	"goraven/core/sandbox/types"
 )
 
 type (

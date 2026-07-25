@@ -15,6 +15,9 @@ func newMainRunner(main *MainAgent, runnerAgent *adk.ChatModelAgent, enableStrea
 func RegisterRunnerHold(sessionId string) {
 }
 
+func ClearRunnerHold(sessionId string) {
+}
+
 func RegisterRunner(sessionId string, runner *MainRunner) {
 }
 

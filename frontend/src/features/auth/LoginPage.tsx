@@ -125,13 +125,13 @@ export function Component() {
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-bg-base px-4">
       <div className="absolute left-6 top-6 flex items-center gap-2">
-        <img src="/favicon.svg" alt="Raven" className="h-7 w-7" />
-        <span className="text-sm font-semibold text-text-2">Raven</span>
+        <img src="/favicon.svg" alt="GoRaven" className="h-7 w-7" />
+        <span className="text-sm font-semibold text-text-2">GoRaven</span>
       </div>
       <div className="w-full max-w-md">
 
         <div className="mb-10 flex justify-center">
-          <h1 className="text-2xl font-semibold text-text-1 tracking-tight">Raven</h1>
+          <h1 className="text-2xl font-semibold text-text-1 tracking-tight">GoRaven</h1>
         </div>
 
         {isExpired && (

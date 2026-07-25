@@ -1,9 +1,11 @@
 package controller
 
 import (
-	"raven/backend/infra"
-	"raven/backend/service"
-	"raven/backend/vo"
+	"goraven/backend/infra"
+	"goraven/backend/repository/seed/mock"
+	"goraven/backend/service"
+	"goraven/backend/vo"
+	"goraven/backend/vo/errs"
 
 	"github.com/8treenet/freedom"
 )
@@ -15,9 +17,9 @@ func init() {
 }
 
 type SessionController struct {
-	SessionSev	*service.SessionService
-	ShareLinkSev	*service.ShareLinkService
-	Request		*infra.Request
+	SessionSev   *service.SessionService
+	ShareLinkSev *service.ShareLinkService
+	Request      *infra.Request
 }
 
 func (controller *SessionController) BeforeActivation(b freedom.BeforeActivation) {
@@ -39,6 +41,10 @@ func (controller *SessionController) ListSessions() freedom.Result {
 		return &infra.JSONResponse{Error: err}
 	}
 
+	if chatUseMock {
+		return &infra.JSONResponse{Object: mock.BuildMockSessionList(userId)}
+	}
+
 	rsp, err := controller.SessionSev.ListSessions(userId, req)
 	if err != nil {
 		return &infra.JSONResponse{Error: err}
@@ -49,11 +55,19 @@ func (controller *SessionController) ListSessions() freedom.Result {
 func (controller *SessionController) GetSession(sessionId string) freedom.Result {
 	userId := controller.Request.GetUserId()
 
+	if chatUseMock {
+		detail := mock.BuildMockSessionDetail(sessionId, userId)
+		if detail == nil {
+			return &infra.JSONResponse{Error: errs.ErrSessionNotFound}
+		}
+		return &infra.JSONResponse{Object: detail}
+	}
+
 	rsp, err := controller.SessionSev.GetSession(sessionId, userId)
 	if err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
-	return &infra.JSONResponse{Object: rsp, DisableLogOutput: true}
+	return &infra.JSONResponse{Object: rsp}
 }
 
 func (controller *SessionController) UpdateSession(sessionId string) freedom.Result {
@@ -70,6 +84,12 @@ func (controller *SessionController) UpdateSession(sessionId string) freedom.Res
 
 func (controller *SessionController) GetMessages(sessionId string) freedom.Result {
 	userId := controller.Request.GetUserId()
+
+	if chatUseMock {
+		_ = userId
+		return &infra.JSONResponse{Object: []vo.MessageItem{}}
+	}
+
 	rsp, err := controller.SessionSev.GetMessages(sessionId, userId)
 	if err != nil {
 		return &infra.JSONResponse{Error: err}

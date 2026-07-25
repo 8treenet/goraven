@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"raven/backend/infra"
-	"raven/backend/po"
-	"raven/backend/vo"
-	"raven/config"
+	"goraven/backend/infra"
+	"goraven/backend/po"
+	"goraven/backend/vo"
+	"goraven/config"
 
 	"github.com/8treenet/freedom"
 	"github.com/redis/go-redis/v9"
@@ -331,6 +331,7 @@ func (repo *DashboardRepository) GetActiveUserTrend(dateRange []string) ([]vo.Ac
 
 	dateMap := make(map[string]int64, len(rows))
 	for _, r := range rows {
+
 		if len(r.Date) >= 10 {
 			dateMap[r.Date[:10]] = r.Count
 		}
@@ -382,6 +383,16 @@ func (repo *DashboardRepository) GetUserTodayTokens(userId string) (int64, error
 		Where("user_id = ? AND stat_date = ?", userId, today).
 		Scan(&total).Error
 	return total, err
+}
+
+func (repo *DashboardRepository) GetUserDailyTokenLimit(userId string) (int, error) {
+	var limit int
+	err := repo.db().
+		Model(&po.User{}).
+		Select("daily_token_limit").
+		Where("user_id = ? AND deleted = 0", userId).
+		Scan(&limit).Error
+	return limit, err
 }
 
 func (repo *DashboardRepository) GetUserTotalTokens(userId string) (int64, error) {

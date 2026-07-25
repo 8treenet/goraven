@@ -1,9 +1,9 @@
 package controller
 
 import (
-	"raven/backend/infra"
-	"raven/backend/service"
-	"raven/backend/vo"
+	"goraven/backend/infra"
+	"goraven/backend/service"
+	"goraven/backend/vo"
 
 	"github.com/8treenet/freedom"
 )
@@ -19,7 +19,6 @@ type SkillController struct {
 	Request  *infra.Request
 }
 
-// BeforeActivation 绑定路由前缀 /api/skills
 func (controller *SkillController) BeforeActivation(b freedom.BeforeActivation) {
 	b.Handle("GET", "/simpleSkills", "GetSimpleSkills")
 	b.Handle("GET", "/simpleSkills/byIds", "GetSimpleSkillsByIDs")

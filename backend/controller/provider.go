@@ -3,8 +3,8 @@ package controller
 import (
 	"strconv"
 
-	"raven/backend/infra"
-	"raven/backend/service"
+	"goraven/backend/infra"
+	"goraven/backend/service"
 
 	"github.com/8treenet/freedom"
 )
@@ -16,8 +16,8 @@ func init() {
 }
 
 type ProvidersController struct {
-	ModelSev	*service.AIModelService
-	Request		*infra.Request
+	ModelSev *service.AIModelService
+	Request  *infra.Request
 }
 
 func (controller *ProvidersController) BeforeActivation(b freedom.BeforeActivation) {

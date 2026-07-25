@@ -1,8 +1,8 @@
 import { Streamdown, type StreamdownProps } from 'streamdown'
 import { code } from '@streamdown/code'
 import { cn } from '@/lib/utils'
-import { RavenFile } from './raven-file'
-import { RavenChart } from './raven-chart'
+import { GoRavenFile } from './goraven-file'
+import { GoRavenChart } from './goraven-chart'
 
 const SHIKI_JS_ENGINE_SUPPORTED = (() => {
   try {
@@ -21,10 +21,10 @@ interface MarkdownProps {
   components?: StreamdownProps['components']
 }
 
-const RAVEN_FILE_RE = /<raven-file\s+([^>]*?)\/?>/gi
-const RAVEN_CHART_RE = /<raven-chart\s+([^>]*?)\/?>/gi
-const RAVEN_UPLOAD_RE = /<raven-upload[^>]*>[\s\S]*?<\/raven-upload>/gi
-const RAVEN_REF_RE = /<raven-ref\s+[^>]*>[\s\S]*?<\/raven-ref>/gi
+const GORAVEN_FILE_RE = /<goraven-file\s+([^>]*?)\/?>/gi
+const GORAVEN_CHART_RE = /<goraven-chart\s+([^>]*?)\/?>/gi
+const GORAVEN_UPLOAD_RE = /<goraven-upload[^>]*>[\s\S]*?<\/goraven-upload>/gi
+const GORAVEN_REF_RE = /<goraven-ref\s+[^>]*>[\s\S]*?<\/goraven-ref>/gi
 
 function parseAttrs(attrStr: string): Record<string, string> {
   const attrs: Record<string, string> = {}
@@ -47,8 +47,8 @@ function splitContent(raw: string): Segment[] {
   let last = 0
 
   const tags: { regex: RegExp; type: Segment['type'] }[] = [
-    { regex: RAVEN_FILE_RE, type: 'file' },
-    { regex: RAVEN_CHART_RE, type: 'chart' },
+    { regex: GORAVEN_FILE_RE, type: 'file' },
+    { regex: GORAVEN_CHART_RE, type: 'chart' },
   ]
 
   type Match = { index: number; end: number; type: Segment['type']; attrs: Record<string, string> }
@@ -84,7 +84,7 @@ function renderStreamdown(
   props: Pick<StreamdownProps, 'mode' | 'isAnimating' | 'plugins' | 'shikiTheme' | 'controls' | 'mermaid' | 'components' | 'className'> & { children: string },
 ) {
   const { className, ...rest } = props
-  return <Streamdown key={key} className={cn('raven-markdown', className)} {...rest} />
+  return <Streamdown key={key} className={cn('goraven-markdown', className)} {...rest} />
 }
 
 export function Markdown({
@@ -94,16 +94,16 @@ export function Markdown({
   className,
   components,
 }: MarkdownProps) {
-  // Strip <raven-upload> tags — server adds these from user uploads but the frontend
+  // Strip <goraven-upload> tags — server adds these from user uploads but the frontend
   // doesn't render them (files are already shown as attachment previews in the input)
   const cleanChildren = children
-    .replace(RAVEN_UPLOAD_RE, '')
-    .replace(RAVEN_REF_RE, '')
+    .replace(GORAVEN_UPLOAD_RE, '')
+    .replace(GORAVEN_REF_RE, '')
     .trim()
 
-  const hasTag = RAVEN_FILE_RE.test(cleanChildren) || RAVEN_CHART_RE.test(cleanChildren)
-  RAVEN_FILE_RE.lastIndex = 0
-  RAVEN_CHART_RE.lastIndex = 0
+  const hasTag = GORAVEN_FILE_RE.test(cleanChildren) || GORAVEN_CHART_RE.test(cleanChildren)
+  GORAVEN_FILE_RE.lastIndex = 0
+  GORAVEN_CHART_RE.lastIndex = 0
 
   const base = {
     mode,
@@ -122,11 +122,11 @@ export function Markdown({
 
   const segments = splitContent(cleanChildren)
   return (
-    <div className={cn('raven-markdown', className)}>
+    <div className={cn('goraven-markdown', className)}>
       {segments.map((seg, i) => {
         if (seg.type === 'file') {
           return (
-            <RavenFile
+            <GoRavenFile
               key={i}
               kind={seg.attrs?.kind}
               path={seg.attrs?.path}
@@ -136,7 +136,7 @@ export function Markdown({
           )
         }
         if (seg.type === 'chart') {
-          return <RavenChart key={i} attrs={seg.attrs || {}} />
+          return <GoRavenChart key={i} attrs={seg.attrs || {}} />
         }
         if (seg.content.trim()) {
           return renderStreamdown(i, { ...base, children: seg.content })

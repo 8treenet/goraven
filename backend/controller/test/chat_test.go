@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"goraven/backend/vo"
 	"net/http"
-	"raven/backend/vo"
 	"strings"
 	"testing"
 	"time"
@@ -22,14 +22,14 @@ func TestChat(t *testing.T) {
 	content := "我在学习golang语言,给我一出一份学习计划"
 	modelId := 1
 	req := vo.ChatReq{
-		Content:	content,
-		AIModelId:	modelId,
+		Content:   content,
+		AIModelId: modelId,
 	}
 
 	var rsp struct {
-		Code	int		`json:"code"`
-		Msg	string		`json:"msg"`
-		Data	vo.ChatRsp	`json:"data,omitempty"`
+		Code int        `json:"code"`
+		Msg  string     `json:"msg"`
+		Data vo.ChatRsp `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/chat").
 		Post().
@@ -49,15 +49,15 @@ func TestPersonaChat(t *testing.T) {
 	modelId := 2
 
 	req := vo.ChatReq{
-		Content:	content,
-		AIModelId:	modelId,
-		Project:	"golang-learning",
+		Content:   content,
+		AIModelId: modelId,
+		Project:   "golang-learning",
 	}
 
 	var rsp struct {
-		Code	int		`json:"code"`
-		Msg	string		`json:"msg"`
-		Data	vo.ChatRsp	`json:"data,omitempty"`
+		Code int        `json:"code"`
+		Msg  string     `json:"msg"`
+		Data vo.ChatRsp `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/chat").
 		Post().
@@ -77,15 +77,15 @@ func TestPersonaSkillChat(t *testing.T) {
 	modelId := 1
 	personaId := 3
 	req := vo.ChatReq{
-		Content:	content,
-		AIModelId:	modelId,
-		PersonaId:	&personaId,
+		Content:   content,
+		AIModelId: modelId,
+		PersonaId: &personaId,
 	}
 
 	var rsp struct {
-		Code	int		`json:"code"`
-		Msg	string		`json:"msg"`
-		Data	vo.ChatRsp	`json:"data,omitempty"`
+		Code int        `json:"code"`
+		Msg  string     `json:"msg"`
+		Data vo.ChatRsp `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/chat").
 		Post().
@@ -104,15 +104,15 @@ func TestMCPChat(t *testing.T) {
 	content := "我现在加载了github的mcp，我想测试下是否正常。你调用一下试试"
 	modelId := 1
 	req := vo.ChatReq{
-		Content:	content,
-		AIModelId:	modelId,
-		McpIds:		[]int{3},
+		Content:   content,
+		AIModelId: modelId,
+		McpIds:    []int{3},
 	}
 
 	var rsp struct {
-		Code	int		`json:"code"`
-		Msg	string		`json:"msg"`
-		Data	vo.ChatRsp	`json:"data,omitempty"`
+		Code int        `json:"code"`
+		Msg  string     `json:"msg"`
+		Data vo.ChatRsp `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/chat").
 		Post().
@@ -132,8 +132,8 @@ func TestChatStop(t *testing.T) {
 		SessionId: "2e6b6788ad124f29b3146438de169bb4",
 	}
 	var stopRsp struct {
-		Code	int	`json:"code"`
-		Msg	string	`json:"msg"`
+		Code int    `json:"code"`
+		Msg  string `json:"msg"`
 	}
 	stopResp := requests.NewHTTPRequest(domain+"/api/chat/stop").
 		Post().
@@ -167,9 +167,9 @@ func chatsteam(t *testing.T, sessionId string) {
 
 	scanner := bufio.NewScanner(resp.Body)
 	var (
-		eventType	string
-		dataLine	string
-		lastBlock	string
+		eventType string
+		dataLine  string
+		lastBlock string
 	)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -217,9 +217,9 @@ func chatsteam(t *testing.T, sessionId string) {
 				}
 				var evt struct {
 					Tool *struct {
-						Icon		string	`json:"icon"`
-						DisplayName	string	`json:"displayName"`
-						Action		string	`json:"action"`
+						Icon        string `json:"icon"`
+						DisplayName string `json:"displayName"`
+						Action      string `json:"action"`
 					} `json:"tool"`
 				}
 				if json.Unmarshal([]byte(dataStr), &evt) == nil && evt.Tool != nil {
@@ -233,9 +233,9 @@ func chatsteam(t *testing.T, sessionId string) {
 				}
 				var evt struct {
 					Retry *struct {
-						Attempt		int	`json:"attempt"`
-						MaxRetries	int	`json:"maxRetries"`
-						Error		string	`json:"error"`
+						Attempt    int    `json:"attempt"`
+						MaxRetries int    `json:"maxRetries"`
+						Error      string `json:"error"`
 					} `json:"retry"`
 				}
 				if json.Unmarshal([]byte(dataStr), &evt) == nil && evt.Retry != nil {
@@ -269,9 +269,9 @@ func TestChatCompress(t *testing.T) {
 	}
 
 	var rsp struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	vo.ChatCompressRsp	`json:"data,omitempty"`
+		Code int                `json:"code"`
+		Msg  string             `json:"msg"`
+		Data vo.ChatCompressRsp `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/chat/compress").
 		Post().
@@ -289,9 +289,9 @@ func ChatPollCompress(taskId string) {
 	for i := 0; i < 100; i++ {
 		time.Sleep(500 * time.Millisecond)
 		var rsp struct {
-			Code	int			`json:"code"`
-			Msg	string			`json:"msg"`
-			Data	vo.ChatCompressPollRsp	`json:"data,omitempty"`
+			Code int                    `json:"code"`
+			Msg  string                 `json:"msg"`
+			Data vo.ChatCompressPollRsp `json:"data,omitempty"`
 		}
 		httpResp := requests.NewHTTPRequest(domain+"/api/chat/compress/"+taskId).
 			Get().

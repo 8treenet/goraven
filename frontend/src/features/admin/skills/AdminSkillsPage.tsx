@@ -151,14 +151,14 @@ function parseSkillContent(content: string): { name: string; description: string
 
   if (!name) errors.push(translate('adminSkills.errMissingName'))
   if (!description) errors.push(translate('adminSkills.errMissingDescription'))
-  if (name && !name.startsWith('raven-')) errors.push(translate('adminSkills.errNamePrefix'))
-  if (name && !/^raven-[a-z0-9][a-z0-9-]*$/.test(name)) errors.push(translate('adminSkills.errNameFormat'))
+  if (name && !name.startsWith('goraven-')) errors.push(translate('adminSkills.errNamePrefix'))
+  if (name && !/^goraven-[a-z0-9][a-z0-9-]*$/.test(name)) errors.push(translate('adminSkills.errNameFormat'))
 
   return { name, description, errors }
 }
 
 const GLOBAL_TEMPLATE = `---
-name: raven-
+name: goraven-
 description: fill skill description here
 ---
 

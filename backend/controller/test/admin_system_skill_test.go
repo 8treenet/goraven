@@ -16,7 +16,7 @@ func TestAdminListSystemSkills(t *testing.T) {
 
 func TestAdminCreateSystemSkill(t *testing.T) {
 	req := map[string]interface{}{
-		"content": "---\nname: raven-test-skill234\ndescription: 这是一个测试技能\n---\n# 测试技能\n\n你是一个测试助手。",
+		"content": "---\nname: goraven-test-skill234\ndescription: 这是一个测试技能\n---\n# 测试技能\n\n你是一个测试助手。",
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/systemSkills").
 		Post().
@@ -34,7 +34,7 @@ func TestAdminGetSystemSkillDetail(t *testing.T) {
 
 func TestAdminUpdateSystemSkill(t *testing.T) {
 	req := map[string]interface{}{
-		"content": "---\nname: raven-test-skill\ndescription: 这是更新后的测试技能\n---\n# 更新后的测试技能\n\n你是一个更新后的测试助手。",
+		"content": "---\nname: goraven-test-skill\ndescription: 这是更新后的测试技能\n---\n# 更新后的测试技能\n\n你是一个更新后的测试助手。",
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/systemSkills/1").
 		Put().
@@ -93,7 +93,7 @@ func TestAdminCreateSystemSkillInvalidName(t *testing.T) {
 }
 
 func TestAdminCreateSystemSkillDuplicate(t *testing.T) {
-	content := "---\nname: raven-dup-test\ndescription: 重复测试\n---\n# 内容"
+	content := "---\nname: goraven-dup-test\ndescription: 重复测试\n---\n# 内容"
 	req := map[string]interface{}{
 		"content": content,
 	}

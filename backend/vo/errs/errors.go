@@ -3,7 +3,7 @@ package errs
 import (
 	"fmt"
 
-	"raven/config"
+	"goraven/config"
 )
 
 type Error struct {
@@ -80,9 +80,9 @@ var (
 		enMessage: "cannot delete the default model",
 		zhMessage: "默认模型不可删除",
 	}
-	ErrCannotDeleteCompressModel = &Error{
-		enMessage: "cannot delete the compress model. Please set another model as the compress model first",
-		zhMessage: "压缩模型不可删除，请先将其他模型设置为压缩模型",
+	ErrCannotDeleteFlashModel = &Error{
+		enMessage: "cannot delete the flash model. Please set another model as the flash model first",
+		zhMessage: "Flash 模型不可删除，请先将其他模型设置为 Flash 模型",
 	}
 	ErrCannotDeleteVisualModel = &Error{
 		enMessage: "cannot delete the multimodal recognition model. Please set another model as the visual model first",
@@ -157,8 +157,8 @@ var (
 		zhMessage: "技能格式无效：缺少 frontmatter",
 	}
 	ErrSystemSkillInvalidName = &Error{
-		enMessage: "skill name must start with 'raven-'",
-		zhMessage: "技能名称必须以 'raven-' 开头",
+		enMessage: "skill name must start with 'goraven-'",
+		zhMessage: "技能名称必须以 'goraven-' 开头",
 	}
 	ErrSystemSkillNameRequired = &Error{
 		enMessage: "skill name is required in frontmatter",
@@ -166,11 +166,11 @@ var (
 	}
 	ErrPresetSkillCannotModify = &Error{
 		enMessage: "preset system skills cannot be modified",
-		zhMessage: "Raven 预设技能不可修改",
+		zhMessage: "GoRaven 预设技能不可修改",
 	}
 	ErrPresetSkillCannotDelete = &Error{
 		enMessage: "preset system skills cannot be deleted",
-		zhMessage: "Raven 预设技能不可删除",
+		zhMessage: "GoRaven 预设技能不可删除",
 	}
 	ErrMarketSkillNotFound = &Error{
 		enMessage: "market skill not found",
@@ -340,6 +340,14 @@ var (
 		enMessage: "compress task not found or expired",
 		zhMessage: "压缩任务不存在或已过期",
 	}
+	ErrProjectMutualExclusive = &Error{
+		enMessage: "project and sharedProjectId are mutually exclusive",
+		zhMessage: "个人项目和团队共享项目不能同时设置",
+	}
+	ErrSharedProjectBusy = &Error{
+		enMessage: "the shared project is currently in use by another session, please try again later",
+		zhMessage: "该团队共享项目正在被其他会话使用，请稍后重试",
+	}
 	ErrShareNotFound = &Error{
 		enMessage: "share link not found",
 		zhMessage: "分享链接不存在",
@@ -388,13 +396,33 @@ var (
 		enMessage: "value too long (max 65535)",
 		zhMessage: "值过长（最大 65535）",
 	}
-	ErrProjectMutualExclusive = &Error{
-		enMessage: "project and sharedProjectId are mutually exclusive",
-		zhMessage: "个人项目和团队共享项目不能同时设置",
+	ErrTempAccessInvalid = &Error{
+		enMessage: "invalid or expired access key",
+		zhMessage: "访问凭证无效或已过期",
 	}
-	ErrSharedProjectBusy = &Error{
-		enMessage: "the shared project is currently in use by another session, please try again later",
-		zhMessage: "该团队共享项目正在被其他会话使用，请稍后重试",
+	ErrTempAccessPathNotAllowed = &Error{
+		enMessage: "path is not allowed by the access key",
+		zhMessage: "该路径不在访问凭证允许范围内",
+	}
+	ErrTempAccessFileNotFound = &Error{
+		enMessage: "file not found",
+		zhMessage: "文件不存在",
+	}
+	ErrTempAccessNotFile = &Error{
+		enMessage: "requested path is not a file",
+		zhMessage: "请求的路径不是文件",
+	}
+	ErrTempAccessTypeInvalid = &Error{
+		enMessage: "type must be 'file' or 'dir'",
+		zhMessage: "类型必须为 'file' 或 'dir'",
+	}
+	ErrTempAccessPathInvalid = &Error{
+		enMessage: "path is outside user workspace",
+		zhMessage: "路径不在用户工作空间内",
+	}
+	ErrTempAccessNotDir = &Error{
+		enMessage: "path is not a directory",
+		zhMessage: "路径不是目录",
 	}
 	ErrSharedProjectNotFound = &Error{
 		enMessage: "shared project not found",
@@ -416,21 +444,8 @@ var (
 		enMessage: "project directory does not exist, contact the owner",
 		zhMessage: "项目目录不存在，请联系所有者",
 	}
-	ErrTempAccessTypeInvalid = &Error{
-		enMessage: "type must be 'file' or 'dir'",
-		zhMessage: "类型必须为 'file' 或 'dir'",
-	}
-	ErrTempAccessPathInvalid = &Error{
-		enMessage: "path is outside user workspace",
-		zhMessage: "路径不在用户工作空间内",
-	}
-
-	ErrTempAccessNotFile = &Error{
-		enMessage: "requested path is not a file",
-		zhMessage: "请求的路径不是文件",
-	}
-	ErrTempAccessNotDir = &Error{
-		enMessage: "path is not a directory",
-		zhMessage: "路径不是目录",
+	ErrDailyTokenLimitExceeded = &Error{
+		enMessage: "daily token limit exceeded, please try again tomorrow or contact your administrator",
+		zhMessage: "今日 Token 用量已达上限，请明日再试或联系管理员调整额度",
 	}
 )

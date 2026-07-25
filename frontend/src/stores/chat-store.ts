@@ -135,7 +135,7 @@ const pollIntervals = new Map<string, ReturnType<typeof setInterval>>()
 const backgroundTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 const BACKGROUND_TIMEOUT_MS = 5 * 60 * 1000
 
-const LAST_USED_MODEL_KEY = 'raven.lastUsedModelId'
+const LAST_USED_MODEL_KEY = 'goraven.lastUsedModelId'
 
 function getLastUsedModelId(): number {
   const v = localStorage.getItem(LAST_USED_MODEL_KEY)
@@ -612,7 +612,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set((s) => ({ messages: [...s.messages, userMsg], streamController: null }))
 
     // Build the request
-    const refTags = state.formRefs.map(r => `<raven-ref type="${r.type}" name="${r.name}">${r.path}</raven-ref>`).join('\n')
+    const refTags = state.formRefs.map(r => `<goraven-ref type="${r.type}" name="${r.name}">${r.path}</goraven-ref>`).join('\n')
     const fullContent = content + (refTags ? '\n' + refTags : '')
     const request: ChatRequest = {
       sessionId: state.currentSessionId || undefined,

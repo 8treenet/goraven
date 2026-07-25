@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"raven/backend/infra"
-	"raven/backend/service"
-	"raven/backend/vo"
-	"raven/core/agent"
+	"goraven/backend/infra"
+	"goraven/backend/repository/seed/mock"
+	"goraven/backend/service"
+	"goraven/backend/vo"
+	"goraven/core/agent"
 
 	"github.com/8treenet/freedom"
 	iris "github.com/8treenet/iris/v12"
@@ -20,12 +21,12 @@ func init() {
 }
 
 type ChatController struct {
-	ChatSev		*service.ChatService
-	SessionSev	*service.SessionService
-	HfsSev		*service.HFSService
-	McpSev		*service.McpService
-	SkillSev	*service.SkillService
-	Request		*infra.Request
+	ChatSev    *service.ChatService
+	SessionSev *service.SessionService
+	HfsSev     *service.HFSService
+	McpSev     *service.McpService
+	SkillSev   *service.SkillService
+	Request    *infra.Request
 }
 
 const (
@@ -48,6 +49,11 @@ func (controller *ChatController) Chat() freedom.Result {
 		return &infra.JSONResponse{Error: err}
 	}
 
+	if chatUseMock {
+		mock.MarkSessionCreated(userId, mock.ChatMockSessionId)
+		return &infra.JSONResponse{Object: &vo.ChatRsp{SessionId: mock.ChatMockSessionId}}
+	}
+
 	rsp, err := controller.ChatSev.StartChat(
 		context.Background(),
 		userId,
@@ -64,6 +70,15 @@ func (controller *ChatController) Chat() freedom.Result {
 func (controller *ChatController) Stream(sessionId string) freedom.Result {
 	userId := controller.Request.GetUserId()
 
+	if chatUseMock {
+		_ = userId
+		return &sseResponse{
+			SessionId: sessionId,
+			SSEChan:   mock.BuildStreamMock(sessionId),
+			Runner:    nil,
+		}
+	}
+
 	runner, err := controller.ChatSev.GetRunner(sessionId, userId)
 	if err != nil {
 		return &infra.JSONResponse{Error: err}
@@ -71,9 +86,9 @@ func (controller *ChatController) Stream(sessionId string) freedom.Result {
 
 	sseChan := runner.StartFetch()
 	return &sseResponse{
-		SessionId:	sessionId,
-		SSEChan:	sseChan,
-		Runner:		runner,
+		SessionId: sessionId,
+		SSEChan:   sseChan,
+		Runner:    runner,
 	}
 }
 
@@ -113,9 +128,9 @@ func (controller *ChatController) PollCompress(taskId string) freedom.Result {
 }
 
 type sseResponse struct {
-	SessionId	string
-	SSEChan		<-chan *agent.SSEEvent
-	Runner		*agent.MainRunner
+	SessionId string
+	SSEChan   <-chan *agent.SSEEvent
+	Runner    *agent.MainRunner
 }
 
 func (sse *sseResponse) Dispatch(ctx iris.Context) {
@@ -147,7 +162,6 @@ func (sse *sseResponse) Dispatch(ctx iris.Context) {
 			}
 
 			data, _ := json.Marshal(event)
-
 			if _, err := fmt.Fprintf(ctx.ResponseWriter(), "event: %s\ndata: %s\n\n", event.Type, data); err != nil {
 				return
 			}

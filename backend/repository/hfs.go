@@ -3,12 +3,24 @@ package repository
 import (
 	"context"
 	"encoding/json"
-	"raven/backend/po"
+	"goraven/backend/po"
 	"time"
 
 	"github.com/8treenet/freedom"
 	"gorm.io/gorm"
 )
+
+const (
+	tempAkKeyPrefix = "hfs:tempak:"
+
+	TempAkTTL = 15 * time.Minute
+)
+
+type TempAccessCache struct {
+	UserName string `json:"userName"`
+	Path     string `json:"path"`
+	Type     string `json:"type"`
+}
 
 func init() {
 	freedom.Prepare(func(initiator freedom.Initiator) {
@@ -16,18 +28,6 @@ func init() {
 			return &HFSRepository{}
 		})
 	})
-}
-
-const (
-	tempAkKeyPrefix = "hfs:tempak:"
-	// TempAkTTL 临时访问凭证有效期
-	TempAkTTL = 15 * time.Minute
-)
-
-type TempAccessCache struct {
-	UserName string `json:"userName"`
-	Path     string `json:"path"`
-	Type     string `json:"type"` // "file" 或 "dir"
 }
 
 type HFSRepository struct {
@@ -96,16 +96,33 @@ func (repo *HFSRepository) MarkUploadUsed(uploadId string) error {
 		}).Error
 }
 
-func (repo *HFSRepository) SetTempAccess(ak string, data *TempAccessCache) error {
-	key := tempAkKeyPrefix + ak
-	val, _ := json.Marshal(data)
-	return repo.Redis().Set(context.Background(), key, val, TempAkTTL).Err()
-}
-
 func (repo *HFSRepository) db() *gorm.DB {
 	var db *gorm.DB
 	if err := repo.FetchDB(&db); err != nil {
 		panic(err)
 	}
 	return db
+}
+
+func (repo *HFSRepository) SetTempAccess(ak string, data *TempAccessCache) error {
+	key := tempAkKeyPrefix + ak
+	val, _ := json.Marshal(data)
+	return repo.Redis().Set(context.Background(), key, val, TempAkTTL).Err()
+}
+
+func (repo *HFSRepository) GetTempAccess(ak string) (*TempAccessCache, error) {
+	key := tempAkKeyPrefix + ak
+	data, err := repo.Redis().Get(context.Background(), key).Bytes()
+	if err != nil {
+		return nil, nil
+	}
+	var cache TempAccessCache
+	if err := json.Unmarshal(data, &cache); err != nil {
+		return nil, err
+	}
+	return &cache, nil
+}
+
+func (repo *HFSRepository) DeleteTempAccess(ak string) {
+	repo.Redis().Del(context.Background(), tempAkKeyPrefix+ak)
 }

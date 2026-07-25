@@ -3,7 +3,7 @@ package provider
 import (
 	"errors"
 
-	"raven/core/iface"
+	"goraven/core/iface"
 )
 
 type ModelInfo struct {

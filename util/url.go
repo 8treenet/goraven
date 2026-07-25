@@ -6,7 +6,6 @@ import (
 	"strings"
 )
 
-// EncodeQuery URL 编码查询参数
 func EncodeQuery(s string) string {
 	return strings.ReplaceAll(
 		strings.ReplaceAll(
@@ -17,7 +16,6 @@ func EncodeQuery(s string) string {
 	)
 }
 
-// EncodePath URL 编码路径段
 func EncodePath(s string) string {
 	return strings.ReplaceAll(s, "/", "%2F")
 }

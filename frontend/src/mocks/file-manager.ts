@@ -42,7 +42,7 @@ const MOCK_FS: Record<string, FileItem[]> = {
     { name: 'notes-2024.txt', isDir: false, size: 1_024, modTime: '2024-12-31T23:00:00Z' },
   ],
   '/projects': [
-    { name: 'raven', isDir: true, size: 0, modTime: '2025-05-20T10:00:00Z' },
+    { name: 'goraven', isDir: true, size: 0, modTime: '2025-05-20T10:00:00Z' },
     { name: 'website', isDir: true, size: 0, modTime: '2025-04-15T08:30:00Z' },
     { name: '.gitconfig', isDir: false, size: 1_024, modTime: '2025-05-10T12:00:00Z' },
   ],

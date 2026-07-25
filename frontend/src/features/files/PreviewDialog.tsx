@@ -181,7 +181,7 @@ export function PreviewDialog({ item, type, url, text, sheets, loading, error, o
                 </div>
               )}
               <div
-                className="raven-xlsx flex-1 overflow-auto"
+                className="goraven-xlsx flex-1 overflow-auto"
                 dangerouslySetInnerHTML={{ __html: sheets[activeSheet]?.html ?? '' }}
               />
             </div>

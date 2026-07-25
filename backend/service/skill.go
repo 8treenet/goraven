@@ -5,18 +5,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"goraven/backend/infra"
+	"goraven/backend/po"
+	"goraven/backend/repository"
+	seed "goraven/backend/repository/seed"
+	"goraven/backend/vo"
+	"goraven/backend/vo/errs"
+	"goraven/config"
+	"goraven/core/iface"
+	"goraven/core/sandbox"
+	"goraven/util"
 	"io"
 	"os"
 	"path/filepath"
-	"raven/backend/infra"
-	"raven/backend/po"
-	"raven/backend/repository"
-	"raven/backend/vo"
-	"raven/backend/vo/errs"
-	"raven/config"
-	"raven/core/iface"
-	"raven/core/sandbox"
-	"raven/util"
 	"strings"
 
 	"github.com/8treenet/freedom"
@@ -107,8 +108,8 @@ func (service *SkillService) CreateSystemSkill(req *vo.AdminCreateSystemSkillReq
 	if err != nil {
 		return service.translateParseError(err)
 	}
-	if !strings.HasPrefix(name, "raven-") {
-		return errors.New("skill name must start with 'raven-'")
+	if !strings.HasPrefix(name, "goraven-") {
+		return errors.New("skill name must start with 'goraven-'")
 	}
 
 	if _, err := service.SkillRepo.FindSystemSkillByName(name); err == nil {
@@ -129,7 +130,9 @@ func (service *SkillService) UpdateSystemSkill(skillId int, req *vo.AdminUpdateS
 	if err != nil {
 		return errs.ErrSystemSkillNotFound
 	}
-	fmt.Println(skill)
+	if seed.PresetSkillNames[skill.Name] {
+		return errs.ErrPresetSkillCannotModify
+	}
 
 	if req.Content == "" {
 		return nil
@@ -139,8 +142,8 @@ func (service *SkillService) UpdateSystemSkill(skillId int, req *vo.AdminUpdateS
 	if err != nil {
 		return service.translateParseError(err)
 	}
-	if !strings.HasPrefix(name, "raven-") {
-		return errors.New("skill name must start with 'raven-'")
+	if !strings.HasPrefix(name, "goraven-") {
+		return errors.New("skill name must start with 'goraven-'")
 	}
 
 	existing, err := service.SkillRepo.FindSystemSkillByName(name)
@@ -157,17 +160,23 @@ func (service *SkillService) UpdateSystemSkill(skillId int, req *vo.AdminUpdateS
 }
 
 func (service *SkillService) UpdateSystemSkillStatus(skillId int, status uint8) error {
-	_, err := service.SkillRepo.GetSystemSkillByID(skillId)
+	skill, err := service.SkillRepo.GetSystemSkillByID(skillId)
 	if err != nil {
 		return errs.ErrSystemSkillNotFound
+	}
+	if seed.PresetSkillNames[skill.Name] {
+		return errs.ErrPresetSkillCannotModify
 	}
 	return service.SkillRepo.UpdateSystemSkill(skillId, map[string]interface{}{"status": int(status)})
 }
 
 func (service *SkillService) DeleteSystemSkill(skillId int) error {
-	_, err := service.SkillRepo.GetSystemSkillByID(skillId)
+	skill, err := service.SkillRepo.GetSystemSkillByID(skillId)
 	if err != nil {
 		return errs.ErrSystemSkillNotFound
+	}
+	if seed.PresetSkillNames[skill.Name] {
+		return errs.ErrPresetSkillCannotDelete
 	}
 	return service.SkillRepo.SoftDeleteSystemSkill(skillId)
 }
@@ -435,6 +444,11 @@ func (service *SkillService) processSkillZip(zipPath string, source string, sour
 		return err
 	}
 
+	if err := service.rewriteSkillMdName(destDir, skillName); err != nil {
+		os.RemoveAll(destDir)
+		return fmt.Errorf("rewrite skill name: %w", err)
+	}
+
 	skill := &po.SkillMarket{
 		Name:        skillName,
 		Description: description,
@@ -562,6 +576,19 @@ func (service *SkillService) extractAndVerifySkillZip(zipPath, destDir string) e
 	return nil
 }
 
+func (service *SkillService) rewriteSkillMdName(destDir, skillName string) error {
+	skillMdPath := filepath.Join(destDir, "SKILL.md")
+	data, err := os.ReadFile(skillMdPath)
+	if err != nil {
+		return err
+	}
+	rewritten, err := util.RewriteSkillName(string(data), skillName)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(skillMdPath, []byte(rewritten), 0644)
+}
+
 func isSystemDirName(name string) bool {
 	return strings.HasPrefix(name, ".")
 }
@@ -669,6 +696,9 @@ func (service *SkillService) DeleteSkillCategory(categoryId int) error {
 	if err := service.SkillRepo.ReassignUserSkillsToCategory(categoryId, defaultCat.CategoryId); err != nil {
 		return err
 	}
+	if err := service.SkillRepo.ReassignSkillSharesToCategory(categoryId, defaultCat.CategoryId); err != nil {
+		return err
+	}
 
 	return service.SkillRepo.SoftDeleteSkillCategory(categoryId)
 }
@@ -689,6 +719,21 @@ func (service *SkillService) batchGetCategoryMap(skills []po.SkillMarket) map[in
 		return nil
 	}
 
+	m := make(map[int]po.SkillCategory, len(cats))
+	for _, c := range cats {
+		m[c.CategoryId] = c
+	}
+	return m
+}
+
+func (service *SkillService) batchGetCategoryMapByIds(ids []int) map[int]po.SkillCategory {
+	if len(ids) == 0 {
+		return nil
+	}
+	cats, err := service.SkillRepo.BatchGetSkillCategories(ids)
+	if err != nil {
+		return nil
+	}
 	m := make(map[int]po.SkillCategory, len(cats))
 	for _, c := range cats {
 		m[c.CategoryId] = c
@@ -854,6 +899,11 @@ func (service *SkillService) GetUserSkillDetail(userSkillId int, userId string) 
 		}
 	}
 
+	var isShared bool
+	if share, err := service.SkillRepo.GetSkillShareBySkillName(skill.SkillName); err == nil && share.OwnerId == userId {
+		isShared = true
+	}
+
 	return &vo.UserSkillDetailRsp{
 		UserSkillId:   skill.UserSkillId,
 		SkillName:     skill.SkillName,
@@ -866,6 +916,7 @@ func (service *SkillService) GetUserSkillDetail(userSkillId int, userId string) 
 		InstallStatus: skill.InstallStatus,
 		InstallError:  skill.InstallError,
 		Content:       content,
+		IsShared:      isShared,
 		Created:       skill.Created,
 		Updated:       skill.Updated,
 	}, nil
@@ -995,11 +1046,7 @@ func (service *SkillService) installSkillAsync(userSkillId int, userId string, s
 	if err != nil {
 		sysCfg = repository.NewDefaultSystemConfig()
 	}
-
-	content := sysCfg.ClawHubToken
-	if err := sb.MarkSkillInstalled(skillName, content); err != nil {
-		service.Worker.Logger().Errorf("MarkSkillInstalled failed: skillName=%s, err=%v", skillName, err)
-	}
+	service.Worker.Logger().Errorf("MarkSkillInstalled failed: skillName=%s, err=%v", sysCfg, err)
 }
 
 func (service *SkillService) GetUserSkillStatus(userSkillId int, userId string) (*vo.UserSkillStatusRsp, error) {
@@ -1119,16 +1166,28 @@ func (service *SkillService) RefreshUserSkills(userId string) (*vo.UserSkillRefr
 			os.RemoveAll(filepath.Join(skillsDir, skillName))
 			continue
 		}
-		if name != skillName {
+		if name == "" {
+
 			os.RemoveAll(filepath.Join(skillsDir, skillName))
 			continue
+		}
+
+		if name != skillName {
+			rewritten, rewriteErr := util.RewriteSkillName(result.Content, skillName)
+			if rewriteErr == nil {
+				if writeErr := os.WriteFile(skillMdPath, []byte(rewritten), 0644); writeErr != nil {
+					freedom.Logger().Errorf("RefreshUserSkills rewrite SKILL.md name error: skillName=%s, err=%v", skillName, writeErr)
+				}
+			} else {
+				freedom.Logger().Errorf("RefreshUserSkills RewriteSkillName error: skillName=%s, err=%v", skillName, rewriteErr)
+			}
 		}
 
 		if _, ok := existingMap[skillName]; !ok {
 
 			userSkill := &po.UserSkill{
 				UserId:        userId,
-				SkillName:     name,
+				SkillName:     skillName,
 				Description:   description,
 				MarketSkillId: 0,
 				CategoryId:    defaultCategoryId,
@@ -1280,7 +1339,6 @@ func (service *SkillService) ShareSkill(userId string, req *vo.ShareSkillReq) (*
 	}
 
 	srcPath, err := box.Download(filepath.Join(box.GetWorkspace(), "skills", userSkill.SkillName))
-	fmt.Println(infra.GetUserName(service.Worker), filepath.Join("skills", userSkill.SkillName), "sp", srcPath)
 	if err != nil {
 		return nil, errs.NewFormatError(
 			"source skill files not found, cannot share",
@@ -1357,28 +1415,12 @@ func (service *SkillService) UpdateSharedSkill(shareId int, userId string) error
 	})
 }
 
-func (service *SkillService) batchGetCategoryMapByIds(ids []int) map[int]po.SkillCategory {
-	if len(ids) == 0 {
-		return nil
-	}
-	cats, err := service.SkillRepo.BatchGetSkillCategories(ids)
-	if err != nil {
-		return nil
-	}
-	m := make(map[int]po.SkillCategory, len(cats))
-	for _, c := range cats {
-		m[c.CategoryId] = c
-	}
-	return m
-}
-
 func (service *SkillService) ListSkillShares(userId string, req *vo.SkillShareListReq) (*infra.PageResponse, error) {
 	shares, pr, err := service.SkillRepo.PaginateSkillShares(req)
 	if err != nil {
 		return nil, err
 	}
 
-	// 批量查询分类名称
 	categoryIds := make([]int, 0)
 	for _, s := range shares {
 		if s.CategoryId > 0 {
@@ -1467,7 +1509,6 @@ func (service *SkillService) GetSkillShareDetail(shareId int) (*vo.SkillShareDet
 		}
 	}
 
-	// 读取共享目录下的 SKILL.md 内容
 	var content string
 	skillMdPath := filepath.Join(config.Get().GetSkillShareDir(), share.SkillName, "SKILL.md")
 	if data, err := os.ReadFile(skillMdPath); err == nil {
@@ -1508,7 +1549,8 @@ func (service *SkillService) InstallSharedSkill(userId string, shareId int) (*vo
 		UserId:        userId,
 		SkillName:     share.SkillName,
 		Description:   share.Description,
-		CategoryId:    0,
+		CategoryId:    share.CategoryId,
+		Icon:          share.Icon,
 		Source:        "share",
 		InstallStatus: po.UserSkillInstalled,
 	}

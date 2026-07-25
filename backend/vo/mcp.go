@@ -24,6 +24,7 @@ type AdminMCPItem struct {
 	StdioEnv        string     `json:"stdioEnv"`
 	StdioArgs       string     `json:"stdioArgs"`
 	Status          uint8      `json:"status"`
+	AlwaysOn        int        `json:"alwaysOn"`
 	HealthLatency   int        `json:"healthLatency"`
 	HealthCheckedAt *time.Time `json:"healthCheckedAt"`
 	Remark          string     `json:"remark"`
@@ -45,6 +46,7 @@ type AdminMCPDetailRsp struct {
 	StdioEnv        string     `json:"stdioEnv"`
 	StdioArgs       string     `json:"stdioArgs"`
 	Status          uint8      `json:"status"`
+	AlwaysOn        int        `json:"alwaysOn"`
 	HealthLatency   int        `json:"healthLatency"`
 	HealthCheckedAt *time.Time `json:"healthCheckedAt"`
 	Remark          string     `json:"remark"`
@@ -67,11 +69,6 @@ type AdminCreateMCPReq struct {
 	Remark       string            `json:"remark"`
 }
 
-// AdminMCPToggleAlwaysOnReq 切换 MCP 始终启用请求
-type AdminMCPToggleAlwaysOnReq struct {
-	AlwaysOn int `json:"alwaysOn" validate:"oneof=0 1"` // 始终启用：0关闭 1开启
-}
-
 type AdminUpdateMCPReq struct {
 	DisplayName  string            `json:"displayName"`
 	Icon         string            `json:"icon"`
@@ -84,6 +81,10 @@ type AdminUpdateMCPReq struct {
 	StdioArgs    []string          `json:"stdioArgs"`
 	Status       *uint8            `json:"status"`
 	Remark       string            `json:"remark"`
+}
+
+type AdminMCPToggleAlwaysOnReq struct {
+	AlwaysOn int `json:"alwaysOn" validate:"oneof=0 1"`
 }
 
 type MCPRecommendItem struct {

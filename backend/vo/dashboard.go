@@ -27,12 +27,13 @@ type UserDashboardRsp struct {
 }
 
 type UserDashboardOverview struct {
-	TodayTokens   int64           `json:"todayTokens"`
-	WeekTokens    int64           `json:"weekTokens"`
-	TotalTokens   int64           `json:"totalTokens"`
-	TotalSessions int64           `json:"totalSessions"`
-	NewSessions   int64           `json:"newSessions"`
-	Sparkline     []SparklineItem `json:"sparkline"`
+	TodayTokens     int64           `json:"todayTokens"`
+	WeekTokens      int64           `json:"weekTokens"`
+	TotalTokens     int64           `json:"totalTokens"`
+	DailyTokenLimit int             `json:"dailyTokenLimit"`
+	TotalSessions   int64           `json:"totalSessions"`
+	NewSessions     int64           `json:"newSessions"`
+	Sparkline       []SparklineItem `json:"sparkline"`
 }
 
 type SparklineItem struct {

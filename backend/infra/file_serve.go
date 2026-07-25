@@ -8,9 +8,6 @@ import (
 	iris "github.com/8treenet/iris/v12"
 )
 
-// ServeFile 带 ETag 校验的文件响应。
-// 自动处理 304 Not Modified，设置 Cache-Control: no-cache，
-// 通过 http.ServeContent 支持 Range 请求。
 func ServeFile(ctx iris.Context, absPath string, displayName string) {
 	f, err := os.Open(absPath)
 	if err != nil {

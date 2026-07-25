@@ -7,21 +7,21 @@ import (
 )
 
 const (
-	SystemSkillStatusDisabled	= 1
-	SystemSkillStatusEnabled	= 0
+	SystemSkillStatusDisabled = 1
+	SystemSkillStatusEnabled  = 0
 )
 
-const SystemSkillNamePrefix = "raven-"
+const SystemSkillNamePrefix = "goraven-"
 
 type SystemSkill struct {
-	SkillId		int		`gorm:"primaryKey;column:skill_id;type:int;autoIncrement"`
-	Name		string		`gorm:"index;column:name;type:varchar(64);not null"`
-	Description	string		`gorm:"column:description;type:varchar(512)"`
-	Content		string		`gorm:"column:content;type:text;not null"`
-	Status		uint8		`gorm:"column:status;default:0"`
-	Deleted		uint8		`gorm:"column:deleted;default:0"`
-	Created		time.Time	`gorm:"not null;column:created"`
-	Updated		time.Time	`gorm:"not null;column:updated"`
+	SkillId     int       `gorm:"primaryKey;column:skill_id;type:int;autoIncrement"`
+	Name        string    `gorm:"uniqueIndex;column:name;type:varchar(64);not null"`
+	Description string    `gorm:"column:description;type:varchar(512)"`
+	Content     string    `gorm:"column:content;type:text;not null"`
+	Status      uint8     `gorm:"column:status;default:0"`
+	Deleted     uint8     `gorm:"column:deleted;default:0"`
+	Created     time.Time `gorm:"not null;column:created"`
+	Updated     time.Time `gorm:"not null;column:updated"`
 }
 
 func (s *SystemSkill) TableName() string {

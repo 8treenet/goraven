@@ -8,30 +8,25 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// skillNamePattern 技能名称合法规则：字母开头，仅允许字母、数字、连字符、下划线、冒号
-var skillNamePattern = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9:_-]{1,127}$`)
+var skillNamePattern = regexp.MustCompile(`^[a-zA-Z@][a-zA-Z0-9@_-]{1,63}$`)
 
 var (
 	ErrInvalidSkillFormat = errors.New("invalid skill format: missing frontmatter")
 	ErrMissingSkillName   = errors.New("skill name is required")
-	ErrInvalidSkillName   = errors.New("skill name must start with a lowercase letter and contain only lowercase letters, digits, hyphens, underscores, and colons")
+	ErrInvalidSkillName   = errors.New("skill name must start with a letter or @ and contain only letters, digits, @, hyphens, and underscores")
 )
 
-// SkillFrontmatter 技能 frontmatter 结构，与 eino 的 FrontMatter 保持一致
 type SkillFrontmatter struct {
 	Name        string `yaml:"name"`
 	Description string `yaml:"description"`
 	Slug        string `yaml:"slug"`
 }
 
-// ParseSkillFrontmatter 从 skill content 中解析 frontmatter
-// 格式：
-// ---
 // name: xxx
 // description: xxx
-// ---
+
 // # 内容...
-// 当 name 不合法时，会尝试使用 slug 作为 fallback
+
 func ParseSkillFrontmatter(content string) (name, description string, err error) {
 	content = strings.TrimSpace(content)
 
@@ -44,6 +39,9 @@ func ParseSkillFrontmatter(content string) (name, description string, err error)
 	if err = yaml.Unmarshal([]byte(frontmatter), &fm); err != nil {
 		return "", "", err
 	}
+
+	fm.Name = normalizeSkillName(fm.Name)
+	fm.Slug = normalizeSkillName(fm.Slug)
 
 	if fm.Name == "" && fm.Slug == "" {
 		return "", "", ErrMissingSkillName
@@ -59,7 +57,6 @@ func ParseSkillFrontmatter(content string) (name, description string, err error)
 	return fm.Name, fm.Description, nil
 }
 
-// parseFrontmatter 分离 frontmatter 和 content，与 eino 的实现保持一致
 func parseFrontmatter(data string) (frontmatter, content string, err error) {
 	const delimiter = "---"
 
@@ -76,9 +73,39 @@ func parseFrontmatter(data string) (frontmatter, content string, err error) {
 	frontmatter = strings.TrimSpace(rest[:endIdx])
 	content = rest[endIdx+len("\n"+delimiter):]
 
-	if strings.HasPrefix(content, "\n") {
-		content = content[1:]
-	}
+	content = strings.TrimPrefix(content, "\n")
 
 	return frontmatter, content, nil
+}
+
+var skillNameReplacer = strings.NewReplacer(
+	"/", "-",
+	"\\", "-",
+	":", "-",
+	"*", "-",
+	"?", "-",
+	"\"", "-",
+	"<", "-",
+	">", "-",
+	"|", "-",
+)
+
+func normalizeSkillName(s string) string {
+	return skillNameReplacer.Replace(s)
+}
+
+var frontmatterNameRe = regexp.MustCompile(`(?m)^(name:)\s*.+$`)
+
+func RewriteSkillName(content, newName string) (string, error) {
+	frontmatter, body, err := parseFrontmatter(content)
+	if err != nil {
+		return "", err
+	}
+	quoted := "\"" + newName + "\""
+	if frontmatterNameRe.MatchString(frontmatter) {
+		frontmatter = frontmatterNameRe.ReplaceAllString(frontmatter, "${1} "+quoted)
+	} else {
+		frontmatter = "name: " + quoted + "\n" + frontmatter
+	}
+	return "---\n" + frontmatter + "\n---\n" + body, nil
 }

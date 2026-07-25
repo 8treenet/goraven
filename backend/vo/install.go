@@ -3,12 +3,12 @@ package vo
 import "errors"
 
 type InstallDBCheckReq struct {
-	DBType	string	`json:"dbType" validate:"required,oneof=sqlite mysql pg"`
-	DBAddr	string	`json:"dbAddr"`
-	DBPort	int	`json:"dbPort"`
-	DBUser	string	`json:"dbUser"`
-	DBPass	string	`json:"dbPass"`
-	DBName	string	`json:"dbName"`
+	DBType string `json:"dbType" validate:"required,oneof=sqlite mysql pg"`
+	DBAddr string `json:"dbAddr"`
+	DBPort int    `json:"dbPort"`
+	DBUser string `json:"dbUser"`
+	DBPass string `json:"dbPass"`
+	DBName string `json:"dbName"`
 }
 
 func (req *InstallDBCheckReq) Check() error {
@@ -27,33 +27,33 @@ func (req *InstallDBCheckReq) Check() error {
 }
 
 type InstallRedisCheckReq struct {
-	RedisAddr	string	`json:"redisAddr" validate:"required"`
-	RedisPort	int	`json:"redisPort" validate:"required"`
-	RedisPass	string	`json:"redisPass"`
-	RedisDB		int	`json:"redisDB"`
+	RedisAddr string `json:"redisAddr" validate:"required"`
+	RedisPort int    `json:"redisPort" validate:"required"`
+	RedisPass string `json:"redisPass"`
+	RedisDB   int    `json:"redisDB"`
 }
 
 type InstallInitReq struct {
-	Language	string	`json:"language" validate:"required,oneof=zh en"`
+	Language string `json:"language" validate:"required,oneof=zh en"`
 
-	Domain	string	`json:"domain"`
+	Domain string `json:"domain"`
 
-	Username	string	`json:"username" validate:"required,min=8,max=16"`
-	Password	string	`json:"password" validate:"required,min=6,max=256"`
-	Email		string	`json:"email"`
+	Username string `json:"username" validate:"required,min=8,max=16"`
+	Password string `json:"password" validate:"required,min=6,max=256"`
+	Email    string `json:"email"`
 
-	DBType	string	`json:"dbType" validate:"required,oneof=sqlite mysql pg"`
-	DBAddr	string	`json:"dbAddr"`
-	DBPort	int	`json:"dbPort"`
-	DBUser	string	`json:"dbUser"`
-	DBPass	string	`json:"dbPass"`
-	DBName	string	`json:"dbName"`
+	DBType string `json:"dbType" validate:"required,oneof=sqlite mysql pg"`
+	DBAddr string `json:"dbAddr"`
+	DBPort int    `json:"dbPort"`
+	DBUser string `json:"dbUser"`
+	DBPass string `json:"dbPass"`
+	DBName string `json:"dbName"`
 
-	CacheType	string	`json:"cacheType" validate:"required,oneof=local redis"`
-	RedisAddr	string	`json:"redisAddr"`
-	RedisPort	int	`json:"redisPort"`
-	RedisPass	string	`json:"redisPass"`
-	RedisDB		int	`json:"redisDB"`
+	CacheType string `json:"cacheType" validate:"required,oneof=local redis"`
+	RedisAddr string `json:"redisAddr"`
+	RedisPort int    `json:"redisPort"`
+	RedisPass string `json:"redisPass"`
+	RedisDB   int    `json:"redisDB"`
 }
 
 func (req *InstallInitReq) Check() error {
@@ -89,6 +89,6 @@ func (req *InstallInitReq) Check() error {
 }
 
 type InstallInitRsp struct {
-	UserId		string	`json:"userId"`
-	Username	string	`json:"username"`
+	UserId   string `json:"userId"`
+	Username string `json:"username"`
 }

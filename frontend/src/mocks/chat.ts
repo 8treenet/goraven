@@ -217,19 +217,19 @@ defer resp.Body.Close()
 
 我已经生成了详细的审查报告和修复后的代码：
 
-<raven-file kind="doc" path="/documents/code-review-report.pdf" name="代码审查报告" description="包含3个问题的详细分析和修复建议" />
-<raven-file kind="image" path="https://raw.githubusercontent.com/8treenet/blog/master/img/freedom.png" name="Freedom 框架架构图" />
-<raven-file kind="video" path="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" name="审查要点讲解" description="15分钟逐行分析关键修复点" />
+<goraven-file kind="doc" path="/documents/code-review-report.pdf" name="代码审查报告" description="包含3个问题的详细分析和修复建议" />
+<goraven-file kind="image" path="https://raw.githubusercontent.com/8treenet/blog/master/img/freedom.png" name="Freedom 框架架构图" />
+<goraven-file kind="video" path="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" name="审查要点讲解" description="15分钟逐行分析关键修复点" />
 
 ### 代码质量趋势
 
 最近 5 次提交的代码质量评分变化：
 
-<raven-chart type="line" title="代码质量评分趋势" x="['v1.0','v1.1','v1.2','v2.0','v2.1']" y1="[72,78,85,82,91]" y1name="质量分" height="260" />
+<goraven-chart type="line" title="代码质量评分趋势" x="['v1.0','v1.1','v1.2','v2.0','v2.1']" y1="[72,78,85,82,91]" y1name="质量分" height="260" />
 
 各类型问题的分布情况：
 
-<raven-chart type="pie" title="问题类型分布" labels="['错误处理','并发安全','资源泄漏','性能','其他']" y1="[12,8,5,3,2]" height="240" />
+<goraven-chart type="pie" title="问题类型分布" labels="['错误处理','并发安全','资源泄漏','性能','其他']" y1="[12,8,5,3,2]" height="240" />
 
 需要我详细展开哪一点？`
 
@@ -526,25 +526,25 @@ erDiagram
 
 Q2 整体营收呈现稳步增长态势，6 月份受促销活动拉动，环比增长显著。
 
-<raven-chart type="bar" title="Q2 月度营收" x="['4月','5月','6月']" y1="[286,342,518]" y1name="营收(万元)" height="260" />
+<goraven-chart type="bar" title="Q2 月度营收" x="['4月','5月','6月']" y1="[286,342,518]" y1name="营收(万元)" height="260" />
 
 ### 各产品线收入占比
 
 旗舰产品和 SaaS 服务贡献了超过 70% 的收入，定制开发项目占比相对稳定。
 
-<raven-chart type="pie" title="产品线收入分布" labels="['旗舰产品','SaaS服务','定制开发','技术支持','其他']" y1="[156,138,82,45,28]" height="240" />
+<goraven-chart type="pie" title="产品线收入分布" labels="['旗舰产品','SaaS服务','定制开发','技术支持','其他']" y1="[156,138,82,45,28]" height="240" />
 
 ### 同比与环比增长
 
 与去年同期相比，Q2 整体增长 36.8%。环比 Q1 增长 18.2%，其中 SaaS 服务增速最快。
 
-<raven-chart type="line" title="营收同比增长趋势" x="['1月','2月','3月','4月','5月','6月']" y1="[220,185,260,286,342,518]" y1name="2025" y2="[180,160,230,245,280,370]" y2name="2024" height="260" />
+<goraven-chart type="line" title="营收同比增长趋势" x="['1月','2月','3月','4月','5月','6月']" y1="[220,185,260,286,342,518]" y1name="2025" y2="[180,160,230,245,280,370]" y2name="2024" height="260" />
 
 ### 客户活跃度变化
 
 日均活跃客户数在 Q2 稳步上升，周末活跃度有所回落但工作日恢复迅速。
 
-<raven-chart type="area" title="日均活跃客户数" x="['Mon','Tue','Wed','Thu','Fri','Sat','Sun']" y1="[3400,3800,4200,4500,4100,2800,3200]" y1name="活跃客户" height="260" />
+<goraven-chart type="area" title="日均活跃客户数" x="['Mon','Tue','Wed','Thu','Fri','Sat','Sun']" y1="[3400,3800,4200,4500,4100,2800,3200]" y1name="活跃客户" height="260" />
 
 ### 总结
 

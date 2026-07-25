@@ -1,7 +1,7 @@
 package test
 
 import (
-	"raven/backend/vo"
+	"goraven/backend/vo"
 	"testing"
 
 	"github.com/8treenet/freedom/infra/requests"
@@ -9,9 +9,9 @@ import (
 
 func TestGetUserModels(t *testing.T) {
 	var rsp struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	[]vo.UserModelItem	`json:"data,omitempty"`
+		Code int                `json:"code"`
+		Msg  string             `json:"msg"`
+		Data []vo.UserModelItem `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/providers/models").
 		Get().
@@ -32,9 +32,9 @@ func TestGetUserModels(t *testing.T) {
 
 func TestGetUserMCPs(t *testing.T) {
 	var rsp struct {
-		Code	int			`json:"code"`
-		Msg	string			`json:"msg"`
-		Data	[]vo.UserMCPItem	`json:"data,omitempty"`
+		Code int              `json:"code"`
+		Msg  string           `json:"msg"`
+		Data []vo.UserMCPItem `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/mcp").
 		Get().
@@ -55,9 +55,9 @@ func TestGetUserMCPs(t *testing.T) {
 
 func TestGetSimpleSkills(t *testing.T) {
 	var rsp struct {
-		Code	int				`json:"code"`
-		Msg	string				`json:"msg"`
-		Data	[]vo.UserAvailableSkillItem	`json:"data,omitempty"`
+		Code int                         `json:"code"`
+		Msg  string                      `json:"msg"`
+		Data []vo.UserAvailableSkillItem `json:"data,omitempty"`
 	}
 	httpResp := requests.NewHTTPRequest(domain+"/api/skills/simpleSkills").
 		Get().

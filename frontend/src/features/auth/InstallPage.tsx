@@ -229,14 +229,14 @@ export function Component() {
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-bg-base px-4">
       <div className="absolute left-6 top-6 flex items-center gap-2">
-        <img src="/favicon.svg" alt="Raven" className="h-7 w-7" />
-        <span className="text-sm font-semibold text-text-2">Raven</span>
+        <img src="/favicon.svg" alt="GoRaven" className="h-7 w-7" />
+        <span className="text-sm font-semibold text-text-2">GoRaven</span>
       </div>
       <div className="w-full max-w-md">
 
         {/* Logo */}
         <div className="mb-10 flex justify-center">
-          <h1 className="text-xl font-semibold text-text-1 tracking-tight">Raven</h1>
+          <h1 className="text-xl font-semibold text-text-1 tracking-tight">GoRaven</h1>
         </div>
 
         {/* Step indicator */}
@@ -422,7 +422,7 @@ function DbStep({ data, onField, onFieldNumber, onType, errors, testing, testRes
           </div>
           <Field label={t('common.username')} value={data.dbUser} onChange={onField('dbUser')} placeholder="root" error={errors.dbUser} />
           <Field label={t('common.password')} value={data.dbPass} onChange={onField('dbPass')} placeholder={t('install.dbPassPlaceholder')} type="password" error={errors.dbPass} />
-          <Field label={t('install.dbName')} value={data.dbName} onChange={onField('dbName')} placeholder="raven" error={errors.dbName} />
+          <Field label={t('install.dbName')} value={data.dbName} onChange={onField('dbName')} placeholder="goraven" error={errors.dbName} />
           <TestButton label={t('common.testConnection')} testing={testing} result={testResult} onTest={onTest} />
           {errors.dbTest && <p className="text-xs text-text-3">{errors.dbTest}</p>}
         </>

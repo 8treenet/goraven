@@ -4,18 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"goraven/backend/infra"
+	"goraven/backend/po"
+	"goraven/backend/repository"
+	"goraven/backend/vo"
+	"goraven/backend/vo/errs"
+	"goraven/config"
+	"goraven/core/agent"
+	"goraven/core/knowledge"
+	"goraven/core/sandbox"
+	"goraven/core/tools"
+	"goraven/util"
 	"os"
 	"path/filepath"
-	"raven/backend/infra"
-	"raven/backend/po"
-	"raven/backend/repository"
-	"raven/backend/vo"
-	"raven/backend/vo/errs"
-	"raven/core/agent"
-	"raven/core/knowledge"
-	"raven/core/sandbox"
-	"raven/core/tools"
-	"raven/util"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -35,15 +37,17 @@ func init() {
 }
 
 type ChatService struct {
-	Worker         freedom.Worker
-	MsgSessionRepo *repository.MsgSessionRepository
-	ModelRepo      *repository.ProviderRepository
-	McpRepo        *repository.MCPRepository
-	SkillRepo      *repository.SkillRepository
-	PersonaRepo    *repository.PersonaRepository
-	SysSettingRepo *repository.SystemSettingRepository
-	DailyStatsRepo *repository.DailyStatsRepository
-	HFSRepo        *repository.HFSRepository
+	Worker            freedom.Worker
+	MsgSessionRepo    *repository.MsgSessionRepository
+	ModelRepo         *repository.ProviderRepository
+	McpRepo           *repository.MCPRepository
+	SkillRepo         *repository.SkillRepository
+	PersonaRepo       *repository.PersonaRepository
+	SysSettingRepo    *repository.SystemSettingRepository
+	DailyStatsRepo    *repository.DailyStatsRepository
+	HFSRepo           *repository.HFSRepository
+	SharedProjectRepo *repository.SharedProjectRepository
+	UserRepo          *repository.UserRepository
 }
 
 func (service *ChatService) StartChat(
@@ -52,10 +56,12 @@ func (service *ChatService) StartChat(
 	req *vo.ChatReq,
 	mcpService *McpService,
 	skillService *SkillService,
-) (*vo.ChatRsp, error) {
+) (rsp *vo.ChatRsp, err error) {
 	if req.Content == "" {
 		return nil, errs.ErrChatContentRequired
 	}
+
+	isNewSession := req.SessionId == nil || *req.SessionId == ""
 
 	session, persona, mcpIds, skillIds, userRole, err := service.resolveSession(userId, req)
 	if err != nil {
@@ -67,6 +73,19 @@ func (service *ChatService) StartChat(
 	}
 	if _, ok := agent.GetRunner(session.SessionId); ok {
 		return nil, errs.ErrChatSessionActive
+	}
+
+	var dailyTokenLimit, dailyTokenUsed int
+	user, userErr := service.UserRepo.FindByUserId(userId)
+	if userErr == nil && user.DailyTokenLimit > 0 {
+		dailyTokenLimit = user.DailyTokenLimit
+		used, statsErr := service.DailyStatsRepo.GetTodayTokenUsage(userId)
+		if statsErr == nil {
+			dailyTokenUsed = used
+		}
+		if dailyTokenUsed >= dailyTokenLimit*1_000_000 {
+			return nil, errs.ErrDailyTokenLimitExceeded
+		}
 	}
 
 	reasoning := req.Reasoning == 1
@@ -81,11 +100,15 @@ func (service *ChatService) StartChat(
 		return nil, err
 	}
 
-	mcpObjects, mcpNames, err := service.buildMCPTools(userId, mcpIds, mcpService)
+	alwaysOnMcpIds, err := service.McpRepo.FindAlwaysOnMcpIds()
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(mcpNames)
+	effectiveMcpIds := util.DedupInts(append(mcpIds, alwaysOnMcpIds...))
+	mcpObjects, mcpNames, err := service.buildMCPTools(userId, effectiveMcpIds, mcpService)
+	if err != nil {
+		return nil, err
+	}
 
 	skillNames, err := service.SkillRepo.GetUserSkillNamesByIDs(userId, skillIds)
 	if err != nil {
@@ -98,6 +121,22 @@ func (service *ChatService) StartChat(
 	}
 	skillNames = util.DedupStrings(append(skillNames, alwaysOnNames...))
 
+	resolvedProject, _, sharedProjectInfo, err := service.resolveProjectFromSession(session)
+	if err != nil {
+		return nil, err
+	}
+
+	spId, spLocked, err := service.lockSharedProject(session, sharedProjectInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err != nil && spLocked {
+			service.SharedProjectRepo.UnlockSharedProject(spId)
+		}
+	}()
+
 	param := agent.AgentParam{
 		Session:             session,
 		MsgRepo:             service.MsgSessionRepo,
@@ -106,7 +145,7 @@ func (service *ChatService) StartChat(
 		SystemSkillProvider: service.SkillRepo,
 		SysCfg:              sysCfg,
 		DailyStatsRepo:      service.DailyStatsRepo,
-		Project:             session.Project,
+		Project:             resolvedProject,
 		UserName:            infra.GetUserName(service.Worker),
 	}
 
@@ -125,25 +164,33 @@ func (service *ChatService) StartChat(
 	}
 
 	for _, mcpObj := range mcpObjects {
-		fmt.Println(mcpObj)
+		mainAgent.AddMCP(mcpObj)
 	}
 
+	mainAgent.SetMCPFilter(agent.NewSimpleMCPFilter(mcpNames))
+
+	simpleSkillFilter := agent.NewSimpleSkillFilter(skillNames, func(name string) {
+		service.DailyStatsRepo.AddToolDailyStats(userId, "skill", name)
+	})
+	mainAgent.SetSkillAccessor(simpleSkillFilter)
 	agent.RegisterRunnerHold(session.SessionId)
 	service.Worker.DeferRecycle()
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				freedom.Logger().Errorf("StartChat panic: %v", r)
+				freedom.Logger().Errorf("StartChat panic: %v\n%s", r, debug.Stack())
+				if spLocked {
+					service.SharedProjectRepo.UnlockSharedProject(spId)
+				}
 			}
-			agent.DeleteRunner(session.SessionId)
 		}()
 
-		compressModel, cerr := service.ModelRepo.GetDefaultChatModel()
+		flashModel, cerr := service.ModelRepo.GetDefaultChatModel()
 		if cerr != nil {
-			freedom.Logger().Warnf("GetDefaultChatModel for compress: %v", cerr)
-			compressModel = chatModel
+			freedom.Logger().Warnf("GetDefaultChatModel for flash: %v", cerr)
+			flashModel = chatModel
 		}
-		mainAgent.SetCompressModel(compressModel)
+		mainAgent.SetFlashModel(flashModel)
 
 		if sysCfg.VisualEnabled {
 
@@ -155,32 +202,48 @@ func (service *ChatService) StartChat(
 		runner, err := mainAgent.NewRunner(ctx)
 		if err != nil {
 			service.Worker.Logger().Error(err)
-			agent.DeleteRunner(session.SessionId)
+			agent.ClearRunnerHold(session.SessionId)
+			if spLocked {
+				service.SharedProjectRepo.UnlockSharedProject(spId)
+			}
 			return
 		}
 
 		runner.OnComplete(func(event *agent.RunnerCompleteEvent) {
+			if spLocked {
+				service.SharedProjectRepo.UnlockSharedProject(spId)
+			}
 			service.ChatComplete()
 			skillService.RefreshUserSkills(userId)
+			if isNewSession {
+				titler := agent.NewSessionTitler(flashModel, service.MsgSessionRepo, service.DailyStatsRepo, session.SessionId, userId)
+				service.generateAndSaveTitle(titler, event.Reply, session.SessionId, userId, req.Content)
+			}
 		})
 
 		effectiveContent := req.Content + attachmentTags
 		if err = runner.Query(ctx, effectiveContent); err != nil {
 			service.Worker.Logger().Error(err)
+			agent.ClearRunnerHold(session.SessionId)
+			if spLocked {
+				service.SharedProjectRepo.UnlockSharedProject(spId)
+			}
 			return
 		}
 
 		agent.RegisterRunner(session.SessionId, runner)
 	}()
 
-	rsp := &vo.ChatRsp{
+	rsp = &vo.ChatRsp{
 		SessionId: session.SessionId,
 		Session: &vo.SessionDetailRsp{
-			SessionId:             session.SessionId,
-			Title:                 session.Title,
-			Status:                session.Status,
+			SessionId: session.SessionId,
+			Title:     session.Title,
+
+			Status:                1,
 			PersonaId:             session.PersonaId,
 			Project:               session.Project,
+			SharedProject:         sharedProjectInfo,
 			AIModelId:             session.AIModelId,
 			PromptTokensCount:     session.PromptTokensCount,
 			CompletionTokensCount: session.CompletionTokensCount,
@@ -235,7 +298,56 @@ func (service *ChatService) StopChat(sessionId string, userId string) error {
 }
 
 func (service *ChatService) CompressChat(sessionId string, userId string) (*vo.ChatCompressRsp, error) {
-	return &vo.ChatCompressRsp{}, nil
+
+	session, err := service.MsgSessionRepo.GetUserSession(sessionId, userId)
+	if err != nil {
+		return nil, errs.ErrSessionNotFound
+	}
+
+	if session.Status == 1 {
+		return nil, errs.ErrChatSessionActive
+	}
+
+	flashModel, err := service.ModelRepo.GetFlashChatModel(session.AIModelId)
+	if err != nil {
+		return nil, err
+	}
+
+	sysCfg, err := service.SysSettingRepo.LoadConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	messages, err := service.MsgSessionRepo.GetChatMessages(session.SessionId)
+	if err != nil {
+		return nil, err
+	}
+	history := agent.BuildHistoryFromMessages(messages)
+
+	compress := agent.NewCompress(flashModel, service.MsgSessionRepo, service.DailyStatsRepo, session.SessionId, session.UserId, sysCfg)
+
+	if err := service.MsgSessionRepo.UpdateSessionStatus(sessionId, 1); err != nil {
+		return nil, err
+	}
+
+	taskId := util.UUID()
+	ctx := context.Background()
+	service.MsgSessionRepo.SetCompressTaskStatus(taskId, vo.CompressTaskStatusRunning)
+
+	service.Worker.DeferRecycle()
+	go func() {
+		status := vo.CompressTaskStatusDone
+		if _, cerr := compress.ForceCompress(ctx, history); cerr != nil {
+			freedom.Logger().Errorf("CompressChat failed: sessionId=%s, err=%v", sessionId, cerr)
+			status = vo.CompressTaskStatusFailed
+		}
+
+		service.MsgSessionRepo.SetCompressTaskStatus(taskId, status)
+
+		_ = service.MsgSessionRepo.UpdateSessionStatus(sessionId, 0)
+	}()
+
+	return &vo.ChatCompressRsp{TaskId: taskId}, nil
 }
 
 func (service *ChatService) PollCompress(taskId string) (*vo.ChatCompressPollRsp, error) {
@@ -282,12 +394,26 @@ func (service *ChatService) resolveSession(
 		return nil, nil, nil, nil, "", errs.ErrChatModelRequired
 	}
 
+	if req.Project != "" && req.SharedProjectId != nil {
+		return nil, nil, nil, nil, "", errs.ErrProjectMutualExclusive
+	}
+
 	session = &po.Session{
 		UserId:       userId,
 		Title:        truncateRunes(req.Content, 30),
 		AIModelId:    req.AIModelId,
-		Project:      req.Project,
 		LastChatTime: time.Now(),
+	}
+
+	if req.SharedProjectId != nil && *req.SharedProjectId > 0 {
+		sp, err := service.SharedProjectRepo.GetByID(*req.SharedProjectId)
+		if err != nil {
+			return nil, nil, nil, nil, "", errs.ErrSharedProjectNotFound
+		}
+		session.SharedProjectId = sp.Id
+		session.Project = sp.ProjectName
+	} else {
+		session.Project = req.Project
 	}
 
 	if req.PersonaId != nil && *req.PersonaId > 0 {
@@ -484,13 +610,37 @@ func (service *ChatService) processOneAttachment(userId string, uploadId string)
 	}
 
 	return fmt.Sprintf(
-		"\n<raven-upload size=\"%s\">\n  %s\n</raven-upload>",
+		"\n<goraven-upload size=\"%s\">\n  %s\n</goraven-upload>",
 		formatFileSize(upload.FileSize),
-		dstRelPath,
+		dstAbsPath,
 	), nil
 }
 
 func (service *ChatService) ChatComplete() {
+}
+
+func (service *ChatService) generateAndSaveTitle(titler *agent.SessionTitler, assistantReply, sessionId, userId, userContent string) {
+	if titler == nil {
+		return
+	}
+	if strings.TrimSpace(assistantReply) == "" {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	title, err := titler.Generate(ctx, userContent, assistantReply)
+	if err != nil {
+		freedom.Logger().Warnf("generateSessionTitle sessionId=%s err=%v", sessionId, err)
+		return
+	}
+	if err := service.MsgSessionRepo.UpdateSession(sessionId, userId, map[string]interface{}{
+		"title":   title,
+		"updated": time.Now(),
+	}); err != nil {
+		freedom.Logger().Warnf("UpdateSession title sessionId=%s err=%v", sessionId, err)
+	}
 }
 
 func truncateRunes(s string, n int) string {
@@ -499,4 +649,57 @@ func truncateRunes(s string, n int) string {
 		return s
 	}
 	return string(runes[:n])
+}
+
+func (service *ChatService) lockSharedProject(session *po.Session, sharedProjectInfo *vo.SharedProjectInfo) (spId int, spLocked bool, err error) {
+	if session.SharedProjectId > 0 {
+		spId = session.SharedProjectId
+	} else if sharedProjectInfo == nil && session.Project != "" {
+		if sp, dbErr := service.SharedProjectRepo.GetByOwnerAndProject(session.UserId, session.Project); dbErr == nil {
+			spId = sp.Id
+		}
+	} else if sharedProjectInfo != nil {
+		spId = sharedProjectInfo.Id
+	}
+
+	if spId == 0 {
+		return 0, false, nil
+	}
+
+	ok, lockErr := service.SharedProjectRepo.LockSharedProject(spId, session.SessionId)
+	if lockErr != nil {
+		return 0, false, lockErr
+	}
+	if !ok {
+		return 0, false, errs.ErrSharedProjectBusy
+	}
+	service.SharedProjectRepo.IncrementVisitAndUpdateLastActive(spId)
+	return spId, true, nil
+}
+
+func (service *ChatService) resolveProjectFromSession(session *po.Session) (projectName, projectWorkspace string, sharedInfo *vo.SharedProjectInfo, err error) {
+	if session.SharedProjectId <= 0 {
+		return session.Project, "", nil, nil
+	}
+	sp, dbErr := service.SharedProjectRepo.GetByID(session.SharedProjectId)
+	if dbErr != nil {
+		return session.Project, "", nil, nil
+	}
+	owner, userErr := service.SharedProjectRepo.GetUserByID(sp.OwnerId)
+	if userErr != nil {
+		return sp.ProjectName, "", nil, nil
+	}
+	ownerName := owner.Nickname
+	if ownerName == "" {
+		ownerName = owner.Username
+	}
+	projectWorkspace = config.Get().GetUserSpace(owner.Username)
+	sharedInfo = &vo.SharedProjectInfo{
+		Id:          sp.Id,
+		OwnerId:     sp.OwnerId,
+		OwnerName:   ownerName,
+		ProjectName: sp.ProjectName,
+		Description: sp.Description,
+	}
+	return sp.ProjectName, projectWorkspace, sharedInfo, nil
 }

@@ -4,14 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"goraven/backend/po"
+	"goraven/backend/repository"
+	"goraven/backend/vo"
+	"goraven/backend/vo/errs"
+	"goraven/config"
+	"goraven/util"
 	"net"
 	"os"
-	"raven/backend/po"
-	"raven/backend/repository"
-	"raven/backend/vo"
-	"raven/backend/vo/errs"
-	"raven/config"
-	"raven/util"
 	"strings"
 	"syscall"
 	"time"
@@ -54,9 +54,9 @@ func (service *InstallService) CheckDB(req *vo.InstallDBCheckReq) error {
 
 func (service *InstallService) CheckRedis(req *vo.InstallRedisCheckReq) error {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:		service.buildRedisAddr(req.RedisAddr, req.RedisPort),
-		Password:	req.RedisPass,
-		DB:		req.RedisDB,
+		Addr:     service.buildRedisAddr(req.RedisAddr, req.RedisPort),
+		Password: req.RedisPass,
+		DB:       req.RedisDB,
 	})
 	defer rdb.Close()
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
@@ -84,10 +84,10 @@ func (service *InstallService) Init(req *vo.InstallInitReq) (*vo.InstallInitRsp,
 	if req.CacheType == "redis" {
 		redisAddr = service.buildRedisAddr(req.RedisAddr, req.RedisPort)
 		if err := service.CheckRedis(&vo.InstallRedisCheckReq{
-			RedisAddr:	req.RedisAddr,
-			RedisPort:	req.RedisPort,
-			RedisPass:	req.RedisPass,
-			RedisDB:	req.RedisDB,
+			RedisAddr: req.RedisAddr,
+			RedisPort: req.RedisPort,
+			RedisPass: req.RedisPass,
+			RedisDB:   req.RedisDB,
 		}); err != nil {
 			return nil, err
 		}
@@ -134,13 +134,13 @@ func (service *InstallService) Init(req *vo.InstallInitReq) (*vo.InstallInitRsp,
 
 		userId = util.UUID()
 		user := &po.User{
-			UserId:		userId,
-			Username:	req.Username,
-			Password:	util.MD5(req.Password),
-			Email:		req.Email,
-			Role:		1,
-			SuperAdmin:	1,
-			Status:		1,
+			UserId:     userId,
+			Username:   req.Username,
+			Password:   util.MD5(req.Password),
+			Email:      req.Email,
+			Role:       1,
+			SuperAdmin: 1,
+			Status:     1,
 		}
 		if err := db.Create(user).Error; err != nil {
 			return nil, fmt.Errorf("create super admin failed: %w", err)
@@ -161,8 +161,8 @@ func (service *InstallService) Init(req *vo.InstallInitReq) (*vo.InstallInitRsp,
 	}()
 
 	return &vo.InstallInitRsp{
-		UserId:		userId,
-		Username:	req.Username,
+		UserId:   userId,
+		Username: req.Username,
 	}, nil
 }
 

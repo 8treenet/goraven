@@ -143,12 +143,12 @@ function SidebarBrand({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile' 
       >
         <img
           src="/favicon.svg"
-          alt="Raven"
+          alt="GoRaven"
           className="h-7 w-7 shrink-0 opacity-80"
         />
         {!(variant === 'desktop' && collapsed) && (
           <span className="truncate text-base font-semibold text-text-1">
-            Raven
+            GoRaven
           </span>
         )}
       </a>

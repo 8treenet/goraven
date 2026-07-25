@@ -15,6 +15,8 @@ type FileManagerListItem struct {
 	Size      int64     `json:"size"`
 	ModTime   time.Time `json:"modTime"`
 	IsDefault bool      `json:"isDefault,omitempty"`
+	IsShared  bool      `json:"isShared,omitempty"`
+	SharedId  int       `json:"sharedId,omitempty"`
 }
 
 type FileManagerListRsp struct {

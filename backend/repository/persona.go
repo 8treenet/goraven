@@ -2,8 +2,8 @@ package repository
 
 import (
 	"fmt"
-	"raven/backend/po"
-	"raven/backend/vo"
+	"goraven/backend/po"
+	"goraven/backend/vo"
 	"time"
 
 	"github.com/8treenet/freedom"
@@ -62,9 +62,9 @@ func (repo *PersonaRepository) SoftDeletePersonaTemplate(templateId int) error {
 
 	suffixedName := fmt.Sprintf("%s-%d", tmpl.Name, time.Now().Unix())
 	return repo.db().Model(&po.PersonaTemplate{}).Where("template_id = ? AND deleted = 0", templateId).Updates(map[string]interface{}{
-		"deleted":	1,
-		"name":		suffixedName,
-		"updated":	time.Now(),
+		"deleted": 1,
+		"name":    suffixedName,
+		"updated": time.Now(),
 	}).Error
 }
 
@@ -110,9 +110,9 @@ func (repo *PersonaRepository) SoftDeletePersonaCategory(categoryId int) error {
 
 	suffixedName := fmt.Sprintf("%s-%d", cat.Name, time.Now().Unix())
 	return repo.db().Model(&po.PersonaCategory{}).Where("category_id = ? AND deleted = 0", categoryId).Updates(map[string]interface{}{
-		"deleted":	1,
-		"name":		suffixedName,
-		"updated":	time.Now(),
+		"deleted": 1,
+		"name":    suffixedName,
+		"updated": time.Now(),
 	}).Error
 }
 
@@ -154,10 +154,10 @@ func (repo *PersonaRepository) GetAllPersonaCategories() ([]vo.AdminPersonaCateg
 	items := make([]vo.AdminPersonaCategoryItem, 0, len(categories))
 	for _, c := range categories {
 		items = append(items, vo.AdminPersonaCategoryItem{
-			CategoryId:	c.CategoryId,
-			Name:		c.Name,
-			Icon:		c.Icon,
-			IsDefault:	c.IsDefault,
+			CategoryId: c.CategoryId,
+			Name:       c.Name,
+			Icon:       c.Icon,
+			IsDefault:  c.IsDefault,
 		})
 	}
 	return items, nil
@@ -199,9 +199,9 @@ func (repo *PersonaRepository) SoftDeleteUserPersona(personaId int, userId strin
 
 	suffixedName := fmt.Sprintf("%s-%d", persona.Name, time.Now().Unix())
 	return repo.db().Model(&po.UserPersona{}).Where("persona_id = ? AND user_id = ? AND deleted = 0", personaId, userId).Updates(map[string]interface{}{
-		"deleted":	1,
-		"name":		suffixedName,
-		"updated":	time.Now(),
+		"deleted": 1,
+		"name":    suffixedName,
+		"updated": time.Now(),
 	}).Error
 }
 
