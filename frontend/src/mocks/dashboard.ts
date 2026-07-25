@@ -36,6 +36,7 @@ export const MOCK_DASHBOARD: DashboardData = {
     todayTokens: 12453,
     weekTokens: 156234,
     totalTokens: 2345678,
+    dailyTokenLimit: 10,
     totalSessions: 42,
     newSessions: 3,
     sparkline: Array.from({ length: 7 }, (_, i) => ({

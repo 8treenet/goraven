@@ -1061,7 +1061,7 @@ function NewChatInput({
                 <FolderGit2 className="size-3.5" />
               </button>
             </TooltipTrigger>
-            <TooltipContent>{t('chat.selectProject')}</TooltipContent>
+            <TooltipContent className="max-w-56">{t('chat.selectProject')}</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -1078,7 +1078,7 @@ function NewChatInput({
                 <AtSign className="size-3.5" />
               </button>
             </TooltipTrigger>
-            <TooltipContent>{t('chat.selectFile')}</TooltipContent>
+            <TooltipContent className="max-w-56">{t('chat.selectFile')}</TooltipContent>
           </Tooltip>
 
           <label className={cn(
@@ -1475,7 +1475,7 @@ function ChatInput({
                     <AtSign className="size-3.5" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent>{t('chat.selectFile')}</TooltipContent>
+                <TooltipContent className="max-w-56">{t('chat.selectFile')}</TooltipContent>
               </Tooltip>
 
               <label className={cn(

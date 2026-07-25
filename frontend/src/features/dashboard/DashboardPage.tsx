@@ -2,6 +2,14 @@ import { useState, useCallback, useMemo, useEffect } from 'react'
 import {
   RefreshCw,
   AlertCircle,
+  Zap,
+  CalendarRange,
+  Database,
+  MessageSquare,
+  Sparkles,
+  HardDrive,
+  Inbox,
+  type LucideIcon,
 } from 'lucide-react'
 import { useT } from '@/i18n'
 import { formatNumber, formatBytes } from '@/lib/format'
@@ -77,21 +85,45 @@ function DashboardSkeleton() {
       <div className="flex flex-1 flex-col gap-2 p-2">
         {/* Row 1 */}
         <div className="flex min-h-[100px] gap-2">
-          <div className="flex w-1/2 flex-col justify-center gap-3 rounded-lg border border-border bg-bg-layer-1 px-6 py-4">
+          <div className="flex w-1/2 flex-col gap-3 rounded-lg border border-border bg-bg-layer-1 px-6 py-4">
             <div className="h-3 w-20 animate-pulse rounded bg-bg-layer-2" />
-            <div className="flex gap-8">
-              <div className="h-8 w-16 animate-pulse rounded bg-bg-layer-2" />
-              <div className="h-8 w-16 animate-pulse rounded bg-bg-layer-2" />
-              <div className="h-8 w-16 animate-pulse rounded bg-bg-layer-2" />
+            <div className="flex flex-1 gap-4">
+              <div className="flex flex-1 flex-col justify-center gap-2.5 rounded-lg bg-bg-layer-2/50 px-4 py-3">
+                <div className="h-3 w-14 animate-pulse rounded bg-bg-layer-3" />
+                <div className="h-7 w-20 animate-pulse rounded bg-bg-layer-3" />
+                <div className="h-1.5 w-full animate-pulse rounded-full bg-bg-layer-3" />
+              </div>
+              <div className="grid grid-cols-2 content-center gap-x-5 gap-y-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-center gap-2.5">
+                    <div className="size-7 animate-pulse rounded-md bg-bg-layer-2" />
+                    <div className="h-3 w-12 animate-pulse rounded bg-bg-layer-2" />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-          <div className="flex w-1/2 flex-col justify-center gap-3 rounded-lg border border-border bg-bg-layer-1 px-6 py-4">
+          <div className="flex w-1/2 flex-col gap-3 rounded-lg border border-border bg-bg-layer-1 px-6 py-4">
             <div className="h-3 w-16 animate-pulse rounded bg-bg-layer-2" />
-            <div className="h-2 w-full animate-pulse rounded bg-bg-layer-2" />
-            <div className="flex gap-6">
-              <div className="h-3 w-24 animate-pulse rounded bg-bg-layer-2" />
-              <div className="h-3 w-24 animate-pulse rounded bg-bg-layer-2" />
-              <div className="h-3 w-24 animate-pulse rounded bg-bg-layer-2" />
+            <div className="flex flex-1 gap-4">
+              <div className="flex flex-1 flex-col justify-center gap-2.5 rounded-lg bg-bg-layer-2/50 px-4 py-3">
+                <div className="h-3 w-10 animate-pulse rounded bg-bg-layer-3" />
+                <div className="h-7 w-20 animate-pulse rounded bg-bg-layer-3" />
+                <div className="h-1.5 w-full animate-pulse rounded-full bg-bg-layer-3" />
+              </div>
+              <div className="flex flex-col justify-center gap-3">
+                {[1, 2].map((i) => (
+                  <div key={i} className="flex items-center gap-2.5">
+                    <div className="size-7 animate-pulse rounded-md bg-bg-layer-2" />
+                    <div className="h-3 w-12 animate-pulse rounded bg-bg-layer-2" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-x-3 gap-y-2 border-t border-border pt-2.5">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-3 animate-pulse rounded bg-bg-layer-2" />
+              ))}
             </div>
           </div>
         </div>
@@ -170,40 +202,76 @@ function DashboardError({ onRetry }: { onRetry: () => void }) {
    Panel: Token Overview
    ============================================ */
 
+function MiniStat({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon
+  label: string
+  value: string
+}) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-bg-layer-2 text-text-3">
+        <Icon className="size-3.5" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-sm font-medium leading-none text-text-1 tabular-nums">{value}</p>
+        <p className="mt-1 truncate text-xs text-text-3">{label}</p>
+      </div>
+    </div>
+  )
+}
+
 function TokenOverviewPanel({ data }: { data: DashboardOverview }) {
-  const { todayTokens, weekTokens, totalTokens, totalSessions, newSessions } = data
+  const { todayTokens, weekTokens, totalTokens, totalSessions, newSessions, dailyTokenLimit } = data
   const t = useT()
 
+  const hasLimit = dailyTokenLimit > 0
+  const limitTokens = dailyTokenLimit * 1_000_000
+  const pct = hasLimit ? Math.min((todayTokens / limitTokens) * 100, 100) : 0
+  const pctLabel = pct < 10 ? pct.toFixed(1) : String(Math.round(pct))
+
   return (
-    <div className="flex flex-1 flex-col justify-center gap-2 px-6 py-4">
-      <h3 className="text-xs font-semibold text-text-2">{t('dashboard.tokenUsage')}</h3>
-      <div className="flex items-baseline gap-10">
-        <div>
-          <p className="text-lg font-semibold text-text-1 leading-none">
-            {formatNumber(totalTokens)}
-          </p>
-          <p className="mt-1.5 text-xs text-text-3">{t('dashboard.totalTokens')}</p>
-        </div>
-        <div>
-          <p className="text-base font-semibold text-text-1 leading-none">
-            {formatNumber(weekTokens)}
-          </p>
-          <p className="mt-1.5 text-xs text-text-3">{t('dashboard.thisWeek')}</p>
-        </div>
-        <div>
-          <p className="text-base font-semibold text-text-1 leading-none">
+    <div className="flex flex-1 flex-col gap-3 px-6 py-4">
+      <div className="flex items-center gap-1.5">
+        <Zap className="size-3.5 text-text-3" />
+        <h3 className="text-xs font-semibold text-text-2">{t('dashboard.tokenUsage')}</h3>
+      </div>
+
+      <div className="flex flex-1 items-center gap-4">
+        {/* Hero: today's usage against daily limit */}
+        <div className="flex flex-1 flex-col justify-center rounded-lg bg-bg-layer-2/40 px-4 py-3">
+          <p className="text-xs text-text-3">{t('dashboard.todayUsed')}</p>
+          <p className="mt-1.5 text-2xl font-semibold leading-none text-highlight tabular-nums">
             {formatNumber(todayTokens)}
           </p>
-          <p className="mt-1.5 text-xs text-text-3">{t('dashboard.today')}</p>
+          {hasLimit ? (
+            <>
+              <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-bg-layer-3">
+                <div
+                  className="h-full rounded-full bg-highlight transition-all duration-500"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <div className="mt-1.5 flex items-center justify-between text-xs text-text-3 tabular-nums">
+                <span>{pctLabel}%</span>
+                <span>{t('dashboard.limit')} {dailyTokenLimit}M</span>
+              </div>
+            </>
+          ) : (
+            <p className="mt-3 text-xs text-text-3">{t('dashboard.unlimited')}</p>
+          )}
         </div>
-      </div>
-      <div className="flex gap-6">
-        <span className="text-xs text-text-3">
-          {t('dashboard.sessions')} {totalSessions}
-        </span>
-        <span className="text-xs text-text-3">
-          {t('dashboard.newSessions')} {newSessions}
-        </span>
+
+        {/* Secondary metrics */}
+        <div className="grid grid-cols-2 content-center gap-x-5 gap-y-3">
+          <MiniStat icon={CalendarRange} label={t('dashboard.thisWeek')} value={formatNumber(weekTokens)} />
+          <MiniStat icon={Database} label={t('dashboard.totalTokens')} value={formatNumber(totalTokens)} />
+          <MiniStat icon={MessageSquare} label={t('dashboard.sessions')} value={formatNumber(totalSessions)} />
+          <MiniStat icon={Sparkles} label={t('dashboard.newSessions')} value={formatNumber(newSessions)} />
+        </div>
       </div>
     </div>
   )
@@ -215,56 +283,55 @@ function TokenOverviewPanel({ data }: { data: DashboardOverview }) {
 
 function StoragePanel({ data }: { data: StorageStats }) {
   const { usedBytes, freeBytes, totalBytes, items } = data
-  const pct = totalBytes > 0 ? (usedBytes / totalBytes) * 100 : 0
   const t = useT()
 
-  return (
-    <div className="flex flex-1 flex-col justify-center gap-2 px-6 py-3">
-      <h3 className="text-xs font-semibold text-text-2">{t('dashboard.storage')}</h3>
+  const hasTotal = totalBytes > 0
+  const pct = hasTotal ? Math.min((usedBytes / totalBytes) * 100, 100) : 0
+  const pctLabel = pct < 10 ? pct.toFixed(1) : String(Math.round(pct))
 
-      <div className="flex items-baseline gap-4">
-        <div>
-          <p className="text-base font-semibold text-text-1">
+  return (
+    <div className="flex flex-1 flex-col gap-3 px-6 py-4">
+      <div className="flex items-center gap-1.5">
+        <HardDrive className="size-3.5 text-text-3" />
+        <h3 className="text-xs font-semibold text-text-2">{t('dashboard.storage')}</h3>
+      </div>
+
+      <div className="flex items-stretch gap-4">
+        {/* Hero: used space against total */}
+        <div className="flex flex-1 flex-col justify-center rounded-lg bg-bg-layer-2/40 px-4 py-3">
+          <p className="text-xs text-text-3">{t('dashboard.used')}</p>
+          <p className="mt-1.5 text-2xl font-semibold leading-none text-highlight tabular-nums">
             {formatBytes(usedBytes)}
           </p>
-          <p className="text-xs text-text-3">{t('dashboard.used')}</p>
+          {hasTotal ? (
+            <>
+              <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-bg-layer-3">
+                <div
+                  className="h-full rounded-full bg-highlight transition-all duration-500"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <p className="mt-1.5 text-xs text-text-3 tabular-nums">{pctLabel}%</p>
+            </>
+          ) : (
+            <p className="mt-3 text-xs text-text-3">-</p>
+          )}
         </div>
-        <div>
-          <p className="text-base font-semibold text-text-1">
-            {totalBytes > 0 ? formatBytes(freeBytes) : '-'}
-          </p>
-          <p className="text-xs text-text-3">{t('dashboard.free')}</p>
-        </div>
-        <div>
-          <p className="text-base font-semibold text-text-1">
-            {totalBytes > 0 ? formatBytes(totalBytes) : '-'}
-          </p>
-          <p className="text-xs text-text-3">{t('dashboard.total')}</p>
-        </div>
-      </div>
 
-      {/* Progress bar */}
-      <div className="h-1.5 w-full overflow-hidden rounded-sm bg-bg-layer-3">
-        <div
-          className="h-full bg-bg-hover transition-all duration-500"
-          style={{ width: `${Math.min(pct, 100)}%` }}
-        />
+        {/* Secondary metrics */}
+        <div className="grid grid-cols-1 content-center gap-y-3">
+          <MiniStat icon={Inbox} label={t('dashboard.free')} value={hasTotal ? formatBytes(freeBytes) : '-'} />
+          <MiniStat icon={Database} label={t('dashboard.total')} value={hasTotal ? formatBytes(totalBytes) : '-'} />
+        </div>
       </div>
-      <p className="text-xs text-text-3">
-        {totalBytes > 0 ? `${pct.toFixed(1)}%` : '-'}
-      </p>
 
       {/* Directory breakdown */}
       {items.length > 0 && (
-        <div className="grid grid-cols-4 gap-x-3 gap-y-1.5">
+        <div className="grid grid-cols-4 gap-x-3 gap-y-2 border-t border-border pt-2.5">
           {items.map((item) => (
-            <div key={item.name}>
-              <p className="text-xs text-text-1 tabular-nums">
-                {formatBytes(item.bytesSize)}
-              </p>
-              <p className="text-xs text-text-3 truncate">
-                {item.name}
-              </p>
+            <div key={item.name} className="min-w-0">
+              <p className="text-xs font-medium text-text-1 tabular-nums">{formatBytes(item.bytesSize)}</p>
+              <p className="mt-0.5 truncate text-xs text-text-3">{item.name}</p>
             </div>
           ))}
         </div>

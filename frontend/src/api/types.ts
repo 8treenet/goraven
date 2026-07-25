@@ -40,6 +40,7 @@ export interface User {
 export interface AdminUserItem extends User {
   sessionCount: number
   lastActiveTime: string | null
+  dailyTokenLimit: number
   updated: string
 }
 
@@ -352,6 +353,7 @@ export interface DashboardOverview {
   todayTokens: number
   weekTokens: number
   totalTokens: number
+  dailyTokenLimit: number
   totalSessions: number
   newSessions: number
   sparkline: Array<{ date: string; tokens: number }>

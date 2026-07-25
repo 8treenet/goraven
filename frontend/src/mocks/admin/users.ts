@@ -74,6 +74,7 @@ function generateMockUsers(): AdminUserItem[] {
         : '',
     role: n.role,
     status: n.status,
+    dailyTokenLimit: i % 5 === 0 ? 10 : 0,
     sessionCount: n.role === 1 ? Math.floor(Math.random() * 50) + 5 : Math.floor(Math.random() * 30),
     lastActiveTime:
       i % 7 === 0
@@ -112,6 +113,7 @@ export interface UpdateUserRequest {
   email: string
   role: number
   status: number
+  dailyTokenLimit: number
 }
 
 /* ============================================
@@ -185,6 +187,7 @@ export async function createUser(req: CreateUserRequest): Promise<AdminUserItem>
     avatar: '',
     role: req.role,
     status: 1,
+    dailyTokenLimit: 0,
     sessionCount: 0,
     lastActiveTime: '',
     created: new Date().toISOString(),
@@ -205,7 +208,7 @@ export async function updateUser(userId: string, req: UpdateUserRequest): Promis
 
   users = users.map((u) =>
     u.userId === userId
-      ? { ...u, nickname: req.nickname, email: req.email, role: req.role, status: req.status }
+      ? { ...u, nickname: req.nickname, email: req.email, role: req.role, status: req.status, dailyTokenLimit: req.dailyTokenLimit }
       : u,
   )
 

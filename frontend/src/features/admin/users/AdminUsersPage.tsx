@@ -547,6 +547,121 @@ function DeleteUserDialog({
 }
 
 /* ============================================
+   Token Limit Dialog
+   ============================================ */
+
+const TOKEN_LIMIT_PRESETS = [10, 20, 50, 80, 100]
+
+function TokenLimitDialog({
+  user,
+  onClose,
+  onSave,
+}: {
+  user: AdminUserItem | null
+  onClose: () => void
+  onSave: (userId: string, limit: number) => Promise<void>
+}) {
+  const t = useT()
+  const [mode, setMode] = useState<'preset' | 'custom'>('preset')
+  const [preset, setPreset] = useState<number>(0)
+  const [custom, setCustom] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (user) {
+      const limit = user.dailyTokenLimit ?? 0
+      if (TOKEN_LIMIT_PRESETS.includes(limit)) {
+        setMode('preset')
+        setPreset(limit)
+      } else if (limit > 0) {
+        setMode('custom')
+        setCustom(String(limit))
+      } else {
+        setMode('preset')
+        setPreset(0)
+      }
+      setSaving(false)
+    }
+  }, [user])
+
+  if (!user) return null
+
+  const value = mode === 'preset' ? preset : Math.max(0, Math.floor(Number(custom) || 0))
+
+  const handleSave = () => {
+    setSaving(true)
+    onSave(user.userId, value)
+      .catch((err: Error) => { toast.error(err.message || translate('common.failed')) })
+      .finally(() => setSaving(false))
+  }
+
+  return (
+    <Dialog open={!!user} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t('adminUsers.editTokenLimit')}</DialogTitle>
+          <DialogDescription>
+            {translate('adminUsers.tokenLimitFor').replace('{name}', user.username)}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-1.5">
+            {[0, ...TOKEN_LIMIT_PRESETS].map((v) => (
+              <button
+                key={v}
+                onClick={() => { setMode('preset'); setPreset(v) }}
+                className={cn(
+                  'rounded-lg border px-3 py-1.5 text-xs transition-colors',
+                  mode === 'preset' && preset === v
+                    ? 'border-highlight bg-highlight/10 font-medium text-highlight'
+                    : 'border-border-strong text-text-2 hover:border-text-3 hover:text-text-1',
+                )}
+              >
+                {v === 0 ? t('adminUsers.unlimited') : `${v}M`}
+              </button>
+            ))}
+          </div>
+          <div
+            onClick={() => setMode('custom')}
+            className={cn(
+              'flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-colors',
+              mode === 'custom' ? 'border-highlight' : 'border-border-strong',
+            )}
+          >
+            <span className={cn('whitespace-nowrap text-xs', mode === 'custom' ? 'font-medium text-highlight' : 'text-text-2')}>
+              {t('common.custom')}
+            </span>
+            <input
+              type="number"
+              min={1}
+              value={custom}
+              onChange={(e) => { setMode('custom'); setCustom(e.target.value) }}
+              onFocus={() => setMode('custom')}
+              placeholder="50"
+              className="h-6 w-20 bg-transparent text-sm tabular-nums text-text-1 outline-none placeholder:text-text-muted"
+            />
+            <span className="text-xs text-text-3">M</span>
+          </div>
+          <p className="text-xs text-text-muted">{t('adminUsers.tokenLimitUnit')}</p>
+          <div className="mt-1 flex justify-end gap-2">
+            <Button variant="ghost" size="default" onClick={onClose}>{t('common.cancel')}</Button>
+            <Button
+              variant="default"
+              size="default"
+              disabled={saving || (mode === 'custom' && value <= 0)}
+              onClick={handleSave}
+            >
+              {saving && <Loader2 className="size-3.5 animate-spin" />}
+              {t('common.save')}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/* ============================================
    Table Row
    ============================================ */
 
@@ -557,6 +672,7 @@ function UserRow({
   onDelete,
   onResetPassword,
   onToggleStatus,
+  onEditLimit,
 }: {
   user: AdminUserItem
   isCurrentUser: boolean
@@ -564,6 +680,7 @@ function UserRow({
   onDelete: () => void
   onResetPassword: () => void
   onToggleStatus: (v: boolean) => void
+  onEditLimit: () => void
 }) {
   const t = useT()
   return (
@@ -599,6 +716,16 @@ function UserRow({
           disabled={isCurrentUser}
           onChange={onToggleStatus}
         />
+      </td>
+      <td className="py-2.5 pr-4">
+        <button
+          onClick={onEditLimit}
+          title={t('adminUsers.editTokenLimit')}
+          className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-sm tabular-nums text-text-2 transition-colors hover:bg-bg-layer-2 hover:text-text-1"
+        >
+          {user.dailyTokenLimit > 0 ? `${user.dailyTokenLimit}M` : <span className="text-text-3">—</span>}
+          <Pencil className="size-3 text-text-3" />
+        </button>
       </td>
       <td className="py-2.5 pr-4 text-sm tabular-nums text-text-2">{user.sessionCount}</td>
       <td className="py-2.5 pr-4 text-sm text-text-3">
@@ -648,12 +775,13 @@ function TableSkeleton() {
       <table className="w-full">
         <thead>
           <tr className="border-b border-border text-left text-xs text-text-3">
-            <th className="pb-2 pl-4 pr-2 font-normal" />
-            <th className="pb-2 pr-4 font-normal">{t('common.username')}</th>
+            <th className="w-10 pb-2 pl-4 pr-2 font-normal" />
+            <th className="w-40 pb-2 pr-4 font-normal">{t('common.username')}</th>
             <th className="pb-2 pr-4 font-normal">{t('adminUsers.nickname')}</th>
             <th className="pb-2 pr-4 font-normal">{t('common.email')}</th>
             <th className="pb-2 pr-4 font-normal">{t('common.role')}</th>
             <th className="pb-2 pr-4 font-normal">{t('common.status')}</th>
+            <th className="pb-2 pr-4 font-normal">{t('adminUsers.dailyTokenLimit')}</th>
             <th className="pb-2 pr-4 font-normal">{t('adminUsers.sessions')}</th>
             <th className="pb-2 pr-4 font-normal">{t('adminUsers.lastActive')}</th>
             <th className="pb-2 pr-4 font-normal" />
@@ -679,6 +807,9 @@ function TableSkeleton() {
               </td>
               <td className="py-2.5 pr-4">
                 <div className="h-4 w-8 animate-pulse rounded-full bg-bg-layer-2" />
+              </td>
+              <td className="py-2.5 pr-4">
+                <div className="h-3.5 w-8 animate-pulse rounded bg-bg-layer-2" />
               </td>
               <td className="py-2.5 pr-4">
                 <div className="h-3.5 w-6 animate-pulse rounded bg-bg-layer-2" />
@@ -844,6 +975,7 @@ export function Component() {
   const [editTarget, setEditTarget] = useState<AdminUserItem | null>(null)
   const [dialogMode, setDialogMode] = useState<DialogMode>(null)
   const [dialogTarget, setDialogTarget] = useState<AdminUserItem | null>(null)
+  const [limitTarget, setLimitTarget] = useState<AdminUserItem | null>(null)
 
   const loadData = useCallback(() => {
     setState('loading')
@@ -946,6 +1078,18 @@ export function Component() {
     [users],
   )
 
+  // Update daily token limit
+  const handleSaveTokenLimit = useCallback(
+    (userId: string, limit: number) => {
+      return adminUsersApi.updateUser(userId, { dailyTokenLimit: limit }).then(() => {
+        setLimitTarget(null)
+        toast.success(translate('adminUsers.userUpdated'))
+        loadData()
+      })
+    },
+    [loadData],
+  )
+
   const currentUserId = useUserStore((s) => s.currentUser?.userId)
   const isCurrentUser = useCallback((user: AdminUserItem) => user.userId === currentUserId, [currentUserId])
 
@@ -1018,12 +1162,13 @@ export function Component() {
             <table className="w-full">
               <thead>
                 <tr className="sticky top-0 z-10 border-b border-border bg-bg-base text-left text-xs text-text-3">
-                  <th className="pb-2 pl-4 pr-2 font-normal" />
-                  <th className="pb-2 pr-4 font-normal">{t('common.username')}</th>
+                  <th className="w-10 pb-2 pl-4 pr-2 font-normal" />
+                  <th className="w-40 pb-2 pr-4 font-normal">{t('common.username')}</th>
                   <th className="pb-2 pr-4 font-normal">{t('adminUsers.nickname')}</th>
                   <th className="pb-2 pr-4 font-normal">{t('common.email')}</th>
                   <th className="pb-2 pr-4 font-normal">{t('common.role')}</th>
                   <th className="pb-2 pr-4 font-normal">{t('common.status')}</th>
+                  <th className="pb-2 pr-4 font-normal">{t('adminUsers.dailyTokenLimit')}</th>
                   <th className="pb-2 pr-4 font-normal">{t('adminUsers.sessions')}</th>
                   <th className="pb-2 pr-4 font-normal">{t('adminUsers.lastActive')}</th>
                   <th className="pb-2 pr-4 font-normal" />
@@ -1048,6 +1193,7 @@ export function Component() {
                       setDialogMode('resetPassword')
                     }}
                     onToggleStatus={(v) => handleToggleStatus(user.userId, v)}
+                    onEditLimit={() => setLimitTarget(user)}
                   />
                 ))}
               </tbody>
@@ -1099,6 +1245,12 @@ export function Component() {
         }}
         onConfirm={handleDeleteUser}
         username={dialogTarget?.username ?? ''}
+      />
+
+      <TokenLimitDialog
+        user={limitTarget}
+        onClose={() => setLimitTarget(null)}
+        onSave={handleSaveTokenLimit}
       />
     </div>
   )

@@ -386,6 +386,7 @@ export interface DashboardOverview {
   todayTokens: number
   weekTokens: number
   totalTokens: number
+  dailyTokenLimit: number
   totalSessions: number
   newSessions: number
   sparkline: SparklineItem[]
@@ -416,6 +417,7 @@ export interface AdminUserItem {
   avatar: string
   role: number
   status: number
+  dailyTokenLimit: number
   sessionCount: number
   lastActiveTime: string
   created: string

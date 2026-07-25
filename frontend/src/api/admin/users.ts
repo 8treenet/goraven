@@ -22,7 +22,7 @@ export function getUserDetail(userId: string) {
 }
 
 /** PUT /api/admin/users/:userId */
-export function updateUser(userId: string, data: { nickname?: string; email?: string; role?: number; status?: number }) {
+export function updateUser(userId: string, data: { nickname?: string; email?: string; role?: number; status?: number; dailyTokenLimit?: number }) {
   return http.put(`/admin/users/${userId}`, data)
 }
 
