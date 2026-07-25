@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/8treenet/blog/9d6f2d861fbb7c5f4627a9a5b1a3472fb4236881/img/favicon.svg" alt="Raven" width="80" />
+  <img src="https://raw.githubusercontent.com/8treenet/blog/9d6f2d861fbb7c5f4627a9a5b1a3472fb4236881/img/favicon.svg" alt="GoRaven" width="80" />
 </p>
 
-<h1 align="center">Raven</h1>
+<h1 align="center">GoRaven</h1>
 
 <p align="center">
   <strong>开源 · 自部署 · AI 工坊</strong><br/>
@@ -27,20 +27,20 @@
 </p>
 
 <p align="center">
-  <img src="https://github.com/8treenet/blog/blob/master/img/cn_chat.png?raw=true" alt="Raven 聊天界面" width="90%" />
+  <img src="https://github.com/8treenet/blog/blob/master/img/cn_chat.png?raw=true" alt="GoRaven 聊天界面" width="90%" />
 </p>
 
 ---
 
 ## 它是什么
 
-Raven 给团队里每个人一个独立的 Agent 工作空间。不是聊天框，是工位。Agent 在里面读文件、写代码、跑命令、调接口、查知识库、分析数据、写报告、做图表。你交代任务，它自己拆步骤、并行推进、交付结果。
+GoRaven 给团队里每个人一个独立的 Agent 工作空间。不是聊天框，是工位。Agent 在里面读文件、写代码、跑命令、调接口、查知识库、分析数据、写报告、做图表。你交代任务，它自己拆步骤、并行推进、交付结果。
 
 你拿到的是成果，不是一段需要复制粘贴的文本。
 
 ---
 
-## 为什么选 Raven
+## 为什么选 GoRaven
 
 <table>
 <tr>
@@ -100,22 +100,22 @@ Agent 直接读写文件、执行 Shell、调用 MCP 工具链。内部 API、�
 ### 国内镜像（推荐）
 
 ```bash
-docker pull docker.1panel.live/8treenet/raven:v0.3.2
+docker pull docker.1panel.live/8treenet/goraven:v0.3.3
 
-docker run -d --restart=always --name raven-agent \
+docker run -d --restart=always --name goraven-agent \
   -p 8000:8000 \
-  -e RAVEN_CHINA_MIRROR=1 \
-  docker.1panel.live/8treenet/raven:v0.3.2
+  -e GORAVEN_CHINA_MIRROR=1 \
+  docker.1panel.live/8treenet/goraven:v0.3.3
 ```
 
 ### 持久化数据
 
 ```bash
-docker run -d --restart=always --name raven-agent \
+docker run -d --restart=always --name goraven-agent \
   -p 8000:8000 \
-  -v /opt/raven_data:/raven/data \
-  -e RAVEN_CHINA_MIRROR=1 \
-  docker.1panel.live/8treenet/raven:v0.3.2
+  -v /opt/goraven:/goraven/data \
+  -e GORAVEN_CHINA_MIRROR=1 \
+  docker.1panel.live/8treenet/goraven:v0.3.3
 ```
 
 启动后访问 `http://localhost:8000`，按引导完成初始化，创建管理员账户即可使用。
@@ -123,7 +123,7 @@ docker run -d --restart=always --name raven-agent \
 ---
 
 <p align="center">
-  <img src="https://github.com/8treenet/blog/blob/master/img/cnd.png?raw=true" alt="Raven 运营面板" width="90%" />
+  <img src="https://github.com/8treenet/blog/blob/master/img/cnd.png?raw=true" alt="GoRaven 运营面板" width="90%" />
 </p>
 
 ---
@@ -131,7 +131,7 @@ docker run -d --restart=always --name raven-agent \
 ## 架构
 
 <p align="center">
-  <img src="https://github.com/8treenet/blog/blob/master/img/architecture.svg?raw=true" alt="Raven Architecture" width="90%" />
+  <img src="https://github.com/8treenet/blog/blob/master/img/architecture.svg?raw=true" alt="GoRaven Architecture" width="90%" />
 </p>
 
 ---
@@ -144,7 +144,7 @@ docker run -d --restart=always --name raven-agent \
 
 Agent 作为工具，本分只有三件事：流程的确定性、工具调用的精度、执行的鲁棒性。假器以自生慧，真器以能尽物用。
 
-打开 Raven，东西在哪、怎么用，不需要看文档就能明白。这是我们理解的“好用”。
+打开 GoRaven，东西在哪、怎么用，不需要看文档就能明白。这是我们理解的“好用”。
 
 ---
 

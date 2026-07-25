@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/8treenet/blog/9d6f2d861fbb7c5f4627a9a5b1a3472fb4236881/img/favicon.svg" alt="Raven" width="80" />
+  <img src="https://raw.githubusercontent.com/8treenet/blog/9d6f2d861fbb7c5f4627a9a5b1a3472fb4236881/img/favicon.svg" alt="GoRaven" width="80" />
 </p>
 
-<h1 align="center">Raven</h1>
+<h1 align="center">GoRaven</h1>
 
 <p align="center">
   <strong>Open Source · Self-Hosted · AI Harness</strong><br/>
@@ -27,20 +27,20 @@
 </p>
 
 <p align="center">
-  <img src="https://github.com/8treenet/blog/blob/master/img/enchat.png?raw=true" alt="Raven Chat" width="90%" />
+  <img src="https://github.com/8treenet/blog/blob/master/img/enchat.png?raw=true" alt="GoRaven Chat" width="90%" />
 </p>
 
 ---
 
 ## What It Is
 
-Raven gives every person on your team an independent Agent workspace. Not a chat window — a workstation. The Agent reads files, writes code, runs commands, calls APIs, searches your knowledge base, analyzes data, writes reports, builds charts. You assign the task; it breaks it down, works in parallel, and delivers the result.
+GoRaven gives every person on your team an independent Agent workspace. Not a chat window — a workstation. The Agent reads files, writes code, runs commands, calls APIs, searches your knowledge base, analyzes data, writes reports, builds charts. You assign the task; it breaks it down, works in parallel, and delivers the result.
 
 What you get is the outcome, not a block of text you have to copy-paste.
 
 ---
 
-## Why Raven
+## Why GoRaven
 
 <table>
 <tr>
@@ -98,20 +98,20 @@ One Docker command and it's running. Data never leaves your server. Works with O
 ## Quick Start
 
 ```bash
-docker pull 8treenet/raven:latest
+docker pull 8treenet/goraven:latest
 
-docker run -d --restart=always --name raven-agent \
+docker run -d --restart=always --name goraven-agent \
   -p 8000:8000 \
-  8treenet/raven:latest
+  8treenet/goraven:latest
 ```
 
 ### Persistent Data
 
 ```bash
-docker run -d --restart=always --name raven-agent \
+docker run -d --restart=always --name goraven-agent \
   -p 8000:8000 \
-  -v /opt/raven_data:/raven/data \
-  8treenet/raven:latest
+  -v /opt/goraven:/goraven/data \
+  8treenet/goraven:latest
 ```
 
 After startup, visit `http://localhost:8000` and follow the setup wizard to create your admin account.
@@ -121,7 +121,7 @@ After startup, visit `http://localhost:8000` and follow the setup wizard to crea
 ---
 
 <p align="center">
-  <img src="https://github.com/8treenet/blog/blob/master/img/cnd.png?raw=true" alt="Raven Dashboard" width="90%" />
+  <img src="https://github.com/8treenet/blog/blob/master/img/cnd.png?raw=true" alt="GoRaven Dashboard" width="90%" />
 </p>
 
 ---
@@ -129,7 +129,7 @@ After startup, visit `http://localhost:8000` and follow the setup wizard to crea
 ## Architecture
 
 <p align="center">
-  <img src="https://github.com/8treenet/blog/blob/master/img/architecture.svg?raw=true" alt="Raven Architecture" width="90%" />
+  <img src="https://github.com/8treenet/blog/blob/master/img/architecture.svg?raw=true" alt="GoRaven Architecture" width="90%" />
 </p>
 
 ---
@@ -142,7 +142,7 @@ We don't do "memory and evolution" — if it can't be distilled into generalizab
 
 As a tool, the Agent has only three duties: deterministic workflows, precise tool invocation, and robust execution. Borrow the instrument to let wisdom arise naturally — a true instrument is one that fulfills its purpose to the fullest.
 
-Open Raven, and where things are and how they work should be obvious without reading docs. That's our definition of "good."
+Open GoRaven, and where things are and how they work should be obvious without reading docs. That's our definition of "good."
 
 ---
 
