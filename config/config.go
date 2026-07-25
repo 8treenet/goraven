@@ -12,7 +12,7 @@ import (
 )
 
 // Version Raven 版本号，通过 ldflags 注入: go build -ldflags "-X raven/config.Version=1.0.0"
-var Version = "0.3.1"
+var Version = "0.3.2"
 
 // StartTime 进程启动时间
 var StartTime = time.Now()
