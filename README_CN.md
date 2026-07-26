@@ -97,7 +97,7 @@ Agent 直接读写文件、执行 Shell、调用 MCP 工具链。内部 API、�
 
 ## 快速开始
 
-### 国内镜像（推荐）
+### 国内镜像（需关闭代理）
 
 ```bash
 docker pull docker.1panel.live/8treenet/goraven:v0.3.3
