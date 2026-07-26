@@ -142,7 +142,11 @@ We don't do "memory and evolution" — if it can't be distilled into generalizab
 
 As a tool, the Agent has only three duties: deterministic workflows, precise tool invocation, and robust execution. Borrow the instrument to let wisdom arise naturally — a true instrument is one that fulfills its purpose to the fullest.
 
-Open GoRaven, and where things are and how they work should be obvious without reading docs. That's our definition of "good."
+**Observability First**: Collaboration isn't about delegating tasks — it's about aligning understanding. Human-agent communication is far more fragile than human-human communication: you can't see what it's thinking, and it can't guess what you want. Observability of the execution process must be pursued and solved at the product level — every round of observation should become the reserve for the next round of decisions.
+
+**OS First**: Models have knowledge and reasoning, but no eyes and no hands. For an Agent to get work done, it must heavily leverage operating system capabilities. But an Agent can't come with a full OS — so integrating runtime environments and dependencies must be the first priority. This isn't something code or algorithms alone can solve. A good Agent is, at its core, an Agent OS — except you can't actually build an operating system from scratch.
+
+**Engineering First**: Agents are too flexible — tool combinations explode fast, and tweaking a pruning rule even slightly sends the whole execution flow off track. Without solid engineering, a few iterations in and nobody dares to touch it. The time spent on engineering isn't about shipping one more feature today. It's about making sure the project is still worth working on next year.
 
 ---
 
