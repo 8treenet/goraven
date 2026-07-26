@@ -150,14 +150,6 @@ As a tool, the Agent has only three duties: deterministic workflows, precise too
 
 ---
 
-## Roadmap
-
-- [ ] `core` directory core code open-sourced (Available at 1k Stars)
-- [ ] Security sandbox
-- [ ] Open API
-
----
-
 ## Community
 
 - 💬 [Discord](https://discord.gg/derR7CBYDW) — feedback, discussions, tips
