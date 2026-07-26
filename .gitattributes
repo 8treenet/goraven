@@ -1,1 +1,3 @@
-* linguist-language=Go
+frontend/** linguist-language=Go
+scripts/** linguist-language=Go
+backend/repository/seed/** linguist-language=Go
