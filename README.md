@@ -121,7 +121,7 @@ After startup, visit `http://localhost:8000` and follow the setup wizard to crea
 ---
 
 <p align="center">
-  <img src="https://github.com/8treenet/blog/blob/master/img/cnd.png?raw=true" alt="GoRaven Dashboard" width="90%" />
+  <img src="https://github.com/8treenet/blog/blob/master/img/end.png?raw=true" alt="GoRaven Dashboard" width="90%" />
 </p>
 
 ---
