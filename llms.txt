@@ -1,0 +1,73 @@
+# GoRaven
+
+> Open-source, self-hosted team AI Agent platform. Models, tools, knowledge, skills, workflows — all in one runtime. The Agent doesn't just chat; it actually gets work done.
+
+GoRaven gives every team member an independent Agent workspace. The Agent reads files, writes code, runs commands, calls APIs, searches knowledge bases, analyzes data, and delivers results. Built with Go (Freedom framework + Cloudwego Eino ADK) on the backend and React + TypeScript + Tailwind CSS on the frontend.
+
+## Documentation
+
+- [README](README.md): Project overview, features, quick start, architecture, and design principles (English)
+- [README_CN](README_CN.md): 项目概览、功能特性、快速开始、架构与设计原则（中文）
+- [PRODUCT](PRODUCT.md): Product definition, target users, brand personality, and design principles
+- [DESIGN](DESIGN.md): Design system specification — colors, typography, elevation, components, do's and don'ts
+- [CLAUDE](CLAUDE.md): Comprehensive developer guide — build commands, architecture, agent core, SSE protocol, database, config
+
+## Backend
+
+- [main.go](main.go): Application bootstrap — Freedom app, DB/Redis wiring, middleware, frontend serving
+- [config/config.yaml](config/config.yaml): Runtime configuration — paths, database, Redis, system settings
+- [backend/controller/](backend/controller/): HTTP controllers (chat, session, user, skill, mcp, persona, admin, dashboard)
+- [backend/service/](backend/service/): Business logic layer — orchestrates agents, repositories, and external services
+- [backend/repository/](backend/repository/): GORM data access, seed data, system config, pagination helpers
+- [backend/po/](backend/po/): Persistent objects (GORM models) — User, Session, Message, AIModel, MCPEndpoint, Skill
+- [backend/vo/](backend/vo/): View objects (request/response DTOs) for all API endpoints
+- [backend/infra/](backend/infra/): Auth (bearer token), request/response helpers, code constants
+
+## Agent Core
+
+- [core/agent/](core/agent/): Agent implementations — MainAgent (conversational), DynamicAgent (sub-tasks), SystemAgent (dependencies)
+- [core/agent/prompt.go](core/agent/prompt.go): Bilingual system prompt building (zh/en)
+- [core/agent/compress.go](core/agent/compress.go): Automatic context compression when token threshold exceeded
+- [core/agent/safety_review.go](core/agent/safety_review.go): Command validation — two tiers (strict for agents, relaxed for system)
+- [core/provider/](core/provider/): LLM provider adapters — OpenAI, Claude, Gemini, DeepSeek, Qwen, GLM, Ollama, OpenRouter
+- [core/tools/](core/tools/): Built-in tools — filesystem ops, MCP client, web fetch, file preview
+- [core/plugin/](core/plugin/): Plugin system — AgentLifecycleHook, RoundHook, ToolHook, SSEHook
+- [core/sandbox/](core/sandbox/): File system isolation per user — local and Docker backends
+- [core/knowledge/](core/knowledge/): RAG pipeline via docling + Chroma vector DB
+- [core/middleware/](core/middleware/): Agent middlewares — context pruning, tool error handling, skill backend
+- [core/iface/](core/iface/): Shared interfaces — SkillAccessor, MCPFilter, FileURLGenerator
+
+## Frontend
+
+- [frontend/package.json](frontend/package.json): Dependencies — React 18, Vite 8, TypeScript 6, Tailwind CSS 4, shadcn/ui, Zustand
+- [frontend/src/](frontend/src/): Source code — features (chat, files, skills, personas, admin), components, API layer, i18n
+- [frontend/vite.config.ts](frontend/vite.config.ts): Vite configuration with API proxy to backend
+
+## System Skills
+
+- [goraven-guide](backend/repository/seed/skill_goraven_guide.go): Skill index — routes questions to the appropriate knowledge skill below
+- [goraven-runtime](backend/repository/seed/skill_goraven_runtime.go): Runtime environment — Docker container, toolchain, built-in tools, safety rules, multi-user isolation
+- [goraven-features](backend/repository/seed/skill_goraven_features.go): Platform capabilities — personas, skills, MCP, workspace, team projects, sharing, system settings
+- [goraven-user-ui](backend/repository/seed/skill_goraven_user_ui.go): User-facing pages — chat, dashboard, workspace, skills center, personas, profile
+- [goraven-admin-ui](backend/repository/seed/skill_goraven_admin_ui.go): Admin pages — user management, models, MCP, settings, system info
+
+## Plugins
+
+- [plugins/README.md](plugins/README.md): Plugin development guide with hook interfaces and error handling conventions
+- [plugins/plugins.go](plugins/plugins.go): Plugin registration entry point
+
+## Infrastructure
+
+- [docker/Dockerfile](docker/Dockerfile): Multi-stage build — Go binary + frontend into Ubuntu 22.04 with Go, Node.js, Python
+- [docker/build.sh](docker/build.sh): Cross-architecture build script (amd64/arm64)
+- [docker/config.yaml](docker/config.yaml): Docker-specific runtime configuration
+- [scripts/docling/](scripts/docling/): Python scripts for document processing (convert, chunk, read)
+
+## Utilities
+
+- [util/](util/): Shared utilities — Markdown parsing, HTTP helpers, zip, UUID, file operations, captcha
+
+## Optional
+
+- [go.mod](go.mod): Go module definition and dependency list
+- [frontend/tsconfig.json](frontend/tsconfig.json): TypeScript compiler configuration
