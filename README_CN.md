@@ -100,12 +100,12 @@ Agent 直接读写文件、执行 Shell、调用 MCP 工具链。内部 API、�
 ### 国内镜像（需关闭代理）
 
 ```bash
-docker pull docker.1panel.live/8treenet/goraven:v0.3.3
+docker pull docker.1panel.live/8treenet/goraven:v0.4.0
 
 docker run -d --restart=always --name goraven-agent \
   -p 8000:8000 \
   -e GORAVEN_CHINA_MIRROR=1 \
-  docker.1panel.live/8treenet/goraven:v0.3.3
+  docker.1panel.live/8treenet/goraven:v0.4.0
 ```
 
 ### 持久化数据
@@ -115,7 +115,7 @@ docker run -d --restart=always --name goraven-agent \
   -p 8000:8000 \
   -v /opt/goraven:/goraven/data \
   -e GORAVEN_CHINA_MIRROR=1 \
-  docker.1panel.live/8treenet/goraven:v0.3.3
+  docker.1panel.live/8treenet/goraven:v0.4.0
 ```
 
 启动后访问 `http://localhost:8000`，按引导完成初始化，创建管理员账户即可使用。
