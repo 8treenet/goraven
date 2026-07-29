@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
 """
 Docling document converter CLI.
-Usage: python3 convert.py --input /path/to/file.pdf [--output /path/to/output.md] [--ocr]
+Usage: python3 convert.py --input /path/to/file.pdf [--output /path/to/output.md]
 Converts various document formats to Markdown.
 
 Supported formats:
 - PDF, DOCX, PPTX, XLSX, HTML, MD, ASCIIDOC, CSV, LATEX
 - AUDIO (WAV/MP3, requires ASR), VTT (WebVTT subtitles)
 - JSON_DOCLING, XML_JATS, XML_USPTO, XML_XBRL, METS_GBS
-- IMAGE (PNG/JPEG/TIFF/BMP/WEBP, requires --ocr)
+- IMAGE (PNG/JPEG/TIFF/BMP/WEBP)
 - Plain text files (.txt, .log, .json, .xml, .yaml, .yml, .toml, .ini, .cfg)
 """
 
 import argparse
 import logging
 import os
-import platform
 import sys
 
 from docling.document_converter import DocumentConverter, PdfFormatOption
@@ -23,26 +22,18 @@ from docling.datamodel.pipeline_options import (
     PdfPipelineOptions,
     TableStructureOptions,
     TableFormerMode,
-    EasyOcrOptions,
-    OcrMacOptions,
 )
 from docling.datamodel.base_models import InputFormat
 
 
-def build_converter(enable_ocr: bool) -> DocumentConverter:
+def build_converter() -> DocumentConverter:
     pipeline_opts = PdfPipelineOptions()
-    pipeline_opts.do_ocr = enable_ocr
+    pipeline_opts.do_ocr = False
     pipeline_opts.do_table_structure = True
     pipeline_opts.table_structure_options = TableStructureOptions(
         do_cell_matching=True,
         mode=TableFormerMode.ACCURATE,
     )
-
-    if enable_ocr:
-        if platform.system() == "Darwin":
-            pipeline_opts.ocr_options = OcrMacOptions()
-        else:
-            pipeline_opts.ocr_options = EasyOcrOptions()
 
     allowed = [
         InputFormat.PDF,
@@ -59,9 +50,8 @@ def build_converter(enable_ocr: bool) -> DocumentConverter:
         InputFormat.XML_USPTO,
         InputFormat.XML_XBRL,
         InputFormat.METS_GBS,
+        InputFormat.IMAGE,
     ]
-    if enable_ocr:
-        allowed.append(InputFormat.IMAGE)
 
     return DocumentConverter(
         format_options={
@@ -75,7 +65,6 @@ def main():
     parser = argparse.ArgumentParser(description="Docling document to Markdown converter")
     parser.add_argument("--input", required=True, help="Path to input document")
     parser.add_argument("--output", default=None, help="Path to output markdown file")
-    parser.add_argument("--ocr", action="store_true", help="Enable OCR for image-based documents")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
     args = parser.parse_args()
 
@@ -110,8 +99,8 @@ def main():
         return
 
     try:
-        logging.info(f"Initializing converter (OCR={args.ocr})...")
-        converter = build_converter(args.ocr)
+        logging.info("Initializing converter...")
+        converter = build_converter()
 
         logging.info(f"Converting: {input_path}")
         result = converter.convert(input_path)

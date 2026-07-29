@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Docling document chunker CLI.
-Usage: python3 chunk.py --input /path/to/file.pdf [--output /path/to/output.jsonl] [--ocr]
+Usage: python3 chunk.py --input /path/to/file.pdf [--output /path/to/output.jsonl]
 Converts documents to Markdown internally, then chunks using HybridChunker.
 Output: JSON lines file, one JSON object per line per chunk.
 Each chunk record: {"text", "heading", "page", "block_type", "chunk_index"}
@@ -11,7 +11,6 @@ import argparse
 import json
 import logging
 import os
-import platform
 import sys
 
 from docling.document_converter import DocumentConverter, PdfFormatOption
@@ -19,27 +18,19 @@ from docling.datamodel.pipeline_options import (
     PdfPipelineOptions,
     TableStructureOptions,
     TableFormerMode,
-    EasyOcrOptions,
-    OcrMacOptions,
 )
 from docling.datamodel.base_models import InputFormat
 from docling.chunking import HybridChunker
 
 
-def build_converter(enable_ocr: bool) -> DocumentConverter:
+def build_converter() -> DocumentConverter:
     pipeline_opts = PdfPipelineOptions()
-    pipeline_opts.do_ocr = enable_ocr
+    pipeline_opts.do_ocr = False
     pipeline_opts.do_table_structure = True
     pipeline_opts.table_structure_options = TableStructureOptions(
         do_cell_matching=True,
         mode=TableFormerMode.ACCURATE,
     )
-
-    if enable_ocr:
-        if platform.system() == "Darwin":
-            pipeline_opts.ocr_options = OcrMacOptions()
-        else:
-            pipeline_opts.ocr_options = EasyOcrOptions()
 
     allowed = [
         InputFormat.PDF,
@@ -56,9 +47,8 @@ def build_converter(enable_ocr: bool) -> DocumentConverter:
         InputFormat.XML_USPTO,
         InputFormat.XML_XBRL,
         InputFormat.METS_GBS,
+        InputFormat.IMAGE,
     ]
-    if enable_ocr:
-        allowed.append(InputFormat.IMAGE)
 
     return DocumentConverter(
         format_options={
@@ -110,7 +100,6 @@ def main():
     parser = argparse.ArgumentParser(description="Docling document chunker")
     parser.add_argument("--input", required=True, help="Path to input document")
     parser.add_argument("--output", default=None, help="Path to output JSONL file")
-    parser.add_argument("--ocr", action="store_true", help="Enable OCR for image-based documents")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
     args = parser.parse_args()
 
@@ -129,8 +118,8 @@ def main():
         output_path = f"{base}_chunks.jsonl"
 
     try:
-        logging.info(f"Converting (OCR={args.ocr}): {args.input}")
-        converter = build_converter(args.ocr)
+        logging.info(f"Converting: {args.input}")
+        converter = build_converter()
         result = converter.convert(args.input)
         extract_chunks(result, output_path)
     except Exception as e:
