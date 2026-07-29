@@ -107,6 +107,10 @@ docker run -d --restart=always --name goraven-agent \
   -e GORAVEN_CHINA_MIRROR=1 \
   docker.1panel.live/8treenet/goraven:v0.4.0
 ```
+> 备用拉取地址：`docker.1ms.run/8treenet/goraven:v0.4.0`
+
+`GORAVEN_CHINA_MIRROR=1` 启用国内加速镜像，并自动设置时区为 `Asia/Shanghai`。
+
 
 ### 持久化数据
 
