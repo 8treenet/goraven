@@ -13,6 +13,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  Braces,
 } from 'lucide-react'
 import { useT, t as translate } from '@/i18n'
 import { cn } from '@/lib/utils'
@@ -30,6 +31,7 @@ import { useUserStore } from '@/stores/user-store'
 import { getCurrentUser, updateProfile, changePassword, logout } from '@/api/auth'
 import { useAvatarUpload } from '@/hooks/useAvatarUpload'
 import type { User } from '@/api/types'
+import { EnvVarsDialog } from './EnvVarsDialog'
 
 type Theme = 'light' | 'dark' | 'system'
 
@@ -531,6 +533,7 @@ export function Component() {
   const [avatarOpen, setAvatarOpen] = useState(false)
   const [passwordOpen, setPasswordOpen] = useState(false)
   const [logoutOpen, setLogoutOpen] = useState(false)
+  const [envVarsOpen, setEnvVarsOpen] = useState(false)
 
   const { upload: avatarUpload } = useAvatarUpload()
 
@@ -745,6 +748,21 @@ export function Component() {
 
         <hr className="border-border mb-8" />
 
+        {/* Section: 环境变量 */}
+        <div className="mb-8">
+          <h2 className="mb-4 text-sm font-semibold text-text-2">{t('profile.envVarsTitle')}</h2>
+
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-text-3">{t('profile.envVarsDesc')}</p>
+            <Button variant="outline" size="default" onClick={() => setEnvVarsOpen(true)} className="border-highlight text-highlight hover:bg-highlight/10">
+              <Braces className="size-4" />
+              {t('profile.envVarsManage')}
+            </Button>
+          </div>
+        </div>
+
+        <hr className="border-border mb-8" />
+
         {/* Section: 账号安全 */}
         <div className="mb-8">
           <h2 className="mb-4 text-sm font-semibold text-text-2">{t('profile.accountSecurity')}</h2>
@@ -844,6 +862,7 @@ export function Component() {
         />
         <PasswordDialog open={passwordOpen} onOpenChange={setPasswordOpen} />
         <LogoutDialog open={logoutOpen} onOpenChange={setLogoutOpen} />
+        <EnvVarsDialog open={envVarsOpen} onOpenChange={setEnvVarsOpen} />
         </div>
       </div>
     </div>

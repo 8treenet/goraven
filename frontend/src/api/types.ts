@@ -245,8 +245,8 @@ export interface RefreshSkillsResult {
 
 export interface SharedProjectInfo {
   id: number
-  ownerId: string
-  ownerName: string
+  creatorId: string
+  creatorName: string
   projectName: string
   description: string
 }
@@ -731,8 +731,6 @@ export interface FileItem {
   size: number
   modTime: string
   isDefault?: boolean
-  isShared?: boolean
-  sharedId?: number
 }
 
 export interface StorageUsage {
@@ -754,30 +752,30 @@ export interface ProfileListResponse {
 
 export interface TeamProjectItem {
   id: number
-  ownerId: string
-  ownerName: string
-  ownerAvatar: string
+  creatorId: string
+  creatorName: string
+  creatorAvatar: string
   projectName: string
   description: string
   updatedAt: string
-  isOwner: boolean
+  isCreator: boolean
 }
 
 export interface TeamProjectListRsp {
   items: TeamProjectItem[]
 }
 
-export interface TeamProjectShareRsp {
-  sharedId: number
+export interface TeamProjectCreateRsp {
+  id: number
 }
 
-/* ---------- Admin Shared Projects ---------- */
+/* ---------- Admin Team Projects ---------- */
 
-export interface AdminSharedProjectItem {
+export interface AdminTeamProjectItem {
   id: number
-  ownerId: string
-  ownerName: string
-  ownerAvatar: string
+  creatorId: string
+  creatorName: string
+  creatorAvatar: string
   projectName: string
   description: string
   visitCount: number
@@ -788,7 +786,7 @@ export interface AdminSharedProjectItem {
   updated: string
 }
 
-export interface AdminSharedProjectListReq {
+export interface AdminTeamProjectListReq {
   search?: string
   page?: number
   pageSize?: number

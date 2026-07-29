@@ -17,6 +17,7 @@ interface FileDialogsProps {
   value: string
   error: string | null
   selectedItems: FileItem[]
+  createTitle?: string
   onValueChange: (value: string) => void
   onClearError: () => void
   onClose: () => void
@@ -31,6 +32,7 @@ export function FileDialogs({
   value,
   error,
   selectedItems,
+  createTitle,
   onValueChange,
   onClearError,
   onClose,
@@ -40,6 +42,8 @@ export function FileDialogs({
   onDecompress,
 }: FileDialogsProps) {
   const t = useT()
+  const folderNameInvalid = mode === 'newFolder' && value.length > 0 && !/^[a-zA-Z0-9\-_]+$/.test(value)
+  const folderCanSubmit = value.trim().length > 0 && !folderNameInvalid
 
   return (
     <Dialog open={mode !== null} onOpenChange={() => onClose()}>
@@ -47,7 +51,7 @@ export function FileDialogs({
         {mode === 'newFolder' && (
           <>
             <DialogHeader>
-              <DialogTitle>{t('files.newFolderTitle')}</DialogTitle>
+              <DialogTitle>{createTitle || t('files.newFolderTitle')}</DialogTitle>
               <DialogDescription>{t('files.folderNameLabel')}</DialogDescription>
             </DialogHeader>
             <div className="space-y-3">
@@ -58,17 +62,21 @@ export function FileDialogs({
                   onClearError()
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') onCreateFolder()
+                  if (e.key === 'Enter' && folderCanSubmit) onCreateFolder()
                 }}
                 placeholder={t('files.folderNamePlaceholder')}
+                className={folderNameInvalid ? 'border-destructive focus:border-destructive' : ''}
                 autoFocus
               />
+              {folderNameInvalid && (
+                <p className="text-xs text-destructive">{t('files.projectNameInvalid')}</p>
+              )}
               {error && <p className="text-sm text-text-3">{error}</p>}
               <div className="flex justify-end gap-2">
                 <Button variant="ghost" size="default" onClick={onClose}>
                   {t('common.cancel')}
                 </Button>
-                <Button variant="default" size="default" onClick={onCreateFolder}>
+                <Button variant="default" size="default" onClick={onCreateFolder} disabled={!folderCanSubmit}>
                   {t('common.create')}
                 </Button>
               </div>

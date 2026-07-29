@@ -1437,7 +1437,7 @@ function ModelRow({
           )}
         </div>
       </td>
-      <td className="py-2.5 pr-2 text-sm tabular-nums text-text-2">{model.contextLen} KB</td>
+      <td className="py-2.5 pr-2 text-sm tabular-nums text-text-2">{model.contextLen}K</td>
       <td className="py-2.5 pr-2 text-sm text-text-3">{formatDate(model.updated)}</td>
       <td className="py-2.5 pr-4">
         <RowActionsMenu

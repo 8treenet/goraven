@@ -144,7 +144,7 @@ export function PersonaInfoDialog({
         ) : persona ? (
           <div className="border-b border-border">
             <div className="flex items-center gap-3 border-b border-border px-6 py-4">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-bg-layer-2 text-text-1">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-bg-layer-2 text-highlight">
                 <Icon name={persona.icon} className="size-4.5" />
               </span>
               <div>
@@ -164,9 +164,9 @@ export function PersonaInfoDialog({
 
                   <div className="flex items-center">
                     <span className="w-24 shrink-0 text-xs text-text-3">{t('common.category')}</span>
-                    <span className="flex items-center gap-1.5">
-                      <Icon name={persona.categoryIcon} className="size-3.5 text-text-2" />
-                      <span className="text-sm text-text-1">{persona.categoryName}</span>
+                    <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs bg-interactive text-white">
+                      <Icon name={persona.categoryIcon} className="size-2.5" />
+                      {persona.categoryName}
                     </span>
                   </div>
                 </div>

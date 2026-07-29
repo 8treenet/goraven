@@ -13,7 +13,8 @@ import { Input } from '@/components/ui/input'
 import { useT, t as translate } from '@/i18n'
 import { getProfile, createProfile, updateProfile, deleteProfile } from '@/api/files'
 import type { ProfileEntry } from '@/api/types'
-import { KEY_REGEX } from './file-helpers'
+
+const KEY_REGEX = /^[A-Za-z0-9_]+$/
 
 interface EnvVarsDialogProps {
   open: boolean
@@ -60,18 +61,18 @@ export function EnvVarsDialog({ open, onOpenChange }: EnvVarsDialogProps) {
 
   const handleAdd = useCallback(() => {
     if (!newKey.trim() || !KEY_REGEX.test(newKey.trim())) {
-      setError(t('files.envVarKeyInvalid'))
+      setError(t('profile.envVarKeyInvalid'))
       return
     }
     setError(null)
     createProfile(newKey.trim(), newValue)
       .then(() => {
         resetForm()
-        toast.success(t('files.envVarAdded'))
+        toast.success(t('profile.envVarAdded'))
         load()
       })
       .catch((err: Error) => {
-        toast.error(err.message || t('files.envVarExists').replace('{key}', newKey.trim()))
+        toast.error(err.message || t('profile.envVarExists').replace('{key}', newKey.trim()))
       })
   }, [newKey, newValue, resetForm, load, t])
 
@@ -87,18 +88,18 @@ export function EnvVarsDialog({ open, onOpenChange }: EnvVarsDialogProps) {
     updateProfile(key, editValue)
       .then(() => {
         resetForm()
-        toast.success(t('files.envVarUpdated'))
+        toast.success(t('profile.envVarUpdated'))
         load()
       })
       .catch((err: Error) => {
-        toast.error(err.message || t('files.envVarNotFound').replace('{key}', key))
+        toast.error(err.message || t('profile.envVarNotFound').replace('{key}', key))
       })
   }, [editValue, resetForm, load, t])
 
   const handleDelete = useCallback((key: string) => {
     deleteProfile(key)
       .then(() => {
-        toast.success(t('files.envVarDeleted'))
+        toast.success(t('profile.envVarDeleted'))
         load()
       })
       .catch((err: Error) => {
@@ -110,12 +111,12 @@ export function EnvVarsDialog({ open, onOpenChange }: EnvVarsDialogProps) {
     <Dialog open={open} onOpenChange={() => onOpenChange(false)}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>{t('files.envVarsTitle')}</DialogTitle>
-          <DialogDescription>{t('files.envVarsDesc')}</DialogDescription>
+          <DialogTitle>{t('profile.envVarsTitle')}</DialogTitle>
+          <DialogDescription>{t('profile.envVarsDesc')}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <p className="text-xs text-text-3 leading-relaxed">
-            {t('files.envVarsHint')}
+            {t('profile.envVarsHint')}
           </p>
 
           {loading ? (
@@ -129,8 +130,8 @@ export function EnvVarsDialog({ open, onOpenChange }: EnvVarsDialogProps) {
             </div>
           ) : items.length === 0 && !adding ? (
             <div className="flex flex-col items-center gap-2 py-6">
-              <p className="text-sm text-text-2">{t('files.envVarEmpty')}</p>
-              <p className="text-sm text-text-3">{t('files.envVarEmptyHint')}</p>
+              <p className="text-sm text-text-2">{t('profile.envVarEmpty')}</p>
+              <p className="text-sm text-text-3">{t('profile.envVarEmptyHint')}</p>
             </div>
           ) : (
             <div className="max-h-[400px] overflow-auto rounded-md border border-border p-1.5 space-y-1">
@@ -140,7 +141,7 @@ export function EnvVarsDialog({ open, onOpenChange }: EnvVarsDialogProps) {
                     value={newKey}
                     onChange={(e) => { setNewKey(e.target.value); setError(null) }}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleAdd() }}
-                    placeholder={t('files.envVarKeyPlaceholder')}
+                    placeholder={t('profile.envVarKeyPlaceholder')}
                     className="h-7 flex-[2] text-sm"
                     autoFocus
                   />
@@ -148,7 +149,7 @@ export function EnvVarsDialog({ open, onOpenChange }: EnvVarsDialogProps) {
                     value={newValue}
                     onChange={(e) => setNewValue(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleAdd() }}
-                    placeholder={t('files.envVarValuePlaceholder')}
+                    placeholder={t('profile.envVarValuePlaceholder')}
                     className="h-7 flex-[3] text-sm"
                   />
                   <Button variant="ghost" size="icon" className="size-7 shrink-0" onClick={handleAdd}>
@@ -178,7 +179,7 @@ export function EnvVarsDialog({ open, onOpenChange }: EnvVarsDialogProps) {
                           if (e.key === 'Enter') handleUpdate(entry.key)
                           if (e.key === 'Escape') resetForm()
                         }}
-                        placeholder={t('files.envVarValuePlaceholder')}
+                        placeholder={t('profile.envVarValuePlaceholder')}
                         className="h-7 flex-[3] text-sm"
                         autoFocus
                       />
@@ -228,7 +229,7 @@ export function EnvVarsDialog({ open, onOpenChange }: EnvVarsDialogProps) {
               onClick={() => { setAdding(true); setNewKey(''); setNewValue(''); setError(null) }}
             >
               <Plus className="size-4" />
-              {t('files.envVarAdd')}
+              {t('profile.envVarAdd')}
             </Button>
           )}
         </div>

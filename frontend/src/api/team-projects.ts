@@ -2,7 +2,7 @@ import http from './http'
 import type {
   TeamProjectItem,
   TeamProjectListRsp,
-  TeamProjectShareRsp,
+  TeamProjectCreateRsp,
   FileItem,
   StorageUsage,
 } from './types'
@@ -11,7 +11,7 @@ export interface TeamFileListResponse {
   items: FileItem[]
 }
 
-/* ---------- 共享管理 ---------- */
+/* ---------- 项目管理 ---------- */
 
 /** GET /api/teamProject/list */
 export function listTeamProjects() {
@@ -23,13 +23,13 @@ export function getTeamProject(id: number) {
   return http.get<TeamProjectItem>(`/teamProject/${id}`)
 }
 
-/** POST /api/teamProject/share */
-export function shareProject(projectName: string, description: string) {
-  return http.post<TeamProjectShareRsp>('/teamProject/share', { projectName, description })
+/** POST /api/teamProject/create */
+export function createTeamProject(projectName: string, description: string) {
+  return http.post<TeamProjectCreateRsp>('/teamProject/create', { projectName, description })
 }
 
 /** DELETE /api/teamProject/:id */
-export function unshareProject(id: number) {
+export function deleteTeamProject(id: number) {
   return http.delete(`/teamProject/${id}`)
 }
 

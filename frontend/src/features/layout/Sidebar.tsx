@@ -134,12 +134,12 @@ function SidebarBrand({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile' 
   const t = useT()
 
   return (
-    <div className="flex h-10 items-center justify-between px-2 mb-2">
+    <div className="flex h-12 items-center justify-between px-2 mb-1">
       <a
         href="https://goraven.dev"
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-0 min-w-0 pl-2 transition-opacity hover:opacity-70"
+        className="flex items-center gap-2 min-w-0 transition-opacity hover:opacity-70"
       >
         <img
           src="/favicon.svg"
@@ -287,7 +287,7 @@ function UserMenu() {
   return (
     <>
       <SidebarGroup
-        label={t('sidebar.workspace')}
+        label={t('sidebar.console')}
         groupKey="workspace"
         collapsed={collapsed}
       >
@@ -300,7 +300,7 @@ function UserMenu() {
         <NavItem
           to="/files"
           icon={FolderOpen}
-          label={t('sidebar.files')}
+          label={t('sidebar.workspace')}
           collapsed={collapsed}
         />
         <NavItem
@@ -596,6 +596,31 @@ function NavItem({
 }
 
 /* ============================================
+   Session Avatar Color Helper
+   ============================================ */
+
+const SESSION_COLORS = [
+  'bg-blue-500',
+  'bg-emerald-500',
+  'bg-violet-500',
+  'bg-amber-500',
+  'bg-rose-500',
+  'bg-cyan-500',
+  'bg-pink-500',
+  'bg-indigo-500',
+  'bg-teal-500',
+  'bg-orange-500',
+]
+
+function getSessionColor(title: string): string {
+  let hash = 0
+  for (let i = 0; i < title.length; i++) {
+    hash = title.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return SESSION_COLORS[Math.abs(hash) % SESSION_COLORS.length]
+}
+
+/* ============================================
    Session Item
    ============================================ */
 
@@ -655,16 +680,24 @@ function SessionItem({
   }, [session.sessionId, onDelete])
 
   if (collapsed) {
+    const initial = session.title.charAt(0).toUpperCase()
+    const colorClass = getSessionColor(session.title)
     return (
       <button
         onClick={onNavigateOverride ?? (() => navigate(`/chat/${session.sessionId}`))}
         title={session.title}
-        className={cn(
-          'flex w-full items-center justify-center rounded-md py-1.5 text-sm text-text-2 transition-colors hover:bg-bg-hover',
-          isActive && 'bg-interactive-soft font-medium text-interactive',
-        )}
+        className="group/session flex w-full items-center justify-center py-1.5 transition-colors"
       >
-        {session.title.charAt(0)}
+        <span
+          className={cn(
+            'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white transition-all',
+            isActive
+              ? 'bg-interactive ring-2 ring-interactive/30'
+              : `${colorClass} group-hover/session:scale-110 group-hover/session:ring-2 group-hover/session:ring-border`,
+          )}
+        >
+          {initial}
+        </span>
       </button>
     )
   }

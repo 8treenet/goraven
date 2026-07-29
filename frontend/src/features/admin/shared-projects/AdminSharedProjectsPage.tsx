@@ -7,13 +7,14 @@ import {
   Loader2,
   Lock,
   Share2,
+  Pencil,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useT, t as translate } from '@/i18n'
 import { adminSharedProjectsApi } from '@/api'
-import type { AdminSharedProjectItem } from '@/api'
+import type { AdminTeamProjectItem } from '@/api'
 
 type PageState = 'loading' | 'data' | 'empty' | 'error'
 
@@ -58,6 +59,60 @@ function Avatar({ name, avatar }: { name: string; avatar: string }) {
 }
 
 /* ============================================
+   Edit Description Dialog
+   ============================================ */
+
+function EditDescriptionDialog({
+  open,
+  onClose,
+  onConfirm,
+  projectName,
+  description,
+  loading,
+}: {
+  open: boolean
+  onClose: () => void
+  onConfirm: (desc: string) => void
+  projectName: string
+  description: string
+  loading: boolean
+}) {
+  const t = useT()
+  const [value, setValue] = useState(description)
+
+  useEffect(() => {
+    if (open) setValue(description)
+  }, [open, description])
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{t('adminSharedProjects.editDescription')}</DialogTitle>
+          <DialogDescription>
+            {translate('adminSharedProjects.editDescriptionFor').replace('{name}', projectName)}
+          </DialogDescription>
+        </DialogHeader>
+        <textarea
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder={t('adminSharedProjects.descriptionPlaceholder')}
+          rows={3}
+          className="w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 resize-none"
+        />
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" size="default" onClick={onClose} disabled={loading}>{t('common.cancel')}</Button>
+          <Button size="default" onClick={() => onConfirm(value)} disabled={loading}>
+            {loading && <Loader2 className="size-3.5 mr-1 animate-spin" />}
+            {t('common.save')}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/* ============================================
    Delete Confirm Dialog
    ============================================ */
 
@@ -79,9 +134,9 @@ function DeleteProjectDialog({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>{t('adminSharedProjects.cancelShare')}</DialogTitle>
+          <DialogTitle>{t('adminSharedProjects.deleteProject')}</DialogTitle>
           <DialogDescription>
-            {translate('adminSharedProjects.cancelShareConfirm').replace('{name}', projectName)}
+            {translate('adminSharedProjects.deleteProjectConfirm').replace('{name}', projectName)}
           </DialogDescription>
         </DialogHeader>
         <div className="flex justify-end gap-2">
@@ -103,9 +158,11 @@ function DeleteProjectDialog({
 function ProjectRow({
   project,
   onDelete,
+  onEdit,
 }: {
-  project: AdminSharedProjectItem
+  project: AdminTeamProjectItem
   onDelete: () => void
+  onEdit: () => void
 }) {
   const t = useT()
   return (
@@ -118,8 +175,8 @@ function ProjectRow({
       </td>
       <td className="py-2.5 pr-4">
         <div className="flex items-center gap-2">
-          <Avatar name={project.ownerName || project.ownerId} avatar={project.ownerAvatar} />
-          <span className="text-sm text-text-2">{project.ownerName || project.ownerId}</span>
+          <Avatar name={project.creatorName || project.creatorId} avatar={project.creatorAvatar} />
+          <span className="text-sm text-text-2">{project.creatorName || project.creatorId}</span>
         </div>
       </td>
       <td className="py-2.5 pr-4 text-sm text-text-2">
@@ -141,13 +198,22 @@ function ProjectRow({
       </td>
       <td className="py-2.5 pr-4 text-sm text-text-3">{formatDate(project.created)}</td>
       <td className="py-2.5 pr-4">
-        <button
-          onClick={onDelete}
-          className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-destructive"
-          title={t('adminSharedProjects.cancelShare')}
-        >
-          <Trash2 className="size-3.5" />
-        </button>
+        <div className="flex items-center gap-0.5">
+          <button
+            onClick={onEdit}
+            className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-interactive"
+            title={t('adminSharedProjects.editDescription')}
+          >
+            <Pencil className="size-3.5" />
+          </button>
+          <button
+            onClick={onDelete}
+            className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-destructive"
+            title={t('adminSharedProjects.deleteProject')}
+          >
+            <Trash2 className="size-3.5" />
+          </button>
+        </div>
       </td>
     </tr>
   )
@@ -165,12 +231,12 @@ function TableSkeleton() {
         <thead>
           <tr className="border-b border-border text-left text-xs text-text-3">
             <th className="pb-2 pl-4 pr-2 font-normal">{t('adminSharedProjects.projectName')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.owner')}</th>
+            <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.creator')}</th>
             <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.description')}</th>
             <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.visitCount')}</th>
             <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.lastActive')}</th>
             <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.status')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.shareTime')}</th>
+            <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.createTime')}</th>
             <th className="pb-2 pr-4 font-normal" />
           </tr>
         </thead>
@@ -341,18 +407,20 @@ function Pagination({ page, totalPages, totalCount, onPageChange }: PaginateProp
 export function Component() {
   const t = useT()
   const [state, setState] = useState<PageState>('loading')
-  const [projects, setProjects] = useState<AdminSharedProjectItem[]>([])
+  const [projects, setProjects] = useState<AdminTeamProjectItem[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
   const [page, setPage] = useState(1)
-  const [deleteTarget, setDeleteTarget] = useState<AdminSharedProjectItem | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<AdminTeamProjectItem | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [editTarget, setEditTarget] = useState<AdminTeamProjectItem | null>(null)
+  const [saving, setSaving] = useState(false)
 
   const pageSize = 20
 
   const loadData = useCallback(() => {
     setState('loading')
-    adminSharedProjectsApi.getSharedProjects({ page, pageSize })
+    adminSharedProjectsApi.getTeamProjects({ page, pageSize })
       .then((res) => {
         const list = res.list ?? []
         // 当本页为空且不在第一页时（通常是删除最后一项后），回退一页
@@ -379,10 +447,10 @@ export function Component() {
   const handleDelete = useCallback(() => {
     if (!deleteTarget) return
     setDeleting(true)
-    adminSharedProjectsApi.unshareProject(deleteTarget.id)
+    adminSharedProjectsApi.deleteTeamProject(deleteTarget.id)
       .then(() => {
         setDeleteTarget(null)
-        toast.success(translate('adminSharedProjects.cancelSuccess'))
+        toast.success(translate('adminSharedProjects.deleteSuccess'))
         loadData()
       })
       .catch((err: Error) => {
@@ -392,6 +460,23 @@ export function Component() {
         setDeleting(false)
       })
   }, [deleteTarget, loadData])
+
+  const handleEditDescription = useCallback((desc: string) => {
+    if (!editTarget) return
+    setSaving(true)
+    adminSharedProjectsApi.updateTeamProject(editTarget.id, { description: desc })
+      .then(() => {
+        setEditTarget(null)
+        toast.success(translate('adminSharedProjects.updateSuccess'))
+        loadData()
+      })
+      .catch((err: Error) => {
+        toast.error(err.message || translate('common.failed'))
+      })
+      .finally(() => {
+        setSaving(false)
+      })
+  }, [editTarget, loadData])
 
   return (
     <div className="flex h-full flex-col bg-bg-base">
@@ -418,12 +503,12 @@ export function Component() {
               <thead>
                 <tr className="sticky top-0 z-10 border-b border-border bg-bg-base text-left text-xs text-text-3">
                   <th className="pb-2 pl-4 pr-2 font-normal">{t('adminSharedProjects.projectName')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.owner')}</th>
+                  <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.creator')}</th>
                   <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.description')}</th>
                   <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.visitCount')}</th>
                   <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.lastActive')}</th>
                   <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.status')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.shareTime')}</th>
+                  <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.createTime')}</th>
                   <th className="pb-2 pr-4 font-normal" />
                 </tr>
               </thead>
@@ -433,6 +518,7 @@ export function Component() {
                     key={project.id}
                     project={project}
                     onDelete={() => setDeleteTarget(project)}
+                    onEdit={() => setEditTarget(project)}
                   />
                 ))}
               </tbody>
@@ -448,6 +534,14 @@ export function Component() {
       )}
 
       {/* Dialogs */}
+      <EditDescriptionDialog
+        open={!!editTarget}
+        onClose={() => { if (!saving) setEditTarget(null) }}
+        onConfirm={handleEditDescription}
+        projectName={editTarget?.projectName ?? ''}
+        description={editTarget?.description ?? ''}
+        loading={saving}
+      />
       <DeleteProjectDialog
         open={!!deleteTarget}
         onClose={() => { if (!deleting) setDeleteTarget(null) }}

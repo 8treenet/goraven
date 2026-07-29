@@ -189,7 +189,7 @@ export function Component() {
             )}
 
             <div className="flex flex-col items-center gap-3 pt-10">
-              <p className="text-center text-xs text-text-muted">{t('share.tagline')}</p>
+              <p className="text-center text-xs text-text-muted text-balance">{t('share.tagline')}</p>
               <div className="flex items-center gap-6">
                   <a
                     href="https://goraven.dev"

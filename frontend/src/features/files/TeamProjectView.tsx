@@ -1,20 +1,22 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
-import { Users, RefreshCw, MoreHorizontal, Pencil, FolderOpen, AlertCircle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { RefreshCw, MoreHorizontal, Pencil, FolderOpen, AlertCircle, Trash2, Plus } from 'lucide-react'
 import { useT, t as translate } from '@/i18n'
-import { listTeamProjects, unshareProject, updateProjectDescription } from '@/api/team-projects'
+import { listTeamProjects, deleteTeamProject, updateProjectDescription, createTeamProject } from '@/api/team-projects'
 import type { TeamProjectItem } from '@/api/types'
 import { formatTime } from './file-helpers'
 import { ShareDialog, type ShareDialogMode } from './ShareDialog'
 
+export interface TeamProjectViewHandle {
+  createProject: () => void
+}
+
 interface TeamProjectViewProps {
-  onBack: () => void
   onEnterProject: (project: TeamProjectItem) => void
 }
 
-export function TeamProjectView({ onBack, onEnterProject }: TeamProjectViewProps) {
+export const TeamProjectView = forwardRef<TeamProjectViewHandle, TeamProjectViewProps>(function TeamProjectView({ onEnterProject }, ref) {
   const t = useT()
   const [projects, setProjects] = useState<TeamProjectItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -23,6 +25,7 @@ export function TeamProjectView({ onBack, onEnterProject }: TeamProjectViewProps
   const [dialogMode, setDialogMode] = useState<ShareDialogMode>(null)
   const [dialogProject, setDialogProject] = useState<TeamProjectItem | null>(null)
   const [dialogDesc, setDialogDesc] = useState('')
+  const [dialogProjectName, setDialogProjectName] = useState('')
   const menuRef = useRef<HTMLDivElement>(null)
 
   const load = useCallback(() => {
@@ -69,21 +72,41 @@ export function TeamProjectView({ onBack, onEnterProject }: TeamProjectViewProps
     setDialogMode('editShare')
   }, [])
 
-  const openUnshareDialog = useCallback((project: TeamProjectItem) => {
+  const openDeleteDialog = useCallback((project: TeamProjectItem) => {
     setMenuFor(null)
     setDialogProject(project)
-    setDialogMode('unshare')
+    setDialogMode('delete')
+  }, [])
+
+  const openCreateDialog = useCallback(() => {
+    setDialogProject(null)
+    setDialogDesc('')
+    setDialogProjectName('')
+    setDialogMode('create')
   }, [])
 
   const closeDialog = useCallback(() => {
     setDialogMode(null)
     setDialogProject(null)
     setDialogDesc('')
+    setDialogProjectName('')
   }, [])
 
   const handleConfirmDialog = useCallback(() => {
-    if (!dialogProject || !dialogMode) return
-    if (dialogMode === 'editShare') {
+    if (dialogMode === 'create') {
+      if (!dialogProjectName.trim()) return
+      createTeamProject(dialogProjectName.trim(), dialogDesc)
+        .then(() => {
+          toast.success(translate('files.createProjectSuccess'))
+          closeDialog()
+          load()
+        })
+        .catch((err: Error) => {
+          toast.error(err.message)
+        })
+    } else if (!dialogProject || !dialogMode) {
+      return
+    } else if (dialogMode === 'editShare') {
       updateProjectDescription(dialogProject.id, dialogDesc)
         .then(() => {
           toast.success(translate('files.descUpdated'))
@@ -93,10 +116,10 @@ export function TeamProjectView({ onBack, onEnterProject }: TeamProjectViewProps
         .catch((err: Error) => {
           toast.error(err.message)
         })
-    } else if (dialogMode === 'unshare') {
-      unshareProject(dialogProject.id)
+    } else if (dialogMode === 'delete') {
+      deleteTeamProject(dialogProject.id)
         .then(() => {
-          toast.success(translate('files.unshareSuccess'))
+          toast.success(translate('files.deleteProjectSuccess'))
           closeDialog()
           load()
         })
@@ -104,44 +127,14 @@ export function TeamProjectView({ onBack, onEnterProject }: TeamProjectViewProps
           toast.error(err.message)
         })
     }
-  }, [dialogProject, dialogMode, dialogDesc, closeDialog, load])
+  }, [dialogProject, dialogMode, dialogDesc, dialogProjectName, closeDialog, load])
+
+  useImperativeHandle(ref, () => ({
+    createProject: () => openCreateDialog(),
+  }), [openCreateDialog])
 
   return (
-    <div className="flex h-full flex-col bg-bg-base">
-      <div className="flex h-10 shrink-0 items-center gap-1 border-b border-border px-3">
-        <Button
-          variant="ghost"
-          size="default"
-          onClick={onBack}
-          className="text-highlight hover:text-highlight"
-        >
-          <Users className="size-4" />
-          {t('files.teamProjects')}
-        </Button>
-
-        <div className="flex-1" />
-
-        <Button
-          variant="ghost"
-          size="default"
-          onClick={onBack}
-          className="text-highlight hover:text-highlight"
-        >
-          <FolderOpen className="size-4" />
-          {t('files.myFiles')}
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={load}
-          title={t('common.refresh')}
-          className="text-highlight hover:text-highlight"
-        >
-          <RefreshCw className="size-4" />
-        </Button>
-      </div>
-
+    <div className="flex h-full flex-col">
       <div className="flex-1 overflow-auto p-4">
         {loading && (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-4">
@@ -175,6 +168,13 @@ export function TeamProjectView({ onBack, onEnterProject }: TeamProjectViewProps
               <p className="text-sm text-text-2">{t('files.noTeamProjects')}</p>
               <p className="mt-1 text-sm text-text-3">{t('files.noTeamProjectsHint')}</p>
             </div>
+            <button
+              onClick={openCreateDialog}
+              className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-bg-layer-2 px-3 py-1.5 text-sm text-text-1 transition-colors hover:bg-bg-layer-3"
+            >
+              <Plus className="size-4" />
+              {t('files.newTeamProject')}
+            </button>
           </div>
         )}
 
@@ -190,7 +190,7 @@ export function TeamProjectView({ onBack, onEnterProject }: TeamProjectViewProps
                   <span className="text-sm font-semibold text-text-1 truncate">
                     {project.projectName}
                   </span>
-                  {project.isOwner && (
+                  {project.isCreator && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
@@ -204,18 +204,18 @@ export function TeamProjectView({ onBack, onEnterProject }: TeamProjectViewProps
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                    {project.ownerAvatar ? (
+                    {project.creatorAvatar ? (
                       <img
-                        src={project.ownerAvatar}
-                        alt={project.ownerName}
+                        src={project.creatorAvatar}
+                        alt={project.creatorName}
                         className="size-6 shrink-0 rounded-sm object-cover"
                       />
                     ) : (
                       <div className="inline-flex size-6 shrink-0 items-center justify-center rounded-sm bg-interactive text-[11px] font-medium text-white">
-                        {project.ownerName.charAt(0).toUpperCase()}
+                        {project.creatorName.charAt(0).toUpperCase()}
                       </div>
                     )}
-<span className="text-base text-text-3 truncate">{project.ownerName}</span>
+<span className="text-base text-text-3 truncate">{project.creatorName}</span>
                 </div>
 
                 {project.description && (
@@ -253,12 +253,12 @@ export function TeamProjectView({ onBack, onEnterProject }: TeamProjectViewProps
           <button
             onClick={() => {
               const project = projects.find((p) => p.id === menuFor.id)
-              if (project) openUnshareDialog(project)
+              if (project) openDeleteDialog(project)
             }}
             className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
           >
-            <Users className="size-3.5" />
-            {t('files.unshare')}
+            <Trash2 className="size-3.5" />
+            {t('common.delete')}
           </button>
         </div>,
         document.body,
@@ -266,12 +266,13 @@ export function TeamProjectView({ onBack, onEnterProject }: TeamProjectViewProps
 
       <ShareDialog
         mode={dialogMode}
-        projectName={dialogProject?.projectName || ''}
+        projectName={dialogMode === 'create' ? dialogProjectName : (dialogProject?.projectName || '')}
         description={dialogDesc}
         onDescriptionChange={setDialogDesc}
+        onProjectNameChange={setDialogProjectName}
         onClose={closeDialog}
         onConfirm={handleConfirmDialog}
       />
     </div>
   )
-}
+})

@@ -5,6 +5,7 @@ import {
   RefreshCw,
   Users,
   FolderOpen,
+  FolderGit2,
   Loader2,
   AlertCircle,
   ChevronRight,
@@ -52,7 +53,7 @@ export interface FilePickerDialogProps {
   onConfirm?: (file: PickedFile | null) => void
 }
 
-type Tab = 'mine' | 'team'
+type Tab = 'mine' | 'projects' | 'team'
 
 function buildUrl(source: 'mine' | 'team', path: string, teamProjectId?: number): string {
   if (source === 'mine') return getFileUrl(path)
@@ -75,12 +76,14 @@ export function FilePickerDialog({
   const [tab, setTab] = useState<Tab>('mine')
   const [teamProject, setTeamProject] = useState<TeamProjectItem | null>(null)
   const [mineBreadcrumbs, setMineBreadcrumbs] = useState<string[]>([])
+  const [projBreadcrumbs, setProjBreadcrumbs] = useState<string[]>([])
   const [teamBreadcrumbs, setTeamBreadcrumbs] = useState<string[]>([])
 
   const reset = useCallback(() => {
     setTab('mine')
     setTeamProject(null)
     setMineBreadcrumbs([])
+    setProjBreadcrumbs([])
     setTeamBreadcrumbs([])
   }, [])
 
@@ -99,7 +102,10 @@ export function FilePickerDialog({
     setMineError(false)
     listFiles(dir === '/' ? '' : dir)
       .then((data) => {
-        setMineItems(data.items)
+        const filtered = dir === '/'
+          ? data.items.filter((item) => !(item.isDir && item.name === 'projects'))
+          : data.items
+        setMineItems(filtered)
         setMineLoading(false)
       })
       .catch(() => {
@@ -118,12 +124,36 @@ export function FilePickerDialog({
     setTeamProjectsError(false)
     listTeamProjects()
       .then((data) => {
-        setTeamProjects((data.items ?? []).filter((item) => !item.isOwner))
+        setTeamProjects(data.items ?? [])
         setTeamProjectsLoading(false)
       })
       .catch(() => {
         setTeamProjectsError(true)
         setTeamProjectsLoading(false)
+      })
+  }, [])
+
+  // ---------- Projects files ----------
+  const [projItems, setProjItems] = useState<FileItem[]>([])
+  const [projLoading, setProjLoading] = useState(false)
+  const [projError, setProjError] = useState(false)
+
+  const projDir = useMemo(
+    () => (projBreadcrumbs.length === 0 ? 'projects' : `projects/${projBreadcrumbs.join('/')}`),
+    [projBreadcrumbs],
+  )
+
+  const loadProj = useCallback((dir: string) => {
+    setProjLoading(true)
+    setProjError(false)
+    listFiles(dir)
+      .then((data) => {
+        setProjItems(data.items)
+        setProjLoading(false)
+      })
+      .catch(() => {
+        setProjError(true)
+        setProjLoading(false)
       })
   }, [])
 
@@ -173,8 +203,9 @@ export function FilePickerDialog({
     if (!open) return
     reset()
     loadMine('/')
+    loadProj('projects')
     loadTeamProjects()
-  }, [open, reset, loadMine, loadTeamProjects])
+  }, [open, reset, loadMine, loadProj, loadTeamProjects])
 
   // ---------- Navigation: mine ----------
   const enterMineDir = useCallback(
@@ -192,6 +223,24 @@ export function FilePickerDialog({
       loadMine(next.length === 0 ? '/' : next.join('/'))
     },
     [mineBreadcrumbs, loadMine],
+  )
+
+  // ---------- Navigation: projects ----------
+  const enterProjDir = useCallback(
+    (name: string) => {
+      setProjBreadcrumbs((prev) => [...prev, name])
+      loadProj(projBreadcrumbs.length === 0 ? `projects/${name}` : `projects/${projBreadcrumbs.join('/')}/${name}`)
+    },
+    [projBreadcrumbs, loadProj],
+  )
+
+  const navigateProjTo = useCallback(
+    (index: number) => {
+      const next = index < 0 ? [] : projBreadcrumbs.slice(0, index + 1)
+      setProjBreadcrumbs(next)
+      loadProj(next.length === 0 ? 'projects' : `projects/${next.join('/')}`)
+    },
+    [projBreadcrumbs, loadProj],
   )
 
   // ---------- Navigation: team ----------
@@ -268,16 +317,32 @@ export function FilePickerDialog({
     })
   }, [teamProject, teamBreadcrumbs, teamDir, teamDirAbs, pickFile])
 
+  const pickCurrentProjDir = useCallback(() => {
+    const name =
+      projBreadcrumbs.length > 0 ? projBreadcrumbs[projBreadcrumbs.length - 1] : t('files.myProjects')
+    pickFile({
+      source: 'mine',
+      name,
+      path: projDir,
+      size: 0,
+      isDir: true,
+      url: buildUrl('mine', projDir),
+    })
+  }, [projBreadcrumbs, projDir, t, pickFile])
+
   const handleConfirm = useCallback(() => {
     if (tab === 'mine') pickCurrentMineDir()
+    else if (tab === 'projects') pickCurrentProjDir()
     else if (teamProject) pickCurrentTeamDir()
-  }, [tab, pickCurrentMineDir, pickCurrentTeamDir])
+  }, [tab, pickCurrentMineDir, pickCurrentProjDir, pickCurrentTeamDir, teamProject])
 
-  // Confirm button: mine root (/) is not selectable; everything else is.
+  // Confirm button: mine root (/) and projects root are not selectable; everything else is.
   const canConfirmDir =
     tab === 'mine'
       ? mineBreadcrumbs.length > 0
-      : !!teamProject
+      : tab === 'projects'
+        ? projBreadcrumbs.length > 0
+        : !!teamProject
 
   // Current directory display name for footer
   const currentDirLabel =
@@ -285,11 +350,15 @@ export function FilePickerDialog({
       ? mineBreadcrumbs.length > 0
         ? mineBreadcrumbs[mineBreadcrumbs.length - 1]
         : t('files.myFiles')
-      : teamProject
-        ? teamBreadcrumbs.length > 0
-          ? teamBreadcrumbs[teamBreadcrumbs.length - 1]
-          : teamProject.projectName
-        : t('files.teamProjects')
+      : tab === 'projects'
+        ? projBreadcrumbs.length > 0
+          ? projBreadcrumbs[projBreadcrumbs.length - 1]
+          : t('files.myProjects')
+        : teamProject
+          ? teamBreadcrumbs.length > 0
+            ? teamBreadcrumbs[teamBreadcrumbs.length - 1]
+            : teamProject.projectName
+          : t('files.teamProjects')
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -298,17 +367,19 @@ export function FilePickerDialog({
         <DialogDescription className="sr-only">{t('chat.filePickerDesc')}</DialogDescription>
 
         {/* Header: title + tabs */}
-        <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-          <AtSign className="size-4 text-highlight" />
-          <span className="text-sm font-semibold text-text-1">{t('chat.filePickerTitle')}</span>
-          <div className="ml-auto flex items-center gap-1 rounded-md border border-border bg-bg-layer-2 p-0.5">
+        <div className="flex flex-col gap-2 border-b border-border px-4 py-3 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-2">
+            <AtSign className="size-4 text-highlight" />
+            <span className="text-sm font-semibold text-text-1">{t('chat.filePickerTitle')}</span>
+          </div>
+          <div className="flex items-center gap-1 self-start rounded-md border border-border bg-bg-layer-2 p-0.5 sm:ml-auto sm:self-auto">
             <button
               onClick={() => {
                 setTab('mine')
                 exitTeamProject()
               }}
               className={cn(
-                'rounded px-2.5 py-1 text-xs transition-colors',
+                'rounded px-2.5 py-1 text-xs whitespace-nowrap transition-colors',
                 tab === 'mine' ? 'bg-bg-layer-3 text-text-1' : 'text-text-3 hover:text-text-2',
               )}
             >
@@ -319,11 +390,26 @@ export function FilePickerDialog({
             </button>
             <button
               onClick={() => {
+                setTab('projects')
+                exitTeamProject()
+              }}
+              className={cn(
+                'rounded px-2.5 py-1 text-xs whitespace-nowrap transition-colors',
+                tab === 'projects' ? 'bg-bg-layer-3 text-text-1' : 'text-text-3 hover:text-text-2',
+              )}
+            >
+              <span className="inline-flex items-center gap-1">
+                <FolderGit2 className="size-3.5 text-folder" />
+                {t('files.myProjects')}
+              </span>
+            </button>
+            <button
+              onClick={() => {
                 setTab('team')
                 exitTeamProject()
               }}
               className={cn(
-                'rounded px-2.5 py-1 text-xs transition-colors',
+                'rounded px-2.5 py-1 text-xs whitespace-nowrap transition-colors',
                 tab === 'team' ? 'bg-bg-layer-3 text-text-1' : 'text-text-3 hover:text-text-2',
               )}
             >
@@ -340,10 +426,20 @@ export function FilePickerDialog({
           {/* Breadcrumbs / back nav */}
           <div className="flex min-h-9 items-center gap-1 border-b border-border px-4 py-1.5">
             {tab === 'mine' ? (
-              <MineBreadcrumbs
+              <UserSpaceBreadcrumbs
+                rootLabel={t('files.myFiles')}
+                rootIcon={<FolderOpen className="size-3.5 text-folder" />}
                 breadcrumbs={mineBreadcrumbs}
                 onNavigate={navigateMineTo}
                 onRefresh={() => loadMine(mineDir)}
+              />
+            ) : tab === 'projects' ? (
+              <UserSpaceBreadcrumbs
+                rootLabel={t('files.myProjects')}
+                rootIcon={<FolderGit2 className="size-3.5 text-folder" />}
+                breadcrumbs={projBreadcrumbs}
+                onNavigate={navigateProjTo}
+                onRefresh={() => loadProj(projDir)}
               />
             ) : teamProject ? (
               <TeamBreadcrumbs
@@ -376,6 +472,23 @@ export function FilePickerDialog({
                   })
                 }
                 onEnterDir={(item) => enterMineDir(item.name)}
+              />
+            ) : tab === 'projects' ? (
+              <FileList
+                loading={projLoading}
+                error={projError}
+                items={projItems}
+                onPickFile={(item) =>
+                  pickFile({
+                    source: 'mine',
+                    name: item.name,
+                    path: item.path,
+                    size: item.size,
+                    isDir: false,
+                    url: buildUrl('mine', item.path),
+                  })
+                }
+                onEnterDir={(item) => enterProjDir(item.name)}
               />
             ) : teamProject ? (
               <FileList
@@ -431,11 +544,15 @@ export function FilePickerDialog({
    Breadcrumbs
    ============================================ */
 
-function MineBreadcrumbs({
+function UserSpaceBreadcrumbs({
+  rootLabel,
+  rootIcon,
   breadcrumbs,
   onNavigate,
   onRefresh,
 }: {
+  rootLabel: string
+  rootIcon: React.ReactNode
   breadcrumbs: string[]
   onNavigate: (index: number) => void
   onRefresh: () => void
@@ -451,8 +568,8 @@ function MineBreadcrumbs({
         )}
       >
         <span className="inline-flex items-center gap-1">
-          <FolderOpen className="size-3.5 text-folder" />
-          {t('files.myFiles')}
+          {rootIcon}
+          {rootLabel}
         </span>
       </button>
       {breadcrumbs.map((seg, i) => (
@@ -689,18 +806,18 @@ function TeamProjectGrid({
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            {project.ownerAvatar ? (
+            {project.creatorAvatar ? (
               <img
-                src={project.ownerAvatar}
-                alt={project.ownerName}
+                src={project.creatorAvatar}
+                alt={project.creatorName}
                 className="size-4 shrink-0 rounded-sm object-cover"
               />
             ) : (
               <div className="inline-flex size-4 shrink-0 items-center justify-center rounded-sm bg-interactive text-[9px] font-medium text-white">
-                {project.ownerName.charAt(0).toUpperCase()}
+                {project.creatorName.charAt(0).toUpperCase()}
               </div>
             )}
-            <span className="truncate text-xs text-text-3">{project.ownerName}</span>
+            <span className="truncate text-xs text-text-3">{project.creatorName}</span>
           </div>
           {project.description && (
             <p className="line-clamp-2 text-xs text-text-2">{project.description}</p>

@@ -63,7 +63,13 @@ export function useFilePreview(options: UseFilePreviewOptions) {
       const ptype = getPreviewType(item)
       const url = buildDownloadUrl(filePath)
 
-      if (!ptype || ptype === 'image' || ptype === 'video' || ptype === 'audio' || ptype === 'pdf') {
+      // Non-previewable file: notify instead of opening a broken preview
+      if (!ptype) {
+        toast.info(translate('files.previewUnsupported'))
+        return
+      }
+
+      if (ptype === 'image' || ptype === 'video' || ptype === 'audio' || ptype === 'pdf') {
         const cachedUrl = peekCachedBlobUrl(url)
         if (cachedUrl) {
           setPreviewItem(item)

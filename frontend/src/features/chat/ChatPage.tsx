@@ -357,7 +357,7 @@ function SessionChat({ sessionId }: { sessionId: string }) {
         compressing={compressing}
         onCompress={compressSession}
         project={session.project}
-        sharedProject={session.sharedProject as { id: number; ownerName: string; projectName: string; description: string } | undefined}
+        sharedProject={session.sharedProject as { id: number; creatorName: string; projectName: string; description: string } | undefined}
         sessionId={sessionId}
       />
 
@@ -451,7 +451,7 @@ function ChatToolbar({
   compressing?: boolean
   onCompress?: () => void
   project?: string
-  sharedProject?: { id: number; ownerName: string; projectName: string; description: string }
+  sharedProject?: { id: number; creatorName: string; projectName: string; description: string }
   sessionId?: string
 }) {
   const t = useT()
@@ -498,8 +498,8 @@ function ChatToolbar({
             onClick={onPersonaClick}
             className="flex items-center gap-1.5 text-base text-text-2 min-w-0 rounded px-1 -mx-1 py-0.5 transition-colors hover:bg-bg-layer-2 hover:text-text-1"
           >
-            {personaIcon && <Icon name={personaIcon} className="size-4 shrink-0" />}
-            <span className="truncate max-w-48">{personaName}</span>
+            {personaIcon && <Icon name={personaIcon} className="size-4 shrink-0 text-highlight" />}
+            <span className="truncate max-w-24 sm:max-w-48">{personaName}</span>
           </button>
         ) : (
           <button
@@ -507,7 +507,7 @@ function ChatToolbar({
             className="flex items-center gap-1.5 text-base text-text-2 min-w-0 rounded px-1 -mx-1 py-0.5 transition-colors hover:bg-bg-layer-2 hover:text-text-1"
           >
             <ModelIcon icon={modelIcon ?? undefined} />
-            <span className="truncate max-w-48">{modelName}</span>
+            <span className="truncate max-w-24 sm:max-w-48">{modelName}</span>
           </button>
         )}
 
@@ -529,7 +529,7 @@ function ChatToolbar({
 
         <div className="flex items-center gap-1.5">
           {tokenUsed !== undefined && tokenMax !== undefined && tokenMax > 0 && (
-            <span className="text-xs text-highlight tabular-nums">
+            <span className="whitespace-nowrap text-xs text-highlight tabular-nums">
               {formatTokenK(tokenUsed)} / {formatTokenK(tokenMax)}
             </span>
           )}
@@ -659,9 +659,9 @@ function ChatToolbar({
                 selectedPersona || selectedModel ? 'text-text-1 hover:bg-bg-layer-2' : 'text-text-3 hover:bg-bg-layer-2 hover:text-text-2',
                 open && 'bg-bg-layer-2',
               )}>
-              <span className="truncate max-w-48">
+              <span className="truncate max-w-28 sm:max-w-48">
                 {selectedPersona ? (
-                  <span className="flex items-center gap-1.5"><Icon name={selectedPersona.icon} className="size-3.5" />{selectedPersona.name}</span>
+                  <span className="flex items-center gap-1.5"><Icon name={selectedPersona.icon} className="size-3.5 text-highlight" />{selectedPersona.name}</span>
                 ) : selectedModel ? (
                   <span className="flex items-center gap-1.5"><ModelIcon icon={selectedModel.icon} />{selectedModel.name}</span>
                 ) : t('chat.selectModelOrPersona')}
@@ -696,7 +696,7 @@ function ChatToolbar({
                     <span className={cn('shrink-0 text-sm', formPersonaId === p.id ? 'text-text-1' : 'text-text-muted opacity-0')}>
                       {'✓'}
                     </span>
-                    <Icon name={p.icon} className="size-3.5 shrink-0 text-text-2" />
+                    <Icon name={p.icon} className={cn('size-3.5 shrink-0', formPersonaId === p.id ? 'text-highlight' : 'text-text-2')} />
                     <span className="truncate">{p.name}</span>
                   </button>
                 ))}
@@ -792,7 +792,7 @@ function NewChatInput({
     setTeamError(false)
     listTeamProjects()
       .then((data) => {
-        setTeamItems((data.items ?? []).filter((item) => !item.isOwner))
+        setTeamItems(data.items ?? [])
         setTeamLoading(false)
       })
       .catch(() => {
@@ -824,6 +824,11 @@ function NewChatInput({
     }
     setProjectOpen(false)
   }, [formSharedProjectId, onSharedProjectChange])
+
+  const handleBuildWikiIndex = useCallback(() => {
+    onChange(t('chat.buildWikiIndexPrefill'))
+    setProjectOpen(false)
+  }, [onChange, t])
 
   const sidebarCollapsed = useSidebarStore((s) => s.collapsed)
   const dialogLeft = sidebarCollapsed
@@ -1096,7 +1101,28 @@ function NewChatInput({
           </label>
         </div>
 
-        {generating ? (
+        <div className="flex items-center gap-1.5">
+          {(formProjectPath || formSharedProjectId) && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleBuildWikiIndex}
+                  disabled={generating}
+                  className={cn(
+                    'flex shrink-0 items-center rounded-md px-1.5 py-1 text-xs font-medium leading-none transition-colors',
+                    generating
+                      ? 'cursor-not-allowed bg-interactive/5 text-interactive/40'
+                      : 'bg-interactive/10 text-interactive hover:bg-interactive/15',
+                  )}
+                >
+                  Wiki
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-56">{t('chat.buildWikiIndex')}</TooltipContent>
+            </Tooltip>
+          )}
+
+          {generating ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={handleSendOrStop} disabled={stopDisabled}
@@ -1129,6 +1155,7 @@ function NewChatInput({
             <ArrowUp className="size-4" />
           </button>
         )}
+        </div>
       </div>
 
       <Dialog open={projectOpen} onOpenChange={setProjectOpen}>
@@ -1164,7 +1191,7 @@ function NewChatInput({
             <div className="mb-1 mt-2 px-4">
               <p className="flex items-center gap-1.5 text-xs text-text-muted">
                 <FolderOpen className="size-3 text-folder" />
-                {t('files.myFiles')}
+                {t('files.myProjects')}
               </p>
             </div>
 
@@ -1261,7 +1288,7 @@ function NewChatInput({
                     <div className="min-w-0 flex-1">
                       <span className="truncate block">{item.projectName}</span>
                       <span className="text-xs text-text-3">
-                        {item.isOwner ? t('chat.sharedByMe') : t('chat.sharedBy').replace('{name}', item.ownerName)}
+                        {item.isCreator ? t('chat.createdByMe') : t('chat.createdBy').replace('{name}', item.creatorName)}
                       </span>
                     </div>
                     {isSelected && (

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
@@ -13,16 +13,15 @@ import {
   FolderOpen,
   AlertCircle,
   RefreshCw,
-  Braces,
   Eye,
-  Users,
+  X,
+  Plus,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useT, t as translate } from '@/i18n'
 import { listFiles, mkdir, rename, deleteFiles, compress, decompress } from '@/api/files'
 import { createTempAccess, getDownloadUrl } from '@/api/files'
-import { shareProject, unshareProject } from '@/api/team-projects'
 import type { FileItem, TeamProjectItem } from '@/api/types'
 import { useFileUpload } from '@/hooks/useFileUpload'
 import { evictCachedBlob } from '@/lib/file-blob-cache'
@@ -33,10 +32,8 @@ import {
 } from './FileContextMenu'
 import { FileDialogs, type FileDialogMode } from './FileDialogs'
 import { PreviewDialog } from './PreviewDialog'
-import { EnvVarsDialog } from './EnvVarsDialog'
-import { ShareDialog, type ShareDialogMode } from './ShareDialog'
-import { TeamProjectView } from './TeamProjectView'
-import { TeamProjectFiles } from './TeamProjectFiles'
+import { TeamProjectView, type TeamProjectViewHandle } from './TeamProjectView'
+import { TeamProjectFiles, type TeamProjectFilesHandle } from './TeamProjectFiles'
 import { useFilePreview } from './useFilePreview'
 import {
   canPreview,
@@ -52,46 +49,193 @@ import {
 } from './file-helpers'
 
 export function Component() {
-  const [view, setView] = useState<'mine' | 'team' | 'teamProject'>('mine')
+  const [tab, setTab] = useState<'files' | 'projects' | 'team'>('files')
   const [activeTeamProject, setActiveTeamProject] = useState<TeamProjectItem | null>(null)
+  const [plusOpen, setPlusOpen] = useState(false)
+  const plusRef = useRef<HTMLDivElement>(null)
+  const mineRef = useRef<MineFilesHandle>(null)
+  const teamFilesRef = useRef<TeamProjectFilesHandle>(null)
+  const teamViewRef = useRef<TeamProjectViewHandle>(null)
+  const t = useT()
 
-  if (view === 'team') {
-    return (
-      <TeamProjectView
-        onBack={() => setView('mine')}
-        onEnterProject={(project) => {
-          setActiveTeamProject(project)
-          setView('teamProject')
-        }}
-      />
-    )
-  }
+  const switchTab = useCallback((newTab: 'files' | 'projects' | 'team') => {
+    setTab(newTab)
+    setPlusOpen(false)
+    if (newTab !== 'team') setActiveTeamProject(null)
+  }, [])
 
-  if (view === 'teamProject' && activeTeamProject) {
-    return (
-      <TeamProjectFiles
-        project={activeTeamProject}
-        onBack={() => setView('team')}
-        onBackToMine={() => setView('mine')}
-      />
-    )
-  }
+  useEffect(() => {
+    if (!plusOpen) return
+    const handler = (e: MouseEvent) => {
+      if (plusRef.current && !plusRef.current.contains(e.target as Node)) setPlusOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [plusOpen])
 
-  return <MineFiles onSwitchToTeam={() => setView('team')} />
+  return (
+    <div className="flex h-full flex-col bg-bg-base">
+      {/* Tab navigation bar */}
+      <div className="flex h-10 shrink-0 items-center gap-1 border-b border-border px-3">
+        <div className="flex items-center gap-0">
+          {([
+            ['files', t('files.myFiles')],
+            ['projects', t('files.myProjects')],
+            ['team', t('files.teamProjects')],
+          ] as const).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => switchTab(key)}
+              className={cn(
+                'relative px-3 py-1 text-sm transition-colors',
+                tab === key
+                  ? 'text-text-1 font-medium after:absolute after:bottom-[-9px] after:left-0 after:right-0 after:h-[2px] after:bg-highlight after:rounded-full'
+                  : 'text-text-3 hover:text-text-2',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1" />
+
+        {tab === 'files' && (
+          <div className="relative" ref={plusRef}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setPlusOpen((v) => !v)}
+              title={t('files.newFolderTitle')}
+              className="text-highlight hover:text-highlight/80"
+            >
+              <Plus className="size-4" />
+            </Button>
+            {plusOpen && (
+              <div className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-md border border-border bg-bg-layer-2 py-1 shadow-pop">
+                <button
+                  onClick={() => { setPlusOpen(false); mineRef.current?.upload() }}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
+                >
+                  <Upload className="size-3.5" />
+                  {t('files.upload')}
+                </button>
+                <button
+                  onClick={() => { setPlusOpen(false); mineRef.current?.newFolder() }}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
+                >
+                  <FolderPlus className="size-3.5" />
+                  {t('files.newFolderTitle')}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === 'projects' && (
+          <div className="relative" ref={plusRef}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => { setPlusOpen(false); mineRef.current?.newFolder() }}
+              title={t('files.newProject')}
+              className="text-highlight hover:text-highlight/80"
+            >
+              <Plus className="size-4" />
+            </Button>
+          </div>
+        )}
+
+        {tab === 'team' && !activeTeamProject && (
+          <div className="relative" ref={plusRef}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => teamViewRef.current?.createProject()}
+              title={t('files.newTeamProject')}
+              className="text-highlight hover:text-highlight/80"
+            >
+              <Plus className="size-4" />
+            </Button>
+          </div>
+        )}
+
+        {tab === 'team' && activeTeamProject && (
+          <div className="relative" ref={plusRef}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setPlusOpen((v) => !v)}
+              title={t('files.newFolderTitle')}
+              className="text-highlight hover:text-highlight/80"
+            >
+              <Plus className="size-4" />
+            </Button>
+            {plusOpen && (
+              <div className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-md border border-border bg-bg-layer-2 py-1 shadow-pop">
+                <button
+                  onClick={() => { setPlusOpen(false); teamFilesRef.current?.upload() }}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
+                >
+                  <Upload className="size-3.5" />
+                  {t('files.upload')}
+                </button>
+                <button
+                  onClick={() => { setPlusOpen(false); teamFilesRef.current?.newFolder() }}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
+                >
+                  <FolderPlus className="size-3.5" />
+                  {t('files.newFolderTitle')}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Content area */}
+      <div className="flex-1 min-h-0">
+        {tab === 'files' && (
+          <MineFiles ref={mineRef} key="root" initialDir="/" />
+        )}
+        {tab === 'projects' && (
+          <MineFiles ref={mineRef} key="projects" initialDir="/projects" rootDir="/projects" />
+        )}
+        {tab === 'team' && !activeTeamProject && (
+          <TeamProjectView
+            ref={teamViewRef}
+            onEnterProject={setActiveTeamProject}
+          />
+        )}
+        {tab === 'team' && activeTeamProject && (
+          <TeamProjectFiles
+            ref={teamFilesRef}
+            key={activeTeamProject.id}
+            project={activeTeamProject}
+            onBack={() => setActiveTeamProject(null)}
+          />
+        )}
+      </div>
+    </div>
+  )
 }
 
-function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
+interface MineFilesHandle {
+  upload: () => void
+  newFolder: () => void
+}
+
+const MineFiles = forwardRef<MineFilesHandle, { initialDir?: string; rootDir?: string }>(function MineFiles({ initialDir = '/', rootDir = '/' }, ref) {
   const [pageState, setPageState] = useState<PageState>('loading')
-  const [currentDir, setCurrentDir] = useState('/')
+  const [currentDir, setCurrentDir] = useState(initialDir)
   const [items, setItems] = useState<FileItem[]>([])
   const [sortField, setSortField] = useState<SortField>('name')
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
   const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set())
-  const [lastSelected, setLastSelected] = useState<string | null>(null)
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
+  const [emptyContextMenu, setEmptyContextMenu] = useState<{ x: number; y: number } | null>(null)
   const [renamingItem, setRenamingItem] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
-  const [isDragOver, setIsDragOver] = useState(false)
   const t = useT()
 
   const { upload, progress: uploadProgress, isUploading } = useFileUpload()
@@ -99,13 +243,6 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
   const [dialogMode, setDialogMode] = useState<FileDialogMode>(null)
   const [dialogValue, setDialogValue] = useState('')
   const [dialogError, setDialogError] = useState<string | null>(null)
-
-  const [envVarsOpen, setEnvVarsOpen] = useState(false)
-
-  const [shareMode, setShareMode] = useState<ShareDialogMode>(null)
-  const [shareProjectName, setShareProjectName] = useState('')
-  const [shareDescription, setShareDescription] = useState('')
-  const [shareSharedId, setShareSharedId] = useState(0)
 
   const {
     previewItem,
@@ -140,12 +277,11 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
   const allSelected = items.length > 0 && selectedNames.size === items.length
   const someSelected = selectedNames.size > 0 && selectedNames.size < items.length
 
-  const isRoot = currentDir === '/'
+  const isRoot = currentDir === rootDir
   const currentDirName = isRoot ? null : currentDir.split('/').pop() || null
   const inProjectsDir = currentDir === '/projects'
 
   const canDelete = selectedItems.length > 0 && !selectedItems.some((item) => item.isDefault)
-  const canCompress = selectedItems.length > 0
   const canDecompress =
     selectedItems.length === 1 &&
     !selectedItems[0].isDir &&
@@ -154,14 +290,17 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
   const loadDir = useCallback((dir: string) => {
     setPageState('loading')
     setSelectedNames(new Set())
-    setLastSelected(null)
     setContextMenu(null)
+    setEmptyContextMenu(null)
     setRenamingItem(null)
 
     listFiles(dir === '/' ? '' : dir)
       .then((data) => {
-        setItems(data.items)
-        setPageState(data.items.length === 0 ? 'empty' : 'data')
+        const filtered = dir === '/'
+          ? data.items.filter((item) => !(item.isDir && item.name === 'projects'))
+          : data.items
+        setItems(filtered)
+        setPageState(filtered.length === 0 ? 'empty' : 'data')
       })
       .catch(() => {
         setPageState('error')
@@ -194,39 +333,6 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
     [sortField],
   )
 
-  const handleSelect = useCallback(
-    (name: string, e: React.MouseEvent) => {
-      setSelectedNames((prev) => {
-        const next = new Set(prev)
-        if (e.metaKey || e.ctrlKey) {
-          if (next.has(name)) {
-            next.delete(name)
-          } else {
-            next.add(name)
-          }
-        } else if (e.shiftKey && lastSelected) {
-          const allNames = sortedItems.map((item) => item.name)
-          const start = allNames.indexOf(lastSelected)
-          const end = allNames.indexOf(name)
-          if (start !== -1 && end !== -1) {
-            const range = allNames.slice(Math.min(start, end), Math.max(start, end) + 1)
-            for (const n of range) next.add(n)
-          }
-        } else {
-          if (next.has(name) && next.size === 1) {
-            next.clear()
-          } else {
-            next.clear()
-            next.add(name)
-          }
-        }
-        return next
-      })
-      setLastSelected(name)
-    },
-    [sortedItems, lastSelected],
-  )
-
   const handleCheckboxToggle = useCallback((name: string) => {
     setSelectedNames((prev) => {
       const next = new Set(prev)
@@ -237,7 +343,6 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
       }
       return next
     })
-    setLastSelected(name)
   }, [])
 
   const handleSelectAll = useCallback(() => {
@@ -252,6 +357,11 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
     e.preventDefault()
     if (item.isDir && item.isDefault) return
     setContextMenu({ x: e.clientX, y: e.clientY, item })
+  }, [])
+
+  const handleEmptyContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    setEmptyContextMenu({ x: e.clientX, y: e.clientY })
   }, [])
 
   const startRename = useCallback((item: FileItem) => {
@@ -319,41 +429,21 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
     [handleUploadFiles],
   )
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(true)
-  }, [])
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
-  }, [])
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault()
-      setIsDragOver(false)
-      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        handleUploadFiles(e.dataTransfer.files)
-      }
-    },
-    [handleUploadFiles],
-  )
-
   const openNewFolderDialog = useCallback(() => {
     setDialogMode('newFolder')
     setDialogValue('')
     setDialogError(null)
   }, [])
 
+  useImperativeHandle(ref, () => ({
+    upload: () => fileInputRef.current?.click(),
+    newFolder: () => openNewFolderDialog(),
+  }), [openNewFolderDialog])
+
   const openDeleteDialog = useCallback(() => {
-    if (selectedItems.some((item) => item.isShared)) {
-      toast.error(translate('files.cannotDeleteShared'))
-      return
-    }
     setDialogMode('delete')
     setDialogError(null)
-  }, [selectedItems])
+  }, [])
 
   const openCompressDialog = useCallback(() => {
     setDialogMode('compress')
@@ -467,7 +557,7 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
     const handler = (e: KeyboardEvent) => {
       if (dialogMode || renamingItem) return
 
-      if (e.key === 'F2' && selectedItems.length === 1 && !selectedItems[0].isDefault && !selectedItems[0].isShared) {
+      if (e.key === 'F2' && selectedItems.length === 1 && !selectedItems[0].isDefault) {
         e.preventDefault()
         startRename(selectedItems[0])
       }
@@ -477,180 +567,69 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
       }
       if (e.key === 'Escape') {
         setContextMenu(null)
+        setEmptyContextMenu(null)
       }
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [dialogMode, renamingItem, selectedItems, canDelete, startRename, openDeleteDialog])
 
-  const handleRefresh = useCallback(() => {
-    loadDir(currentDir)
-  }, [currentDir, loadDir])
-
-  const openShareDialog = useCallback((item: FileItem) => {
-    setContextMenu(null)
-    setShareProjectName(item.name)
-    setShareDescription('')
-    setShareSharedId(0)
-    setShareMode('share')
-  }, [])
-
-  const openUnshareDialog = useCallback((item: FileItem) => {
-    setContextMenu(null)
-    setShareProjectName(item.name)
-    setShareSharedId(item.sharedId || 0)
-    setShareMode('unshare')
-  }, [])
-
-  const closeShareDialog = useCallback(() => {
-    setShareMode(null)
-    setShareProjectName('')
-    setShareDescription('')
-    setShareSharedId(0)
-  }, [])
-
-  const handleShareConfirm = useCallback(() => {
-    if (shareMode === 'share') {
-      shareProject(shareProjectName, shareDescription)
-        .then(() => {
-          toast.success(translate('files.shareSuccess'))
-          closeShareDialog()
-          loadDir(currentDir)
-        })
-        .catch((err: Error) => {
-          toast.error(err.message)
-        })
-    } else if (shareMode === 'unshare') {
-      unshareProject(shareSharedId)
-        .then(() => {
-          toast.success(translate('files.unshareSuccess'))
-          closeShareDialog()
-          loadDir(currentDir)
-        })
-        .catch((err: Error) => {
-          toast.error(err.message)
-        })
-    }
-  }, [shareMode, shareProjectName, shareDescription, shareSharedId, closeShareDialog, loadDir, currentDir])
+  const hasSelection = selectedNames.size > 0
 
   return (
-    <div className="flex h-full flex-col bg-bg-base">
-      <div className="flex h-10 shrink-0 items-center gap-1 border-b border-border px-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={goBack}
-          disabled={isRoot}
-          title={t('files.backTooltip')}
-        >
-          <ArrowLeft className="size-4" />
-        </Button>
+    <div className="flex h-full flex-col">
+      {/* Back / directory indicator */}
+      {!isRoot && !hasSelection && (
+        <div className="flex h-8 shrink-0 items-center gap-1 px-3">
+          <Button variant="ghost" size="icon" onClick={goBack} title={t('files.backTooltip')} className="size-6 text-text-3 hover:text-text-1">
+            <ArrowLeft className="size-3.5" />
+          </Button>
+          <span className="text-xs font-medium text-folder">{currentDirName}</span>
+        </div>
+      )}
 
-        {currentDirName && (
-          <>
-            <span className="text-sm font-semibold text-text-1 tabular-nums">
-              {currentDirName}
-            </span>
-            <div className="mx-1 h-4 w-px bg-border" />
-          </>
-        )}
+      {/* Selection action bar */}
+      {hasSelection && (
+        <div className="flex h-8 shrink-0 items-center gap-1 bg-interactive/5 px-3">
+          <span className="mr-2 text-xs font-medium text-interactive tabular-nums">
+            {t('files.selectedN').replace('{n}', String(selectedNames.size))}
+          </span>
+          {!selectedItems.some((i) => i.isDir) && selectedItems.length === 1 && (
+            <Button variant="ghost" size="default" className="h-6 px-2 text-xs text-text-2 hover:text-text-1" onClick={() => handleDownload(selectedItems[0])}>
+              <Download className="size-3.5" />
+              {t('files.download')}
+            </Button>
+          )}
+          <Button variant="ghost" size="default" className="h-6 px-2 text-xs text-text-2 hover:text-text-1" disabled={!canDelete} onClick={openDeleteDialog}>
+            <Trash2 className="size-3.5" />
+            {t('files.delete')}
+          </Button>
+          <Button variant="ghost" size="default" className="h-6 px-2 text-xs text-text-2 hover:text-text-1" onClick={openCompressDialog}>
+            <Archive className="size-3.5" />
+            {t('files.compress')}
+          </Button>
+          {canDecompress && (
+            <Button variant="ghost" size="default" className="h-6 px-2 text-xs text-text-2 hover:text-text-1" onClick={openDecompressDialog}>
+              <FolderArchive className="size-3.5" />
+              {t('files.decompress')}
+            </Button>
+          )}
+          <div className="flex-1" />
+          <Button variant="ghost" size="icon" className="size-6 text-text-3 hover:text-text-1" onClick={() => setSelectedNames(new Set())}>
+            <X className="size-3.5" />
+          </Button>
+        </div>
+      )}
 
-        <Button variant="ghost" size="default" onClick={handleUploadClick} className="text-highlight hover:text-highlight">
-          <Upload className="size-4" />
-          {t('files.upload')}
-        </Button>
-        <Button variant="ghost" size="default" onClick={openNewFolderDialog} className="text-highlight hover:text-highlight">
-          <FolderPlus className="size-4" />
-          {t('files.newFolder')}
-        </Button>
-
-        <div className="mx-1 h-4 w-px bg-border" />
-
-        <Button
-          variant="ghost"
-          size="default"
-          onClick={openDeleteDialog}
-          disabled={!canDelete}
-          className={cn(!canDelete ? '' : 'text-highlight hover:text-highlight')}
-        >
-          <Trash2 className="size-4" />
-          {t('files.delete')}
-        </Button>
-        <Button
-          variant="ghost"
-          size="default"
-          onClick={openCompressDialog}
-          disabled={!canCompress}
-          className={cn(!canCompress ? '' : 'text-highlight hover:text-highlight')}
-        >
-          <Archive className="size-4" />
-          {t('files.compress')}
-        </Button>
-        <Button
-          variant="ghost"
-          size="default"
-          onClick={openDecompressDialog}
-          disabled={!canDecompress}
-          className={cn(!canDecompress ? '' : 'text-highlight hover:text-highlight')}
-        >
-          <FolderArchive className="size-4" />
-          {t('files.decompress')}
-        </Button>
-
-        <div className="flex-1" />
-
-        <Button
-          variant="ghost"
-          size="default"
-          onClick={onSwitchToTeam}
-          className="text-highlight hover:text-highlight"
-        >
-          <Users className="size-4" />
-          {t('files.teamProjects')}
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="default"
-          onClick={() => setEnvVarsOpen(true)}
-          className="text-highlight hover:text-highlight"
-        >
-          <Braces className="size-4" />
-          {t('files.envVars')}
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleRefresh}
-          title={t('common.refresh')}
-          className="text-highlight hover:text-highlight"
-        >
-          <RefreshCw className="size-4" />
-        </Button>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          className="hidden"
-          onChange={handleFileInputChange}
-        />
-      </div>
-
+      {/* File list area */}
       <div
         className="flex-1 overflow-auto"
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
+        onContextMenu={handleEmptyContextMenu}
       >
         {pageState === 'loading' && (
           <div>
             {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <div
-                key={i}
-                className="flex h-10 items-center gap-3 border-b border-border px-4"
-              >
+              <div key={i} className="flex h-10 items-center gap-3 border-b border-border px-4">
                 <div className="size-4 shrink-0 animate-pulse rounded-sm bg-bg-layer-3" />
                 <div className="h-4 flex-1 animate-pulse rounded bg-bg-layer-3" />
                 <div className="h-4 w-16 animate-pulse rounded bg-bg-layer-3" />
@@ -665,9 +644,7 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
             <AlertCircle className="size-8 text-text-3" />
             <div className="text-center">
               <p className="text-sm text-text-2">{t('common.loadFailed')}</p>
-              <p className="mt-1 text-sm text-text-3">
-                {t('files.errReadDir')}
-              </p>
+              <p className="mt-1 text-sm text-text-3">{t('files.errReadDir')}</p>
             </div>
             <button
               onClick={() => loadDir(currentDir)}
@@ -679,19 +656,33 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
           </div>
         )}
 
-        {pageState === 'empty' && !isDragOver && (
+        {pageState === 'empty' && (
           <div className="flex h-full flex-col items-center justify-center gap-3">
             <FolderOpen className="size-12 text-text-3" />
             <div className="text-center">
-               <p className="text-sm text-text-2">{t('files.emptyFolder')}</p>
-               <p className="mt-1 text-sm text-text-3">
-                 {t('files.emptyHint')}
-               </p>
+              <p className="text-sm text-text-2">{t('files.emptyFolder')}</p>
+              <p className="mt-1 text-sm text-text-3">{t('files.emptyHint')}</p>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <button
+                onClick={handleUploadClick}
+                className="inline-flex items-center gap-1.5 rounded-md bg-bg-layer-2 px-3 py-1.5 text-sm text-text-1 transition-colors hover:bg-bg-layer-3"
+              >
+                <Upload className="size-4" />
+                {t('files.upload')}
+              </button>
+              <button
+                onClick={openNewFolderDialog}
+                className="inline-flex items-center gap-1.5 rounded-md bg-bg-layer-2 px-3 py-1.5 text-sm text-text-1 transition-colors hover:bg-bg-layer-3"
+              >
+                <FolderPlus className="size-4" />
+                {t('files.newFolder')}
+              </button>
             </div>
           </div>
         )}
 
-        {(pageState === 'data' || (pageState === 'empty' && isDragOver)) && (
+        {pageState === 'data' && (
           <>
             <div className="flex h-8 items-center gap-3 border-b border-border px-4">
               <div className="flex size-4 shrink-0 items-center justify-center">
@@ -770,13 +761,17 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
               return (
                 <div
                   key={item.name}
-                  onClick={(e) => handleSelect(item.name, e)}
-                  onDoubleClick={() => {
+                  onClick={() => {
                     if (item.isDir) navigateTo(`${currentDir === '/' ? '' : currentDir}/${item.name}`)
+                    else if (canPreview(item)) handlePreview(item)
+                    else toast.info(t('files.previewUnsupported'))
                   }}
-                  onContextMenu={(e) => handleContextMenu(item, e)}
+                  onContextMenu={(e) => {
+                    e.stopPropagation()
+                    handleContextMenu(item, e)
+                  }}
                   className={cn(
-                    'flex cursor-default items-center gap-3 px-4 transition-colors select-none',
+                    'flex cursor-pointer items-center gap-3 px-4 transition-colors select-none',
                     rowH,
                     isSelected
                       ? 'bg-bg-layer-3'
@@ -820,9 +815,6 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
                     {item.isDefault && (
                       <Lock className="size-3.5 shrink-0 text-interactive" />
                     )}
-                    {item.isShared && (
-                      <Users className="size-3.5 shrink-0 text-highlight" />
-                    )}
                   </div>
 
                   <div className="w-[120px] text-right text-sm text-text-3 tabular-nums">
@@ -836,34 +828,28 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
               )
             })}
 
-            {isDragOver && (
-              <div className="flex h-20 items-center justify-center border-2 border-dashed border-highlight mx-3 my-2 rounded-lg">
-                <p className="text-sm text-highlight">
-                  {t('files.dropHint')}
-                </p>
-              </div>
-            )}
-
-            {!isDragOver && sortedItems.length < 8 && sortedItems.length > 0 && (
-              <div className="px-4 py-4 text-xs text-text-muted">
-                 <span className="text-text-3">{t('files.dragPrompt')}</span>{' '}
-                 <span className="text-text-muted">| {t('files.orClick')}</span>
-              </div>
-            )}
           </>
         )}
       </div>
 
-      {items.length >= 10 && (
+      {/* Bottom status bar */}
+      {pageState !== 'loading' && pageState !== 'error' && items.length > 0 && (
         <div className="flex h-8 shrink-0 items-center border-t border-border px-4">
-          <span className="text-sm text-text-3 tabular-nums">
-            {selectedNames.size > 0
-              ? t('files.selectedCount').replace('{n}', String(selectedNames.size)).replace('{total}', String(items.length))
-              : t('files.totalCount').replace('{n}', String(items.length))}
+          <span className="text-xs text-text-muted tabular-nums">
+            {t('files.totalCount').replace('{n}', String(items.length))}
           </span>
         </div>
       )}
 
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={handleFileInputChange}
+      />
+
+      {/* Item context menu */}
       {contextMenu && (
         <ContextMenu
           x={contextMenu.x}
@@ -882,13 +868,13 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
               {t('files.download')}
             </ContextMenuItem>
           )}
-          {!contextMenu.item.isDefault && !contextMenu.item.isShared && (
+          {!contextMenu.item.isDefault && (
             <ContextMenuItem onClick={() => startRename(contextMenu.item)}>
               <Pencil className="size-3.5" />
               {t('files.rename')}
             </ContextMenuItem>
           )}
-          {!contextMenu.item.isDefault && !contextMenu.item.isShared && (
+          {!contextMenu.item.isDefault && (
             <ContextMenuItem
               onClick={() => {
                 setContextMenu(null)
@@ -901,18 +887,24 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
               {t('common.delete')}
             </ContextMenuItem>
           )}
-          {inProjectsDir && contextMenu.item.isDir && !contextMenu.item.isShared && (
-            <ContextMenuItem onClick={() => openShareDialog(contextMenu.item)}>
-              <Users className="size-3.5" />
-              {t('files.shareToTeam')}
-            </ContextMenuItem>
-          )}
-          {inProjectsDir && contextMenu.item.isDir && contextMenu.item.isShared && (
-            <ContextMenuItem onClick={() => openUnshareDialog(contextMenu.item)}>
-              <Users className="size-3.5" />
-              {t('files.unshare')}
-            </ContextMenuItem>
-          )}
+        </ContextMenu>
+      )}
+
+      {/* Empty space context menu */}
+      {emptyContextMenu && !inProjectsDir && (
+        <ContextMenu
+          x={emptyContextMenu.x}
+          y={emptyContextMenu.y}
+          onClose={() => setEmptyContextMenu(null)}
+        >
+          <ContextMenuItem onClick={() => { setEmptyContextMenu(null); handleUploadClick() }}>
+            <Upload className="size-3.5" />
+            {t('files.upload')}
+          </ContextMenuItem>
+          <ContextMenuItem onClick={() => { setEmptyContextMenu(null); openNewFolderDialog() }}>
+            <FolderPlus className="size-3.5" />
+            {t('files.newFolder')}
+          </ContextMenuItem>
         </ContextMenu>
       )}
 
@@ -921,6 +913,7 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
         value={dialogValue}
         error={dialogError}
         selectedItems={selectedItems}
+        createTitle={inProjectsDir ? t('files.newProject') : undefined}
         onValueChange={setDialogValue}
         onClearError={() => setDialogError(null)}
         onClose={closeDialog}
@@ -941,20 +934,6 @@ function MineFiles({ onSwitchToTeam }: { onSwitchToTeam: () => void }) {
         onClose={closePreview}
         onDownload={previewItem ? () => handleDownload(previewItem) : undefined}
       />
-
-      <EnvVarsDialog
-        open={envVarsOpen}
-        onOpenChange={setEnvVarsOpen}
-      />
-
-      <ShareDialog
-        mode={shareMode}
-        projectName={shareProjectName}
-        description={shareDescription}
-        onDescriptionChange={setShareDescription}
-        onClose={closeShareDialog}
-        onConfirm={handleShareConfirm}
-      />
     </div>
   )
-}
+})

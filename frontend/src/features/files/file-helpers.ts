@@ -49,7 +49,6 @@ export const TEXT_EXTS = new Set([
 ])
 
 export const ILLEGAL_CHARS = /[\/\\:*?"<>|]/
-export const KEY_REGEX = /^[A-Za-z0-9_]+$/
 
 export function formatSize(bytes: number): string {
   if (bytes === 0) return '--'
