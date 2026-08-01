@@ -8,6 +8,7 @@ import {
   Lock,
   Share2,
   Pencil,
+  Users,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -182,6 +183,15 @@ function ProjectRow({
       <td className="py-2.5 pr-4 text-sm text-text-2">
         <span className="line-clamp-1 max-w-[260px]">{project.description || '—'}</span>
       </td>
+      <td className="py-2.5 pr-4">
+        <span className={cn(
+          'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs',
+          project.access === 1 ? 'bg-interactive/10 text-interactive' : 'bg-highlight/15 text-highlight',
+        )}>
+          <Users className="size-3" />
+          {project.access === 1 ? t('files.accessMembers') : t('files.accessAll')}
+        </span>
+      </td>
       <td className="py-2.5 pr-4 text-sm tabular-nums text-text-2">{project.visitCount}</td>
       <td className="py-2.5 pr-4 text-sm text-text-3">
         {project.lastActiveAt ? formatRelative(project.lastActiveAt) : '—'}
@@ -233,6 +243,7 @@ function TableSkeleton() {
             <th className="pb-2 pl-4 pr-2 font-normal">{t('adminSharedProjects.projectName')}</th>
             <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.creator')}</th>
             <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.description')}</th>
+            <th className="pb-2 pr-4 font-normal">{t('files.accessLabel')}</th>
             <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.visitCount')}</th>
             <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.lastActive')}</th>
             <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.status')}</th>
@@ -254,6 +265,9 @@ function TableSkeleton() {
               </td>
               <td className="py-2.5 pr-4">
                 <div className="h-3.5 w-32 animate-pulse rounded bg-bg-layer-2" />
+              </td>
+              <td className="py-2.5 pr-4">
+                <div className="h-5 w-16 animate-pulse rounded bg-bg-layer-2" />
               </td>
               <td className="py-2.5 pr-4">
                 <div className="h-3.5 w-6 animate-pulse rounded bg-bg-layer-2" />
@@ -505,6 +519,7 @@ export function Component() {
                   <th className="pb-2 pl-4 pr-2 font-normal">{t('adminSharedProjects.projectName')}</th>
                   <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.creator')}</th>
                   <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.description')}</th>
+                  <th className="pb-2 pr-4 font-normal">{t('files.accessLabel')}</th>
                   <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.visitCount')}</th>
                   <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.lastActive')}</th>
                   <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.status')}</th>

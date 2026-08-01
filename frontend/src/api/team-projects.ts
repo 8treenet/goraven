@@ -3,6 +3,9 @@ import type {
   TeamProjectItem,
   TeamProjectListRsp,
   TeamProjectCreateRsp,
+  TeamProjectUserItem,
+  TeamProjectMembersRsp,
+  PaginatedResponse,
   FileItem,
   StorageUsage,
 } from './types'
@@ -36,6 +39,28 @@ export function deleteTeamProject(id: number) {
 /** PUT /api/teamProject/:id */
 export function updateProjectDescription(id: number, description: string) {
   return http.put(`/teamProject/${id}`, { description })
+}
+
+/* ---------- 成员管理 ---------- */
+
+/** GET /api/teamProject/users — 用户列表（成员选择器） */
+export function listTeamProjectUsers(page: number, pageSize: number) {
+  return http.get<PaginatedResponse<TeamProjectUserItem>>('/teamProject/users', { params: { page, pageSize } })
+}
+
+/** GET /api/teamProject/:id/members — 查询项目成员 */
+export function getTeamProjectMembers(id: number) {
+  return http.get<TeamProjectMembersRsp>(`/teamProject/${id}/members`)
+}
+
+/** PUT /api/teamProject/:id/members — 编辑项目成员 */
+export function updateTeamProjectMembers(id: number, addUserIds: string[], removeUserIds: string[]) {
+  return http.put(`/teamProject/${id}/members`, { addUserIds, removeUserIds })
+}
+
+/** PUT /api/teamProject/:id/access — 设置访问权限 */
+export function updateTeamProjectAccess(id: number, access: number) {
+  return http.put(`/teamProject/${id}/access`, { access })
 }
 
 /* ---------- 文件操作 ---------- */

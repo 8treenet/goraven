@@ -79,3 +79,18 @@ export function setFlashModel(id: number) {
 export function setVisualModel(id: number) {
   return http.put(`/admin/models/${id}/visual`)
 }
+
+/** GET /api/admin/models/:id/members — 查询模型可见成员 */
+export function getModelMembers(id: number) {
+  return http.get<{ memberIds: string[] }>(`/admin/models/${id}/members`)
+}
+
+/** PUT /api/admin/models/:id/members — 编辑模型成员 */
+export function updateModelMembers(id: number, addUserIds: string[], removeUserIds: string[]) {
+  return http.put(`/admin/models/${id}/members`, { addUserIds, removeUserIds })
+}
+
+/** PUT /api/admin/models/:id/access — 设置模型访问权限 */
+export function updateModelAccess(id: number, access: number) {
+  return http.put(`/admin/models/${id}/access`, { access })
+}

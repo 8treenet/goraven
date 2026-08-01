@@ -1,12 +1,14 @@
 import { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
-import { RefreshCw, MoreHorizontal, Pencil, FolderOpen, AlertCircle, Trash2, Plus } from 'lucide-react'
+import { RefreshCw, MoreHorizontal, Pencil, FolderOpen, AlertCircle, Trash2, Plus, Users } from 'lucide-react'
 import { useT, t as translate } from '@/i18n'
 import { listTeamProjects, deleteTeamProject, updateProjectDescription, createTeamProject } from '@/api/team-projects'
 import type { TeamProjectItem } from '@/api/types'
+import { useUserStore } from '@/stores/user-store'
 import { formatTime } from './file-helpers'
 import { ShareDialog, type ShareDialogMode } from './ShareDialog'
+import { MembersDialog } from './MembersDialog'
 
 export interface TeamProjectViewHandle {
   createProject: () => void
@@ -26,6 +28,7 @@ export const TeamProjectView = forwardRef<TeamProjectViewHandle, TeamProjectView
   const [dialogProject, setDialogProject] = useState<TeamProjectItem | null>(null)
   const [dialogDesc, setDialogDesc] = useState('')
   const [dialogProjectName, setDialogProjectName] = useState('')
+  const [membersProject, setMembersProject] = useState<TeamProjectItem | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
   const load = useCallback(() => {
@@ -78,6 +81,11 @@ export const TeamProjectView = forwardRef<TeamProjectViewHandle, TeamProjectView
     setDialogMode('delete')
   }, [])
 
+  const openMembersDialog = useCallback((project: TeamProjectItem) => {
+    setMenuFor(null)
+    setMembersProject(project)
+  }, [])
+
   const openCreateDialog = useCallback(() => {
     setDialogProject(null)
     setDialogDesc('')
@@ -96,10 +104,23 @@ export const TeamProjectView = forwardRef<TeamProjectViewHandle, TeamProjectView
     if (dialogMode === 'create') {
       if (!dialogProjectName.trim()) return
       createTeamProject(dialogProjectName.trim(), dialogDesc)
-        .then(() => {
+        .then((rsp) => {
           toast.success(translate('files.createProjectSuccess'))
+          const user = useUserStore.getState().currentUser
+          const newProject: TeamProjectItem = {
+            id: rsp.id,
+            creatorId: user?.userId || '',
+            creatorName: user?.nickname || user?.username || '',
+            creatorAvatar: user?.avatar || '',
+            projectName: dialogProjectName.trim(),
+            description: dialogDesc,
+            access: 0,
+            updatedAt: new Date().toISOString(),
+            isCreator: true,
+          }
           closeDialog()
           load()
+          setMembersProject(newProject)
         })
         .catch((err: Error) => {
           toast.error(err.message)
@@ -237,7 +258,7 @@ export const TeamProjectView = forwardRef<TeamProjectViewHandle, TeamProjectView
           className="fixed z-50 min-w-[140px] rounded-md border border-border bg-bg-layer-2 py-1 shadow-pop"
           style={{
             left: Math.min(menuFor.x, window.innerWidth - 148),
-            top: Math.min(menuFor.y, window.innerHeight - 80),
+            top: Math.min(menuFor.y, window.innerHeight - 120),
           }}
         >
           <button
@@ -249,6 +270,16 @@ export const TeamProjectView = forwardRef<TeamProjectViewHandle, TeamProjectView
           >
             <Pencil className="size-3.5" />
             {t('files.editDescription')}
+          </button>
+          <button
+            onClick={() => {
+              const project = projects.find((p) => p.id === menuFor.id)
+              if (project) openMembersDialog(project)
+            }}
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
+          >
+            <Users className="size-3.5" />
+            {t('files.editMembers')}
           </button>
           <button
             onClick={() => {
@@ -272,6 +303,12 @@ export const TeamProjectView = forwardRef<TeamProjectViewHandle, TeamProjectView
         onProjectNameChange={setDialogProjectName}
         onClose={closeDialog}
         onConfirm={handleConfirmDialog}
+      />
+
+      <MembersDialog
+        project={membersProject}
+        onClose={() => setMembersProject(null)}
+        onSaved={load}
       />
     </div>
   )

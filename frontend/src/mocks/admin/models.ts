@@ -30,6 +30,7 @@ interface StoredModel {
   isDefault: number
   isFlash: number
   isVisual: number
+  access: number
   status: number
   remark: string
   created: string
@@ -57,6 +58,7 @@ function storedToItem(m: StoredModel): AdminModelItem {
     isDefault: m.isDefault,
     isFlash: m.isFlash,
     isVisual: m.isVisual,
+    access: m.access,
     status: m.status,
     remark: m.remark,
     created: m.created,
@@ -80,6 +82,7 @@ function storedToDetail(m: StoredModel): AdminModelItem {
     isDefault: m.isDefault,
     isFlash: m.isFlash,
     isVisual: m.isVisual,
+    access: m.access,
     status: m.status,
     remark: m.remark,
     created: m.created,
@@ -96,97 +99,97 @@ function generateMockModels(): StoredModel[] {
     {
       aiModelId: 1, providerDisplayName: 'DeepSeek', displayName: 'DeepSeek V3', providerId: 'deepseek', icon: '/logos/deepseek.svg', modelName: 'deepseek-chat',
       apiKey: 'sk-d1xxxxxxxx87f2', baseUrl: '', proxyUrl: '', contextLen: 200, extraFields: '',
-      isDefault: 1, isFlash: 0, isVisual: 0,
+      isDefault: 1, isFlash: 0, isVisual: 0, access: 0,
       status: 1, remark: '', created: '2026-01-15T08:30:00Z', updated: '2026-03-20T14:22:00Z',
     },
     {
       aiModelId: 2, providerDisplayName: 'DeepSeek 代码', displayName: 'DeepSeek Coder', providerId: 'deepseek', icon: '/logos/deepseek.svg', modelName: 'deepseek-coder',
       apiKey: 'sk-d2xxxxxxxx3a91', baseUrl: '', proxyUrl: '', contextLen: 200, extraFields: '',
-      isDefault: 0, isFlash: 0, isVisual: 0,
+      isDefault: 0, isFlash: 0, isVisual: 0, access: 1,
       status: 1, remark: '', created: '2026-02-01T10:00:00Z', updated: '2026-02-01T10:00:00Z',
     },
     {
       aiModelId: 3, providerDisplayName: 'DeepSeek 推理', displayName: 'DeepSeek Reasoner', providerId: 'deepseek', icon: '/logos/deepseek.svg', modelName: 'deepseek-reasoner',
       apiKey: 'sk-d3xxxxxxxxbc22', baseUrl: '', proxyUrl: '', contextLen: 200, extraFields: '',
-      isDefault: 0, isFlash: 1, isVisual: 0,
+      isDefault: 0, isFlash: 1, isVisual: 0, access: 0,
       status: 1, remark: '用于复杂推理任务', created: '2026-03-01T09:15:00Z', updated: '2026-04-10T16:30:00Z',
     },
     {
       aiModelId: 4, providerDisplayName: 'OpenAI', displayName: 'GPT-4o', providerId: 'openai', icon: '/logos/openai.svg', modelName: 'gpt-4o',
       apiKey: 'sk-o1xxxxxxxxee45', baseUrl: '', proxyUrl: '', contextLen: 200, extraFields: '',
-      isDefault: 0, isFlash: 0, isVisual: 1,
+      isDefault: 0, isFlash: 0, isVisual: 1, access: 0,
       status: 1, remark: '多模态模型', created: '2026-01-20T11:00:00Z', updated: '2026-05-01T08:00:00Z',
     },
     {
       aiModelId: 5, providerDisplayName: 'OpenAI Mini', displayName: 'GPT-4o Mini', providerId: 'openai', icon: '/logos/openai.svg', modelName: 'gpt-4o-mini',
       apiKey: 'sk-o2xxxxxxxxdf56', baseUrl: '', proxyUrl: '', contextLen: 200, extraFields: '',
-      isDefault: 0, isFlash: 0, isVisual: 0,
+      isDefault: 0, isFlash: 0, isVisual: 0, access: 0,
       status: 1, remark: '轻量任务', created: '2026-02-10T13:00:00Z', updated: '2026-02-10T13:00:00Z',
     },
     {
       aiModelId: 6, providerDisplayName: 'OpenAI o3', displayName: 'o3-mini', providerId: 'openai', icon: '/logos/openai.svg', modelName: 'o3-mini',
       apiKey: 'sk-o3xxxxxxxxgh78', baseUrl: '', proxyUrl: '', contextLen: 200, extraFields: '',
-      isDefault: 0, isFlash: 0, isVisual: 0,
+      isDefault: 0, isFlash: 0, isVisual: 0, access: 0,
       status: 0, remark: '', created: '2026-03-15T08:00:00Z', updated: '2026-03-15T08:00:00Z',
     },
     {
       aiModelId: 7, providerDisplayName: 'Claude', displayName: 'Claude Sonnet 4', providerId: 'claude', icon: '/logos/claude.svg', modelName: 'claude-sonnet-4-20250514',
       apiKey: 'sk-c1xxxxxxxxij90', baseUrl: '', proxyUrl: '', contextLen: 200, extraFields: '',
-      isDefault: 0, isFlash: 0, isVisual: 0,
+      isDefault: 0, isFlash: 0, isVisual: 0, access: 0,
       status: 1, remark: '', created: '2026-02-20T15:00:00Z', updated: '2026-02-20T15:00:00Z',
     },
     {
       aiModelId: 8, providerDisplayName: 'Claude Opus', displayName: 'Claude Opus 4', providerId: 'claude', icon: '/logos/claude.svg', modelName: 'claude-opus-4-20250514',
       apiKey: 'sk-c2xxxxxxxxkl12', baseUrl: '', proxyUrl: '', contextLen: 200, extraFields: '',
-      isDefault: 0, isFlash: 0, isVisual: 0,
+      isDefault: 0, isFlash: 0, isVisual: 0, access: 0,
       status: 1, remark: '复杂分析', created: '2026-03-01T10:00:00Z', updated: '2026-03-01T10:00:00Z',
     },
     {
       aiModelId: 9, providerDisplayName: 'Claude Haiku', displayName: 'Claude Haiku 3.5', providerId: 'claude', icon: '/logos/claude.svg', modelName: 'claude-haiku-3-5-20241022',
       apiKey: 'sk-c3xxxxxxxxmn34', baseUrl: '', proxyUrl: '', contextLen: 200, extraFields: '',
-      isDefault: 0, isFlash: 0, isVisual: 0,
+      isDefault: 0, isFlash: 0, isVisual: 0, access: 0,
       status: 0, remark: '', created: '2026-03-10T09:00:00Z', updated: '2026-03-10T09:00:00Z',
     },
     {
       aiModelId: 10, providerDisplayName: '百炼', displayName: 'Qwen Turbo', providerId: 'bailian', icon: '/logos/bailian.svg', modelName: 'qwen-turbo-latest',
       apiKey: 'sk-b1xxxxxxxxop56', baseUrl: '', proxyUrl: '', contextLen: 200, extraFields: '',
-      isDefault: 0, isFlash: 0, isVisual: 0,
+      isDefault: 0, isFlash: 0, isVisual: 0, access: 0,
       status: 1, remark: '', created: '2026-01-25T16:00:00Z', updated: '2026-01-25T16:00:00Z',
     },
     {
       aiModelId: 11, providerDisplayName: '百炼 Plus', displayName: 'Qwen Plus', providerId: 'bailian', icon: '/logos/bailian.svg', modelName: 'qwen-plus-latest',
       apiKey: 'sk-b2xxxxxxxxqr78', baseUrl: '', proxyUrl: '', contextLen: 200, extraFields: '',
-      isDefault: 0, isFlash: 0, isVisual: 0,
+      isDefault: 0, isFlash: 0, isVisual: 0, access: 0,
       status: 1, remark: '', created: '2026-02-05T14:00:00Z', updated: '2026-02-05T14:00:00Z',
     },
     {
       aiModelId: 12, providerDisplayName: '百炼 Max', displayName: 'Qwen Max', providerId: 'bailian', icon: '/logos/bailian.svg', modelName: 'qwen-max-latest',
       apiKey: 'sk-b3xxxxxxxxst90', baseUrl: '', proxyUrl: '', contextLen: 200, extraFields: '',
-      isDefault: 0, isFlash: 0, isVisual: 0,
+      isDefault: 0, isFlash: 0, isVisual: 0, access: 0,
       status: 1, remark: '长文本专用', created: '2026-03-20T11:00:00Z', updated: '2026-03-20T11:00:00Z',
     },
     {
       aiModelId: 13, providerDisplayName: '本地 Ollama', displayName: 'Qwen 2.5 14B', providerId: 'ollama', icon: '/logos/ollama.svg', modelName: 'qwen2.5:14b',
       apiKey: '', baseUrl: 'http://localhost:11434', proxyUrl: '', contextLen: 200, extraFields: '',
-      isDefault: 0, isFlash: 0, isVisual: 0,
+      isDefault: 0, isFlash: 0, isVisual: 0, access: 1,
       status: 1, remark: '内网部署', created: '2026-02-15T08:00:00Z', updated: '2026-04-01T12:00:00Z',
     },
     {
       aiModelId: 14, providerDisplayName: '本地 Llama', displayName: 'Llama 3.1 8B', providerId: 'ollama', icon: '/logos/ollama.svg', modelName: 'llama3.1:8b',
       apiKey: '', baseUrl: 'http://localhost:11434', proxyUrl: '', contextLen: 200, extraFields: '',
-      isDefault: 0, isFlash: 0, isVisual: 0,
+      isDefault: 0, isFlash: 0, isVisual: 0, access: 1,
       status: 1, remark: '', created: '2026-03-05T17:00:00Z', updated: '2026-03-05T17:00:00Z',
     },
     {
       aiModelId: 15, providerDisplayName: '本地 CodeLlama', displayName: 'CodeLlama 13B', providerId: 'ollama', icon: '/logos/ollama.svg', modelName: 'codellama:13b',
       apiKey: '', baseUrl: 'http://localhost:11434', proxyUrl: '', contextLen: 200, extraFields: '',
-      isDefault: 0, isFlash: 0, isVisual: 0,
+      isDefault: 0, isFlash: 0, isVisual: 0, access: 0,
       status: 0, remark: '', created: '2026-03-10T10:00:00Z', updated: '2026-03-10T10:00:00Z',
     },
     {
       aiModelId: 16, providerDisplayName: 'Gemini', displayName: 'Gemini 2.0 Flash', providerId: 'gemini', icon: '', modelName: 'gemini-2.0-flash',
       apiKey: 'sk-g1xxxxxxxxyz23', baseUrl: '', proxyUrl: '', contextLen: 200, extraFields: '',
-      isDefault: 0, isFlash: 0, isVisual: 0,
+      isDefault: 0, isFlash: 0, isVisual: 0, access: 0,
       status: 1, remark: 'Google 多模态模型', created: '2026-04-12T09:00:00Z', updated: '2026-04-12T09:00:00Z',
     },
   ]
@@ -391,6 +394,7 @@ export interface CreateModelRequest {
   isDefault: number
   isFlash: number
   isVisual: number
+  access: number
   remark: string
 }
 
@@ -520,6 +524,7 @@ export async function createModel(req: CreateModelRequest): Promise<AdminModelIt
     isDefault: req.isDefault,
     isFlash: req.isFlash,
     isVisual: req.isVisual,
+    access: req.access ?? 0,
     status: 1,
     remark: req.remark,
     created: now,

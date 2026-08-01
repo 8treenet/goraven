@@ -438,6 +438,7 @@ export interface AdminModelItem {
   isDefault: number
   isFlash: number
   isVisual: number
+  access: number
   status: number
   remark: string
   created: string

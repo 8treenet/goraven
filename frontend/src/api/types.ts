@@ -426,6 +426,7 @@ export interface AdminModelItem {
   isFlash: number
   isVisual: number
   status: number
+  access: number
   remark: string
   created: string
   updated: string
@@ -447,6 +448,7 @@ export interface AdminModelDetail {
   isFlash: number
   isVisual: number
   status: number
+  access: number
   remark: string
   created: string
   updated: string
@@ -757,6 +759,7 @@ export interface TeamProjectItem {
   creatorAvatar: string
   projectName: string
   description: string
+  access: number // 0全员开放 1仅成员可见
   updatedAt: string
   isCreator: boolean
 }
@@ -769,6 +772,20 @@ export interface TeamProjectCreateRsp {
   id: number
 }
 
+/* ---------- Team Project Members ---------- */
+
+export interface TeamProjectUserItem {
+  userId: string
+  username: string
+  nickname: string
+  avatar: string
+}
+
+export interface TeamProjectMembersRsp {
+  creatorId: string
+  memberIds: string[]
+}
+
 /* ---------- Admin Team Projects ---------- */
 
 export interface AdminTeamProjectItem {
@@ -778,6 +795,7 @@ export interface AdminTeamProjectItem {
   creatorAvatar: string
   projectName: string
   description: string
+  access: number
   visitCount: number
   lastActiveAt: string | null
   locked: boolean
