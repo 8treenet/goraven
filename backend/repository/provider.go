@@ -55,9 +55,10 @@ func (repo *ProviderRepository) PaginateModels(req *vo.AdminModelListReq) ([]vo.
 			ContextLen:          m.ContextLen,
 			ExtraFields:         m.ExtraFields,
 			IsDefault:           m.IsDefault,
-			IsFlash:             m.IsFlash,
-			IsVisual:            m.IsVisual,
+		IsFlash:             m.IsFlash,
+		IsVisual:            m.IsVisual,
 			Status:              m.Status,
+			Access:              m.Access,
 			Remark:              m.Remark,
 			Created:             m.Created,
 			Updated:             m.Updated,
@@ -126,6 +127,9 @@ func (repo *ProviderRepository) UpdateModel(id int, updates map[string]interface
 	})
 }
 
+// SoftDeleteModel 软删除模型，同时清空 isDefault/isFlash/isVisual 标志位
+// 防止删除后仍占用「默认/Flash/视觉」角色，导致 SetDefault/SetFlash/SetVisual 链路与
+// 已删除行冲突，以及仪表盘模型使用分布出现重复的「Unknown」聚合。
 func (repo *ProviderRepository) SoftDeleteModel(id int) error {
 	return repo.db().Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&po.AIModel{}).
@@ -143,18 +147,35 @@ func (repo *ProviderRepository) SoftDeleteModel(id int) error {
 	})
 }
 
+// FindEnabledModels 查询所有启用且未删除的模型
 func (repo *ProviderRepository) FindEnabledModels() ([]po.AIModel, error) {
 	var models []po.AIModel
 	err := repo.db().Where("status = 1 AND deleted = 0").Order("created DESC").Find(&models).Error
 	return models, err
 }
 
+// FindEnabledModelsByUser 查询用户可见的启用模型（全员开放 OR 成员），按创建时间倒序
+func (repo *ProviderRepository) FindEnabledModelsByUser(userId string) ([]po.AIModel, error) {
+	var models []po.AIModel
+	err := repo.db().
+		Where("status = 1 AND deleted = 0 AND (access = ? OR ai_model_id IN (?))",
+			po.AIModelAccessAll,
+			repo.db().Model(&po.AIModelMember{}).Select("ai_model_id").Where("user_id = ?", userId),
+		).
+		Order("created DESC").
+		Find(&models).Error
+	return models, err
+}
+
+// GetDefaultModel 获取默认模型（isDefault=1，启用，未删除）
 func (repo *ProviderRepository) GetDefaultModel() (*po.AIModel, error) {
 	var model po.AIModel
 	err := repo.db().Where("is_default = 1 AND status = 1 AND deleted = 0").First(&model).Error
 	return &model, err
 }
 
+// GetDefaultChatModel 获取默认聊天模型
+// 封装 GetDefaultModel → 创建 provider → 创建 ChatModel 的完整流程
 func (repo *ProviderRepository) GetDefaultChatModel() (iface.BaseChatModel, error) {
 	model, err := repo.GetDefaultModel()
 	if err != nil {
@@ -163,22 +184,27 @@ func (repo *ProviderRepository) GetDefaultChatModel() (iface.BaseChatModel, erro
 	return repo.createChatModelFromPO(model, false)
 }
 
+// GetFlashChatModel 获取 Flash 模型
+// 优先级：isFlash=1 的模型 > fallbackModelId 指定的模型 > 默认模型
 func (repo *ProviderRepository) GetFlashChatModel(fallbackModelId int) (iface.BaseChatModel, error) {
-
+	// 1. 优先使用 Flash 模型
 	var model po.AIModel
 	if err := repo.db().Where("is_flash = 1 AND status = 1 AND deleted = 0").First(&model).Error; err == nil {
 		return repo.createChatModelFromPO(&model, false)
 	}
 
+	// 2. 其次使用 fallbackModelId
 	if fallbackModelId > 0 {
 		if m, err := repo.GetModelByID(fallbackModelId); err == nil {
 			return repo.createChatModelFromPO(m, false)
 		}
 	}
 
+	// 3. 最后降级为默认模型
 	return repo.GetDefaultChatModel()
 }
 
+// HasVisualModel 检查是否存在多模态识别模型（isVisual=1 且启用）
 func (repo *ProviderRepository) HasVisualModel() (bool, error) {
 	var count int64
 	if err := repo.db().Model(&po.AIModel{}).Where("is_visual = 1 AND status = 1 AND deleted = 0").Count(&count).Error; err != nil {
@@ -187,6 +213,8 @@ func (repo *ProviderRepository) HasVisualModel() (bool, error) {
 	return count > 0, nil
 }
 
+// GetVisualChatModel 获取多模态识别模型
+// 仅查询 isVisual=1 的模型，不降级，找不到返回 nil
 func (repo *ProviderRepository) GetVisualChatModel() (iface.BaseChatModel, error) {
 	var model po.AIModel
 	if err := repo.db().Where("is_visual = 1 AND status = 1 AND deleted = 0").First(&model).Error; err != nil {
@@ -195,6 +223,7 @@ func (repo *ProviderRepository) GetVisualChatModel() (iface.BaseChatModel, error
 	return repo.createChatModelFromPO(&model, false)
 }
 
+// createChatModelFromPO 根据 po.AIModel 创建聊天模型
 func (repo *ProviderRepository) createChatModelFromPO(model *po.AIModel, reasoning bool) (iface.BaseChatModel, error) {
 	pv, err := provider.GetProviderByName(model.ProviderID, provider.ProviderConfig{
 		APIKey:      model.APIKey,
@@ -211,6 +240,9 @@ func (repo *ProviderRepository) createChatModelFromPO(model *po.AIModel, reasoni
 	return pv.CreateModel(model.ModelName, reasoning, model.ContextLenInTokens())
 }
 
+// CreateChatModelFromID 根据模型ID创建聊天模型，支持控制推理模式
+// 返回 chatModel（LLM 客户端）、aiModel（模型元数据，含 DisplayName/Icon/ContextLen）、
+// aiModelId（实际使用的模型ID）和 error
 func (repo *ProviderRepository) CreateChatModelFromID(aiModelId int, reasoning bool) (iface.BaseChatModel, *po.AIModel, int, error) {
 	var am *po.AIModel
 	var defaultModel *po.AIModel
@@ -225,7 +257,7 @@ func (repo *ProviderRepository) CreateChatModelFromID(aiModelId int, reasoning b
 		am = useModel
 	}
 	if am == nil {
-
+		//返回中英错误类型
 		return nil, nil, 0, errs.ErrModelAndDefaultNotFound
 	}
 
@@ -249,4 +281,37 @@ func maskAPIKey(apiKey string) string {
 		return "****"
 	}
 	return apiKey[:4] + "****" + apiKey[len(apiKey)-4:]
+}
+
+// ListModelMembers 查询模型的所有可见成员
+func (repo *ProviderRepository) ListModelMembers(modelId int) ([]po.AIModelMember, error) {
+	var members []po.AIModelMember
+	err := repo.db().Where("ai_model_id = ?", modelId).Order("created ASC").Find(&members).Error
+	return members, err
+}
+
+// AddModelMember 添加模型可见成员
+func (repo *ProviderRepository) AddModelMember(modelId int, userId string) error {
+	member := &po.AIModelMember{
+		AIModelId: modelId,
+		UserId:    userId,
+	}
+	return repo.db().Create(member).Error
+}
+
+// RemoveModelMember 移除模型可见成员
+func (repo *ProviderRepository) RemoveModelMember(modelId int, userId string) error {
+	return repo.db().Where("ai_model_id = ? AND user_id = ?", modelId, userId).
+		Delete(&po.AIModelMember{}).Error
+}
+
+// RemoveModelMembersByModelId 删除模型的所有成员记录（模型删除时调用）
+func (repo *ProviderRepository) RemoveModelMembersByModelId(modelId int) error {
+	return repo.db().Where("ai_model_id = ?", modelId).Delete(&po.AIModelMember{}).Error
+}
+
+// UpdateModelAccess 更新模型访问权限
+func (repo *ProviderRepository) UpdateModelAccess(modelId int, access uint8) error {
+	return repo.db().Model(&po.AIModel{}).Where("ai_model_id = ? AND deleted = 0", modelId).
+		Update("access", access).Error
 }

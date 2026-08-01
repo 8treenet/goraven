@@ -444,8 +444,40 @@ var (
 		enMessage: "project directory does not exist, contact the owner",
 		zhMessage: "项目目录不存在，请联系所有者",
 	}
+	ErrTeamProjectPermission = &Error{
+		enMessage: "permission denied: only the creator can manage this team project",
+		zhMessage: "权限不足：仅创建者可管理此团队项目",
+	}
+	ErrTeamProjectAlreadyExists = &Error{
+		enMessage: "a team project with this name already exists",
+		zhMessage: "同名团队项目已存在",
+	}
+	ErrTeamProjectDirNotFound = &Error{
+		enMessage: "team project directory does not exist",
+		zhMessage: "团队项目目录不存在",
+	}
+	ErrTeamProjectNotFound = &Error{
+		enMessage: "team project not found",
+		zhMessage: "团队项目不存在",
+	}
 	ErrDailyTokenLimitExceeded = &Error{
 		enMessage: "daily token limit exceeded, please try again tomorrow or contact your administrator",
 		zhMessage: "今日 Token 用量已达上限，请明日再试或联系管理员调整额度",
+	}
+	ErrTeamProjectMemberExists = &Error{
+		enMessage: "user is already a member of this project",
+		zhMessage: "该用户已是项目成员",
+	}
+	ErrTeamProjectMemberNotFound = &Error{
+		enMessage: "member not found in this project",
+		zhMessage: "该用户不是项目成员",
+	}
+	ErrTeamProjectCannotRemoveCreator = &Error{
+		enMessage: "cannot remove the creator from members",
+		zhMessage: "不能移除创建者",
+	}
+	ErrTeamProjectInvalidName = &Error{
+		enMessage: "invalid project name: only letters, digits, hyphens and underscores allowed",
+		zhMessage: "项目名无效：仅允许字母、数字、连字符和下划线",
 	}
 )

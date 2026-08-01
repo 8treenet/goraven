@@ -73,8 +73,9 @@ func (svc *AIModelService) ListModels(req *vo.AdminModelListReq) (*infra.PageRes
 	}, nil
 }
 
-func (service *AIModelService) ListEnabledModels() ([]vo.UserModelItem, error) {
-	models, err := service.ModelRepo.FindEnabledModels()
+// ListEnabledModels 获取用户可选模型列表（启用、未删除、全员开放或成员可见）
+func (service *AIModelService) ListEnabledModels(userId string) ([]vo.UserModelItem, error) {
+	models, err := service.ModelRepo.FindEnabledModelsByUser(userId)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +229,7 @@ func (svc *AIModelService) UpdateModel(id int, req *vo.AdminUpdateModelReq) erro
 		updates["context_len"] = req.ContextLen
 	}
 	if req.IsDefault != nil {
-		updates["is_default"] = int(*req.IsDefault)
+		updates["is_default"] = int(*req.IsDefault) // VO 字段是 uint8，必须转 int，否则 repository 的 interface{} == 1 比较会因类型不匹配跳过先清逻辑
 	}
 	if req.IsFlash != nil {
 		updates["is_flash"] = *req.IsFlash
@@ -236,7 +237,14 @@ func (svc *AIModelService) UpdateModel(id int, req *vo.AdminUpdateModelReq) erro
 	if req.IsVisual != nil {
 		updates["is_visual"] = *req.IsVisual
 	}
-
+	/*	暂时关闭启停
+		if req.Status != nil {
+			if *req.Status == 0 && existing.IsDefault == 1 {
+				return errs.ErrCannotDisableDefaultModel
+			}
+			updates["status"] = int(*req.Status) // 同理 uint8 → int
+		}
+	*/
 	if req.Remark != "" {
 		updates["remark"] = req.Remark
 	}
@@ -278,6 +286,10 @@ func (svc *AIModelService) UpdateModel(id int, req *vo.AdminUpdateModelReq) erro
 	return nil
 }
 
+// DeleteModel 删除模型
+// 默认模型、Flash 模型、多模态识别模型均不可删除，避免业务功能（对话/Flash/图片理解）静默丢失
+// 任何会影响仪表盘聚合的模型变更（增删改、启停）都会在操作成功后清空仪表盘缓存，
+// 确保前端立即看到一致的数据，而不是 10 分钟内继续读旧缓存
 func (svc *AIModelService) DeleteModel(id int) error {
 	existing, err := svc.ModelRepo.GetModelByID(id)
 	if err != nil {
@@ -293,6 +305,9 @@ func (svc *AIModelService) DeleteModel(id int) error {
 		return errs.ErrCannotDeleteVisualModel
 	}
 	if err := svc.ModelRepo.SoftDeleteModel(id); err != nil {
+		return err
+	}
+	if err := svc.ModelRepo.RemoveModelMembersByModelId(id); err != nil {
 		return err
 	}
 	if svc.DashboardRepo != nil {
@@ -333,6 +348,7 @@ func (svc *AIModelService) GetModelDetail(id int) (*vo.AdminModelDetailRsp, erro
 		IsFlash:             model.IsFlash,
 		IsVisual:            model.IsVisual,
 		Status:              model.Status,
+		Access:              model.Access,
 		Remark:              model.Remark,
 		Created:             model.Created,
 		Updated:             model.Updated,
@@ -372,6 +388,8 @@ func (svc *AIModelService) SetVisualModel(id int) error {
 	return nil
 }
 
+// invalidateDashboardCache 清空所有仪表盘缓存（管理员 + 全部用户）
+// 模型元信息变更后，前端可立即看到一致数据，避免 10 分钟内继续读旧缓存导致「删除后还在展示」的问题
 func (svc *AIModelService) invalidateDashboardCache() {
 	if svc.DashboardRepo != nil {
 		svc.DashboardRepo.InvalidateAllDashboardCache()
@@ -410,6 +428,16 @@ func (svc *AIModelService) RecommendModels(providerID string, apiKey string, bas
 
 func (svc *AIModelService) testModelKeys(providerID, apiKey, baseURL, extraFields, proxyURL, modelName string, contextLen int) error {
 	if apiKey == "" {
+		if providerID == "OllamaProviderName" {
+			pv, err := provider.GetProviderByName(providerID, provider.ProviderConfig{BaseURL: baseURL})
+			if err != nil {
+				return errs.NewFormatError("provider error: %v", "供应商错误: %v", err)
+			}
+			if proxyURL != "" {
+				pv.SetProxy(proxyURL)
+			}
+			return svc.testSingleKey(pv, modelName, contextLen)
+		}
 		return errs.ErrAPIKeyRequired
 	}
 
@@ -473,4 +501,52 @@ func (svc *AIModelService) validateExtraFields(raw string) error {
 		)
 	}
 	return nil
+}
+
+// ListMembers 查询模型成员列表
+func (service *AIModelService) ListMembers(modelId int) (*vo.AIModelMembersRsp, error) {
+	if _, err := service.ModelRepo.GetModelByID(modelId); err != nil {
+		return nil, errs.ErrModelNotFound
+	}
+
+	members, err := service.ModelRepo.ListModelMembers(modelId)
+	if err != nil {
+		return nil, err
+	}
+
+	memberIds := make([]string, 0, len(members))
+	for _, m := range members {
+		memberIds = append(memberIds, m.UserId)
+	}
+	return &vo.AIModelMembersRsp{MemberIds: memberIds}, nil
+}
+
+// UpdateMembers 编辑模型成员
+func (service *AIModelService) UpdateMembers(modelId int, req *vo.AIModelMemberUpdateReq) error {
+	if _, err := service.ModelRepo.GetModelByID(modelId); err != nil {
+		return errs.ErrModelNotFound
+	}
+
+	for _, uid := range req.AddUserIds {
+		if err := service.ModelRepo.AddModelMember(modelId, uid); err != nil {
+			return err
+		}
+	}
+	for _, uid := range req.RemoveUserIds {
+		if err := service.ModelRepo.RemoveModelMember(modelId, uid); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// UpdateAccess 设置模型访问权限
+func (service *AIModelService) UpdateAccess(modelId int, access uint8) error {
+	if access != po.AIModelAccessAll && access != po.AIModelAccessMember {
+		return errs.NewFormatError("access must be 0 or 1", "access 取值只能为 0 或 1")
+	}
+	if _, err := service.ModelRepo.GetModelByID(modelId); err != nil {
+		return errs.ErrModelNotFound
+	}
+	return service.ModelRepo.UpdateModelAccess(modelId, access)
 }

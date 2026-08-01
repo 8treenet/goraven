@@ -46,7 +46,7 @@ type ChatService struct {
 	SysSettingRepo    *repository.SystemSettingRepository
 	DailyStatsRepo    *repository.DailyStatsRepository
 	HFSRepo           *repository.HFSRepository
-	SharedProjectRepo *repository.SharedProjectRepository
+	SharedProjectRepo *repository.TeamProjectRepository
 	UserRepo          *repository.UserRepository
 }
 
@@ -133,7 +133,7 @@ func (service *ChatService) StartChat(
 
 	defer func() {
 		if err != nil && spLocked {
-			service.SharedProjectRepo.UnlockSharedProject(spId)
+			service.SharedProjectRepo.UnlockTeamProject(spId)
 		}
 	}()
 
@@ -180,7 +180,7 @@ func (service *ChatService) StartChat(
 			if r := recover(); r != nil {
 				freedom.Logger().Errorf("StartChat panic: %v\n%s", r, debug.Stack())
 				if spLocked {
-					service.SharedProjectRepo.UnlockSharedProject(spId)
+					service.SharedProjectRepo.UnlockTeamProject(spId)
 				}
 			}
 		}()
@@ -204,14 +204,14 @@ func (service *ChatService) StartChat(
 			service.Worker.Logger().Error(err)
 			agent.ClearRunnerHold(session.SessionId)
 			if spLocked {
-				service.SharedProjectRepo.UnlockSharedProject(spId)
+				service.SharedProjectRepo.UnlockTeamProject(spId)
 			}
 			return
 		}
 
 		runner.OnComplete(func(event *agent.RunnerCompleteEvent) {
 			if spLocked {
-				service.SharedProjectRepo.UnlockSharedProject(spId)
+				service.SharedProjectRepo.UnlockTeamProject(spId)
 			}
 			service.ChatComplete()
 			skillService.RefreshUserSkills(userId)
@@ -226,7 +226,7 @@ func (service *ChatService) StartChat(
 			service.Worker.Logger().Error(err)
 			agent.ClearRunnerHold(session.SessionId)
 			if spLocked {
-				service.SharedProjectRepo.UnlockSharedProject(spId)
+				service.SharedProjectRepo.UnlockTeamProject(spId)
 			}
 			return
 		}
@@ -655,8 +655,10 @@ func (service *ChatService) lockSharedProject(session *po.Session, sharedProject
 	if session.SharedProjectId > 0 {
 		spId = session.SharedProjectId
 	} else if sharedProjectInfo == nil && session.Project != "" {
-		if sp, dbErr := service.SharedProjectRepo.GetByOwnerAndProject(session.UserId, session.Project); dbErr == nil {
-			spId = sp.Id
+		if sp, dbErr := service.SharedProjectRepo.LockTeamProject(0, session.UserId); dbErr == nil {
+			if sp {
+				spId = 1
+			}
 		}
 	} else if sharedProjectInfo != nil {
 		spId = sharedProjectInfo.Id
@@ -666,7 +668,7 @@ func (service *ChatService) lockSharedProject(session *po.Session, sharedProject
 		return 0, false, nil
 	}
 
-	ok, lockErr := service.SharedProjectRepo.LockSharedProject(spId, session.SessionId)
+	ok, lockErr := service.SharedProjectRepo.LockTeamProject(spId, session.SessionId)
 	if lockErr != nil {
 		return 0, false, lockErr
 	}
@@ -685,7 +687,7 @@ func (service *ChatService) resolveProjectFromSession(session *po.Session) (proj
 	if dbErr != nil {
 		return session.Project, "", nil, nil
 	}
-	owner, userErr := service.SharedProjectRepo.GetUserByID(sp.OwnerId)
+	owner, userErr := service.SharedProjectRepo.GetUserByID(session.SessionId)
 	if userErr != nil {
 		return sp.ProjectName, "", nil, nil
 	}
@@ -696,7 +698,6 @@ func (service *ChatService) resolveProjectFromSession(session *po.Session) (proj
 	projectWorkspace = config.Get().GetUserSpace(owner.Username)
 	sharedInfo = &vo.SharedProjectInfo{
 		Id:          sp.Id,
-		OwnerId:     sp.OwnerId,
 		OwnerName:   ownerName,
 		ProjectName: sp.ProjectName,
 		Description: sp.Description,

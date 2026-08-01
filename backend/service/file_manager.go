@@ -30,7 +30,7 @@ func init() {
 type FileManagerService struct {
 	Worker    freedom.Worker
 	HFSRepo   *repository.HFSRepository
-	ShareRepo *repository.SharedProjectRepository
+	ShareRepo *repository.TeamProjectRepository
 }
 
 func (service *FileManagerService) List(userID string, req *vo.FileManagerListReq) (*vo.FileManagerListRsp, error) {
@@ -58,13 +58,6 @@ func (service *FileManagerService) List(userID string, req *vo.FileManagerListRe
 
 	var sharedSet map[string]int
 	if strings.TrimPrefix(strings.TrimSpace(req.Dir), "/") == "projects" {
-		sharedProjects, err := service.ShareRepo.ListByOwner(userID)
-		if err == nil && len(sharedProjects) > 0 {
-			sharedSet = make(map[string]int, len(sharedProjects))
-			for _, sp := range sharedProjects {
-				sharedSet[sp.ProjectName] = sp.Id
-			}
-		}
 	}
 
 	for _, fi := range items {

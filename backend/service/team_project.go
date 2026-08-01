@@ -1,10 +1,14 @@
 package service
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
+	"syscall"
 	"time"
 
 	"goraven/backend/infra"
@@ -12,7 +16,6 @@ import (
 	"goraven/backend/repository"
 	"goraven/backend/vo"
 	"goraven/backend/vo/errs"
-	"goraven/core/sandbox"
 	"goraven/util"
 
 	"github.com/8treenet/freedom"
@@ -30,27 +33,33 @@ func init() {
 	})
 }
 
+// TeamProjectService 团队项目服务
 type TeamProjectService struct {
-	Worker    freedom.Worker
-	ShareRepo *repository.SharedProjectRepository
-	HFSRepo   *repository.HFSRepository
+	Worker  freedom.Worker
+	TPRepo  *repository.TeamProjectRepository
+	HFSRepo *repository.HFSRepository
 }
 
+var teamProjectNameRegexp = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]*$`)
+
+// --- 项目管理 ---
+
+// List 列出当前用户可见的团队项目（创建者 OR 成员）
 func (service *TeamProjectService) List(userId string) (*vo.TeamProjectListRsp, error) {
-	projects, err := service.ShareRepo.ListAll()
+	projects, err := service.TPRepo.ListByUser(userId)
 	if err != nil {
 		return nil, err
 	}
 
-	ownerIds := make([]string, 0, len(projects))
+	creatorIds := make([]string, 0, len(projects))
 	seen := map[string]bool{}
 	for _, p := range projects {
-		if !seen[p.OwnerId] {
-			seen[p.OwnerId] = true
-			ownerIds = append(ownerIds, p.OwnerId)
+		if !seen[p.CreatorId] {
+			seen[p.CreatorId] = true
+			creatorIds = append(creatorIds, p.CreatorId)
 		}
 	}
-	userMap, err := service.ShareRepo.GetUsersByIDs(ownerIds)
+	userMap, err := service.TPRepo.GetUsersByIDs(creatorIds)
 	if err != nil {
 		return nil, err
 	}
@@ -59,130 +68,146 @@ func (service *TeamProjectService) List(userId string) (*vo.TeamProjectListRsp, 
 	for _, p := range projects {
 		item := vo.TeamProjectItem{
 			Id:          p.Id,
-			OwnerId:     p.OwnerId,
+			CreatorId:   p.CreatorId,
 			ProjectName: p.ProjectName,
 			Description: p.Description,
+			Access:      p.Access,
 			UpdatedAt:   p.Updated,
-			IsOwner:     p.OwnerId == userId,
+			IsCreator:   p.CreatorId == userId,
 		}
-		if u, ok := userMap[p.OwnerId]; ok {
-			item.OwnerName = u.Nickname
-			if item.OwnerName == "" {
-				item.OwnerName = u.Username
+		if u, ok := userMap[p.CreatorId]; ok {
+			item.CreatorName = u.Nickname
+			if item.CreatorName == "" {
+				item.CreatorName = u.Username
 			}
-			item.OwnerAvatar = u.Avatar
+			item.CreatorAvatar = u.Avatar
 		}
 		items = append(items, item)
 	}
 	return &vo.TeamProjectListRsp{Items: items}, nil
 }
 
+// Get 查询单个团队项目详情
 func (service *TeamProjectService) Get(userId string, id int) (*vo.TeamProjectItem, error) {
-	project, err := service.ShareRepo.GetByID(id)
+	project, err := service.TPRepo.GetByID(id)
 	if err != nil {
-		return nil, errs.ErrSharedProjectNotFound
+		return nil, errs.ErrTeamProjectNotFound
 	}
 	item := vo.TeamProjectItem{
 		Id:          project.Id,
-		OwnerId:     project.OwnerId,
+		CreatorId:   project.CreatorId,
 		ProjectName: project.ProjectName,
 		Description: project.Description,
+		Access:      project.Access,
 		UpdatedAt:   project.Updated,
-		IsOwner:     project.OwnerId == userId,
+		IsCreator:   project.CreatorId == userId,
 	}
-	if u, err := service.ShareRepo.GetUserByID(project.OwnerId); err == nil {
-		item.OwnerName = u.Nickname
-		if item.OwnerName == "" {
-			item.OwnerName = u.Username
+	if u, err := service.TPRepo.GetUserByID(project.CreatorId); err == nil {
+		item.CreatorName = u.Nickname
+		if item.CreatorName == "" {
+			item.CreatorName = u.Username
 		}
-		item.OwnerAvatar = u.Avatar
+		item.CreatorAvatar = u.Avatar
 	}
 	return &item, nil
 }
 
-func (service *TeamProjectService) Share(userId, projectName, description string) (*vo.TeamProjectShareRsp, error) {
+// Create 创建团队项目（建目录 + 写DB）
+func (service *TeamProjectService) Create(userId, projectName, description string) (*vo.TeamProjectCreateRsp, error) {
 	projectName = strings.TrimSpace(projectName)
-	if projectName == "" || strings.Contains(projectName, "/") || strings.Contains(projectName, "\\") {
-		return nil, errs.ErrSharedProjectInvalidName
+	if projectName == "" || !teamProjectNameRegexp.MatchString(projectName) {
+		return nil, errs.ErrTeamProjectInvalidName
 	}
 
-	user, err := service.ShareRepo.GetUserByID(userId)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user info: %w", err)
-	}
-
-	sb, err := sandbox.NewSandbox(user.Username)
-	if err != nil {
-		return nil, err
-	}
-	if !dirExistsInSandbox(sb, filepath.Join("projects", projectName)) {
-		return nil, errs.ErrSharedProjectDirNotFound
-	}
-
-	existing, err := service.ShareRepo.GetByOwnerAndProject(userId, projectName)
+	existing, err := service.TPRepo.GetByName(projectName)
 	if err == nil && existing != nil {
-		return nil, errs.ErrSharedProjectAlreadyShared
+		return nil, errs.ErrTeamProjectAlreadyExists
 	}
 
-	record := &po.SharedProject{
-		OwnerId:     userId,
+	projectDir := projectName
+	if err := os.MkdirAll(projectDir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create project directory: %w", err)
+	}
+
+	record := &po.TeamProject{
+		CreatorId:   userId,
 		ProjectName: projectName,
 		Description: description,
 	}
-	if err := service.ShareRepo.Create(record); err != nil {
+	if err := service.TPRepo.Create(record); err != nil {
+		os.RemoveAll(projectDir)
 		return nil, err
 	}
-	return &vo.TeamProjectShareRsp{SharedId: record.Id}, nil
+	return &vo.TeamProjectCreateRsp{Id: record.Id}, nil
 }
 
-func (service *TeamProjectService) Unshare(userId string, id int) error {
-	project, err := service.ShareRepo.GetByID(id)
+// DeleteProject 删除团队项目（仅创建者，删目录 + 删DB + 删成员）
+func (service *TeamProjectService) DeleteProject(userId string, id int) error {
+	project, err := service.TPRepo.GetByID(id)
 	if err != nil {
-		return errs.ErrSharedProjectNotFound
+		return errs.ErrTeamProjectNotFound
 	}
-	if project.OwnerId != userId {
-		return errs.ErrSharedProjectPermission
+	if project.CreatorId != userId {
+		return errs.ErrTeamProjectPermission
 	}
-	return service.ShareRepo.Delete(id)
+	projectDir := filepath.Join(project.ProjectName)
+	os.RemoveAll(projectDir)
+	service.TPRepo.RemoveMembersByProjectId(id)
+	return service.TPRepo.Delete(id)
 }
 
+// UpdateDescription 更新简介（仅创建者）
 func (service *TeamProjectService) UpdateDescription(userId string, id int, description string) error {
-	project, err := service.ShareRepo.GetByID(id)
+	project, err := service.TPRepo.GetByID(id)
 	if err != nil {
-		return errs.ErrSharedProjectNotFound
+		return errs.ErrTeamProjectNotFound
 	}
-	if project.OwnerId != userId {
-		return errs.ErrSharedProjectPermission
+	if project.CreatorId != userId {
+		return errs.ErrTeamProjectPermission
 	}
-	return service.ShareRepo.UpdateDescription(id, description)
+	return service.TPRepo.UpdateDescription(id, description)
 }
 
-func (service *TeamProjectService) AdminListSharedProjects(req *vo.AdminSharedProjectListReq) (*infra.PageResponse, error) {
-	projects, pr, err := service.ShareRepo.PaginateSharedProjects(req)
+// UpdateAccess 设置访问权限（仅创建者）
+func (service *TeamProjectService) UpdateAccess(userId string, id int, access uint8) error {
+	project, err := service.TPRepo.GetByID(id)
+	if err != nil {
+		return errs.ErrTeamProjectNotFound
+	}
+	if project.CreatorId != userId {
+		return errs.ErrTeamProjectPermission
+	}
+	return service.TPRepo.UpdateAccess(id, access)
+}
+
+// AdminListTeamProjects 管理端列出所有团队项目（分页+搜索，含访问统计、锁状态）
+func (service *TeamProjectService) AdminListTeamProjects(req *vo.AdminTeamProjectListReq) (*infra.PageResponse, error) {
+	projects, pr, err := service.TPRepo.Paginate(req)
 	if err != nil {
 		return nil, err
 	}
 
-	ownerIds := make([]string, 0, len(projects))
+	creatorIds := make([]string, 0, len(projects))
 	seen := map[string]bool{}
 	for _, p := range projects {
-		if !seen[p.OwnerId] {
-			seen[p.OwnerId] = true
-			ownerIds = append(ownerIds, p.OwnerId)
+		if !seen[p.CreatorId] {
+			seen[p.CreatorId] = true
+			creatorIds = append(creatorIds, p.CreatorId)
 		}
 	}
-	userMap, err := service.ShareRepo.GetUsersByIDs(ownerIds)
+	userMap, err := service.TPRepo.GetUsersByIDs(creatorIds)
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]vo.AdminSharedProjectItem, 0, len(projects))
+	items := make([]vo.AdminTeamProjectItem, 0, len(projects))
 	for _, p := range projects {
-		item := vo.AdminSharedProjectItem{
+		item := vo.AdminTeamProjectItem{
 			Id:          p.Id,
-			OwnerId:     p.OwnerId,
+			CreatorId:   p.CreatorId,
 			ProjectName: p.ProjectName,
 			Description: p.Description,
+			Access:      p.Access,
 			VisitCount:  p.VisitCount,
 			Created:     p.Created,
 			Updated:     p.Updated,
@@ -190,14 +215,14 @@ func (service *TeamProjectService) AdminListSharedProjects(req *vo.AdminSharedPr
 		if !p.LastActiveAt.IsZero() {
 			item.LastActiveAt = &p.LastActiveAt
 		}
-		if u, ok := userMap[p.OwnerId]; ok {
-			item.OwnerName = u.Nickname
-			if item.OwnerName == "" {
-				item.OwnerName = u.Username
+		if u, ok := userMap[p.CreatorId]; ok {
+			item.CreatorName = u.Nickname
+			if item.CreatorName == "" {
+				item.CreatorName = u.Username
 			}
-			item.OwnerAvatar = u.Avatar
+			item.CreatorAvatar = u.Avatar
 		}
-		locked, sessionId, _ := service.ShareRepo.IsSharedProjectLocked(p.Id)
+		locked, sessionId, _ := service.TPRepo.IsTeamProjectLocked(p.Id)
 		item.Locked = locked
 		item.LockedBy = sessionId
 		items = append(items, item)
@@ -212,90 +237,90 @@ func (service *TeamProjectService) AdminListSharedProjects(req *vo.AdminSharedPr
 	}, nil
 }
 
-func (service *TeamProjectService) AdminUnshare(id int) error {
-	_, err := service.ShareRepo.GetByID(id)
+// AdminDeleteProject 管理端删除团队项目（无需创建者校验）
+func (service *TeamProjectService) AdminDeleteProject(id int) error {
+	project, err := service.TPRepo.GetByID(id)
 	if err != nil {
-		return errs.ErrSharedProjectNotFound
+		return errs.ErrTeamProjectNotFound
 	}
-	return service.ShareRepo.Delete(id)
+	projectDir := filepath.Join(project.ProjectName)
+	os.RemoveAll(projectDir)
+	service.TPRepo.RemoveMembersByProjectId(id)
+	return service.TPRepo.Delete(id)
 }
 
-func (service *TeamProjectService) newSandboxForProject(id int) (sandbox.Sandbox, sandbox.FileManager, string, *po.SharedProject, error) {
-	project, err := service.ShareRepo.GetByID(id)
+// AdminUpdateDescription 管理端更新团队项目简介（无需创建者校验）
+func (service *TeamProjectService) AdminUpdateDescription(id int, description string) error {
+	_, err := service.TPRepo.GetByID(id)
 	if err != nil {
-		return nil, nil, "", nil, errs.ErrSharedProjectNotFound
+		return errs.ErrTeamProjectNotFound
 	}
-
-	user, err := service.ShareRepo.GetUserByID(project.OwnerId)
-	if err != nil {
-		return nil, nil, "", nil, fmt.Errorf("failed to get owner info: %w", err)
-	}
-
-	sb, err := sandbox.NewSandbox(user.Username)
-	if err != nil {
-		return nil, nil, "", nil, err
-	}
-
-	projectRoot := filepath.Join("projects", project.ProjectName)
-	if !dirExistsInSandbox(sb, projectRoot) {
-		return nil, nil, "", nil, errs.ErrSharedProjectDirNotFound
-	}
-
-	fm := sb.NewFileManager()
-	return sb, fm, projectRoot, project, nil
+	return service.TPRepo.UpdateDescription(id, description)
 }
 
-func joinProjectPath(projectRoot, subPath string) string {
-	subPath = strings.TrimSpace(subPath)
-	if subPath == "" || subPath == "/" {
-		return projectRoot
+// --- 文件操作 ---
+
+// getProjectDir 获取团队项目的物理目录绝对路径
+func getProjectDir(projectName string) string {
+	return filepath.Join(projectName)
+}
+
+// validateProject 校验团队项目存在且目录有效，返回项目记录和物理目录
+func (service *TeamProjectService) validateProject(id int) (*po.TeamProject, string, error) {
+	project, err := service.TPRepo.GetByID(id)
+	if err != nil {
+		return nil, "", errs.ErrTeamProjectNotFound
 	}
-	return filepath.Join(projectRoot, subPath)
+	projectDir := getProjectDir(project.ProjectName)
+	info, statErr := os.Stat(projectDir)
+	if statErr != nil || !info.IsDir() {
+		return nil, "", errs.ErrTeamProjectDirNotFound
+	}
+	return project, projectDir, nil
 }
 
-func dirExistsInSandbox(sb sandbox.Sandbox, relPath string) bool {
-	absPath := filepath.Join(sb.GetWorkspace(), relPath)
-	info, err := os.Stat(absPath)
-	return err == nil && info.IsDir()
-}
-
+// ListFiles 列出项目内指定目录的文件
 func (service *TeamProjectService) ListFiles(id int, req *vo.FileManagerListReq) (*vo.FileManagerListRsp, error) {
-	sb, fm, projectRoot, _, err := service.newSandboxForProject(id)
+	_, projectDir, err := service.validateProject(id)
 	if err != nil {
 		return nil, err
 	}
 
-	sortBy := req.Sort
-	if sortBy == "" {
-		sortBy = "name"
+	dir := req.Dir
+	if dir == "" || dir == "/" {
+		dir = "."
 	}
-	order := req.Order
-	if order == "" {
-		order = "asc"
-	}
+	absDir := filepath.Join(projectDir, dir)
 
-	dir := joinProjectPath(projectRoot, req.Dir)
-	items, err := fm.List(dir, sortBy, order)
+	entries, err := os.ReadDir(absDir)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list directory: %w", err)
 	}
 
-	listItems := make([]vo.FileManagerListItem, 0, len(items))
-	for _, fi := range items {
-		if strings.HasPrefix(fi.Name, ".") {
+	listItems := make([]vo.FileManagerListItem, 0, len(entries))
+	for _, entry := range entries {
+		if strings.HasPrefix(entry.Name(), ".") {
 			continue
 		}
+		info, _ := entry.Info()
+		var size int64
+		var modTime time.Time
+		if info != nil {
+			size = info.Size()
+			modTime = info.ModTime()
+		}
 		listItems = append(listItems, vo.FileManagerListItem{
-			Name:    fi.Name,
-			Path:    filepath.Join(sb.GetWorkspace(), projectRoot, req.Dir, fi.Name),
-			IsDir:   fi.IsDir,
-			Size:    fi.Size,
-			ModTime: fi.ModTime,
+			Name:    entry.Name(),
+			Path:    filepath.Join(absDir, entry.Name()),
+			IsDir:   entry.IsDir(),
+			Size:    size,
+			ModTime: modTime,
 		})
 	}
 	return &vo.FileManagerListRsp{Items: listItems}, nil
 }
 
+// Upload 将 HFS 分片上传合并后的文件移入团队项目目录
 func (service *TeamProjectService) Upload(id int, userId string, req *vo.FileManagerUploadReq) (*vo.FileManagerUploadRsp, error) {
 	upload, err := service.HFSRepo.GetUploadByUploadId(req.UploadId)
 	if err != nil {
@@ -308,7 +333,7 @@ func (service *TeamProjectService) Upload(id int, userId string, req *vo.FileMan
 		return nil, fmt.Errorf("upload not completed")
 	}
 
-	sb, _, projectRoot, _, err := service.newSandboxForProject(id)
+	_, projectDir, err := service.validateProject(id)
 	if err != nil {
 		return nil, err
 	}
@@ -318,9 +343,10 @@ func (service *TeamProjectService) Upload(id int, userId string, req *vo.FileMan
 		return nil, fmt.Errorf("merged file not found in temp dir")
 	}
 
-	relPath := filepath.Join(projectRoot, req.Dir, upload.FileName)
-	dstPath := filepath.Join(sb.GetWorkspace(), relPath)
-	if err := sb.Upload(srcPath, dstPath); err != nil {
+	dstDir := filepath.Join(projectDir, req.Dir)
+	os.MkdirAll(dstDir, 0755)
+	dstPath := filepath.Join(dstDir, upload.FileName)
+	if err := moveFileCrossDevice(srcPath, dstPath, os.Rename); err != nil {
 		return nil, fmt.Errorf("failed to move file to project: %w", err)
 	}
 
@@ -331,70 +357,121 @@ func (service *TeamProjectService) Upload(id int, userId string, req *vo.FileMan
 	return &vo.FileManagerUploadRsp{Path: returnPath}, nil
 }
 
+// moveFileCrossDevice moves a file with a copy fallback for paths on different mounts.
+func moveFileCrossDevice(srcPath, dstPath string, rename func(string, string) error) error {
+	if err := rename(srcPath, dstPath); err == nil {
+		return nil
+	} else if !errors.Is(err, syscall.EXDEV) {
+		return err
+	}
+
+	src, err := os.Open(srcPath)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+
+	info, err := src.Stat()
+	if err != nil {
+		return err
+	}
+	dst, err := os.OpenFile(dstPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, info.Mode().Perm())
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(dst, src); err != nil {
+		dst.Close()
+		return err
+	}
+	if err := dst.Close(); err != nil {
+		return err
+	}
+	return os.Remove(srcPath)
+}
+
+// Mkdir 在项目内新建目录
 func (service *TeamProjectService) Mkdir(id int, req *vo.FileManagerMkdirReq) error {
-	_, fm, projectRoot, _, err := service.newSandboxForProject(id)
+	_, projectDir, err := service.validateProject(id)
 	if err != nil {
 		return err
 	}
-	return fm.Mkdir(joinProjectPath(projectRoot, req.Path))
+	return os.MkdirAll(filepath.Join(projectDir, req.Path), 0755)
 }
 
+// Rename 重命名项目内文件
 func (service *TeamProjectService) Rename(id int, req *vo.FileManagerRenameReq) error {
-	_, fm, projectRoot, _, err := service.newSandboxForProject(id)
+	_, projectDir, err := service.validateProject(id)
 	if err != nil {
 		return err
 	}
-	oldPath := joinProjectPath(projectRoot, req.OldPath)
-	newPath := joinProjectPath(projectRoot, req.NewPath)
-	return fm.Rename(oldPath, newPath)
+	return os.Rename(filepath.Join(projectDir, req.OldPath), filepath.Join(projectDir, req.NewPath))
 }
 
+// Delete 删除项目内文件
 func (service *TeamProjectService) Delete(id int, req *vo.FileManagerDeleteReq) error {
-	_, fm, projectRoot, _, err := service.newSandboxForProject(id)
+	_, projectDir, err := service.validateProject(id)
 	if err != nil {
 		return err
 	}
-	paths := make([]string, len(req.Paths))
-	for i, p := range req.Paths {
-		paths[i] = joinProjectPath(projectRoot, p)
+	cleanBase := filepath.Clean(projectDir)
+	for _, p := range req.Paths {
+		absPath := filepath.Join(projectDir, p)
+		if !strings.HasPrefix(filepath.Clean(absPath), cleanBase+string(filepath.Separator)) {
+			continue
+		}
+		os.RemoveAll(absPath)
 	}
-	return fm.Delete(paths)
+	return nil
 }
 
+// Compress 压缩项目内文件
 func (service *TeamProjectService) Compress(id int, req *vo.FileManagerCompressReq) (*vo.FileManagerCompressRsp, error) {
-	_, fm, projectRoot, _, err := service.newSandboxForProject(id)
+	_, projectDir, err := service.validateProject(id)
 	if err != nil {
 		return nil, err
 	}
-	paths := make([]string, len(req.Paths))
+	absPaths := make([]string, len(req.Paths))
 	for i, p := range req.Paths {
-		paths[i] = joinProjectPath(projectRoot, p)
+		absPaths[i] = filepath.Join(projectDir, p)
 	}
-	zipPath, err := fm.Compress(paths, req.OutputName)
-	if err != nil {
+	outputName := req.OutputName
+	if outputName == "" {
+		outputName = "archive.zip"
+	}
+	if !strings.HasSuffix(outputName, ".zip") {
+		outputName += ".zip"
+	}
+	zipPath := filepath.Join(projectDir, outputName)
+	if err := util.CreateZip(absPaths, zipPath, projectDir); err != nil {
 		return nil, err
 	}
-	relPath := strings.TrimPrefix(zipPath, projectRoot+"/")
-	return &vo.FileManagerCompressRsp{ZipPath: relPath}, nil
+	return &vo.FileManagerCompressRsp{ZipPath: outputName}, nil
 }
 
+// Decompress 解压项目内 zip 文件
 func (service *TeamProjectService) Decompress(id int, req *vo.FileManagerDecompressReq) error {
-	_, fm, projectRoot, _, err := service.newSandboxForProject(id)
+	_, projectDir, err := service.validateProject(id)
 	if err != nil {
 		return err
 	}
-	return fm.Decompress(joinProjectPath(projectRoot, req.Path), req.ToSubDir)
+	zipPath := filepath.Join(projectDir, req.Path)
+	destDir := projectDir
+	if req.ToSubDir {
+		base := strings.TrimSuffix(filepath.Base(req.Path), filepath.Ext(req.Path))
+		destDir = filepath.Join(projectDir, base)
+	}
+	return util.ExtractZip(zipPath, destDir)
 }
 
+// Usage 项目磁盘使用统计（仅统计项目目录）
 func (service *TeamProjectService) Usage(id int) (*vo.FileManagerUsageRsp, error) {
-	sb, _, projectRoot, _, err := service.newSandboxForProject(id)
+	_, projectDir, err := service.validateProject(id)
 	if err != nil {
 		return nil, err
 	}
-	absProjectDir := filepath.Join(sb.GetWorkspace(), projectRoot)
 	var usedSize int64
 	var fileCount int
-	err = filepath.Walk(absProjectDir, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(projectDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -413,39 +490,29 @@ func (service *TeamProjectService) Usage(id int) (*vo.FileManagerUsageRsp, error
 	}, nil
 }
 
+// CreateTempAccess 为团队项目内文件/目录创建临时访问凭证
 func (service *TeamProjectService) CreateTempAccess(id int, req *vo.TempAccessReq) (*vo.TempAccessRsp, error) {
 	if req.Type != "file" && req.Type != "dir" {
 		return nil, errs.ErrTempAccessTypeInvalid
 	}
 
-	project, err := service.ShareRepo.GetByID(id)
+	project, err := service.TPRepo.GetByID(id)
 	if err != nil {
-		return nil, errs.ErrSharedProjectNotFound
-	}
-	user, err := service.ShareRepo.GetUserByID(project.OwnerId)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get owner info: %w", err)
+		return nil, errs.ErrTeamProjectNotFound
 	}
 
-	projectRoot := filepath.Join("projects", project.ProjectName)
-	fullPath := "/" + joinProjectPath(projectRoot, req.Path)
-
-	sb, sberr := sandbox.NewSandbox(user.Username)
-	if sberr != nil {
-		return nil, sberr
-	}
-
-	absPath := filepath.Join(sb.GetWorkspace(), fullPath)
+	projectDir := getProjectDir(project.ProjectName)
+	absPath := filepath.Join(projectDir, req.Path)
 	cleanPath := filepath.Clean(absPath)
-	workspace := filepath.Clean(sb.GetWorkspace())
-	if !strings.HasPrefix(cleanPath, workspace+string(filepath.Separator)) && cleanPath != workspace {
+	cleanProjectDir := filepath.Clean(projectDir)
+	if !strings.HasPrefix(cleanPath, cleanProjectDir+string(filepath.Separator)) && cleanPath != cleanProjectDir {
 		return nil, errs.ErrTempAccessPathInvalid
 	}
 
 	info, err := os.Stat(cleanPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, errs.NewFormatError("path not found: %s", "路径不存在: %s", fullPath)
+			return nil, errs.NewFormatError("path not found: %s", "路径不存在: %s", req.Path)
 		}
 		return nil, fmt.Errorf("stat path: %w", err)
 	}
@@ -456,10 +523,15 @@ func (service *TeamProjectService) CreateTempAccess(id int, req *vo.TempAccessRe
 		return nil, errs.ErrTempAccessNotDir
 	}
 
+	user, err := service.TPRepo.GetUserByID(project.CreatorId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get creator info: %w", err)
+	}
+
 	ak := "rvnt_" + util.UUID()
 	cache := &repository.TempAccessCache{
 		UserName: user.Username,
-		Path:     fullPath,
+		Path:     cleanPath,
 		Type:     req.Type,
 	}
 	if err := service.HFSRepo.SetTempAccess(ak, cache); err != nil {
@@ -472,13 +544,16 @@ func (service *TeamProjectService) CreateTempAccess(id int, req *vo.TempAccessRe
 	}, nil
 }
 
+// Download 解析团队项目内文件的绝对路径，供 controller SendFile
 func (service *TeamProjectService) Download(id int, subPath string) (string, string, error) {
-	sb, _, projectRoot, _, err := service.newSandboxForProject(id)
+	_, projectDir, err := service.validateProject(id)
 	if err != nil {
 		return "", "", err
 	}
-	fullRelPath := joinProjectPath(projectRoot, subPath)
-	absPath := filepath.Join(sb.GetWorkspace(), fullRelPath)
+	absPath := filepath.Join(projectDir, subPath)
+	if !strings.HasPrefix(filepath.Clean(absPath), filepath.Clean(projectDir)+string(filepath.Separator)) {
+		return "", "", fmt.Errorf("invalid path")
+	}
 	info, err := os.Stat(absPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -489,9 +564,80 @@ func (service *TeamProjectService) Download(id int, subPath string) (string, str
 	if info.IsDir() {
 		return "", "", fmt.Errorf("path is a directory, not a file")
 	}
-	validated, err := sb.Download(absPath)
+	return absPath, filepath.Base(subPath), nil
+}
+
+// --- 成员管理 ---
+
+// ListUsers 分页查询所有可用用户（成员选择器用）
+func (service *TeamProjectService) ListUsers(req *vo.TeamProjectUserListReq) (*infra.PageResponse, error) {
+	items, pr, err := service.TPRepo.PaginateActiveUsers(req)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
-	return validated, filepath.Base(fullRelPath), nil
+	return &infra.PageResponse{
+		List:       items,
+		TotalPage:  pr.TotalPage,
+		TotalCount: pr.TotalCount,
+		Page:       pr.Page,
+		PageSize:   pr.PageSize,
+	}, nil
+}
+
+// ListMembers 查询项目成员列表
+func (service *TeamProjectService) ListMembers(userId string, projectId int) (*vo.TeamProjectMembersRsp, error) {
+	project, err := service.TPRepo.GetByID(projectId)
+	if err != nil {
+		return nil, errs.ErrTeamProjectNotFound
+	}
+
+	members, err := service.TPRepo.ListMembers(projectId)
+	if err != nil {
+		return nil, err
+	}
+
+	memberIds := make([]string, 0, len(members))
+	for _, m := range members {
+		memberIds = append(memberIds, m.UserId)
+	}
+	return &vo.TeamProjectMembersRsp{
+		CreatorId: project.CreatorId,
+		MemberIds: memberIds,
+	}, nil
+}
+
+// UpdateMembers 编辑项目成员（仅创建者操作）
+func (service *TeamProjectService) UpdateMembers(userId string, projectId int, req *vo.TeamProjectMemberUpdateReq) error {
+	project, err := service.TPRepo.GetByID(projectId)
+	if err != nil {
+		return errs.ErrTeamProjectNotFound
+	}
+	if project.CreatorId != userId {
+		return errs.ErrTeamProjectPermission
+	}
+
+	// 添加成员
+	for _, uid := range req.AddUserIds {
+		if uid == project.CreatorId {
+			continue // 创建者不进成员表
+		}
+		isMember, _ := service.TPRepo.IsMember(projectId, uid)
+		if isMember {
+			continue
+		}
+		if err := service.TPRepo.AddMember(projectId, uid); err != nil {
+			return err
+		}
+	}
+
+	// 移除成员
+	for _, uid := range req.RemoveUserIds {
+		if uid == project.CreatorId {
+			return errs.ErrTeamProjectCannotRemoveCreator
+		}
+		if err := service.TPRepo.RemoveMember(projectId, uid); err != nil {
+			return err
+		}
+	}
+	return nil
 }

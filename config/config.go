@@ -11,7 +11,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var Version = "0.4.0"
+var Version = "0.4.2"
 
 var StartTime = time.Now()
 

@@ -39,7 +39,7 @@ func TestTeamProjectShareAndUnshare(t *testing.T) {
 		SetHeaderValue("Authorization", "Bearer "+token).
 		ToJSON(&apiRsp{})
 
-	shareReq := vo.TeamProjectShareReq{
+	shareReq := vo.TeamProjectCreateReq{
 		ProjectName: "js-learning",
 		Description: "测试js-learning",
 	}
@@ -101,7 +101,7 @@ func TestTeamProjectUnshare(t *testing.T) {
 }
 
 func TestTeamProjectShareInvalidName(t *testing.T) {
-	shareReq := vo.TeamProjectShareReq{
+	shareReq := vo.TeamProjectCreateReq{
 		ProjectName: "foo/bar",
 		Description: "",
 	}
@@ -121,7 +121,7 @@ func TestTeamProjectShareInvalidName(t *testing.T) {
 }
 
 func TestTeamProjectShareNonexistentDir(t *testing.T) {
-	shareReq := vo.TeamProjectShareReq{
+	shareReq := vo.TeamProjectCreateReq{
 		ProjectName: "nonexistent_project_12345",
 		Description: "",
 	}
@@ -176,7 +176,7 @@ func TestTeamProjectRenameAndCompress(t *testing.T) {
 		SetHeaderValue("Authorization", "Bearer "+token).
 		ToJSON(&apiRsp{})
 
-	shareReq := vo.TeamProjectShareReq{ProjectName: "test_team_project", Description: ""}
+	shareReq := vo.TeamProjectCreateReq{ProjectName: "test_team_project", Description: ""}
 	requests.NewHTTPRequest(domain+"/api/teamProject/share").
 		Post().
 		SetJSONBody(shareReq).
@@ -195,7 +195,7 @@ func TestTeamProjectRenameAndCompress(t *testing.T) {
 
 	var sharedId int
 	for _, item := range listRsp.Data.Items {
-		if item.ProjectName == "test_team_project" && item.IsOwner {
+		if item.ProjectName == "test_team_project" {
 			sharedId = item.Id
 			break
 		}

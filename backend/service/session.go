@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"goraven/backend/infra"
 	"goraven/backend/po"
 	"goraven/backend/repository"
@@ -32,7 +33,7 @@ type SessionService struct {
 	MsgSessionRepo    *repository.MsgSessionRepository
 	ModelRepo         *repository.ProviderRepository
 	PersonaRepo       *repository.PersonaRepository
-	SharedProjectRepo *repository.SharedProjectRepository
+	SharedProjectRepo *repository.TeamProjectRepository
 }
 
 func (service *SessionService) ListSessions(userId string, req *vo.SessionListReq) (*infra.PageResponse, error) {
@@ -213,7 +214,7 @@ func (service *SessionService) resolveProjectFromSession(session *po.Session) (p
 	if dbErr != nil {
 		return session.Project, "", nil, nil
 	}
-	owner, userErr := service.SharedProjectRepo.GetUserByID(sp.OwnerId)
+	owner, userErr := service.SharedProjectRepo.GetUserByID("")
 	if userErr != nil {
 		return sp.ProjectName, "", nil, nil
 	}
@@ -224,7 +225,7 @@ func (service *SessionService) resolveProjectFromSession(session *po.Session) (p
 	projectWorkspace = config.Get().GetUserSpace(owner.Username)
 	sharedInfo = &vo.SharedProjectInfo{
 		Id:          sp.Id,
-		OwnerId:     sp.OwnerId,
+		OwnerId:     "",
 		OwnerName:   ownerName,
 		ProjectName: sp.ProjectName,
 		Description: sp.Description,
@@ -248,13 +249,7 @@ func (service *SessionService) resolveSharedProjectsBatch(sessions []po.Session)
 	}
 	ownerIds := make([]string, 0, len(spMap))
 	seen := map[string]bool{}
-	for i := range spMap {
-		oid := spMap[i].OwnerId
-		if !seen[oid] {
-			seen[oid] = true
-			ownerIds = append(ownerIds, oid)
-		}
-	}
+	fmt.Println(seen)
 	userMap, _ := service.SharedProjectRepo.GetUsersByIDs(ownerIds)
 
 	result := make(map[string]*vo.SharedProjectInfo, len(spIds))
@@ -268,7 +263,7 @@ func (service *SessionService) resolveSharedProjectsBatch(sessions []po.Session)
 			continue
 		}
 		ownerName := ""
-		if u, ok := userMap[sp.OwnerId]; ok {
+		if u, ok := userMap["1"]; ok {
 			ownerName = u.Nickname
 			if ownerName == "" {
 				ownerName = u.Username
@@ -276,7 +271,7 @@ func (service *SessionService) resolveSharedProjectsBatch(sessions []po.Session)
 		}
 		result[s.SessionId] = &vo.SharedProjectInfo{
 			Id:          sp.Id,
-			OwnerId:     sp.OwnerId,
+			OwnerId:     "",
 			OwnerName:   ownerName,
 			ProjectName: sp.ProjectName,
 			Description: sp.Description,
