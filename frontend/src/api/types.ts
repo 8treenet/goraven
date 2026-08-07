@@ -270,6 +270,7 @@ export interface SessionDetail extends SessionSimple {
   mcpIds: number[]
   skillIds: number[]
   modelName: string
+  modelIcon: string
   personaName: string
   personaIcon: string
   contextLimit: number

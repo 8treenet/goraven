@@ -5,17 +5,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   MessageSquarePlus,
-  LayoutDashboard,
-  FolderOpen,
-  Puzzle,
-  Palette,
-  Users,
-  Brain,
-  Plug,
   Settings,
-  Info,
-  User,
-  LogOut,
   ChevronDown,
   ChevronRight,
   Ellipsis,
@@ -23,8 +13,21 @@ import {
   Archive,
   Check,
   X,
-  Share2,
+  User,
+  LogOut,
 } from 'lucide-react'
+import {
+  IconGrid,
+  IconFolderFilled,
+  IconWrench,
+  IconBot,
+  IconInfo,
+  IconUsers,
+  IconSettings,
+  IconShare,
+  IconCpu,
+  IconPlug,
+} from '@/components/icons'
 import { cn } from '@/lib/utils'
 import { useSidebarStore } from '@/stores/sidebar-store'
 import { useUserStore } from '@/stores/user-store'
@@ -293,27 +296,31 @@ function UserMenu() {
       >
         <NavItem
           to="/dashboard"
-          icon={LayoutDashboard}
+          icon={IconGrid}
           label={t('sidebar.dashboard')}
           collapsed={collapsed}
+          accent
         />
         <NavItem
           to="/files"
-          icon={FolderOpen}
+          icon={IconFolderFilled}
           label={t('sidebar.workspace')}
           collapsed={collapsed}
+          accent
         />
         <NavItem
           to="/skills"
-          icon={Puzzle}
+          icon={IconWrench}
           label={t('sidebar.skills')}
           collapsed={collapsed}
+          accent
         />
         <NavItem
           to="/personas"
-          icon={Palette}
+          icon={IconBot}
           label={t('sidebar.personas')}
           collapsed={collapsed}
+          accent
         />
       </SidebarGroup>
 
@@ -488,8 +495,8 @@ function AdminMenu({ collapsed: collapsedProp }: { collapsed?: boolean }) {
         groupKey="admin-overview"
         collapsed={collapsed}
       >
-        <NavItem to="/admin" icon={LayoutDashboard} label={t('sidebar.dashboard')} collapsed={collapsed} />
-        <NavItem to="/admin/systemInfo" icon={Info} label={t('sidebar.systemInfo')} collapsed={collapsed} />
+        <NavItem to="/admin" icon={IconGrid} label={t('sidebar.dashboard')} collapsed={collapsed} accent />
+        <NavItem to="/admin/systemInfo" icon={IconInfo} label={t('sidebar.systemInfo')} collapsed={collapsed} accent />
       </SidebarGroup>
 
       <SidebarGroup
@@ -497,9 +504,9 @@ function AdminMenu({ collapsed: collapsedProp }: { collapsed?: boolean }) {
         groupKey="admin-system"
         collapsed={collapsed}
       >
-        <NavItem to="/admin/users" icon={Users} label={t('sidebar.users')} collapsed={collapsed} />
-        <NavItem to="/admin/settings" icon={Settings} label={t('sidebar.settings')} collapsed={collapsed} />
-        <NavItem to="/admin/shared-projects" icon={Share2} label={t('sidebar.sharedProjects')} collapsed={collapsed} />
+        <NavItem to="/admin/users" icon={IconUsers} label={t('sidebar.users')} collapsed={collapsed} accent />
+        <NavItem to="/admin/settings" icon={IconSettings} label={t('sidebar.settings')} collapsed={collapsed} accent />
+        <NavItem to="/admin/shared-projects" icon={IconShare} label={t('sidebar.sharedProjects')} collapsed={collapsed} accent />
       </SidebarGroup>
 
       <SidebarGroup
@@ -507,10 +514,10 @@ function AdminMenu({ collapsed: collapsedProp }: { collapsed?: boolean }) {
         groupKey="admin-config"
         collapsed={collapsed}
       >
-        <NavItem to="/admin/models" icon={Brain} label={t('sidebar.models')} collapsed={collapsed} />
-        <NavItem to="/admin/mcp" icon={Plug} label={t('sidebar.mcp')} collapsed={collapsed} />
-        <NavItem to="/admin/skills" icon={Puzzle} label={t('sidebar.skillAdmin')} collapsed={collapsed} />
-        <NavItem to="/admin/persona-templates" icon={Palette} label={t('sidebar.personaTemplates')} collapsed={collapsed} />
+        <NavItem to="/admin/models" icon={IconCpu} label={t('sidebar.models')} collapsed={collapsed} accent />
+        <NavItem to="/admin/mcp" icon={IconPlug} label={t('sidebar.mcp')} collapsed={collapsed} accent />
+        <NavItem to="/admin/skills" icon={IconWrench} label={t('sidebar.skillAdmin')} collapsed={collapsed} accent />
+        <NavItem to="/admin/persona-templates" icon={IconBot} label={t('sidebar.personaTemplates')} collapsed={collapsed} accent />
       </SidebarGroup>
     </>
   )
@@ -567,12 +574,14 @@ function NavItem({
   label,
   collapsed,
   indent,
+  accent = false,
 }: {
   to: string
   icon: React.ComponentType<{ className?: string }>
   label: string
   collapsed: boolean
   indent?: boolean
+  accent?: boolean
 }) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -582,42 +591,30 @@ function NavItem({
     <button
       onClick={() => navigate(to)}
       className={cn(
-        'flex w-full items-center gap-2 rounded-md py-1.5 text-sm text-text-1 transition-colors',
+        'flex w-full items-center gap-2 rounded-md py-1.5 text-sm transition-colors',
         collapsed ? 'justify-center px-0' : indent ? 'pl-7 pr-2' : 'px-2',
         isActive
-          ? 'bg-interactive-soft font-medium text-interactive'
+          ? accent
+            ? 'bg-highlight-soft font-medium text-highlight'
+            : 'bg-interactive-soft font-medium text-interactive'
           : 'hover:bg-bg-hover',
       )}
     >
-      <Icon className={cn('size-4 shrink-0', isActive ? 'text-interactive' : 'text-text-3')} />
+      <Icon
+        className={cn(
+          'size-4 shrink-0',
+          isActive
+            ? accent
+              ? 'text-highlight'
+              : 'text-interactive'
+            : accent
+              ? 'text-interactive'
+              : 'text-text-3',
+        )}
+      />
       {!collapsed && <span className="truncate">{label}</span>}
     </button>
   )
-}
-
-/* ============================================
-   Session Avatar Color Helper
-   ============================================ */
-
-const SESSION_COLORS = [
-  'bg-blue-500',
-  'bg-emerald-500',
-  'bg-violet-500',
-  'bg-amber-500',
-  'bg-rose-500',
-  'bg-cyan-500',
-  'bg-pink-500',
-  'bg-indigo-500',
-  'bg-teal-500',
-  'bg-orange-500',
-]
-
-function getSessionColor(title: string): string {
-  let hash = 0
-  for (let i = 0; i < title.length; i++) {
-    hash = title.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  return SESSION_COLORS[Math.abs(hash) % SESSION_COLORS.length]
 }
 
 /* ============================================
@@ -681,7 +678,6 @@ function SessionItem({
 
   if (collapsed) {
     const initial = session.title.charAt(0).toUpperCase()
-    const colorClass = getSessionColor(session.title)
     return (
       <button
         onClick={onNavigateOverride ?? (() => navigate(`/chat/${session.sessionId}`))}
@@ -692,8 +688,8 @@ function SessionItem({
           className={cn(
             'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white transition-all',
             isActive
-              ? 'bg-interactive ring-2 ring-interactive/30'
-              : `${colorClass} group-hover/session:scale-110 group-hover/session:ring-2 group-hover/session:ring-border`,
+              ? 'bg-highlight ring-2 ring-highlight/30'
+              : 'bg-interactive group-hover/session:scale-110 group-hover/session:ring-2 group-hover/session:ring-border',
           )}
         >
           {initial}
@@ -732,10 +728,10 @@ function SessionItem({
   return (
     <div
       className={cn(
-        'group flex items-center rounded-md text-text-1 transition-colors',
+        'group flex items-center rounded-md transition-colors',
         isActive
-          ? 'bg-interactive-soft text-interactive'
-          : 'hover:bg-bg-hover',
+          ? 'bg-highlight-soft font-medium text-highlight'
+          : 'text-text-1 hover:bg-bg-hover',
       )}
     >
       <button

@@ -664,7 +664,7 @@ const en = {
   'adminModels.setAsDefault': 'Set as default model',
   'adminModels.setAsFlash': 'Set as flash model',
   'adminModels.setAsMultimodal': 'Set as multimodal model',
-  'adminModels.flashHint': 'Used for automatic conversation context compression and sub-agent independent task delegation. A more cost-effective model is recommended; falls back to the default model if not set.',
+  'adminModels.flashHint': 'This model is used to automatically summarize long chat histories and to handle small background tasks. Choose a lightweight, fast model to save costs; falls back to the default model if not set.',
   'adminModels.multimodalHint': 'Takes effect after enabling multimodal recognition in system settings. After enabling, it can recognize images, videos, and audio files uploaded by users. Ensure the selected model supports multimodal capabilities.',
   'adminModels.remark': 'Remark',
   'adminModels.getRecommended': 'Get Model List',

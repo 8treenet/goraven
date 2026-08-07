@@ -206,14 +206,22 @@ function MiniStat({
   icon: Icon,
   label,
   value,
+  color,
 }: {
   icon: LucideIcon
   label: string
   value: string
+  color: string
 }) {
   return (
     <div className="flex items-center gap-2.5">
-      <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-bg-layer-2 text-text-3">
+      <div
+        className="flex size-7 shrink-0 items-center justify-center rounded-md"
+        style={{
+          color,
+          backgroundColor: `color-mix(in srgb, ${color} 10%, transparent)`,
+        }}
+      >
         <Icon className="size-3.5" />
       </div>
       <div className="min-w-0">
@@ -267,10 +275,10 @@ function TokenOverviewPanel({ data }: { data: DashboardOverview }) {
 
         {/* Secondary metrics */}
         <div className="grid grid-cols-2 content-center gap-x-5 gap-y-3">
-          <MiniStat icon={CalendarRange} label={t('dashboard.thisWeek')} value={formatNumber(weekTokens)} />
-          <MiniStat icon={Database} label={t('dashboard.totalTokens')} value={formatNumber(totalTokens)} />
-          <MiniStat icon={MessageSquare} label={t('dashboard.sessions')} value={formatNumber(totalSessions)} />
-          <MiniStat icon={Sparkles} label={t('dashboard.newSessions')} value={formatNumber(newSessions)} />
+          <MiniStat icon={CalendarRange} label={t('dashboard.thisWeek')} value={formatNumber(weekTokens)} color="var(--chart-2)" />
+          <MiniStat icon={Database} label={t('dashboard.totalTokens')} value={formatNumber(totalTokens)} color="var(--chart-3)" />
+          <MiniStat icon={MessageSquare} label={t('dashboard.sessions')} value={formatNumber(totalSessions)} color="var(--chart-4)" />
+          <MiniStat icon={Sparkles} label={t('dashboard.newSessions')} value={formatNumber(newSessions)} color="var(--chart-5)" />
         </div>
       </div>
     </div>
@@ -320,8 +328,8 @@ function StoragePanel({ data }: { data: StorageStats }) {
 
         {/* Secondary metrics */}
         <div className="grid grid-cols-1 content-center gap-y-3">
-          <MiniStat icon={Inbox} label={t('dashboard.free')} value={hasTotal ? formatBytes(freeBytes) : '-'} />
-          <MiniStat icon={Database} label={t('dashboard.total')} value={hasTotal ? formatBytes(totalBytes) : '-'} />
+          <MiniStat icon={Inbox} label={t('dashboard.free')} value={hasTotal ? formatBytes(freeBytes) : '-'} color="var(--chart-2)" />
+          <MiniStat icon={Database} label={t('dashboard.total')} value={hasTotal ? formatBytes(totalBytes) : '-'} color="var(--chart-3)" />
         </div>
       </div>
 

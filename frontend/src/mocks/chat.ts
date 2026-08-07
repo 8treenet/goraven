@@ -598,6 +598,7 @@ function sessionToDetail(s: RichSession): SessionDetail {
     lastChatTime: s.lastChatTime,
     created: '2025-06-01T10:00:00Z',
     modelName: model?.modelName ?? '',
+    modelIcon: model?.icon ?? '',
     personaName: persona?.name ?? '',
     personaIcon: persona?.icon ?? '',
     contextLimit: model?.contextLen ?? 131072,

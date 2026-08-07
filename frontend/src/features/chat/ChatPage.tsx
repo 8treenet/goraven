@@ -339,7 +339,11 @@ function SessionChat({ sessionId }: { sessionId: string }) {
     ? (models.find(m => m.isDefault) ?? models[0])
     : null
   const displayName = sessionDetail?.modelName || session.modelName || fallbackModel?.name || null
-  const displayIcon = models.find(m => m.id === (sessionDetail?.aiModelId ?? session.modelId))?.icon || fallbackModel?.icon || null
+  // modelIcon 与 modelName 同源（后端 GetSession 对同一模型记录解析），
+  // 优先使用，避免会话模型不在当前用户可见模型列表（受访问权限/停用影响）时回退到默认模型图标。
+  const displayIcon = sessionDetail?.modelIcon || session.modelIcon
+    || models.find(m => m.id === (sessionDetail?.aiModelId ?? session.modelId))?.icon
+    || fallbackModel?.icon || null
 
   return (
     <div className="flex h-full flex-col bg-bg-base">

@@ -129,6 +129,7 @@ export interface SessionDetail {
   lastChatTime: string
   created: string
   modelName: string
+  modelIcon: string
   personaName: string
   personaIcon: string
   contextLimit: number

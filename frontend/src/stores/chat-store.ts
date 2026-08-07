@@ -91,6 +91,7 @@ export interface Session {
   status: number
   messages: Message[]
   modelName: string
+  modelIcon: string
   personaName: string
   personaIcon: string
   contextTokens: number
@@ -678,6 +679,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         status: 1,
         messages: [...state.messages],
         modelName: d.modelName ?? '',
+        modelIcon: d.modelIcon ?? '',
         personaName: d.personaName ?? '',
         personaIcon: d.personaIcon ?? '',
         contextTokens: d.contextTokens,
@@ -697,6 +699,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         status: 1,
         messages: [...state.messages],
         modelName: '',
+        modelIcon: '',
         personaName: '',
         personaIcon: '',
         contextTokens: 0,
@@ -790,6 +793,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         status: detail.status,
         messages,
         modelName: detail.modelName ?? '',
+        modelIcon: detail.modelIcon ?? '',
         personaName: detail.personaName ?? '',
         personaIcon: detail.personaIcon ?? '',
         contextTokens: detail.contextTokens,
@@ -962,6 +966,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           skillIds: prev?.skillIds ?? [],
           messages: prev?.messages ?? [],
           modelName: prev?.modelName ?? '',
+          modelIcon: prev?.modelIcon ?? '',
           personaName: prev?.personaName ?? '',
           personaIcon: prev?.personaIcon ?? '',
           contextTokens: prev?.contextTokens ?? 0,
@@ -1010,6 +1015,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           skillIds: [],
           messages: [],
           modelName: '',
+          modelIcon: '',
           personaName: '',
           personaIcon: '',
           contextTokens: 0,
