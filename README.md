@@ -150,6 +150,19 @@ As a tool, the Agent has only three duties: deterministic workflows, precise too
 
 ---
 
+## Build & Run
+
+Building from source is only recommended when you need to modify the code:
+
+```bash
+cd frontend && pnpm build
+go run main.go
+```
+
+For non-development needs, use the Docker image instead — it bundles the full runtime (Go, Node.js, Python, Git, and more); building from source requires setting up these environments yourself.
+
+---
+
 ## Community
 
 - 💬 [Discord](https://discord.gg/derR7CBYDW) — feedback, discussions, tips

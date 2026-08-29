@@ -102,14 +102,14 @@ Agent 直接读写文件、执行 Shell、调用 MCP 工具链。内部 API、�
 **第一步：拉取镜像**
 
 ```bash
-docker pull 8treenet/goraven:v0.4.3
+docker pull 8treenet/goraven:v0.5.0
 ```
 
 > 国内网络拉取较慢时，可使用以下镜像仓库地址拉取，拉取后重命名为统一镜像名：
 > ```bash
 > # 以 docker.1panel.live 为例
-> docker pull docker.1panel.live/8treenet/goraven:v0.4.3
-> docker tag docker.1panel.live/8treenet/goraven:v0.4.3 8treenet/goraven:v0.4.3
+> docker pull docker.1panel.live/8treenet/goraven:v0.5.0
+> docker tag docker.1panel.live/8treenet/goraven:v0.5.0 8treenet/goraven:v0.5.0
 > ```
 > 其他镜像仓库地址同理：`docker.1ms.run`、`hub.rat.dev`
 
@@ -119,7 +119,7 @@ docker pull 8treenet/goraven:v0.4.3
 docker run -d --restart=always --name goraven-agent \
   -p 8000:8000 \
   -e GORAVEN_CHINA_MIRROR=1 \
-  8treenet/goraven:v0.4.3
+  8treenet/goraven:v0.5.0
 ```
 
 `GORAVEN_CHINA_MIRROR=1` 启用国内加速源（运行时依赖），并自动设置时区为 `Asia/Shanghai`。
@@ -132,7 +132,7 @@ docker run -d --restart=always --name goraven-agent \
   -p 8000:8000 \
   -v /opt/goraven:/goraven/data \
   -e GORAVEN_CHINA_MIRROR=1 \
-  8treenet/goraven:v0.4.3
+  8treenet/goraven:v0.5.0
 ```
 
 启动后访问 `http://localhost:8000`，按引导完成初始化，创建管理员账户即可使用。
@@ -166,6 +166,19 @@ Agent 作为工具，本分只有三件事：流程的确定性、工具调用�
 **OS 优先**：模型只有知识和推理，没有眼睛，也没有手。Agent 想要干活，就必须大量调用操作系统的能力。但 Agent 不可能自带一个完整的 OS，所以运行环境和依赖的集成必须是第一优先级。这不是代码和算法能解决的问题——一个好的 Agent，本质上就是一个 Agent OS，只不过你不能真的从头写个操作系统。
 
 **工程优先**：Agent 太灵活了，工具多了组合根本管不住，剪枝规则改一点，整个流程就跟着跑偏。工程底子不扎实，迭代几轮就没人敢动了。花在工程上的时间，不是为了今天多上一个功能，是为了明年这项目还能继续做。
+
+---
+
+## 编译运行
+
+仅当需要修改代码时推荐源码编译运行：
+
+```bash
+cd frontend && pnpm build
+go run main.go
+```
+
+非代码修改的需求请直接使用 Docker 镜像——镜像内已打包 Go、Node.js、Python、Git 等完整运行依赖，源码编译运行需自行准备这些环境。
 
 ---
 
