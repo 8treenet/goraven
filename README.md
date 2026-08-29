@@ -120,6 +120,12 @@ After startup, visit `http://localhost:8000` and follow the setup wizard to crea
 
 ---
 
+## ☁️ One-Click Deploy
+
+[![Deploy on RepoCloud](https://d16t0pc4846x52.cloudfront.net/deploylobe.svg)](https://repocloud.io/details/GoRaven/)
+
+---
+
 <p align="center">
   <img src="https://github.com/8treenet/blog/blob/master/img/end.png?raw=true" alt="GoRaven Dashboard" width="90%" />
 </p>
