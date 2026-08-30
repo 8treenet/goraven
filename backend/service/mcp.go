@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"math/rand"
 	"goraven/backend/infra"
 	"goraven/backend/po"
 	"goraven/backend/repository"
@@ -12,7 +13,6 @@ import (
 	"goraven/core/sandbox"
 	"goraven/core/tools"
 	"goraven/util"
-	"math/rand"
 	"regexp"
 	"time"
 
@@ -45,6 +45,7 @@ type McpService struct {
 	PersonaRepo *repository.PersonaRepository
 }
 
+// VerifierTimer 定时校验所有启用的 MCP 端点连通性
 func (service *McpService) VerifierTimer() {
 	if !config.Get().System.Initialized {
 		return
@@ -91,10 +92,13 @@ func (service *McpService) verifyAllMCPs() {
 	}
 }
 
+// CheckAllMCPHealth 手动触发所有启用 MCP 的健康检查
 func (service *McpService) CheckAllMCPHealth() {
 	go service.verifyAllMCPs()
 }
 
+// ListEnabledMCPs 获取用户可选 MCP 列表（status=1 AND deleted=0 AND always_on=0）
+// 始终启用的 MCP 由管理员配置，会话创建时自动注入，不暴露给用户选择
 func (service *McpService) ListEnabledMCPs() ([]vo.UserMCPItem, error) {
 	endpoints, err := service.McpRepo.FindUserSelectableMCPEndpoints()
 	if err != nil {
@@ -114,6 +118,7 @@ func (service *McpService) ListEnabledMCPs() ([]vo.UserMCPItem, error) {
 	return items, nil
 }
 
+// ListEnabledMCPsByIDs 根据指定的 mcpId 列表获取 MCP 列表
 func (service *McpService) ListEnabledMCPsByIDs(mcpIds []int) ([]vo.UserMCPItem, error) {
 	endpoints, err := service.McpRepo.FindEnabledMCPEndpointsByIDs(mcpIds)
 	if err != nil {
@@ -133,6 +138,7 @@ func (service *McpService) ListEnabledMCPsByIDs(mcpIds []int) ([]vo.UserMCPItem,
 	return items, nil
 }
 
+// ListMCPEndpoints 管理员 MCP 端点分页列表
 func (service *McpService) ListMCPEndpoints(req *vo.AdminMCPListReq) (*infra.PageResponse, error) {
 	items, pr, err := service.McpRepo.PaginateMCPEndpoints(req)
 	if err != nil {
@@ -147,6 +153,7 @@ func (service *McpService) ListMCPEndpoints(req *vo.AdminMCPListReq) (*infra.Pag
 	}, nil
 }
 
+// GetMCPEndpointDetail 管理员 MCP 端点详情（含原始敏感字段，用于编辑回填）
 func (service *McpService) GetMCPEndpointDetail(mcpId int) (*vo.AdminMCPDetailRsp, error) {
 	endpoint, err := service.McpRepo.GetMCPEndpointByID(mcpId)
 	if err != nil {
@@ -175,6 +182,8 @@ func (service *McpService) GetMCPEndpointDetail(mcpId int) (*vo.AdminMCPDetailRs
 	}, nil
 }
 
+// CreateMCPEndpoint 创建 MCP 端点，创建前调用 ValidateMCP 测试连通性
+// 前端 httpHeader/stdioEnv 传 map[string]string，后端转为存储格式
 func (service *McpService) CreateMCPEndpoint(req *vo.AdminCreateMCPReq) error {
 	if err := service.validateCreateReq(req); err != nil {
 		return err
@@ -226,6 +235,7 @@ func (service *McpService) CreateMCPEndpoint(req *vo.AdminCreateMCPReq) error {
 	return service.McpRepo.CreateMCPEndpoint(endpoint)
 }
 
+// UpdateMCPEndpoint 编辑 MCP 端点，name/transport 不可改，连接字段变化时重新测试
 func (service *McpService) UpdateMCPEndpoint(mcpId int, req *vo.AdminUpdateMCPReq) error {
 	existing, err := service.McpRepo.GetMCPEndpointByID(mcpId)
 	if err != nil {
@@ -341,16 +351,20 @@ func (service *McpService) UpdateMCPEndpoint(mcpId int, req *vo.AdminUpdateMCPRe
 	return service.McpRepo.UpdateMCPEndpoint(mcpId, updates)
 }
 
+// DeleteMCPEndpoint 软删除 MCP 端点，name 追加时间戳后缀以允许复用
+// 同时清除 persona_tool 中对该 MCP 的关联记录
 func (service *McpService) DeleteMCPEndpoint(mcpId int) error {
 	if _, err := service.McpRepo.GetMCPEndpointByID(mcpId); err != nil {
 		return errs.ErrMCPNotFound
 	}
 
+	// 清除角色关联表中对该 MCP 的引用
 	_ = service.PersonaRepo.DeletePersonaToolByMcpId(mcpId)
 
 	return service.McpRepo.SoftDeleteMCPEndpoint(mcpId)
 }
 
+// UpdateMCPEndpointStatus 启用/禁用 MCP 端点，启用时调用 ValidateMCP 测试连通性
 func (service *McpService) UpdateMCPEndpointStatus(mcpId int, status uint8) error {
 	endpoint, err := service.McpRepo.GetMCPEndpointByID(mcpId)
 	if err != nil {
@@ -368,12 +382,14 @@ func (service *McpService) UpdateMCPEndpointStatus(mcpId int, status uint8) erro
 		return err
 	}
 
+	// 禁用时级联删除角色中关联该 MCP 的工具记录
 	if status == po.MCPEndpointStatusDisabled {
 		_ = service.PersonaRepo.DeletePersonaToolByMcpId(mcpId)
 	}
 	return nil
 }
 
+// ToggleMCPAlwaysOn 切换 MCP 端点始终启用状态
 func (service *McpService) ToggleMCPAlwaysOn(mcpId int, req *vo.AdminMCPToggleAlwaysOnReq) error {
 	if _, err := service.McpRepo.GetMCPEndpointByID(mcpId); err != nil {
 		return errs.ErrMCPNotFound
@@ -384,6 +400,7 @@ func (service *McpService) ToggleMCPAlwaysOn(mcpId int, req *vo.AdminMCPToggleAl
 	})
 }
 
+// GetRecommendMCPs 推荐 MCP 列表，根据 name 匹配已安装状态
 func (service *McpService) GetRecommendMCPs() []vo.MCPRecommendItem {
 	activeEndpoints, _ := service.McpRepo.FindAllActiveMCPEndpoints()
 	installedMap := make(map[string]*po.MCPEndpoint)
@@ -416,11 +433,12 @@ func (service *McpService) GetRecommendMCPs() []vo.MCPRecommendItem {
 	return reuslt
 }
 
+// validateCreateReq 校验创建 MCP 请求的必填字段
 func (service *McpService) validateCreateReq(req *vo.AdminCreateMCPReq) error {
 	if req.Name == "" {
 		return errs.ErrMCPNameRequired
 	}
-
+	// mcpNamePattern MCP 标识名规则：字母开头，仅允许字母、数字、连字符
 	var mcpNamePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9-]{1,63}$`)
 	if !mcpNamePattern.MatchString(req.Name) {
 		return errs.ErrMCPNameInvalid
@@ -447,6 +465,7 @@ func (service *McpService) validateCreateReq(req *vo.AdminCreateMCPReq) error {
 	return nil
 }
 
+// testMCPConnection 测试 MCP 端点连通性
 func (service *McpService) testMCPConnection(mcpObj tools.MCP) error {
 	ctx := context.Background()
 	superAdmin, err := service.UserRepo.FindSuperAdmin()
@@ -465,6 +484,8 @@ func (service *McpService) testMCPConnection(mcpObj tools.MCP) error {
 	return nil
 }
 
+// CheckMCPToolNameConflicts 检查多个 MCP 端点之间是否存在同名工具
+// 逐一连接 MCP 端点获取工具列表，如果不同端点暴露了同名工具则返回错误
 func (service *McpService) CheckMCPToolNameConflicts(mcpIds []int) error {
 	if len(mcpIds) <= 1 {
 		return nil
@@ -484,6 +505,7 @@ func (service *McpService) CheckMCPToolNameConflicts(mcpIds []int) error {
 		return boxerr
 	}
 
+	// toolName -> endpointDisplayName 映射，用于检测同名冲突
 	toolOwnerMap := make(map[string]string)
 	ctx := context.Background()
 
@@ -491,7 +513,7 @@ func (service *McpService) CheckMCPToolNameConflicts(mcpIds []int) error {
 		mcpObj := service.BuildMCPObjectFromEndpoint(&ep)
 		toolNames, validateErr := tools.ValidateMCP(ctx, mcpObj, box)
 		if validateErr != nil {
-
+			// 连接失败的端点跳过，不影响其他端点的冲突检查
 			continue
 		}
 		for _, name := range toolNames {
@@ -508,7 +530,13 @@ func (service *McpService) CheckMCPToolNameConflicts(mcpIds []int) error {
 	return nil
 }
 
+// BuildMCPObjectFromEndpoint 从 po.MCPEndpoint 构建 tools.MCP 对象
 func (service *McpService) BuildMCPObjectFromEndpoint(ep *po.MCPEndpoint) tools.MCP {
+	return buildMCPObjectFromEndpoint(ep)
+}
+
+// buildMCPObjectFromEndpoint 从 po.MCPEndpoint 构建 tools.MCP 对象（包级函数，供无请求上下文的后台任务复用）
+func buildMCPObjectFromEndpoint(ep *po.MCPEndpoint) tools.MCP {
 	mcpObj := tools.MCP{
 		Transport:   ep.Transport,
 		Name:        ep.Name,
@@ -529,6 +557,7 @@ func (service *McpService) BuildMCPObjectFromEndpoint(ep *po.MCPEndpoint) tools.
 	return mcpObj
 }
 
+// buildMCPObject 从字段值构建 tools.MCP 对象，用于创建/编辑时的测试
 func (service *McpService) buildMCPObject(transport, httpUrl, httpHeader, proxyUrl, stdioType, stdioEnv, stdioArgs string) tools.MCP {
 	mcpObj := tools.MCP{
 		Transport:  transport,

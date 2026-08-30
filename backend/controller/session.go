@@ -16,12 +16,14 @@ func init() {
 	})
 }
 
+// SessionController 用户会话相关接口
 type SessionController struct {
 	SessionSev   *service.SessionService
 	ShareLinkSev *service.ShareLinkService
 	Request      *infra.Request
 }
 
+// BeforeActivation 绑定路由前缀 /api/sessions
 func (controller *SessionController) BeforeActivation(b freedom.BeforeActivation) {
 	b.Handle("GET", "/", "ListSessions")
 	b.Handle("GET", "/shares", "ListMyShares")
@@ -34,6 +36,7 @@ func (controller *SessionController) BeforeActivation(b freedom.BeforeActivation
 	b.Handle("DELETE", "/{sessionId:string}/share", "DeleteShare")
 }
 
+// ListSessions 获取会话列表（侧边栏"所有对话"） GET /api/sessions
 func (controller *SessionController) ListSessions() freedom.Result {
 	userId := controller.Request.GetUserId()
 	req := &vo.SessionListReq{}
@@ -41,9 +44,11 @@ func (controller *SessionController) ListSessions() freedom.Result {
 		return &infra.JSONResponse{Error: err}
 	}
 
+	// === MOCK START === 前端联调期间：未调过 Chat() 返回空，调过则返回单条 mock 会话
 	if chatUseMock {
 		return &infra.JSONResponse{Object: mock.BuildMockSessionList(userId)}
 	}
+	// === MOCK END ===
 
 	rsp, err := controller.SessionSev.ListSessions(userId, req)
 	if err != nil {
@@ -52,9 +57,11 @@ func (controller *SessionController) ListSessions() freedom.Result {
 	return &infra.JSONResponse{Object: rsp}
 }
 
+// GetSession 获取会话详情 GET /api/sessions/:sessionId
 func (controller *SessionController) GetSession(sessionId string) freedom.Result {
 	userId := controller.Request.GetUserId()
 
+	// === MOCK START === 前端联调期间：仅在 sessionId 命中 mock 会话时返回详情
 	if chatUseMock {
 		detail := mock.BuildMockSessionDetail(sessionId, userId)
 		if detail == nil {
@@ -62,6 +69,7 @@ func (controller *SessionController) GetSession(sessionId string) freedom.Result
 		}
 		return &infra.JSONResponse{Object: detail}
 	}
+	// === MOCK END ===
 
 	rsp, err := controller.SessionSev.GetSession(sessionId, userId)
 	if err != nil {
@@ -70,6 +78,7 @@ func (controller *SessionController) GetSession(sessionId string) freedom.Result
 	return &infra.JSONResponse{Object: rsp}
 }
 
+// UpdateSession 更新会话（标题、归档等） PUT /api/sessions/:sessionId
 func (controller *SessionController) UpdateSession(sessionId string) freedom.Result {
 	userId := controller.Request.GetUserId()
 	req := &vo.SessionUpdateReq{}
@@ -82,6 +91,7 @@ func (controller *SessionController) UpdateSession(sessionId string) freedom.Res
 	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
 }
 
+// GetMessages 获取会话历史消息 GET /api/sessions/:sessionId/messages
 func (controller *SessionController) GetMessages(sessionId string) freedom.Result {
 	userId := controller.Request.GetUserId()
 
@@ -97,6 +107,7 @@ func (controller *SessionController) GetMessages(sessionId string) freedom.Resul
 	return &infra.JSONResponse{Object: rsp}
 }
 
+// DeleteSession 删除会话（软删除） DELETE /api/sessions/:sessionId
 func (controller *SessionController) DeleteSession(sessionId string) freedom.Result {
 	userId := controller.Request.GetUserId()
 	if err := controller.SessionSev.DeleteSession(sessionId, userId); err != nil {
@@ -105,6 +116,7 @@ func (controller *SessionController) DeleteSession(sessionId string) freedom.Res
 	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
 }
 
+// ListMyShares 获取用户分享链接分页列表 GET /api/sessions/shares
 func (controller *SessionController) ListMyShares() freedom.Result {
 	userId := controller.Request.GetUserId()
 	req := &vo.UserShareListReq{}
@@ -118,6 +130,7 @@ func (controller *SessionController) ListMyShares() freedom.Result {
 	return &infra.JSONResponse{Object: rsp}
 }
 
+// CreateShare 创建会话分享链接 POST /api/sessions/:sessionId/share
 func (controller *SessionController) CreateShare(sessionId string) freedom.Result {
 	userId := controller.Request.GetUserId()
 	req := &vo.CreateShareReq{}
@@ -131,6 +144,7 @@ func (controller *SessionController) CreateShare(sessionId string) freedom.Resul
 	return &infra.JSONResponse{Object: rsp}
 }
 
+// GetSessionShare 获取会话的分享链接 GET /api/sessions/:sessionId/share
 func (controller *SessionController) GetSessionShare(sessionId string) freedom.Result {
 	userId := controller.Request.GetUserId()
 	rsp, err := controller.ShareLinkSev.GetSessionShare(sessionId, userId)
@@ -140,6 +154,7 @@ func (controller *SessionController) GetSessionShare(sessionId string) freedom.R
 	return &infra.JSONResponse{Object: rsp}
 }
 
+// DeleteShare 删除会话的分享链接 DELETE /api/sessions/:sessionId/share
 func (controller *SessionController) DeleteShare(sessionId string) freedom.Result {
 	userId := controller.Request.GetUserId()
 	if err := controller.ShareLinkSev.DeleteShare(sessionId, userId); err != nil {

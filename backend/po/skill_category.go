@@ -6,12 +6,13 @@ import (
 	"gorm.io/gorm"
 )
 
+// SkillCategory 技能分类表
 type SkillCategory struct {
-	CategoryId int    `gorm:"primaryKey;column:category_id;type:int;autoIncrement"`
-	Name       string `gorm:"column:name;type:varchar(128);not null"`
-	Icon       string `gorm:"column:icon;type:varchar(256)"`
-	Deleted    uint8  `gorm:"column:deleted;default:0"`
-	IsDefault  uint8  `gorm:"column:is_default;default:0"`
+	CategoryId int    `gorm:"primaryKey;column:category_id;type:int;autoIncrement"` // 主键ID
+	Name       string `gorm:"column:name;type:varchar(128);not null"`              // 分类名称
+	Icon       string `gorm:"column:icon;type:varchar(256)"`                       // 图标：Lucide 图标名称或 URL
+	Deleted    uint8  `gorm:"column:deleted;default:0"`                            // 软删除：0正常 1删除
+	IsDefault  uint8  `gorm:"column:is_default;default:0"`                          // 是否默认分类: 0否 1是
 	Created    time.Time
 	Updated    time.Time
 }

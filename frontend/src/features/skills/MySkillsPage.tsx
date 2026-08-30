@@ -628,6 +628,7 @@ export function Component() {
               ref={searchRef}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              spellCheck={false}
               placeholder={t('skills.searchPlaceholder')}
               className="h-7 w-40 rounded-md border border-border bg-transparent pl-7 pr-2 text-xs text-text-1 placeholder:text-text-muted outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
             />

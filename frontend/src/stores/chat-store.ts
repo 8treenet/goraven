@@ -138,13 +138,13 @@ const BACKGROUND_TIMEOUT_MS = 5 * 60 * 1000
 
 const LAST_USED_MODEL_KEY = 'goraven.lastUsedModelId'
 
-function getLastUsedModelId(): number {
-  const v = localStorage.getItem(LAST_USED_MODEL_KEY)
-  return v ? Number(v) || 0 : 0
+// 上次使用的模型选择：具体模型 ID 或 'default'（默认模型，对话时后端从默认池随机选取）
+function getLastUsedModelChoice(): string | null {
+  return localStorage.getItem(LAST_USED_MODEL_KEY)
 }
 
-function setLastUsedModelId(id: number) {
-  localStorage.setItem(LAST_USED_MODEL_KEY, String(id))
+function setLastUsedModelChoice(choice: number | 'default') {
+  localStorage.setItem(LAST_USED_MODEL_KEY, choice === 'default' ? 'default' : String(choice))
 }
 
 function startPolling(
@@ -447,7 +447,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ formPersonaId: id })
     try {
       const detail = await personasApi.getPersonaDetail(id)
-      const modelId = detail.aiModelId > 0 ? detail.aiModelId : get().formModelId
+      // 角色绑定具体模型时沿用该模型；角色使用 Auto 时同步选中 Auto，
+      // 避免沿用之前自由模式的具体模型覆盖角色的 Auto 语义
+      const modelId = detail.aiModelId > 0 ? detail.aiModelId : 0
       set({
         formModelId: modelId,
         formMcpIds: detail.mcpIds ?? [],
@@ -520,13 +522,20 @@ export const useChatStore = create<ChatState>((set, get) => ({
         isFlash: Boolean(m.isFlash),
         isVisual: Boolean(m.isVisual),
       }))
-      const defaultModel = models.find((m) => m.isDefault)
+      // 存在默认模型时优先提供“Auto”选项（formModelId=0，对话时后端从默认池随机选取）
+      const defaultModels = models.filter((m) => m.isDefault)
+      const fallbackId = defaultModels.length > 0 ? 0 : (models[0]?.id ?? 0)
       let nextModelId = get().formModelId
       if (!nextModelId) {
-        const lastId = getLastUsedModelId()
-        nextModelId = lastId && models.some((m) => m.id === lastId)
-          ? lastId
-          : (defaultModel?.id ?? models[0]?.id ?? 0)
+        const last = getLastUsedModelChoice()
+        if (last === 'default') {
+          nextModelId = fallbackId
+        } else if (last) {
+          const lastId = Number(last) || 0
+          nextModelId = lastId && models.some((m) => m.id === lastId) ? lastId : fallbackId
+        } else {
+          nextModelId = fallbackId
+        }
       }
       set({ models, formModelId: nextModelId })
     } catch {
@@ -655,8 +664,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
     if (isNewSession) {
       set({ creatingSession: false })
-      const usedModelId = rsp.session?.aiModelId ?? state.formModelId
-      if (usedModelId > 0) setLastUsedModelId(usedModelId)
+      // 使用默认模型时不记录具体模型 ID，记住“默认”选择，下次仍优先选中默认模型
+      if (state.formModelId === 0) {
+        setLastUsedModelChoice('default')
+      } else {
+        const usedModelId = rsp.session?.aiModelId ?? state.formModelId
+        if (usedModelId > 0) setLastUsedModelChoice(usedModelId)
+      }
     }
 
 

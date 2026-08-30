@@ -10,7 +10,9 @@ import (
 var domain = "http://localhost:8000"
 
 func TestInstallCheckDB(t *testing.T) {
-
+	// req := vo.InstallDBCheckReq{
+	// 	DBType: "sqlite",
+	// }
 	req := vo.InstallDBCheckReq{
 		DBType: "mysql",
 		DBAddr: "127.0.0.1",

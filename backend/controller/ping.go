@@ -10,10 +10,12 @@ func init() {
 	})
 }
 
+// PingController
 type PingController struct {
 	Worker freedom.Worker
 }
 
+// Get
 func (controller *PingController) Get() {
 	controller.Worker.IrisContext().WriteString("pong")
 }

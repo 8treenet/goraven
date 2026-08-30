@@ -116,15 +116,15 @@ export function Component() {
   }, [dialogTarget, loadData])
 
   const handleSetDefault = useCallback(
-    (modelId: number) => {
+    (modelId: number, currentlyDefault: boolean) => {
       adminModelsApi.setDefaultModel(modelId).then(() => {
         setModels((prev) =>
           prev.map((m) => ({
             ...m,
-            isDefault: (m.aiModelId === modelId ? 1 : 0) as number,
+            isDefault: (m.aiModelId === modelId ? (currentlyDefault ? 0 : 1) : m.isDefault) as number,
           })),
         )
-        toast.success(translate('adminModels.setDefault'))
+        toast.success(translate(currentlyDefault ? 'adminModels.unsetDefaultToast' : 'adminModels.setDefault'))
       }).catch((err: Error) => { toast.error(err.message || translate('common.failed')) })
     },
     [],
@@ -182,6 +182,7 @@ export function Component() {
               type="text"
               name="search"
               autoComplete="off"
+              spellCheck={false}
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder={t('adminModels.searchPlaceholder')}
@@ -275,7 +276,7 @@ export function Component() {
                       setDialogTarget(model)
                       setDialogMode('delete')
                     }}
-                    onSetDefault={() => handleSetDefault(model.aiModelId)}
+                    onSetDefault={() => handleSetDefault(model.aiModelId, model.isDefault === 1)}
                     onSetFlash={() => handleSetFlash(model.aiModelId)}
                     onSetVisual={() => handleSetVisual(model.aiModelId)}
                   />

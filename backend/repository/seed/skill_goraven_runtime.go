@@ -33,6 +33,10 @@ description: GoRaven Agent 运行环境与约束。涵盖容器环境、可用�
 
 子智能体同样运行在本技能描述的运行环境中，同样受安全规则约束。
 
+### 自动化任务会话
+
+自动化任务到点触发时新建会话执行需求：干净上下文（看不到创建任务时的对话），运行环境与安全约束与本技能完全一致，此类会话不出现在侧边栏。
+
 ### 计划模式
 
 复杂多步任务可用计划工具（TaskCreate / TaskUpdate / TaskGet / TaskList）拆解并跟踪步骤。计划仅存在于本次运行期间，不跨会话持久化。
@@ -70,7 +74,7 @@ LLM 请求失败时系统自动重试，采用退避策略：
 
 - 格式：KEY=VALUE（支持 export KEY=VALUE），# 注释
 - 鉴权失败或缺少环境变量时，先检查 .profile，向用户确认后写入，禁止猜测填充
-- 用户可在 /files 页面通过「环境变量」按钮编辑
+- 用户可在个人设置页（/profile）通过「环境变量」区块的「管理」按钮编辑
 
 ### 后台执行
 Shell 支持后台运行模式，适合长时间任务。进程组管理确保取消时彻底清理所有子进程。
@@ -186,6 +190,10 @@ When to delegate:
 
 Sub-agents run in the same environment described in this skill and are subject to the same safety rules.
 
+### Automation-triggered Sessions
+
+When an automation task is due, a fresh session runs the requirement: clean context (no visibility into the conversation that created the task), same runtime environment and safety constraints as described in this skill. Such sessions are hidden from the sidebar.
+
 ### Plan Mode
 
 For complex multi-step tasks, use the plan tools (TaskCreate / TaskUpdate / TaskGet / TaskList) to break down and track steps. Plans live only for the duration of the run and are not persisted across sessions.
@@ -223,7 +231,7 @@ When executing shell commands, the system auto-injects all variables from the wo
 
 - Format: KEY=VALUE (export KEY=VALUE also supported), # for comments
 - On auth failure or missing env var, inspect .profile first, confirm with user before writing — never guess values
-- Users can edit via the "Environment Variables" button on the /files page
+- Users can edit via the "Manage" button in the "Environment Variables" section on the Profile page (/profile)
 
 ### Background Execution
 Shell supports background mode for long-running tasks. Process group management ensures clean cleanup of all child processes on cancellation.

@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// Seed 初始化所有种子数据
 func Seed(db *gorm.DB) error {
 	if err := seedSkillCategories(db); err != nil {
 		return err
@@ -184,6 +185,10 @@ func seedSystemSkills(db *gorm.DB) error {
 	userUIDescription := seed.ParseSkillDescription(userUIContent)
 	adminUIContent := seed.SystemSkillGoRavenAdminUI
 	adminUIDescription := seed.ParseSkillDescription(adminUIContent)
+	llmwikiContent := seed.SystemSkillGoRavenLLMWiki
+	llmwikiDescription := seed.ParseSkillDescription(llmwikiContent)
+	automationContent := seed.SystemSkillGoRavenAutomation
+	automationDescription := seed.ParseSkillDescription(automationContent)
 	if config.Get().System.Language == "en" {
 		installContent = seed.SystemSkillInstallEn
 		installDescription = seed.ParseSkillDescription(installContent)
@@ -199,6 +204,10 @@ func seedSystemSkills(db *gorm.DB) error {
 		userUIDescription = seed.ParseSkillDescription(userUIContent)
 		adminUIContent = seed.SystemSkillGoRavenAdminUIEn
 		adminUIDescription = seed.ParseSkillDescription(adminUIContent)
+		llmwikiContent = seed.SystemSkillGoRavenLLMWikiEn
+		llmwikiDescription = seed.ParseSkillDescription(llmwikiContent)
+		automationContent = seed.SystemSkillGoRavenAutomationEn
+		automationDescription = seed.ParseSkillDescription(automationContent)
 	}
 
 	skills := []po.SystemSkill{
@@ -206,44 +215,82 @@ func seedSystemSkills(db *gorm.DB) error {
 			Name:        "goraven-install-skill",
 			Description: installDescription,
 			Content:     installContent,
+			Version:     config.Version,
 			Status:      po.SystemSkillStatusEnabled,
 		},
 		{
 			Name:        "goraven-chart",
 			Description: chartDescription,
 			Content:     chartContent,
+			Version:     config.Version,
 			Status:      po.SystemSkillStatusEnabled,
 		},
 		{
 			Name:        "goraven-guide",
 			Description: guideDescription,
 			Content:     guideContent,
+			Version:     config.Version,
 			Status:      po.SystemSkillStatusEnabled,
 		},
 		{
 			Name:        "goraven-runtime",
 			Description: runtimeDescription,
 			Content:     runtimeContent,
+			Version:     config.Version,
 			Status:      po.SystemSkillStatusEnabled,
 		},
 		{
 			Name:        "goraven-features",
 			Description: featuresDescription,
 			Content:     featuresContent,
+			Version:     config.Version,
 			Status:      po.SystemSkillStatusEnabled,
 		},
 		{
 			Name:        "goraven-user-ui",
 			Description: userUIDescription,
 			Content:     userUIContent,
+			Version:     config.Version,
 			Status:      po.SystemSkillStatusEnabled,
 		},
 		{
 			Name:        "goraven-admin-ui",
 			Description: adminUIDescription,
 			Content:     adminUIContent,
+			Version:     config.Version,
 			Status:      po.SystemSkillStatusEnabled,
 		},
+		{
+			Name:        "goraven-llmwiki",
+			Description: llmwikiDescription,
+			Content:     llmwikiContent,
+			Version:     config.Version,
+			Status:      po.SystemSkillStatusEnabled,
+		},
+		{
+			Name:        "goraven-automation",
+			Description: automationDescription,
+			Content:     automationContent,
+			Version:     config.Version,
+			Status:      po.SystemSkillStatusEnabled,
+		},
+	}
+
+	// docling 技能仅 Docker 环境创建（依赖容器内 Python venv + docling）
+	if config.Get().Behavior.Docker {
+		docContent := seed.SystemSkillGoRavenDocParse
+		docDescription := seed.ParseSkillDescription(docContent)
+		if config.Get().System.Language == "en" {
+			docContent = seed.SystemSkillGoRavenDocParseEn
+			docDescription = seed.ParseSkillDescription(docContent)
+		}
+		skills = append(skills, po.SystemSkill{
+			Name:        "goraven-doc-parse",
+			Description: docDescription,
+			Content:     docContent,
+			Version:     config.Version,
+			Status:      po.SystemSkillStatusEnabled,
+		})
 	}
 
 	names := make([]string, len(skills))
@@ -251,20 +298,32 @@ func seedSystemSkills(db *gorm.DB) error {
 		names[i] = s.Name
 	}
 
-	var existingNames []string
-	if err := db.Model(&po.SystemSkill{}).Where("name IN ?", names).Pluck("name", &existingNames).Error; err != nil {
+	var existing []po.SystemSkill
+	if err := db.Select("name", "version").Where("name IN ?", names).Find(&existing).Error; err != nil {
 		return err
 	}
 
-	existingSet := make(map[string]bool, len(existingNames))
-	for _, n := range existingNames {
-		existingSet[n] = true
+	existingMap := make(map[string]string, len(existing))
+	for _, e := range existing {
+		existingMap[e.Name] = e.Version
 	}
 
 	var toInsert []po.SystemSkill
 	for _, s := range skills {
-		if !existingSet[s.Name] {
+		oldVersion, exists := existingMap[s.Name]
+		if !exists {
 			toInsert = append(toInsert, s)
+			continue
+		}
+
+		if oldVersion != config.Version {
+			if err := db.Model(&po.SystemSkill{}).Where("name = ?", s.Name).Updates(map[string]interface{}{
+				"description": s.Description,
+				"content":     s.Content,
+				"version":     config.Version,
+			}).Error; err != nil {
+				continue
+			}
 		}
 	}
 

@@ -615,6 +615,7 @@ export const TeamProjectFiles = forwardRef<TeamProjectFilesHandle, TeamProjectFi
                         ref={renameInputRef}
                         value={renameValue}
                         onChange={(e) => setRenameValue(e.target.value)}
+                        spellCheck={false}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') commitRename()
                           if (e.key === 'Escape') cancelRename()

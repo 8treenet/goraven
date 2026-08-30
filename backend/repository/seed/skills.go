@@ -5,14 +5,11 @@ import "strings"
 var PresetSkillNames = map[string]bool{
 	"goraven-install-skill": true,
 	"goraven-chart":         true,
-	"goraven-guide":         true,
-	"goraven-runtime":       true,
-	"goraven-features":      true,
-	"goraven-user-ui":       true,
-	"goraven-admin-ui":      true,
-	"goraven-troubleshoot":  true,
+	"goraven-llmwiki":       true,
+	"goraven-doc-parse":     true,
 }
 
+// ParseSkillDescription 从技能内容 YAML 前言中提取 description 字段
 func ParseSkillDescription(content string) string {
 	lines := strings.Split(content, "\n")
 	inFrontmatter := false

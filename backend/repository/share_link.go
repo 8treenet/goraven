@@ -18,10 +18,12 @@ func init() {
 	})
 }
 
+// ShareLinkRepository 对话分享链接仓储
 type ShareLinkRepository struct {
 	freedom.Repository
 }
 
+// CreateShareLink 创建分享链接
 func (repo *ShareLinkRepository) CreateShareLink(shareLink *po.ShareLink) error {
 	if shareLink.ShareId == "" {
 		shareLink.ShareId = util.UUID()
@@ -29,18 +31,21 @@ func (repo *ShareLinkRepository) CreateShareLink(shareLink *po.ShareLink) error 
 	return repo.db().Create(shareLink).Error
 }
 
+// GetShareLink 根据 shareId 获取分享链接（无鉴权，公开访问用）
 func (repo *ShareLinkRepository) GetShareLink(shareId string) (*po.ShareLink, error) {
 	var shareLink po.ShareLink
 	err := repo.db().First(&shareLink, "share_id = ? AND deleted = 0", shareId).Error
 	return &shareLink, err
 }
 
+// GetSessionShare 获取会话的分享链接（需校验 userId）
 func (repo *ShareLinkRepository) GetSessionShare(sessionId string, userId string) (*po.ShareLink, error) {
 	var shareLink po.ShareLink
 	err := repo.db().First(&shareLink, "session_id = ? AND user_id = ? AND deleted = 0", sessionId, userId).Error
 	return &shareLink, err
 }
 
+// UpdateShareLink 更新分享链接的标题、类型和过期时间，重置浏览次数
 func (repo *ShareLinkRepository) UpdateShareLink(shareId string, title string, shareType string, expiresAt time.Time) (*po.ShareLink, error) {
 	if err := repo.db().Model(&po.ShareLink{}).
 		Where("share_id = ? AND deleted = 0", shareId).
@@ -60,6 +65,7 @@ func (repo *ShareLinkRepository) UpdateShareLink(shareId string, title string, s
 	return &shareLink, nil
 }
 
+// DeleteShareLink 删除分享链接（软删除，校验 userId）
 func (repo *ShareLinkRepository) DeleteShareLink(sessionId string, userId string) error {
 	return repo.db().Model(&po.ShareLink{}).
 		Where("session_id = ? AND user_id = ? AND deleted = 0", sessionId, userId).
@@ -69,6 +75,7 @@ func (repo *ShareLinkRepository) DeleteShareLink(sessionId string, userId string
 		}).Error
 }
 
+// ListUserShareLinks 获取用户分享链接分页列表
 func (repo *ShareLinkRepository) ListUserShareLinks(userId string, req *vo.UserShareListReq) ([]po.ShareLink, *PageResult, error) {
 	query := repo.db().Model(&po.ShareLink{}).Where("user_id = ? AND deleted = 0", userId)
 	var shareLinks []po.ShareLink
@@ -79,12 +86,13 @@ func (repo *ShareLinkRepository) ListUserShareLinks(userId string, req *vo.UserS
 	return shareLinks, pr, nil
 }
 
+// IncrementViewCount 增加浏览次数
 func (repo *ShareLinkRepository) IncrementViewCount(shareId string) error {
 	return repo.db().Model(&po.ShareLink{}).
 		Where("share_id = ? AND deleted = 0", shareId).
 		Updates(map[string]interface{}{
 			"view_count": gorm.Expr("view_count + 1"),
-			"updated":    time.Now(),
+			"updated":   time.Now(),
 		}).Error
 }
 

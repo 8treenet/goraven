@@ -62,9 +62,13 @@ func TestClawHubRepository_Download(t *testing.T) {
 	var repo *repository.ClawHubRepository
 	unitTest.FetchRepository(&repo)
 	t.Log(repo.Download("bloomberg-headlines"))
-
+	///var/folders/ky/m2vv48ys1p10nxn8sks61cf00000gn/T/goraven-download/7e90f93b2e504feb913e0d25e2bf4f97.zip
 }
 
 func TestClawHubRepository_UnzipFile(t *testing.T) {
-
+	// err := util.UnzipFile("/var/folders/ky/m2vv48ys1p10nxn8sks61cf00000gn/T/goraven-download/7e90f93b2e504feb913e0d25e2bf4f97.zip", "/var/folders/ky/m2vv48ys1p10nxn8sks61cf00000gn/T/goraven-download")
+	// //targetDir目录只有SKILL.md，如果是skill，因该先创建skill_name的目录
+	// if err != nil {
+	// 	panic(err)
+	// }
 }

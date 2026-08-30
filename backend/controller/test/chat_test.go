@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"goraven/backend/vo"
 	"net/http"
+	"goraven/backend/vo"
 	"strings"
 	"testing"
 	"time"
@@ -18,6 +18,8 @@ func init() {
 	requests.SetHTTPClient(requests.NewHTTPClient(1000*time.Second, 5*time.Second))
 }
 
+// TestChat 发起对话 POST /api/chat
+// go test -test.fullpath=true -timeout 1150s -run ^TestChat$ goraven/backend/controller/test -v -count=1
 func TestChat(t *testing.T) {
 	content := "我在学习golang语言,给我一出一份学习计划"
 	modelId := 1
@@ -44,10 +46,12 @@ func TestChat(t *testing.T) {
 	chatsteam(t, rsp.Data.SessionId)
 }
 
+// TestChat 发起对话 POST /api/chat
+// go test -test.fullpath=true -timeout 150s -run ^TestPersonaChat$ goraven/backend/controller/test -v -count=1
 func TestPersonaChat(t *testing.T) {
 	content := "分析下这个项目"
 	modelId := 2
-
+	//personaId := 2
 	req := vo.ChatReq{
 		Content:   content,
 		AIModelId: modelId,
@@ -72,6 +76,8 @@ func TestPersonaChat(t *testing.T) {
 	chatsteam(t, rsp.Data.SessionId)
 }
 
+// TestChat 发起对话 POST /api/chat
+// go test -test.fullpath=true -timeout 1150s -run ^TestPersonaSkillChat$ goraven/backend/controller/test -v -count=1
 func TestPersonaSkillChat(t *testing.T) {
 	content := "给我查下最新的彭博社d头条"
 	modelId := 1
@@ -100,6 +106,7 @@ func TestPersonaSkillChat(t *testing.T) {
 	chatsteam(t, rsp.Data.SessionId)
 }
 
+// go test -test.fullpath=true -timeout 350s -run ^TestMCPChat$ goraven/backend/controller/test -v -count=1
 func TestMCPChat(t *testing.T) {
 	content := "我现在加载了github的mcp，我想测试下是否正常。你调用一下试试"
 	modelId := 1
@@ -127,6 +134,7 @@ func TestMCPChat(t *testing.T) {
 	chatsteam(t, rsp.Data.SessionId)
 }
 
+// TestChatStop 停止生成 POST /api/chat/stop
 func TestChatStop(t *testing.T) {
 	stopReq := vo.ChatStopReq{
 		SessionId: "2e6b6788ad124f29b3146438de169bb4",
@@ -146,6 +154,8 @@ func TestChatStop(t *testing.T) {
 	t.Logf("stop response: code=%d msg=%s", stopRsp.Code, stopRsp.Msg)
 }
 
+// chatsteam SSE 流输出
+// reasoning 和 content 实时追加输出，tool 和 retry 单行输出
 func chatsteam(t *testing.T, sessionId string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
@@ -263,6 +273,7 @@ func chatsteam(t *testing.T, sessionId string) {
 	}
 }
 
+// TestChatCompress 手动压缩上下文 POST /api/chat/compress
 func TestChatCompress(t *testing.T) {
 	req := vo.ChatCompressReq{
 		SessionId: "newddd123",

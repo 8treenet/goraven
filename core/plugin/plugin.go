@@ -1,69 +1,12 @@
+// Package plugin provides the plugin system for the GoRaven agent framework.
+// Third-party extensions implement the hook interfaces defined here and register
+// via the Register function to extend agent behavior.
 package plugin
 
-import "context"
-
+// Plugin is the base interface that all plugins must implement.
 type Plugin interface {
+	// Name returns the unique identifier for this plugin, e.g. "mycorp/approval".
 	Name() string
+	// Version returns the semantic version of this plugin, e.g. "1.0.0".
 	Version() string
-}
-
-type RoundContext struct {
-	SessionID        string
-	RoundID          string
-	Query            string
-	Reply            *string
-	ReasoningContent *string
-	Stopped          bool
-}
-
-type SSEEventData struct {
-	Type string
-}
-
-type AgentCreateContext struct {
-	SessionID string
-	UserID    string
-}
-
-type RoundHook interface {
-	BeforeRound(ctx *RoundContext) error
-	AfterRound(ctx *RoundContext) error
-}
-
-type ToolHook interface {
-	BeforeTool(ctx context.Context, toolName string, args string) (string, bool)
-	AfterTool(ctx context.Context, toolName string, args string, result string, execErr error) string
-}
-
-type SSEHook interface {
-	OnSSEEvent(ctx context.Context, event *SSEEventData) *SSEEventData
-}
-
-type AgentLifecycleHook interface {
-	BeforeAgentCreate(ctx *AgentCreateContext) error
-}
-
-type PluginInfo struct {
-	Name    string
-	Version string
-}
-
-type PluginFactory func() Plugin
-
-var factories []PluginFactory
-
-func Register(factory PluginFactory) {
-	factories = append(factories, factory)
-}
-
-func GetAllPluginInfo() []PluginInfo {
-	var result []PluginInfo
-	for _, f := range factories {
-		p := f()
-		result = append(result, PluginInfo{
-			Name:    p.Name(),
-			Version: p.Version(),
-		})
-	}
-	return result
 }

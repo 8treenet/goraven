@@ -341,12 +341,12 @@ var (
 		zhMessage: "压缩任务不存在或已过期",
 	}
 	ErrProjectMutualExclusive = &Error{
-		enMessage: "project and sharedProjectId are mutually exclusive",
-		zhMessage: "个人项目和团队共享项目不能同时设置",
+		enMessage: "project and teamProjectId are mutually exclusive",
+		zhMessage: "个人项目和团队项目不能同时设置",
 	}
-	ErrSharedProjectBusy = &Error{
-		enMessage: "the shared project is currently in use by another session, please try again later",
-		zhMessage: "该团队共享项目正在被其他会话使用，请稍后重试",
+	ErrTeamProjectBusy = &Error{
+		enMessage: "the team project is currently in use by another session, please try again later",
+		zhMessage: "该团队项目正在被其他会话使用，请稍后重试",
 	}
 	ErrShareNotFound = &Error{
 		enMessage: "share link not found",
@@ -424,25 +424,9 @@ var (
 		enMessage: "path is not a directory",
 		zhMessage: "路径不是目录",
 	}
-	ErrSharedProjectNotFound = &Error{
-		enMessage: "shared project not found",
-		zhMessage: "共享项目不存在",
-	}
-	ErrSharedProjectPermission = &Error{
-		enMessage: "permission denied: only the owner can manage this shared project",
-		zhMessage: "权限不足：仅所有者可管理此共享项目",
-	}
-	ErrSharedProjectAlreadyShared = &Error{
-		enMessage: "this project is already shared",
-		zhMessage: "此项目已共享",
-	}
-	ErrSharedProjectInvalidName = &Error{
-		enMessage: "invalid project name: must be a direct subdirectory of projects/",
-		zhMessage: "项目名无效：必须是 projects/ 下的直接子目录",
-	}
-	ErrSharedProjectDirNotFound = &Error{
-		enMessage: "project directory does not exist, contact the owner",
-		zhMessage: "项目目录不存在，请联系所有者",
+	ErrTeamProjectNotFound = &Error{
+		enMessage: "team project not found",
+		zhMessage: "团队项目不存在",
 	}
 	ErrTeamProjectPermission = &Error{
 		enMessage: "permission denied: only the creator can manage this team project",
@@ -452,17 +436,13 @@ var (
 		enMessage: "a team project with this name already exists",
 		zhMessage: "同名团队项目已存在",
 	}
+	ErrTeamProjectInvalidName = &Error{
+		enMessage: "invalid project name: only letters, digits, hyphens and underscores allowed",
+		zhMessage: "项目名无效：仅允许字母、数字、连字符和下划线",
+	}
 	ErrTeamProjectDirNotFound = &Error{
 		enMessage: "team project directory does not exist",
 		zhMessage: "团队项目目录不存在",
-	}
-	ErrTeamProjectNotFound = &Error{
-		enMessage: "team project not found",
-		zhMessage: "团队项目不存在",
-	}
-	ErrDailyTokenLimitExceeded = &Error{
-		enMessage: "daily token limit exceeded, please try again tomorrow or contact your administrator",
-		zhMessage: "今日 Token 用量已达上限，请明日再试或联系管理员调整额度",
 	}
 	ErrTeamProjectMemberExists = &Error{
 		enMessage: "user is already a member of this project",
@@ -476,8 +456,36 @@ var (
 		enMessage: "cannot remove the creator from members",
 		zhMessage: "不能移除创建者",
 	}
-	ErrTeamProjectInvalidName = &Error{
-		enMessage: "invalid project name: only letters, digits, hyphens and underscores allowed",
-		zhMessage: "项目名无效：仅允许字母、数字、连字符和下划线",
+	ErrAutomationTaskNotFound = &Error{
+		enMessage: "automation task not found",
+		zhMessage: "自动化任务不存在",
+	}
+	ErrAutomationExecutionNotFound = &Error{
+		enMessage: "automation execution not found",
+		zhMessage: "执行记录不存在",
+	}
+	ErrAutomationTaskStatusInvalid = &Error{
+		enMessage: "status must be 0 (disabled) or 1 (enabled)",
+		zhMessage: "状态无效，仅支持 0停用 或 1启用",
+	}
+	ErrAutomationTaskCompleted = &Error{
+		enMessage: "completed task cannot be enabled or disabled",
+		zhMessage: "已完成的任务不可启停",
+	}
+	ErrAutomationTaskRequirementEmpty = &Error{
+		enMessage: "requirement cannot be empty",
+		zhMessage: "需求描述不能为空",
+	}
+	ErrAutomationTaskRunning = &Error{
+		enMessage: "automation task is running, please wait for it to finish",
+		zhMessage: "任务正在执行中，请等待执行结束",
+	}
+	ErrAutomationTaskPersonaDeleted = &Error{
+		enMessage: "the persona of this task has been deleted and it cannot be enabled, please create a new automation task",
+		zhMessage: "任务关联的角色已被删除，无法启用，请新建自动化任务",
+	}
+	ErrDailyTokenLimitExceeded = &Error{
+		enMessage: "daily token limit exceeded, please try again tomorrow or contact your administrator",
+		zhMessage: "今日 Token 用量已达上限，请明日再试或联系管理员调整额度",
 	}
 )

@@ -16,8 +16,9 @@ import (
 	"gorm.io/gorm"
 )
 
+// set GORAVEN_CONF from config.go -> ParseConfigPath
 func GetUnitTest() freedom.UnitTest {
-
+	//Create unit testing tools
 	unitTest := freedom.NewUnitTest()
 	unitTest.InstallDB(func() interface{} {
 		dbConf := config.Get().DB
@@ -30,7 +31,7 @@ func GetUnitTest() freedom.UnitTest {
 			dialector = mysql.Open(dbConfAddr)
 		case "pg":
 			dialector = postgres.Open(dbConfAddr)
-		default:
+		default: // sqlite
 			dbConfAddr = config.Get().Paths.SqliteDB
 			dialector = sqlite.Open(dbConfAddr)
 		}

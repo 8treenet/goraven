@@ -31,6 +31,7 @@ function ModelIcon({ icon }: { icon?: string }) {
 
 export function PersonaInfoDialog({
   personaId,
+  sessionModelId = 0,
   contextTokens,
   promptTokensCount,
   completionTokensCount,
@@ -38,6 +39,7 @@ export function PersonaInfoDialog({
   onOpenChange,
 }: {
   personaId: number | null
+  sessionModelId?: number
   contextTokens: number
   promptTokensCount: number
   completionTokensCount: number
@@ -62,9 +64,12 @@ export function PersonaInfoDialog({
       if (!detail) { setError(true); return }
       setPersona(detail)
 
-      if (detail.aiModelId > 0) {
+      // 角色配置具体模型时用该模型；角色使用 Auto 时展示会话实际使用的模型
+      //（后端不论角色与否都会将实际模型 ID 钉死到会话）
+      const resolvedModelId = detail.aiModelId > 0 ? detail.aiModelId : sessionModelId
+      if (resolvedModelId > 0) {
         try {
-          const m = await providersApi.getModel(detail.aiModelId)
+          const m = await providersApi.getModel(resolvedModelId)
           if (m) {
             setModelInfo(m)
             setModelFailed(false)
@@ -104,7 +109,7 @@ export function PersonaInfoDialog({
       setError(true)
       setLoading(false)
     }
-  }, [personaId, t])
+  }, [personaId, sessionModelId, t])
 
   useEffect(() => {
     if (open && personaId) {
@@ -228,7 +233,10 @@ export function PersonaInfoDialog({
                   ) : persona.aiModelId > 0 && modelFailed ? (
                     <span className="text-sm text-text-3">{t('personas.modelUnavailable')}</span>
                   ) : persona.aiModelId === 0 ? (
-                    <span className="text-sm text-text-3">{t('personas.useDefaultModel')}</span>
+                    <span className="flex items-center gap-1.5 text-sm text-text-1">
+                      <img src="/favicon.svg" alt="" className="size-3.5 shrink-0 rounded object-cover" />
+                      {t('chat.autoModel')}
+                    </span>
                   ) : null}
                 </div>
               </section>

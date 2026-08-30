@@ -63,6 +63,16 @@ func (repo *TeamProjectRepository) GetByID(id int) (*po.TeamProject, error) {
 	return &project, nil
 }
 
+// GetByIDs 根据 ID 列表批量查询团队项目
+func (repo *TeamProjectRepository) GetByIDs(ids []int) ([]po.TeamProject, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	var projects []po.TeamProject
+	err := repo.db().Where("id IN ?", ids).Find(&projects).Error
+	return projects, err
+}
+
 // GetByName 根据项目名查询团队项目
 func (repo *TeamProjectRepository) GetByName(name string) (*po.TeamProject, error) {
 	var project po.TeamProject
@@ -166,8 +176,8 @@ func (repo *TeamProjectRepository) UnlockTeamProject(id int) error {
 func (repo *TeamProjectRepository) IncrementVisitAndUpdateLastActive(id int) error {
 	return repo.db().Model(&po.TeamProject{}).Where("id = ?", id).
 		Updates(map[string]interface{}{
-			"visit_count":    gorm.Expr("visit_count + 1"),
-			"last_active_at": time.Now(),
+			"visit_count":      gorm.Expr("visit_count + 1"),
+			"last_active_time": time.Now(),
 		}).Error
 }
 

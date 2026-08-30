@@ -2,6 +2,7 @@ package seed
 
 import "goraven/backend/po"
 
+// SkillMarketSeeds contains the default skill market seed data.
 var SkillMarketSeeds = []po.SkillMarket{
 	{
 		Name:        "skill-creator",

@@ -334,16 +334,17 @@ function SessionChat({ sessionId }: { sessionId: string }) {
     )
   }
 
-  // 模型被删除时的降级：取默认模型，无默认则取列表第一个
-  const fallbackModel = models.length > 0
-    ? (models.find(m => m.isDefault) ?? models[0])
-    : null
-  const displayName = sessionDetail?.modelName || session.modelName || fallbackModel?.name || null
+  // 模型被删除时的降级：语义化展示“Auto”（发消息时后端从默认池随机选取），
+  // 图标与下拉虚拟选项一致使用 GoRaven 品牌图标；无默认模型时回退展示列表第一个。
+  const fallbackDefault = models.find(m => m.isDefault)
+  const fallbackName = fallbackDefault ? t('chat.autoModel') : models[0]?.name
+  const fallbackIcon = fallbackDefault ? '/favicon.svg' : models[0]?.icon
+  const displayName = sessionDetail?.modelName || session.modelName || fallbackName || null
   // modelIcon 与 modelName 同源（后端 GetSession 对同一模型记录解析），
   // 优先使用，避免会话模型不在当前用户可见模型列表（受访问权限/停用影响）时回退到默认模型图标。
   const displayIcon = sessionDetail?.modelIcon || session.modelIcon
     || models.find(m => m.id === (sessionDetail?.aiModelId ?? session.modelId))?.icon
-    || fallbackModel?.icon || null
+    || fallbackIcon || null
 
   return (
     <div className="flex h-full flex-col bg-bg-base">
@@ -383,6 +384,7 @@ function SessionChat({ sessionId }: { sessionId: string }) {
       />
       <PersonaInfoDialog
         personaId={personaId}
+        sessionModelId={sessionDetail?.aiModelId ?? session.modelId ?? 0}
         contextTokens={sessionDetail?.contextTokens ?? session.contextTokens ?? 0}
         promptTokensCount={sessionDetail?.promptTokensCount ?? session.promptTokensCount ?? 0}
         completionTokensCount={sessionDetail?.completionTokensCount ?? session.completionTokensCount ?? 0}
@@ -474,7 +476,14 @@ function ChatToolbar({
   }, [])
 
   const selectedPersona = formPersonaId ? personas?.find(p => p.id === formPersonaId) : null
-  const selectedModel = !selectedPersona && formModelId ? models?.find(m => m.id === formModelId) : null
+  // “Auto”虚拟选项：仅当存在默认模型时提供，图标使用 GoRaven 品牌图标
+  const defaultModels = models?.filter(m => m.isDefault) ?? []
+  const virtualDefaultModel: Model | undefined = defaultModels.length > 0
+    ? { id: 0, name: t('chat.autoModel'), provider: '', icon: '/favicon.svg', isDefault: true, isFlash: false, isVisual: false }
+    : undefined
+  const selectedModel = !selectedPersona
+    ? (formModelId === 0 ? virtualDefaultModel : models?.find(m => m.id === formModelId)) ?? null
+    : null
 
   const handleSelectModel = (id: number) => {
     if (onPersonaChange) onPersonaChange(null)
@@ -676,6 +685,19 @@ function ChatToolbar({
             {open && (
               <div className="absolute left-0 top-full z-40 mt-1 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-bg-layer-2 py-1 shadow-pop md:w-56">
                 <div className="px-3 py-0.5 text-xs text-text-muted">{t('chat.modelsDropdown')}</div>
+                {virtualDefaultModel && (
+                  <button key="default" onClick={() => handleSelectModel(0)}
+                    className={cn(
+                      'flex w-full items-center gap-2 px-3 py-0.5 text-sm transition-colors hover:bg-bg-layer-3 min-w-0',
+                      !selectedPersona && formModelId === 0 ? 'text-text-1' : 'text-text-2',
+                    )}>
+                    <span className={cn('shrink-0 text-sm', !selectedPersona && formModelId === 0 ? 'text-text-1' : 'text-text-muted opacity-0')}>
+                      {'✓'}
+                    </span>
+                    <ModelIcon icon={virtualDefaultModel.icon} />
+                    <span className="truncate">{virtualDefaultModel.name}</span>
+                  </button>
+                )}
                 {models?.map((m) => (
                   <button key={m.id} onClick={() => handleSelectModel(m.id)}
                     className={cn(
@@ -925,6 +947,7 @@ function NewChatInput({
         ref={textareaRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        spellCheck={false}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && !e.shiftKey) {
             if (isComposingRef.current.composing || e.nativeEvent.isComposing || e.keyCode === 229) {
@@ -1443,6 +1466,7 @@ function ChatInput({
           <textarea
             ref={textareaRef}
             value={value} onChange={(e) => onChange(e.target.value)}
+            spellCheck={false}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 if (isComposingRef.current.composing || e.nativeEvent.isComposing || e.keyCode === 229) {

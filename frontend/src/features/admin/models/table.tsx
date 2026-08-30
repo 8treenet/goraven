@@ -91,16 +91,14 @@ function RowActionsMenu({
             {t('adminModels.members')}
           </button>
           <div className="border-t border-border" />
-          {!isDefault && (
-            <button
-              onClick={() => { onSetDefault(); setOpen(false) }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text-1 transition-colors hover:bg-bg-hover"
-            >
-              <Star className="size-3.5 text-text-3" />
+          <button
+            onClick={() => { onSetDefault(); setOpen(false) }}
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text-1 transition-colors hover:bg-bg-hover"
+          >
+            <Star className={cn('size-3.5', isDefault ? 'text-highlight' : 'text-text-3')} />
 
-              {t('adminModels.setAsDefault')}
-            </button>
-          )}
+            {isDefault ? t('adminModels.unsetDefault') : t('adminModels.setAsDefault')}
+          </button>
           {!isFlash && (
             <button
               onClick={() => { onSetFlash(); setOpen(false) }}

@@ -7,6 +7,7 @@ import (
 	"goraven/core/iface"
 	"goraven/core/provider"
 	"goraven/util"
+	"math/rand"
 	"time"
 
 	"github.com/8treenet/freedom"
@@ -70,11 +71,7 @@ func (repo *ProviderRepository) PaginateModels(req *vo.AdminModelListReq) ([]vo.
 
 func (repo *ProviderRepository) CreateModel(model *po.AIModel) error {
 	return repo.db().Transaction(func(tx *gorm.DB) error {
-		if model.IsDefault == 1 {
-			if err := tx.Model(&po.AIModel{}).Where("is_default = 1 AND deleted = 0").Update("is_default", 0).Error; err != nil {
-				return err
-			}
-		}
+		// 默认模型允许多个（组成默认池，解析时随机选取），不做互斥清理；Flash/多模态保持全局唯一
 		if model.IsFlash == 1 {
 			if err := tx.Model(&po.AIModel{}).Where("is_flash = 1 AND deleted = 0").Update("is_flash", 0).Error; err != nil {
 				return err
@@ -104,13 +101,19 @@ func (repo *ProviderRepository) GetModelByID(id int) (*po.AIModel, error) {
 	return &model, err
 }
 
+// GetModelsByIDs 根据 ID 列表批量获取未删除的模型
+func (repo *ProviderRepository) GetModelsByIDs(ids []int) ([]po.AIModel, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	var models []po.AIModel
+	err := repo.db().Where("ai_model_id IN ? AND deleted = 0", ids).Find(&models).Error
+	return models, err
+}
+
 func (repo *ProviderRepository) UpdateModel(id int, updates map[string]interface{}) error {
 	return repo.db().Transaction(func(tx *gorm.DB) error {
-		if v, ok := updates["is_default"]; ok && util.IntFromIFace(v) == 1 {
-			if err := tx.Model(&po.AIModel{}).Where("is_default = 1 AND deleted = 0").Update("is_default", 0).Error; err != nil {
-				return err
-			}
-		}
+		// is_default 允许多个并存（默认池），不做互斥清理；Flash/多模态保持全局唯一
 		if v, ok := updates["is_flash"]; ok && util.IntFromIFace(v) == 1 {
 			if err := tx.Model(&po.AIModel{}).Where("is_flash = 1 AND deleted = 0").Update("is_flash", 0).Error; err != nil {
 				return err
@@ -167,11 +170,24 @@ func (repo *ProviderRepository) FindEnabledModelsByUser(userId string) ([]po.AIM
 	return models, err
 }
 
-// GetDefaultModel 获取默认模型（isDefault=1，启用，未删除）
+// GetDefaultModels 获取默认模型池（isDefault=1，启用，未删除）
+// 支持配置多个默认模型，对话使用默认模型时从中随机选取一个
+func (repo *ProviderRepository) GetDefaultModels() ([]po.AIModel, error) {
+	var models []po.AIModel
+	err := repo.db().Where("is_default = 1 AND status = 1 AND deleted = 0").Find(&models).Error
+	return models, err
+}
+
+// GetDefaultModel 从默认模型池中随机选取一个，池为空时返回 gorm.ErrRecordNotFound
 func (repo *ProviderRepository) GetDefaultModel() (*po.AIModel, error) {
-	var model po.AIModel
-	err := repo.db().Where("is_default = 1 AND status = 1 AND deleted = 0").First(&model).Error
-	return &model, err
+	models, err := repo.GetDefaultModels()
+	if err != nil {
+		return nil, err
+	}
+	if len(models) == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return &models[rand.Intn(len(models))], nil
 }
 
 // GetDefaultChatModel 获取默认聊天模型

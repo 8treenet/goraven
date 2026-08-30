@@ -151,6 +151,7 @@ export function Component() {
               onKeyDown={handleKeyDown}
               placeholder={t('login.usernamePlaceholder')}
               autoComplete="username"
+              spellCheck={false}
               disabled={submitting}
               className={cn(
                 'h-8 w-full min-w-0 rounded-lg border border-border-custom bg-transparent px-2.5 py-1 text-sm text-text-1 placeholder:text-text-muted outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30 md:text-sm',

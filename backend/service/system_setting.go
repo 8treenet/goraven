@@ -2,13 +2,13 @@ package service
 
 import (
 	"fmt"
+	"math"
 	"goraven/backend/po"
 	"goraven/backend/repository"
 	"goraven/backend/vo"
 	"goraven/backend/vo/errs"
 	"goraven/config"
 	"goraven/util"
-	"math"
 	"strconv"
 	"time"
 
@@ -27,42 +27,49 @@ func init() {
 	})
 }
 
+// SystemSettingService 系统设置服务
+// 提供自描述式设置查询（含 UI 元数据）和批量更新
 type SystemSettingService struct {
 	Worker    freedom.Worker
 	Repo      *repository.SystemSettingRepository
 	ModelRepo *repository.ProviderRepository
 }
 
+// settingMeta 设置项 UI 元数据，用于前端动态渲染
 type settingMeta struct {
-	key           string
-	valueType     string
-	defaultValue  string
-	displayNameZh string
-	displayNameEn string
-	descriptionZh string
-	descriptionEn string
-	inputType     string
-	min           *float64
-	max           *float64
-	placeholder   string
-	displayOrder  int
-	groupName     string
+	key           string   // DB configKey
+	valueType     string   // 值类型：string/int/float/bool/date/datetime
+	defaultValue  string   // 默认值
+	displayNameZh string   // 中文显示名
+	displayNameEn string   // 英文显示名
+	descriptionZh string   // 中文描述
+	descriptionEn string   // 英文描述
+	inputType     string   // 控件类型：text/number/slider/switch/password/textarea/date/datetime/select/jsonEditor
+	min           *float64 // 最小值，仅 number/slider
+	max           *float64 // 最大值，仅 number/slider
+	placeholder   string   // 输入框占位符，仅 ValueType=string 生效，可为空
+	displayOrder  int      // 排序权重
+	groupName     string   // 所属分组
 }
 
+// groupMeta 分组元数据
 type groupMeta struct {
-	name          string
+	name          string // groupName
 	displayNameZh string
 	displayNameEn string
 	displayOrder  int
 }
 
+// settingRegistry 设置项注册表
+// 所有 UI 元数据在此定义，新增设置项只需在此追加 + seed 数据即可
 var settingRegistry = []settingMeta{
-
+	// ---- general ----
 	{key: "general.domain", valueType: po.ValueTypeString, defaultValue: "",
 		displayNameZh: "系统域名", displayNameEn: "System Domain",
 		descriptionZh: "系统对外服务域名，用于生成文件外链和分享链接", descriptionEn: "Public domain for generating file share links",
 		inputType: "text", placeholder: "https://goraven.dev", displayOrder: 1, groupName: "general"},
 
+	// ---- clawhub ----
 	{key: "clawhub.api_url", valueType: po.ValueTypeString, defaultValue: "https://clawhub.ai",
 		displayNameZh: "ClawHub API 地址", displayNameEn: "ClawHub API URL",
 		descriptionZh: "ClawHub 服务接口地址", descriptionEn: "ClawHub service API URL",
@@ -76,12 +83,12 @@ var settingRegistry = []settingMeta{
 		displayNameZh: "最大迭代步数", displayNameEn: "Max Iterations",
 		descriptionZh: "Agent 单次对话最大执行步骤", descriptionEn: "Max steps an agent can execute in one conversation",
 		inputType: "number", min: util.PtrFloat64(20), max: util.PtrFloat64(200), displayOrder: 1, groupName: "agent"},
-
+	// ---- agent: 超时 ----
 	{key: "agent.main_agent_timeout_minutes", valueType: po.ValueTypeInt, defaultValue: "20",
 		displayNameZh: "任务最长执行时间", displayNameEn: "Task Timeout",
 		descriptionZh: "Agent 单次任务允许的最长耗时（分钟），超时将自动终止", descriptionEn: "Maximum duration allowed for a single Agent task (minutes). Exceeding this will terminate the task.",
 		inputType: "number", min: util.PtrFloat64(5), max: util.PtrFloat64(50), displayOrder: 2, groupName: "agent"},
-
+	// ---- agent: 压缩 ----
 	{key: "agent.compress_threshold_percent", valueType: po.ValueTypeInt, defaultValue: "80",
 		displayNameZh: "压缩阈值百分比", displayNameEn: "Compress Threshold %",
 		descriptionZh: "上下文占模型窗口百分比超过此值时触发压缩", descriptionEn: "Trigger compression when context exceeds this % of model window",
@@ -91,6 +98,7 @@ var settingRegistry = []settingMeta{
 		descriptionZh: "压缩时保留最近几轮对话不压缩", descriptionEn: "Number of recent rounds to keep uncompressed",
 		inputType: "number", min: util.PtrFloat64(1), max: util.PtrFloat64(20), displayOrder: 2, groupName: "agent"},
 
+	// ---- agent: 剪枝 ----
 	{key: "agent.pruning_token_threshold", valueType: po.ValueTypeInt, defaultValue: "96",
 		displayNameZh: "剪枝 Token 阈值/K", displayNameEn: "Pruning Token Threshold/K",
 		descriptionZh: "总 token 超过此阈值（单位 K）时触发剪枝", descriptionEn: "Trigger pruning when total tokens exceed this threshold (K)",
@@ -108,6 +116,7 @@ var settingRegistry = []settingMeta{
 		descriptionZh: "剪枝截断时保留尾部的字符数", descriptionEn: "Pruning: characters to keep from the tail when truncating",
 		inputType: "number", min: util.PtrFloat64(0), max: util.PtrFloat64(10000), displayOrder: 7, groupName: "agent"},
 
+	// ---- agent: LLM 调用 ----
 	{key: "agent.llm_request_delay_ms", valueType: po.ValueTypeInt, defaultValue: "500",
 		displayNameZh: "LLM 请求延迟/ms", displayNameEn: "LLM Request Delay/ms",
 		descriptionZh: "两次 LLM 请求之间的延迟，用于避免限流", descriptionEn: "Delay between LLM requests to avoid rate limiting",
@@ -125,16 +134,19 @@ var settingRegistry = []settingMeta{
 		descriptionZh: "退避重试的基秒数, 第 N 次重试等待 N×此值秒", descriptionEn: "Base seconds for backoff retry, wait N×base seconds on Nth retry",
 		inputType: "number", min: util.PtrFloat64(1), max: util.PtrFloat64(30), displayOrder: 11, groupName: "agent"},
 
+	// ---- sharing ----
 	{key: "sharing.file_expires_hours", valueType: po.ValueTypeInt, defaultValue: "72",
 		displayNameZh: "文件外链有效期/小时", displayNameEn: "File Link Expiry/hours",
 		descriptionZh: "文件分享外链的有效期", descriptionEn: "Expiration time for file share links",
 		inputType: "number", min: util.PtrFloat64(1), max: util.PtrFloat64(720), displayOrder: 1, groupName: "sharing"},
 
+	// ---- knowledge ----
 	{key: "knowledge.enable_ocr", valueType: po.ValueTypeBool, defaultValue: "false",
 		displayNameZh: "OCR 开关", displayNameEn: "Enable OCR",
 		descriptionZh: "是否启用 OCR 解析", descriptionEn: "Enable OCR parsing for documents",
 		inputType: "switch", displayOrder: 1, groupName: "knowledge"},
 
+	// ---- tools ----
 	{key: "tools.webfetch_enabled", valueType: po.ValueTypeBool, defaultValue: "true",
 		displayNameZh: "网页读取", displayNameEn: "Web Fetch",
 		descriptionZh: "启用后 Agent 可通过 HTTP GET 读取指定网页内容。注意：仅能获取服务端返回的原始 HTML，无法读取前端渲染的动态页面。",
@@ -151,6 +163,7 @@ var settingRegistry = []settingMeta{
 		inputType: "number", min: util.PtrFloat64(1), max: util.PtrFloat64(30), displayOrder: 3, groupName: "tools"},
 }
 
+// groupRegistry 分组注册表
 var groupRegistry = []groupMeta{
 	{name: "general", displayNameZh: "基本配置", displayNameEn: "General", displayOrder: 1},
 	{name: "tools", displayNameZh: "工具", displayNameEn: "Tools", displayOrder: 6},
@@ -160,6 +173,7 @@ var groupRegistry = []groupMeta{
 	{name: "knowledge", displayNameZh: "知识库", displayNameEn: "Knowledge", displayOrder: 5},
 }
 
+// metaMap 按 key 索引的注册表缓存
 var metaMap map[string]*settingMeta
 
 func init() {
@@ -169,12 +183,14 @@ func init() {
 	}
 }
 
+// GetSettings 获取全部系统设置（含 UI 元数据，按分组返回）
 func (service *SystemSettingService) GetSettings() ([]vo.AdminSettingGroup, error) {
 	rows, err := service.Repo.GetAll()
 	if err != nil {
 		return nil, err
 	}
 
+	// 构建当前值 map
 	valueMap := make(map[string]string, len(rows))
 	for _, r := range rows {
 		valueMap[r.Key] = r.Value
@@ -182,6 +198,7 @@ func (service *SystemSettingService) GetSettings() ([]vo.AdminSettingGroup, erro
 
 	lang := config.Get().GetLanguage()
 
+	// 按分组聚合
 	groupSettings := make(map[string][]vo.AdminSettingItem, len(groupRegistry))
 	for _, m := range settingRegistry {
 		item := vo.AdminSettingItem{
@@ -195,14 +212,17 @@ func (service *SystemSettingService) GetSettings() ([]vo.AdminSettingGroup, erro
 			DisplayOrder: m.displayOrder,
 		}
 
+		// 仅 string 类型透出 placeholder
 		if m.valueType == po.ValueTypeString {
 			item.Placeholder = m.placeholder
 		}
 
+		// DB 无值时用默认值填充
 		if item.Value == "" {
 			item.Value = m.defaultValue
 		}
 
+		// 根据系统语言选择显示名和描述
 		if lang == "en" {
 			item.DisplayName = m.displayNameEn
 			item.Description = m.descriptionEn
@@ -214,6 +234,7 @@ func (service *SystemSettingService) GetSettings() ([]vo.AdminSettingGroup, erro
 		groupSettings[m.groupName] = append(groupSettings[m.groupName], item)
 	}
 
+	// 构建分组响应
 	groups := make([]vo.AdminSettingGroup, 0, len(groupRegistry))
 	for _, g := range groupRegistry {
 		items := groupSettings[g.name]
@@ -236,6 +257,8 @@ func (service *SystemSettingService) GetSettings() ([]vo.AdminSettingGroup, erro
 	return groups, nil
 }
 
+// UpdateSettings 批量更新系统设置
+// 逐项校验 valueType 和范围，通过后调用 repo.BatchUpdate
 func (service *SystemSettingService) UpdateSettings(req *vo.AdminUpdateSettingsReq) (*vo.AdminUpdateSettingsRsp, error) {
 	updates := make(map[string]string, len(req.Settings))
 
@@ -305,6 +328,7 @@ func (service *SystemSettingService) UpdateSettings(req *vo.AdminUpdateSettingsR
 	return &vo.AdminUpdateSettingsRsp{Updated: len(updates)}, nil
 }
 
+// validateSettingValue 校验设置值是否符合 valueType 和范围约束
 func (service *SystemSettingService) validateSettingValue(meta *settingMeta, value string) error {
 	switch meta.valueType {
 	case po.ValueTypeInt:

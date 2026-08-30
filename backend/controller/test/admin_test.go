@@ -289,7 +289,7 @@ func TestAdminGetSettings(t *testing.T) {
 }
 
 func TestAdminUpdateSettings(t *testing.T) {
-
+	// 更新设置
 	req := vo.AdminUpdateSettingsReq{
 		Settings: []vo.AdminSettingUpdateItem{
 			{Key: "general.domain", Value: "https://goraven.dev"},

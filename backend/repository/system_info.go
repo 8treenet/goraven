@@ -5,11 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"goraven/backend/po"
 	"goraven/backend/vo"
 	"goraven/config"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -28,10 +28,13 @@ func init() {
 const systemInfoCacheKey = "admin:systemInfo"
 const systemInfoCacheTTL = 5 * time.Minute
 
+// SystemInfoRepository 系统信息仓库
+// 提供数据库统计查询和 Redis 缓存
 type SystemInfoRepository struct {
 	freedom.Repository
 }
 
+// GetSystemInfo 获取缓存中的系统信息
 func (repo *SystemInfoRepository) GetSystemInfo() (*vo.SystemInfoRsp, bool) {
 	cached, err := repo.Redis().Get(context.Background(), systemInfoCacheKey).Bytes()
 	if err != nil {
@@ -44,6 +47,7 @@ func (repo *SystemInfoRepository) GetSystemInfo() (*vo.SystemInfoRsp, bool) {
 	return &result, true
 }
 
+// SetSystemInfo 写入系统信息到缓存
 func (repo *SystemInfoRepository) SetSystemInfo(info *vo.SystemInfoRsp) {
 	data, err := json.Marshal(info)
 	if err != nil {
@@ -52,10 +56,12 @@ func (repo *SystemInfoRepository) SetSystemInfo(info *vo.SystemInfoRsp) {
 	repo.Redis().Set(context.Background(), systemInfoCacheKey, data, systemInfoCacheTTL)
 }
 
+// InvalidateCache 清除缓存
 func (repo *SystemInfoRepository) InvalidateCache() {
 	repo.Redis().Del(context.Background(), systemInfoCacheKey)
 }
 
+// GetDBVersion 获取数据库版本
 func (repo *SystemInfoRepository) GetDBVersion(dbType string) string {
 	var version string
 	db := repo.db()
@@ -70,6 +76,7 @@ func (repo *SystemInfoRepository) GetDBVersion(dbType string) string {
 	return version
 }
 
+// GetDBName 获取数据库名
 func (repo *SystemInfoRepository) GetDBName(dbType string) string {
 	switch dbType {
 	case "mysql":
@@ -85,6 +92,7 @@ func (repo *SystemInfoRepository) GetDBName(dbType string) string {
 	}
 }
 
+// GetDBDataSize 获取数据库数据占用大小（字节）
 func (repo *SystemInfoRepository) GetDBDataSize(dbType string) int64 {
 	switch dbType {
 	case "mysql":
@@ -103,6 +111,7 @@ func (repo *SystemInfoRepository) GetDBDataSize(dbType string) int64 {
 	}
 }
 
+// GetDBPoolStats 数据库连接池统计
 func (repo *SystemInfoRepository) GetDBPoolStats() (*vo.DBPoolInfo, error) {
 	var sqlDB *sql.DB
 	var err error
@@ -123,6 +132,7 @@ func (repo *SystemInfoRepository) GetDBPoolStats() (*vo.DBPoolInfo, error) {
 	return info, nil
 }
 
+// GetEcosystemCounts 生态统计数据查询
 func (repo *SystemInfoRepository) GetEcosystemCounts() (*vo.EcosystemInfo, error) {
 	db := repo.db()
 	info := &vo.EcosystemInfo{}
@@ -151,7 +161,7 @@ func (repo *SystemInfoRepository) GetEcosystemCounts() (*vo.EcosystemInfo, error
 	db.Model(&po.Session{}).Where("deleted = 0").Count(&info.TotalSessions)
 	db.Model(&po.Message{}).Count(&info.TotalMessages)
 
-	db.Model(&po.SharedProject{}).Count(&info.TotalSharedProjects)
+	db.Model(&po.TeamProject{}).Count(&info.TotalTeamProjects)
 
 	db.Model(&po.ShareLink{}).Where("deleted = 0").Count(&info.TotalShareLinks)
 	db.Model(&po.ShareLink{}).Where("deleted = 0 AND (expires_at IS NULL OR expires_at > ?)", time.Now()).Count(&info.ActiveShareLinks)
@@ -160,6 +170,7 @@ func (repo *SystemInfoRepository) GetEcosystemCounts() (*vo.EcosystemInfo, error
 	return info, nil
 }
 
+// GetMCPHealthList 查询所有启用 MCP 端点的健康状态
 func (repo *SystemInfoRepository) GetMCPHealthList() []vo.MCPHealthItem {
 	var endpoints []po.MCPEndpoint
 	repo.db().Where("status = 1 AND deleted = 0").Find(&endpoints)
@@ -178,12 +189,14 @@ func (repo *SystemInfoRepository) GetMCPHealthList() []vo.MCPHealthItem {
 	return items
 }
 
+// GetActiveSessionCount 活跃会话数
 func (repo *SystemInfoRepository) GetActiveSessionCount() int {
 	var count int64
 	repo.db().Model(&po.Session{}).Where("status = 1").Count(&count)
 	return int(count)
 }
 
+// GetCacheInfo 获取缓存信息（类型 + 内存占用）
 func (repo *SystemInfoRepository) GetCacheInfo() (cacheType string, cacheMemory string) {
 	cacheType = config.Get().System.CacheType
 
@@ -205,6 +218,7 @@ func (repo *SystemInfoRepository) GetCacheInfo() (cacheType string, cacheMemory 
 	return
 }
 
+// db .
 func (repo *SystemInfoRepository) db() *gorm.DB {
 	var db *gorm.DB
 	if err := repo.FetchDB(&db); err != nil {

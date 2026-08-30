@@ -14,6 +14,8 @@ type CacheWrapper struct {
 	cache *cache.Cache
 }
 
+// PatternDeleter 暴露 DelByPattern 能力的接口
+// 真实 Redis 走 SCAN 流程，in-process go-cache 走 Items 迭代
 type PatternDeleter interface {
 	DelByPattern(ctx context.Context, pattern string) int
 }
@@ -76,10 +78,13 @@ func (c *CacheWrapper) Del(ctx context.Context, keys ...string) *redis.IntCmd {
 	return cmd
 }
 
+// ItemCount 返回本地缓存中的条目数
 func (c *CacheWrapper) ItemCount() int {
 	return c.cache.ItemCount()
 }
 
+// DelByPattern 删除所有 key 匹配给定前缀的缓存条目
+// 用于仪表盘缓存批量失效等场景。返回删除的条目数。
 func (c *CacheWrapper) DelByPattern(ctx context.Context, pattern string) int {
 	items := c.cache.Items()
 	var keys []string

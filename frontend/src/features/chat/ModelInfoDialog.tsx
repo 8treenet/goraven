@@ -142,12 +142,12 @@ export function ModelInfoDialog({
           <div className="border-b border-border">
             <div className="flex items-center gap-3 border-b border-border px-6 py-4">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-bg-layer-2 text-text-1">
-                <ModelIcon icon={modelInfo?.icon} />
+                <ModelIcon icon={modelInfo?.icon ?? (aiModelId === 0 ? '/favicon.svg' : undefined)} />
               </span>
               <div>
                 <h2 className="text-[15px] font-semibold text-text-1 leading-tight">
                   {modelInfo?.displayName
-                    ?? (modelFailed ? t('personas.modelUnavailable') : t('personas.useDefaultModel'))}
+                    ?? (modelFailed ? t('personas.modelUnavailable') : t('chat.autoModel'))}
                 </h2>
                 {modelInfo?.providerDisplayName && (
                   <p className="text-xs text-text-3 mt-0.5">{modelInfo.providerDisplayName}</p>
@@ -202,7 +202,10 @@ export function ModelInfoDialog({
                   ) : aiModelId > 0 && modelFailed ? (
                     <span className="text-sm text-text-3">{t('personas.modelUnavailable')}</span>
                   ) : aiModelId === 0 ? (
-                    <span className="text-sm text-text-3">{t('personas.useDefaultModel')}</span>
+                    <span className="flex items-center gap-1.5 text-sm text-text-1">
+                      <img src="/favicon.svg" alt="" className="size-3.5 shrink-0 rounded object-cover" />
+                      {t('chat.autoModel')}
+                    </span>
                   ) : null}
                 </div>
               </section>

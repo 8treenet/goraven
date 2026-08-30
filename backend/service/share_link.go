@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"html"
 	"goraven/backend/infra"
 	"goraven/backend/po"
 	"goraven/backend/repository"
@@ -9,7 +10,6 @@ import (
 	"goraven/backend/vo/errs"
 	"goraven/config"
 	"goraven/util"
-	"html"
 	"strings"
 	"time"
 
@@ -29,6 +29,7 @@ func init() {
 	})
 }
 
+// ShareLinkService 对话分享链接服务
 type ShareLinkService struct {
 	SessionService
 	ShareLinkRepo *repository.ShareLinkRepository
@@ -36,6 +37,7 @@ type ShareLinkService struct {
 	SysCfgRepo    *repository.SystemSettingRepository
 }
 
+// expiresInMapping 过期时间选项到 Duration 的映射
 var expiresInMapping = map[string]time.Duration{
 	"1h":  time.Hour,
 	"24h": 24 * time.Hour,
@@ -43,6 +45,8 @@ var expiresInMapping = map[string]time.Duration{
 	"30d": 30 * 24 * time.Hour,
 }
 
+// buildShareTitle 生成分享标题
+// 优先使用传入的 title，其次取 session.title，最后取用户第一条消息前 30 字
 func (service *ShareLinkService) buildShareTitle(title string, session *po.Session) string {
 	if strings.TrimSpace(title) != "" {
 		title = strings.TrimSpace(title)
@@ -56,6 +60,7 @@ func (service *ShareLinkService) buildShareTitle(title string, session *po.Sessi
 		return session.Title
 	}
 
+	// 取用户第一条消息前 30 字
 	firstMsg, err := service.MsgSessionRepo.GetFirstUserMessage(session.SessionId)
 	if err == nil && firstMsg.Content != "" {
 		content := firstMsg.Content
@@ -69,13 +74,15 @@ func (service *ShareLinkService) buildShareTitle(title string, session *po.Sessi
 	return "GoRaven 对话分享"
 }
 
+// CreateShare 创建分享链接
 func (service *ShareLinkService) CreateShare(userId string, sessionId string, req *vo.CreateShareReq) (*vo.ShareLinkRsp, error) {
-
+	// 校验会话归属
 	session, err := service.MsgSessionRepo.GetUserSession(sessionId, userId)
 	if err != nil {
 		return nil, errs.ErrShareSessionNotFound
 	}
 
+	// 计算过期时间
 	expiresIn := req.ExpiresIn
 	if expiresIn == "" {
 		expiresIn = "24h"
@@ -92,8 +99,10 @@ func (service *ShareLinkService) CreateShare(userId string, sessionId string, re
 
 	title := service.buildShareTitle(req.Title, session)
 
+	// 如果系统域名未配置，尝试用前端传过来的域名自动补全
 	service.autoConfigureDomain(req.Domain)
 
+	// 若已有有效分享，更新它
 	existing, err := service.ShareLinkRepo.GetSessionShare(sessionId, userId)
 	if err == nil && existing != nil && !existing.IsExpired() {
 		updated, err := service.ShareLinkRepo.UpdateShareLink(existing.ShareId, title, shareType, time.Now().Add(duration))
@@ -136,6 +145,7 @@ func (service *ShareLinkService) CreateShare(userId string, sessionId string, re
 	}, nil
 }
 
+// GetSessionShare 获取会话的分享链接
 func (service *ShareLinkService) GetSessionShare(sessionId string, userId string) (*vo.ShareLinkRsp, error) {
 	shareLink, err := service.ShareLinkRepo.GetSessionShare(sessionId, userId)
 	if err != nil {
@@ -153,10 +163,12 @@ func (service *ShareLinkService) GetSessionShare(sessionId string, userId string
 	}, nil
 }
 
+// DeleteShare 删除会话的分享链接
 func (service *ShareLinkService) DeleteShare(sessionId string, userId string) error {
 	return service.ShareLinkRepo.DeleteShareLink(sessionId, userId)
 }
 
+// ListUserShares 获取用户分享链接分页列表
 func (service *ShareLinkService) ListUserShares(userId string, req *vo.UserShareListReq) (*infra.PageResponse, error) {
 	shareLinks, pr, err := service.ShareLinkRepo.ListUserShareLinks(userId, req)
 	if err != nil {
@@ -185,6 +197,7 @@ func (service *ShareLinkService) ListUserShares(userId string, req *vo.UserShare
 	}, nil
 }
 
+// GetShareInfo 获取分享信息（无鉴权）
 func (service *ShareLinkService) GetShareInfo(shareId string) (*vo.PublicShareRsp, error) {
 	shareLink, err := service.ShareLinkRepo.GetShareLink(shareId)
 	if err != nil {
@@ -227,6 +240,7 @@ func (service *ShareLinkService) GetShareInfo(shareId string) (*vo.PublicShareRs
 	}, nil
 }
 
+// buildShareMessages 获取并构建分享的消息列表
 func (service *ShareLinkService) buildShareMessages(shareLink *po.ShareLink) ([]vo.MessageItem, error) {
 	messages, err := service.MsgSessionRepo.GetAllMessages(shareLink.SessionId)
 	if err != nil {
@@ -249,6 +263,8 @@ func (service *ShareLinkService) buildShareMessages(shareLink *po.ShareLink) ([]
 	return items, nil
 }
 
+// GetShareMessages 获取分享的消息
+// userId 为空表示未登录；如果是内部分享且未登录，直接报错
 func (service *ShareLinkService) GetShareMessages(shareId string, userId string) ([]vo.MessageItem, error) {
 	shareLink, err := service.ShareLinkRepo.GetShareLink(shareId)
 	if err != nil {
@@ -266,6 +282,8 @@ func (service *ShareLinkService) GetShareMessages(shareId string, userId string)
 	return service.buildShareMessages(shareLink)
 }
 
+// GetShareOGData 获取分享页 Open Graph 元数据（供社交平台/爬虫预览卡片）。
+// 与 GetShareInfo 的区别：不增量浏览量；不返回消息正文；从传入的 ctx 取请求上下文拼绝对 URL。
 func (service *ShareLinkService) GetShareOGData(shareId string, ctx iris.Context) (*vo.ShareOGData, error) {
 	shareLink, err := service.ShareLinkRepo.GetShareLink(shareId)
 	if err != nil {
@@ -330,6 +348,8 @@ func (service *ShareLinkService) GetShareOGData(shareId string, ctx iris.Context
 	}, nil
 }
 
+// BuildOGHTML 基于 ShareOGData 生成 Open Graph / Twitter Card 的 <meta> 标签块。
+// ImageURL / PageURL 为空时跳过对应标签，避免输出空值 meta（社交平台会视为无效）。
 func BuildOGHTML(d *vo.ShareOGData) string {
 	var b strings.Builder
 	t := html.EscapeString(d.Title)
@@ -353,6 +373,7 @@ func BuildOGHTML(d *vo.ShareOGData) string {
 	return b.String()
 }
 
+// requestScheme 从当前请求推导协议，兼容反向代理（X-Forwarded-Proto）与直连 TLS。
 func requestScheme(ctx iris.Context) string {
 	if ctx.Request().TLS != nil {
 		return "https"
@@ -363,6 +384,8 @@ func requestScheme(ctx iris.Context) string {
 	return "http"
 }
 
+// autoConfigureDomain 若系统 GeneralDomain 为空，尝试用前端传的 domain 自动补全。
+// 仅当 domain 为非 IP/非 localhost 的合法 URL 时才写入。
 func (service *ShareLinkService) autoConfigureDomain(domain string) {
 	domain = strings.TrimSpace(domain)
 	if domain == "" {

@@ -16,6 +16,7 @@ const (
 	ValueTypeDatetime = "datetime"
 )
 
+// SystemSetting 系统设置表（KV 结构，支持 Web 端管理）
 type SystemSetting struct {
 	ID        int       `gorm:"primaryKey;autoIncrement"`
 	Key       string    `gorm:"uniqueIndex;column:config_key;type:varchar(128);not null"`

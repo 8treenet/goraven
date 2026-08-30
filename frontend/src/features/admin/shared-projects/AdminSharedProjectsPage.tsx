@@ -99,6 +99,7 @@ function EditDescriptionDialog({
           onChange={(e) => setValue(e.target.value)}
           placeholder={t('adminSharedProjects.descriptionPlaceholder')}
           rows={3}
+          spellCheck={false}
           className="w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 resize-none"
         />
         <div className="flex justify-end gap-2">

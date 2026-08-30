@@ -1110,6 +1110,7 @@ export function Component() {
               type="text"
               name="search"
               autoComplete="off"
+              spellCheck={false}
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder={t('adminUsers.searchPlaceholder')}

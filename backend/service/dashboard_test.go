@@ -14,6 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// TestDashboard_CheckDailyStatsData 检查 user_daily_stats 表中是否有数据
 func TestDashboard_CheckDailyStatsData(t *testing.T) {
 	unitTest := unit_test.GetUnitTest()
 	unitTest.Run()
@@ -42,6 +43,7 @@ func TestDashboard_CheckDailyStatsData(t *testing.T) {
 	t.Logf("totalPrompt=%d totalCompletion=%d", totalPrompt, totalCompletion)
 }
 
+// TestDashboard_GetAdminTokenTrend 逐个粒度检查 token 趋势
 func TestDashboard_GetAdminTokenTrend(t *testing.T) {
 	unitTest := unit_test.GetUnitTest()
 	unitTest.Run()
@@ -64,6 +66,7 @@ func TestDashboard_GetAdminTokenTrend(t *testing.T) {
 	}
 }
 
+// TestDashboard_CheckAddDailyStats 验证 AddDailyStats 写入
 func TestDashboard_CheckAddDailyStats(t *testing.T) {
 	unitTest := unit_test.GetUnitTest()
 	unitTest.Run()
@@ -78,6 +81,7 @@ func TestDashboard_CheckAddDailyStats(t *testing.T) {
 	t.Log("AddDailyStats(test_user_99, 100, 200, 10) OK")
 }
 
+// TestDashboard_RawTableQuery 直接查 user_daily_stats 原始数据
 func TestDashboard_RawTableQuery(t *testing.T) {
 	cfg := config.Get()
 	dbPath := cfg.Paths.SqliteDB
@@ -92,6 +96,7 @@ func TestDashboard_RawTableQuery(t *testing.T) {
 	rawDB.Table("user_daily_stats").Count(&totalCount)
 	t.Logf("user_daily_stats total rows: %d", totalCount)
 
+	// 用结构化类型查
 	type rawRow struct {
 		UserId           string
 		StatDate         string
@@ -109,6 +114,7 @@ func TestDashboard_RawTableQuery(t *testing.T) {
 			r.UserId, r.StatDate, r.PromptTokens, r.CompletionTokens, r.RoundCount)
 	}
 
+	// 聚合查询
 	type aggRow struct {
 		StatDate         string
 		PromptTokens     int64
@@ -125,6 +131,7 @@ func TestDashboard_RawTableQuery(t *testing.T) {
 	}
 }
 
+// TestDashboard_DataFlow 数据流完整性：写 → 读
 func TestDashboard_DataFlow(t *testing.T) {
 	unitTest := unit_test.GetUnitTest()
 	unitTest.Run()

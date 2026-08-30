@@ -1,3 +1,4 @@
+// Package disk 基于 gopsutil 提供跨平台的系统磁盘挂载信息获取
 package disk
 
 import (
@@ -9,16 +10,19 @@ import (
 	"github.com/shirou/gopsutil/v4/disk"
 )
 
+// Info 磁盘挂载信息
 type Info struct {
-	MountPoint  string
-	FSType      string
-	Device      string
-	TotalBytes  int64
-	UsedBytes   int64
-	FreeBytes   int64
-	UsedPercent float64
+	MountPoint  string  // 挂载点路径
+	FSType      string  // 文件系统类型
+	Device      string  // 设备名
+	TotalBytes  int64   // 总容量（字节）
+	UsedBytes   int64   // 已用容量（字节）
+	FreeBytes   int64   // 可用容量（字节）
+	UsedPercent float64 // 使用百分比
 }
 
+// GetMountPoints 返回系统的物理磁盘挂载点列表
+// 使用 gopsutil 跨平台获取分区与使用量，自动过滤虚拟文件系统
 func GetMountPoints() []Info {
 	partitions, err := disk.Partitions(false)
 	if err != nil {
@@ -50,6 +54,7 @@ func GetMountPoints() []Info {
 	return result
 }
 
+// isVirtual 判断是否为虚拟文件系统
 func isVirtual(device, fstype, mountPoint string) bool {
 	ft := strings.ToLower(fstype)
 	switch ft {
@@ -75,6 +80,7 @@ func isVirtual(device, fstype, mountPoint string) bool {
 	return false
 }
 
+// DirSize 递归计算目录总大小（字节）
 func DirSize(path string) int64 {
 	if path == "" {
 		return 0

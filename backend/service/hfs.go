@@ -41,6 +41,7 @@ func init() {
 	})
 }
 
+// HFSService HTTP File Server 业务服务
 type HFSService struct {
 	Worker         freedom.Worker
 	HFSRepo        *repository.HFSRepository
@@ -50,8 +51,10 @@ type HFSService struct {
 
 var _ iface.FileURLGenerator = (*HFSService)(nil)
 
+// GenerateURL 实现 iface.FileURLGenerator 接口
+// 将用户目录下的文件生成为可外部访问的URL
 func (service *HFSService) GenerateURL(userID string, filePath string) (string, error) {
-
+	//暂时不用
 	sysconf, err := service.SysCfgRepo.LoadConfig()
 	if err != nil {
 		return "", err
@@ -95,6 +98,7 @@ func (service *HFSService) GenerateURL(userID string, filePath string) (string, 
 	return service.buildURL(linkId, filePath, sysconf.GeneralDomain), nil
 }
 
+// ResolveFile 解析外链ID，返回用户ID和文件路径
 func (service *HFSService) ResolveFile(linkId string) (userID, userName string, filePath string, fileName string, err error) {
 	link, err := service.HFSRepo.GetFileLinkByLinkId(linkId)
 	if err != nil {
@@ -114,6 +118,9 @@ func (service *HFSService) ResolveFile(linkId string) (userID, userName string, 
 	return link.UserId, user.Username, link.FilePath, link.FileName, nil
 }
 
+// buildURL 构建文件外链URL
+// ext 来自 filepath.Ext，自带前导点（如 .pdf），与 linkId 拼接为 abc123.pdf 作为单一路径段，
+// controller 侧解析时通过 TrimSuffix 剥离扩展名再查库
 func (service *HFSService) buildURL(linkId string, filePath, domain string) string {
 	ext := filepath.Ext(filePath)
 	return fmt.Sprintf("%s/api/hfs/public/%s%s", strings.TrimSuffix(domain, "/"), linkId, ext)
@@ -121,6 +128,9 @@ func (service *HFSService) buildURL(linkId string, filePath, domain string) stri
 
 const tempAkPrefix = "rvnt_"
 
+// CreateTempAccess 创建临时访问凭证
+// type 为 "file"（单文件）或 "dir"（目录），凭证 15 分钟内有效
+// file 类型绑定到具体文件；dir 类型绑定到目录，授权访问该目录下的任意文件
 func (service *HFSService) CreateTempAccess(userID, userName string, req *vo.TempAccessReq) (*vo.TempAccessRsp, error) {
 	if req.Type != "file" && req.Type != "dir" {
 		return nil, errs.ErrTempAccessTypeInvalid
@@ -155,6 +165,7 @@ func (service *HFSService) CreateTempAccess(userID, userName string, req *vo.Tem
 	ak := tempAkPrefix + util.UUID()
 	cache := &repository.TempAccessCache{
 		UserName: userName,
+		Space:    repository.TempSpaceUser,
 		Path:     req.Path,
 		Type:     req.Type,
 	}
@@ -168,10 +179,39 @@ func (service *HFSService) CreateTempAccess(userID, userName string, req *vo.Tem
 	}, nil
 }
 
+// ResolveAkDownload 校验临时凭证并解析出待下载文件的绝对路径
+// reqPath 为 URL 中携带的 p:path，与凭证 Path 同属一个路径空间：
+// 用户空间凭证为用户工作区相对路径；共享空间凭证形如 /projects/<项目名>/<项目内相对路径>
+// file 类型：reqPath 必须与绑定路径完全一致；
+// dir 类型：reqPath 必须是绑定目录内的某个文件
 func (service *HFSService) ResolveAkDownload(ak, reqPath string) (string, error) {
 	cache, err := service.HFSRepo.GetTempAccess(ak)
 	if err != nil || cache == nil {
 		return "", errs.ErrTempAccessInvalid
+	}
+
+	space := cache.Space
+	if space == "" {
+		space = repository.TempSpaceUser
+	}
+
+	if space == repository.TempSpaceShared {
+		// 共享空间凭证：文件位于团队项目目录，不在用户沙盒内
+		absPath, terr := resolveSharedAkPath(config.Get().GetTeamProjectDir(), cache.Path, cache.Type, reqPath)
+		if terr != nil {
+			return "", terr
+		}
+		info, serr := os.Stat(absPath)
+		if serr != nil {
+			if os.IsNotExist(serr) {
+				return "", errs.ErrTempAccessFileNotFound
+			}
+			return "", serr
+		}
+		if info.IsDir() {
+			return "", errs.ErrTempAccessNotFile
+		}
+		return absPath, nil
 	}
 
 	sb, sberr := sandbox.NewSandbox(cache.UserName)
@@ -187,7 +227,7 @@ func (service *HFSService) ResolveAkDownload(ak, reqPath string) (string, error)
 			return "", errs.ErrTempAccessPathNotAllowed
 		}
 	} else {
-
+		// dir 类型：reqPath 必须严格位于绑定目录内，不能是目录本身
 		if cleanReq == cleanBound || !strings.HasPrefix(cleanReq, cleanBound+string(filepath.Separator)) {
 			return "", errs.ErrTempAccessPathNotAllowed
 		}
@@ -202,7 +242,7 @@ func (service *HFSService) ResolveAkDownload(ak, reqPath string) (string, error)
 		return "", serr
 	}
 	if !info.IsDir() {
-
+		// 通过沙盒校验路径未越出工作空间
 		validated, verr := sb.Download(absPath)
 		if verr != nil {
 			return "", errs.ErrTempAccessPathNotAllowed
@@ -212,6 +252,7 @@ func (service *HFSService) ResolveAkDownload(ak, reqPath string) (string, error)
 	return "", errs.ErrTempAccessNotFile
 }
 
+// CreateUpload 创建分片上传任务
 func (service *HFSService) CreateUpload(userID string, req *vo.ChunkUploadCreateReq) (*vo.ChunkUploadCreateRsp, error) {
 	uploadId := util.UUID()
 	tempBase := config.Get().GetUploadTempDir()
@@ -251,6 +292,7 @@ func (service *HFSService) CreateUpload(userID string, req *vo.ChunkUploadCreate
 	}, nil
 }
 
+// UploadChunk 上传分片
 func (service *HFSService) UploadChunk(userID string, req *vo.ChunkUploadReq, chunkData io.Reader) error {
 	upload, err := service.HFSRepo.GetUploadByUploadId(req.UploadId)
 	if err != nil {
@@ -292,6 +334,7 @@ func (service *HFSService) UploadChunk(userID string, req *vo.ChunkUploadReq, ch
 	return nil
 }
 
+// MergeUpload 合并分片
 func (service *HFSService) MergeUpload(userID string, uploadId string) (*vo.ChunkMergeRsp, error) {
 	upload, err := service.HFSRepo.GetUploadByUploadId(uploadId)
 	if err != nil {
@@ -346,6 +389,7 @@ func (service *HFSService) MergeUpload(userID string, uploadId string) (*vo.Chun
 	}, nil
 }
 
+// CommitAssets 提交上传文件为静态资源
 func (service *HFSService) CommitAssets(userID string, uploadId string) (*vo.AssetsRsp, error) {
 	upload, err := service.HFSRepo.GetUploadByUploadId(uploadId)
 	if err != nil {
@@ -391,6 +435,7 @@ func (service *HFSService) CommitAssets(userID string, uploadId string) (*vo.Ass
 	}, nil
 }
 
+// VerifierTimer
 func (service *HFSService) VerifierTimer() {
 	if !config.Get().System.Initialized {
 		return

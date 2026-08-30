@@ -7,16 +7,30 @@ import (
 	"goraven/core/agent"
 )
 
+// StreamMockChannelBuffer 模拟 SSE 事件通道的缓冲大小，
+// 与 core/agent.MainRunner.Query 中保持一致，避免长流阻塞。
 const StreamMockChannelBuffer = 20000
 
+// StreamMockChunkSize 每个 content 事件包含的字符数。
+// 越小越像真实 LLM 流式输出，越大越省 CPU。
 const StreamMockChunkSize = 4
 
+// StreamMockChunkDelayMs 连续 content chunk 之间的间隔（毫秒）。
+// 配合 ChunkSize=4 时约为每秒 18 字符，模拟中速流式输出。
 const StreamMockChunkDelayMs = 220
 
+// StreamMockStepDelayMs 事件之间的默认停顿（毫秒），模拟 Agent “思考” 间隙。
 const StreamMockStepDelayMs = 600
 
+// StreamMockToolMaxSleepMs 单个 tool 事件允许的最大 sleep 时长。
+// 需求规定不能超过 30 秒。
 const StreamMockToolMaxSleepMs = 30 * 1000
 
+// BuildStreamMock 返回一个会按脚本产生 SSE 事件的 channel。
+// goroutine 会在脚本走完后自动 close channel，并标记 session 完成。
+//
+// sessionId 用于脚本结束时调用 MarkStreamCompleted，保证即使前端提前断开 SSE
+// 连接（如切入 background 轮询模式），轮询期间也能看到 status=0。
 func BuildStreamMock(sessionId string) <-chan *agent.SSEEvent {
 	ch := make(chan *agent.SSEEvent, StreamMockChannelBuffer)
 	stopHeartbeat := make(chan struct{})
@@ -36,6 +50,9 @@ func runStreamScript(sessionId string, ch chan<- *agent.SSEEvent, stopHeartbeat 
 	}
 }
 
+// runHeartbeat 模拟 main_runner.startHeartbeat() 的行为：
+// 每 30 秒往通道里塞一个 heartbeat（前端俗称 ping）事件。
+// 在主脚本结束 / 客户端断开时通过 stop 信号立即退出。
 func runHeartbeat(ch chan<- *agent.SSEEvent, stop <-chan struct{}) {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
@@ -44,8 +61,9 @@ func runHeartbeat(ch chan<- *agent.SSEEvent, stop <-chan struct{}) {
 		case <-stop:
 			return
 		case <-ticker.C:
-
+			// channel 可能已经被主脚本关闭，做一次非阻塞尝试
 			select {
+			case ch <- &agent.SSEEvent{Type: agent.SSEEventTypeHeartbeat}:
 			default:
 			}
 		}
@@ -53,10 +71,12 @@ func runHeartbeat(ch chan<- *agent.SSEEvent, stop <-chan struct{}) {
 }
 
 type streamScriptStep struct {
-	kind     string
-	content  string
-	preSleep time.Duration
-	postWork time.Duration
+	kind     string              // reasoning | content | tool | retry | end
+	content  string              // reasoning / content 文本
+	tool     *agent.SSEEventTool // kind=tool
+	retry    *agent.SSERetryInfo // kind=retry
+	preSleep time.Duration       // 事件发送前的等待
+	postWork time.Duration       // 事件发送后的等待（tool 事件最长 30s）
 }
 
 func (s streamScriptStep) emit(ch chan<- *agent.SSEEvent) {
@@ -64,6 +84,14 @@ func (s streamScriptStep) emit(ch chan<- *agent.SSEEvent) {
 		time.Sleep(s.preSleep)
 	}
 	switch s.kind {
+	case "reasoning":
+		ch <- &agent.SSEEvent{Type: agent.SSEEventTypeReasoning, Content: s.content}
+	case "content":
+		streamContent(ch, s.content)
+	case "tool":
+		ch <- &agent.SSEEvent{Type: agent.SSEEventTypeTool, Tool: s.tool}
+	case "retry":
+		ch <- &agent.SSEEvent{Type: agent.SSEEventTypeRetry, Retry: s.retry}
 	case "end":
 		ch <- &agent.SSEEvent{Type: agent.SSEEventTypeEnd}
 	}
@@ -79,6 +107,7 @@ func streamContent(ch chan<- *agent.SSEEvent, text string) {
 		if end > len(runes) {
 			end = len(runes)
 		}
+		ch <- &agent.SSEEvent{Type: agent.SSEEventTypeContent, Content: string(runes[i:end])}
 		if end < len(runes) {
 			time.Sleep(time.Duration(StreamMockChunkDelayMs) * time.Millisecond)
 		}
@@ -88,6 +117,7 @@ func streamContent(ch chan<- *agent.SSEEvent, text string) {
 func scriptSteps() []streamScriptStep {
 	const step = StreamMockStepDelayMs * time.Millisecond
 
+	// 工具事件 sleep 时长（不能超过 30s）
 	const (
 		toolListSleep = 25 * time.Second
 		toolReadSleep = 18 * time.Second
@@ -96,6 +126,8 @@ func scriptSteps() []streamScriptStep {
 		toolBashSleep = 12 * time.Second
 	)
 
+	// 内容块：每块约 1500~1800 字符，
+	// 5 字符/chunk × 180ms ≈ 54~65 秒/块；4 块共约 230 秒。
 	content1 := strings.Join([]string{
 		"经过初步扫描，该项目采用了经典的 Go 工程布局：",
 		"顶层包含 cmd/、internal/、pkg/ 三个核心目录，外加 configs/、scripts/、docs/、frontend/、plugins/ 等支持目录。",
@@ -199,76 +231,90 @@ func scriptSteps() []streamScriptStep {
 	}, "\n")
 
 	return []streamScriptStep{
-
+		// 0. 用户视角开场白（reasoning）
 		{
 			kind:     "reasoning",
 			content:  "用户希望我对一个 Go 项目做一轮代码审查。我会先扫目录结构，再读关键入口文件，然后按层逐个分析并发、错误处理、测试覆盖度，最后给一份按优先级排序的修复建议。",
 			preSleep: step,
 		},
-
+		// 1. 工具：列出目录
 		{
 			kind:     "tool",
+			tool:     toolDef("ls", "📁", "文件系统", "正在扫描项目根目录"),
 			preSleep: step,
 			postWork: toolListSleep,
 		},
-
+		// 2. 工具：读取入口
 		{
 			kind:     "tool",
+			tool:     toolDef("read_file", "📄", "文件系统", "正在读取 cmd/goraven/main.go"),
 			preSleep: step,
 			postWork: toolReadSleep,
 		},
-
+		// 3. 第一段分析（≈ 55s）
 		{
 			kind:     "content",
 			content:  content1,
 			preSleep: step,
 		},
-
+		// 4. 工具：搜索错误处理模式
 		{
 			kind:     "tool",
+			tool:     toolDef("grep", "🔎", "文件系统", "正在搜索错误处理模式"),
 			preSleep: step,
 			postWork: toolGrepSleep,
 		},
-
+		// 5. 第二段分析（≈ 65s）
 		{
 			kind:     "content",
 			content:  content2,
 			preSleep: step,
 		},
-
+		// 6. 工具：标记可疑代码段
 		{
 			kind:     "tool",
+			tool:     toolDef("edit_file", "📝", "文件系统", "正在标记可疑代码段"),
 			preSleep: step,
 			postWork: toolEditSleep,
 		},
-
+		// 7. 第三段分析（≈ 70s）
 		{
 			kind:     "content",
 			content:  content3,
 			preSleep: step,
 		},
-
+		// 8. 模型重试事件
 		{
-			kind: "retry",
-
+			kind:     "retry",
+			retry:    &agent.SSERetryInfo{MaxRetries: 3, Attempt: 1, Error: "upstream connection reset by peer"},
 			preSleep: step,
 			postWork: 3 * time.Second,
 		},
-
+		// 9. 工具：执行命令
 		{
 			kind:     "tool",
+			tool:     toolDef("execute", "⚙️", "文件系统", "正在运行 go vet ./..."),
 			preSleep: step,
 			postWork: toolBashSleep,
 		},
-
+		// 10. 第四段分析（≈ 45s）
 		{
 			kind:     "content",
 			content:  content4,
 			preSleep: step,
 		},
-
+		// 11. 结束
 		{
 			kind: "end",
 		},
+	}
+}
+
+func toolDef(name, icon, displayName, action string) *agent.SSEEventTool {
+	return &agent.SSEEventTool{
+		Name:        name,
+		Icon:        icon,
+		DisplayName: displayName,
+		Action:      action,
 	}
 }

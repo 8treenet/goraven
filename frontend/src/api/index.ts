@@ -16,6 +16,7 @@ export * as hfsApi from './hfs'
 export * as preferenceApi from './preference'
 export * as shareApi from './share'
 export * as dashboardApi from './dashboard'
+export * as automationApi from './automation'
 
 export * as adminUsersApi from './admin/users'
 export * as adminModelsApi from './admin/models'

@@ -1,3 +1,13 @@
+// Package envfile 解析 dotenv 风格的环境变量文件（.profile / .env）。
+//
+// 支持的格式：
+//   - KEY=VALUE
+//   - KEY="quoted value"  / KEY='quoted value'
+//   - 以 # 开头的整行注释
+//   - 空行
+//   - 行尾若无引号，# 之后视为注释
+//
+// 不做 shell 展开（如 $VAR、$(...)、`...`），保持纯字面量。
 package envfile
 
 import (
@@ -7,9 +17,14 @@ import (
 	"strings"
 )
 
+// Parse 将 dotenv 风格内容解析为 "KEY=VALUE" 形式的切片，
+// 顺序与文件中出现顺序一致；重复键由调用方决定保留策略
+// （exec.Cmd 默认取最后一个）。
+//
+// 解析失败的行返回错误并附带行号，便于排查。
 func Parse(data []byte) ([]string, error) {
 	scanner := bufio.NewScanner(bytes.NewReader(data))
-
+	// 允许较长的单行
 	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 
 	result := make([]string, 0)
@@ -36,8 +51,9 @@ func Parse(data []byte) ([]string, error) {
 	return result, nil
 }
 
+// parseLine 解析单行 KEY=VALUE，返回 key、value。允许 `export KEY=VALUE`。
 func parseLine(line string) (string, string, error) {
-
+	// 兼容 shell 习惯写法 `export FOO=bar`
 	if rest, ok := strings.CutPrefix(line, "export "); ok {
 		line = strings.TrimSpace(rest)
 	}
@@ -60,6 +76,7 @@ func parseLine(line string) (string, string, error) {
 	return key, value, nil
 }
 
+// unquoteValue 处理可选的引号包裹，并去除非引号情形下的行尾注释。
 func unquoteValue(raw string) (string, error) {
 	if raw == "" {
 		return "", nil
@@ -80,12 +97,17 @@ func unquoteValue(raw string) (string, error) {
 		return raw[1:end], nil
 	}
 
+	// 非引号情形：行尾 # 视为注释
 	if idx := strings.IndexByte(raw, '#'); idx >= 0 {
 		raw = strings.TrimSpace(raw[:idx])
 	}
 	return raw, nil
 }
 
+// Serialize 将 KEY=VALUE 列表序列化为 dotenv 风格文本，每项一行，以 \n 结尾。
+// 值中含空格 / # 时会用双引号包裹；不附加任何注释（CRUD 写回会丢失原文件中的注释）。
+// 值含换行或双引号时返回错误——Parse 当前不解析转义序列，写出去无法被反向解析。
+// key 不合法或不存在 '=' 时同样返回错误。
 func Serialize(entries []string) ([]byte, error) {
 	var buf bytes.Buffer
 	for _, e := range entries {
@@ -109,6 +131,8 @@ func Serialize(entries []string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// quoteValueIfNeeded 在值含空格 / # / 单引号时用双引号包裹，保证再次 Parse 时能完整还原。
+// 由 Serialize 在调用前确保不含双引号和换行。
 func quoteValueIfNeeded(v string) string {
 	if v == "" {
 		return `""`
@@ -119,6 +143,7 @@ func quoteValueIfNeeded(v string) string {
 	return v
 }
 
+// isValidKey 判定环境变量名是否合法：[A-Za-z_][A-Za-z0-9_]*。
 func isValidKey(key string) bool {
 	if key == "" {
 		return false

@@ -36,16 +36,18 @@ func (repo *DailyStatsRepository) AddDailyStats(userId string, promptTokens, com
 	return repo.db().Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "user_id"}, {Name: "stat_date"}},
 		DoUpdates: clause.Assignments(map[string]interface{}{
-			"prompt_tokens":        gorm.Expr("user_daily_stats.prompt_tokens + ?", promptTokens),
-			"completion_tokens":    gorm.Expr("user_daily_stats.completion_tokens + ?", completionTokens),
+			"prompt_tokens":       gorm.Expr("user_daily_stats.prompt_tokens + ?", promptTokens),
+			"completion_tokens":   gorm.Expr("user_daily_stats.completion_tokens + ?", completionTokens),
 			"prompt_cached_tokens": gorm.Expr("user_daily_stats.prompt_cached_tokens + ?", promptCachedTokens),
-			"message_count":        gorm.Expr("user_daily_stats.message_count + 1"),
-			"round_count":          gorm.Expr("user_daily_stats.round_count + 1"),
-			"updated":              time.Now(),
+			"message_count":       gorm.Expr("user_daily_stats.message_count + 1"),
+			"round_count":         gorm.Expr("user_daily_stats.round_count + 1"),
+			"updated":            time.Now(),
 		}),
 	}).Create(stats).Error
 }
 
+// AddToolDailyStats 记录工具/技能调用次数
+// 每日每用户每工具每条记录，冲突时增量累加 count
 func (repo *DailyStatsRepository) AddToolDailyStats(userId, toolType, toolName string) error {
 	if toolName == "" {
 		return nil
@@ -72,6 +74,7 @@ func (repo *DailyStatsRepository) AddToolDailyStats(userId, toolType, toolName s
 	}).Create(stats).Error
 }
 
+// GetTodayTokenUsage 查询用户当日已使用的 token 总量（prompt + completion）
 func (repo *DailyStatsRepository) GetTodayTokenUsage(userId string) (int, error) {
 	today := util.StartOfToday().Format("2006-01-02")
 	var stats po.UserDailyStats

@@ -27,6 +27,7 @@ import {
   IconShare,
   IconCpu,
   IconPlug,
+  IconAutomation,
 } from '@/components/icons'
 import { cn } from '@/lib/utils'
 import { useSidebarStore } from '@/stores/sidebar-store'
@@ -298,6 +299,13 @@ function UserMenu() {
           to="/dashboard"
           icon={IconGrid}
           label={t('sidebar.dashboard')}
+          collapsed={collapsed}
+          accent
+        />
+        <NavItem
+          to="/automation"
+          icon={IconAutomation}
+          label={t('sidebar.automation')}
           collapsed={collapsed}
           accent
         />
@@ -705,6 +713,7 @@ function SessionItem({
           ref={inputRef}
           value={editTitle}
           onChange={(e) => setEditTitle(e.target.value)}
+          spellCheck={false}
           onKeyDown={handleKeyDown}
           onBlur={handleCancelRename}
           className="min-w-0 flex-1 bg-transparent text-sm text-text-1 outline-none"

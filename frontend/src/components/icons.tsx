@@ -112,3 +112,13 @@ export function IconPlug({ className }: { className?: string }) {
     </svg>
   )
 }
+
+export function IconAutomation({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+      <circle cx="12" cy="13" r="8.5" fill="currentColor" />
+      <path d="M12 8.5V13l3 1.8" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <path d="M12 1.5v2M19.8 4.2l-1.4 1.4M4.2 4.2l1.4 1.4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+    </svg>
+  )
+}

@@ -16,7 +16,7 @@ func TestChatService_resolveSession(t *testing.T) {
 	session, persona, mcpIds, skillIds, userRole, err := service.resolveSession("999", &vo.ChatReq{
 		SessionId: &sid,
 		AIModelId: 1,
-
+		// PersonaId: new(int),
 		McpIds:    []int{1, 2},
 		SkillIds:  []int{9, 10},
 		Reasoning: 1,
@@ -41,7 +41,7 @@ func TestChatService_resolveSession2(t *testing.T) {
 	session, persona, mcpIds, skillIds, userRole, err := service.resolveSession("999", &vo.ChatReq{
 		AIModelId: 1,
 		Content:   "啊多久啊就是觉得啥的",
-
+		// PersonaId: new(int),
 		McpIds:    []int{1, 2},
 		SkillIds:  []int{9, 10},
 		Reasoning: 1,
@@ -64,7 +64,7 @@ func TestChatService_resolveSession3(t *testing.T) {
 	unitTest.FetchService(&service)
 	personaId := 3
 	session, persona, mcpIds, skillIds, userRole, err := service.resolveSession("999", &vo.ChatReq{
-
+		//SessionId: &sid,
 		AIModelId: 1,
 		Content:   "啊多久啊就是觉得啥的",
 		PersonaId: &personaId,
@@ -90,7 +90,7 @@ func TestChatService_resolveSession4(t *testing.T) {
 	session, persona, mcpIds, skillIds, userRole, err := service.resolveSession("999", &vo.ChatReq{
 		SessionId: &sid,
 		AIModelId: 1,
-
+		// PersonaId: new(int),
 		McpIds:    []int{1},
 		SkillIds:  []int{9},
 		Reasoning: 1,

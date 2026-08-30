@@ -24,6 +24,7 @@ func init() {
 	})
 }
 
+// UserService 用户服务
 type UserService struct {
 	Worker   freedom.Worker
 	UserRepo *repository.UserRepository
@@ -31,7 +32,7 @@ type UserService struct {
 }
 
 func (service *UserService) Login(req *vo.UserLoginReq) (*vo.UserLoginRsp, error) {
-
+	// 防护开关：全局密码错误累计达阈值时强制校验图形验证码
 	if service.UserRepo.GetLoginFailureCount() >= repository.CaptchaThreshold {
 		answer, ok := service.UserRepo.PopCaptchaAnswer(req.Username)
 		if !ok || req.CaptchaAnswer == 0 {
@@ -72,6 +73,7 @@ func (service *UserService) Login(req *vo.UserLoginReq) (*vo.UserLoginRsp, error
 	}, nil
 }
 
+// GetCaptcha 拉取登录算术验证码
 func (service *UserService) GetCaptcha(req *vo.CaptchaReq) (*vo.CaptchaRsp, error) {
 	failureCount := service.UserRepo.GetLoginFailureCount()
 	if failureCount < repository.CaptchaThreshold {
@@ -127,6 +129,7 @@ func (service *UserService) GetUserInfo() (*vo.UserInfoRsp, error) {
 	}, nil
 }
 
+// AdminGetUserDetail 管理员获取用户详情
 func (service *UserService) AdminGetUserDetail(userId string) (*vo.AdminUserDetailRsp, error) {
 	user, err := service.UserRepo.FindByUserId(userId)
 	if err != nil {
@@ -151,6 +154,7 @@ func (service *UserService) AdminGetUserDetail(userId string) (*vo.AdminUserDeta
 	}, nil
 }
 
+// AdminListUsers 管理员获取用户列表（分页+搜索+角色筛选）
 func (service *UserService) AdminListUsers(req *vo.AdminUserListReq) (*infra.PageResponse, error) {
 	items, pr, err := service.UserRepo.PaginateUsers(req)
 	if err != nil {
@@ -165,6 +169,7 @@ func (service *UserService) AdminListUsers(req *vo.AdminUserListReq) (*infra.Pag
 	}, nil
 }
 
+// AdminBatchGetUsers 管理员根据 userId 列表批量查询用户
 func (service *UserService) AdminBatchGetUsers(req *vo.AdminBatchUserReq) ([]vo.AdminUserItem, error) {
 	users, err := service.UserRepo.FindByUserIds(req.UserIds)
 	if err != nil {
@@ -187,6 +192,8 @@ func (service *UserService) AdminBatchGetUsers(req *vo.AdminBatchUserReq) ([]vo.
 	return items, nil
 }
 
+// AdminCreateUser 管理员创建用户
+// 系统允许多位管理员，仅初始化时的超级管理员唯一
 func (service *UserService) AdminCreateUser(req *vo.AdminCreateUserReq) error {
 	if !util.IsValidUsername(req.Username) {
 		return errs.ErrInvalidUsername
@@ -209,6 +216,8 @@ func (service *UserService) AdminCreateUser(req *vo.AdminCreateUserReq) error {
 	return service.UserRepo.CreateUser(user)
 }
 
+// AdminUpdateUser 管理员编辑用户（昵称/邮箱/角色/状态）
+// 禁用用户时自动清除该用户所有 token 使其立即失效
 func (service *UserService) AdminUpdateUser(userId string, req *vo.AdminUpdateUserReq) error {
 	user, err := service.UserRepo.FindByUserId(userId)
 	if err != nil {
@@ -250,6 +259,7 @@ func (service *UserService) AdminUpdateUser(userId string, req *vo.AdminUpdateUs
 	return nil
 }
 
+// AdminResetPassword 管理员重置用户密码
 func (service *UserService) AdminResetPassword(userId string, req *vo.AdminResetPasswordReq) error {
 	user, err := service.UserRepo.FindByUserId(userId)
 	if err != nil {
@@ -266,6 +276,8 @@ func (service *UserService) AdminResetPassword(userId string, req *vo.AdminReset
 	return nil
 }
 
+// AdminDeleteUser 管理员删除用户（软删除）
+// 禁止删除超级管理员，删除后清除该用户所有 token
 func (service *UserService) AdminDeleteUser(userId string) error {
 	user, err := service.UserRepo.FindByUserId(userId)
 	if err != nil {
@@ -290,6 +302,7 @@ func (service *UserService) AdminDeleteUser(userId string) error {
 	return nil
 }
 
+// UpdateProfile 用户修改个人资料（昵称/邮箱/头像）
 func (service *UserService) UpdateProfile(req *vo.UserProfileReq) error {
 	userId := service.Request.GetUserId()
 	if userId == "" {
@@ -313,6 +326,8 @@ func (service *UserService) UpdateProfile(req *vo.UserProfileReq) error {
 	return service.UserRepo.UpdateProfile(userId, updates)
 }
 
+// ChangePassword 用户修改密码
+// 校验当前密码是否正确，新密码不能与当前密码相同
 func (service *UserService) ChangePassword(req *vo.UserPasswordReq) error {
 	userId := service.Request.GetUserId()
 	if userId == "" {
@@ -340,6 +355,7 @@ func (service *UserService) ChangePassword(req *vo.UserPasswordReq) error {
 	return nil
 }
 
+// Logout 退出登录，失效当前 token
 func (service *UserService) Logout() error {
 	token := service.Request.GetToken()
 	if token == "" {

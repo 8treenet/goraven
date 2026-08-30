@@ -36,7 +36,7 @@ const DEFAULT_MODEL: ModelInfo = {
   providerDisplayName: '',
   displayName: '',
   modelName: '',
-  icon: '',
+  icon: '/favicon.svg',
   contextLen: 0,
   isDefault: 0,
   isFlash: 0,
@@ -315,6 +315,7 @@ export function Component() {
                     <input
                       value={templateSearch}
                       onChange={e => setTemplateSearch(e.target.value)}
+                      spellCheck={false}
                       placeholder={t('personas.searchTemplate')}
                       className="h-8 w-full rounded-lg border border-input bg-transparent pl-8 pr-2.5 text-sm text-text-1 placeholder:text-text-muted outline-none transition-colors focus:border-ring focus:ring-3 focus:ring-ring/50"
                     />
@@ -461,6 +462,7 @@ export function Component() {
           <textarea
             value={roleInfo}
             onChange={e => { setRoleInfo(e.target.value); setErrors(prev => ({ ...prev, roleInfo: '' })) }}
+            spellCheck={false}
             placeholder={t('personas.settingsPlaceholder')}
              rows={6}
             maxLength={500}
@@ -482,10 +484,10 @@ export function Component() {
               onClick={() => setModelOpen(!modelOpen)}
             >
               <ModelIcon icon={selectedModel?.icon} />
-              <span className={selectedModel && selectedModel.aiModelId !== 0 ? 'text-text-1' : 'text-text-3'}>
+              <span className={selectedModel ? 'text-text-1' : 'text-text-3'}>
                 {selectedModel
                   ? selectedModel.aiModelId === 0
-                    ? t('personas.useDefaultModel')
+                    ? t('chat.autoModel')
                     : `${selectedModel.providerDisplayName} - ${selectedModel.displayName}`
                   : t('personas.modelPlaceholder')
                 }
@@ -506,7 +508,7 @@ export function Component() {
                           onClick={() => { setAiModelId(m.aiModelId); setModelOpen(false) }}
                         >
                           <ModelIcon icon={m.icon || undefined} />
-                          {m.aiModelId === 0 ? t('personas.useDefaultModel') : `${m.providerDisplayName} - ${m.displayName}`}
+                          {m.aiModelId === 0 ? t('chat.autoModel') : `${m.providerDisplayName} - ${m.displayName}`}
                           {aiModelId === m.aiModelId && <Check className="ml-auto size-3" />}
                         </button>
                       ))}
@@ -527,6 +529,7 @@ export function Component() {
             <input
               value={mcpSearch}
               onChange={e => setMcpSearch(e.target.value)}
+              spellCheck={false}
               placeholder={t('personas.searchMcp')}
               className="h-8 w-full rounded-lg border border-input bg-transparent pl-8 pr-2.5 text-sm text-text-1 placeholder:text-text-muted outline-none transition-colors focus:border-ring focus:ring-3 focus:ring-ring/50"
             />
@@ -587,6 +590,7 @@ export function Component() {
             <input
               value={skillSearch}
               onChange={e => setSkillSearch(e.target.value)}
+              spellCheck={false}
               placeholder={t('personas.searchSkills')}
               className="h-8 w-full rounded-lg border border-input bg-transparent pl-8 pr-2.5 text-sm text-text-1 placeholder:text-text-muted outline-none transition-colors focus:border-ring focus:ring-3 focus:ring-ring/50"
             />

@@ -6,6 +6,7 @@ import (
 	"goraven/backend/vo"
 )
 
+// TestSessionListEmpty 校验未调过 Chat() 时会话列表返回空。
 func TestSessionListEmpty(t *testing.T) {
 	ResetMockSessions()
 
@@ -26,6 +27,7 @@ func TestSessionListEmpty(t *testing.T) {
 	}
 }
 
+// TestSessionListAfterChat 校验调过 Chat() 后会话列表返回单条且 sessionId 一致。
 func TestSessionListAfterChat(t *testing.T) {
 	ResetMockSessions()
 
@@ -51,6 +53,7 @@ func TestSessionListAfterChat(t *testing.T) {
 	}
 }
 
+// TestSessionListIsolation 校验不同用户的 mock 会话互不干扰。
 func TestSessionListIsolation(t *testing.T) {
 	ResetMockSessions()
 
@@ -64,19 +67,23 @@ func TestSessionListIsolation(t *testing.T) {
 	}
 }
 
+// TestSessionDetailNotFound 校验 sessionId 不匹配时返回 nil，模拟 404。
 func TestSessionDetailNotFound(t *testing.T) {
 	ResetMockSessions()
 
+	// 用户没调过 Chat()
 	if d := BuildMockSessionDetail("any", "user-x"); d != nil {
 		t.Errorf("expected nil for user without chat, got %+v", d)
 	}
 
+	// 用户调过 Chat()，但 sessionId 不一致
 	MarkSessionCreated("user-y", "real-session")
 	if d := BuildMockSessionDetail("other-session", "user-y"); d != nil {
 		t.Errorf("expected nil for mismatched sessionId, got %+v", d)
 	}
 }
 
+// TestSessionDetailOK 校验 sessionId 匹配时返回非空详情。
 func TestSessionDetailOK(t *testing.T) {
 	ResetMockSessions()
 

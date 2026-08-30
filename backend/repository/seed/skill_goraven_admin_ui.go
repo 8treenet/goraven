@@ -70,7 +70,9 @@ description: GoRaven 管理端前端界面指南。详细介绍管理员后台�
 
 **编辑模型**：侧边滑出面板。提供商 ID 只读。API Key、BaseURL、代理 URL 被修改时标记「连接信息已变更」，保存时自动触发连接测试。API Key 和 extra_body 等敏感字段需异步加载详情后显示。
 
-**行操作菜单**：每行右侧三点按钮弹出下拉菜单，含编辑、复制、设为默认、设为压缩、设为多模态、删除。设默认/压缩/多模态仅在该标记未设置时显示对应选项。
+**行操作菜单**：每行右侧三点按钮弹出下拉菜单，含编辑、权限和成员、复制、设为默认、设为压缩、设为多模态、删除。设默认/压缩/多模态仅在该标记未设置时显示对应选项。
+
+**权限和成员**：弹窗设置模型访问权限（全员开放/仅成员可见）并管理可见成员列表（选择器分页搜索用户，可添加/移除）。仅成员可见时，只有指定成员在对话中可选该模型。
 
 **复制模型**：基于现有模型创建，显示名自动追加 "-duplicate" 后缀，API Key 和 extra_body 从详情接口获取。
 
@@ -213,7 +215,9 @@ Table listing configured models (provider display name, model display name, mode
 
 **Edit model**: Slide-in drawer. Provider ID is read-only. When API Key, BaseURL, or proxy URL are modified, "connection info changed" state is set, triggering an automatic connectivity test on save. Sensitive fields (apiKey, extraFields) are loaded asynchronously from the detail API.
 
-**Row action menu**: Three-dot button per row opens a dropdown with: edit, duplicate, set as default, set as compression, set as multimodal, delete. Set default/compression/multimodal options only appear when that badge is not currently active.
+**Row action menu**: Three-dot button per row opens a dropdown with: edit, permissions & members, duplicate, set as default, set as compression, set as multimodal, delete. Set default/compression/multimodal options only appear when that badge is not currently active.
+
+**Permissions & Members**: Dialog to set the model's access scope (All users / Members only) and manage the visible member list (paged user selector with search; add/remove members). When set to "Members only", only the listed members can select the model in chat.
 
 **Duplicate model**: Creates a copy from existing model — display name gets "-duplicate" suffix, API Key and extraFields fetched from detail API.
 

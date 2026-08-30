@@ -14,11 +14,13 @@ func init() {
 	})
 }
 
+// SkillController 用户可用的技能相关接口
 type SkillController struct {
 	SkillSev *service.SkillService
 	Request  *infra.Request
 }
 
+// BeforeActivation 绑定路由前缀 /api/skills
 func (controller *SkillController) BeforeActivation(b freedom.BeforeActivation) {
 	b.Handle("GET", "/simpleSkills", "GetSimpleSkills")
 	b.Handle("GET", "/simpleSkills/byIds", "GetSimpleSkillsByIDs")
@@ -42,6 +44,7 @@ func (controller *SkillController) BeforeActivation(b freedom.BeforeActivation) 
 	b.Handle("POST", "/shares/{id:int}/install", "InstallSharedSkill")
 }
 
+// GetSimpleSkills 获取用户可选技能精简列表 GET /api/skills/simpleSkills
 func (controller *SkillController) GetSimpleSkills() freedom.Result {
 	userId := controller.Request.GetUserId()
 	rsp, err := controller.SkillSev.ListAvailableSkills(userId)
@@ -51,6 +54,7 @@ func (controller *SkillController) GetSimpleSkills() freedom.Result {
 	return &infra.JSONResponse{Object: rsp}
 }
 
+// GetSimpleSkillsByIDs 根据指定的 userSkillId 列表获取技能精简列表 GET /api/skills/simpleSkills/byIds?ids=1&ids=2
 func (controller *SkillController) GetSimpleSkillsByIDs() freedom.Result {
 	userId := controller.Request.GetUserId()
 	var query struct {
@@ -66,6 +70,7 @@ func (controller *SkillController) GetSimpleSkillsByIDs() freedom.Result {
 	return &infra.JSONResponse{Object: rsp}
 }
 
+// ListMarketSkills 获取市场技能列表（用户视角） GET /api/skills/market
 func (controller *SkillController) ListMarketSkills() freedom.Result {
 	userId := controller.Request.GetUserId()
 	var req vo.UserMarketSkillListReq
@@ -79,6 +84,7 @@ func (controller *SkillController) ListMarketSkills() freedom.Result {
 	return &infra.JSONResponse{Object: rsp}
 }
 
+// GetMarketSkillDetail 获取市场技能详情 GET /api/skills/market/:id
 func (controller *SkillController) GetMarketSkillDetail(id int) freedom.Result {
 	rsp, err := controller.SkillSev.GetMarketSkillDetailForUser(id)
 	if err != nil {
@@ -87,6 +93,7 @@ func (controller *SkillController) GetMarketSkillDetail(id int) freedom.Result {
 	return &infra.JSONResponse{Object: rsp}
 }
 
+// ListUserSkills 获取用户已安装技能列表 GET /api/skills/user
 func (controller *SkillController) ListUserSkills() freedom.Result {
 	userId := controller.Request.GetUserId()
 	var req vo.UserSkillListReq
@@ -100,6 +107,7 @@ func (controller *SkillController) ListUserSkills() freedom.Result {
 	return &infra.JSONResponse{Object: rsp}
 }
 
+// GetUserSkillDetail 获取用户技能详情 GET /api/skills/user/:id
 func (controller *SkillController) GetUserSkillDetail(id int) freedom.Result {
 	userId := controller.Request.GetUserId()
 	rsp, err := controller.SkillSev.GetUserSkillDetail(id, userId)
@@ -109,6 +117,8 @@ func (controller *SkillController) GetUserSkillDetail(id int) freedom.Result {
 	return &infra.JSONResponse{Object: rsp}
 }
 
+// GetUserSkillStatus 获取用户技能当前安装状态 GET /api/skills/user/:id/status
+// 轻量接口，前端轮询安装进度时使用
 func (controller *SkillController) GetUserSkillStatus(id int) freedom.Result {
 	userId := controller.Request.GetUserId()
 	rsp, err := controller.SkillSev.GetUserSkillStatus(id, userId)
@@ -118,6 +128,7 @@ func (controller *SkillController) GetUserSkillStatus(id int) freedom.Result {
 	return &infra.JSONResponse{Object: rsp}
 }
 
+// InstallSkill 安装市场技能 POST /api/skills/install
 func (controller *SkillController) InstallSkill() freedom.Result {
 	userId := controller.Request.GetUserId()
 	var req vo.UserSkillInstallReq
@@ -131,6 +142,7 @@ func (controller *SkillController) InstallSkill() freedom.Result {
 	return &infra.JSONResponse{Object: rsp}
 }
 
+// RetryInstallSkill 重试安装失败技能 PUT /api/skills/user/:id/retry
 func (controller *SkillController) RetryInstallSkill(id int) freedom.Result {
 	userId := controller.Request.GetUserId()
 	if err := controller.SkillSev.RetryInstallSkill(id, userId); err != nil {
@@ -139,6 +151,7 @@ func (controller *SkillController) RetryInstallSkill(id int) freedom.Result {
 	return &infra.JSONResponse{}
 }
 
+// UpdateUserSkill 编辑用户技能 PUT /api/skills/user/:id
 func (controller *SkillController) UpdateUserSkill(id int) freedom.Result {
 	userId := controller.Request.GetUserId()
 	var req vo.UserSkillUpdateReq
@@ -151,6 +164,7 @@ func (controller *SkillController) UpdateUserSkill(id int) freedom.Result {
 	return &infra.JSONResponse{}
 }
 
+// ToggleAlwaysOn 切换始终启用 PUT /api/skills/user/:id/alwaysOn
 func (controller *SkillController) ToggleAlwaysOn(id int) freedom.Result {
 	userId := controller.Request.GetUserId()
 	var req vo.UserSkillToggleAlwaysOnReq
@@ -163,6 +177,7 @@ func (controller *SkillController) ToggleAlwaysOn(id int) freedom.Result {
 	return &infra.JSONResponse{}
 }
 
+// DeleteUserSkill 删除用户技能 DELETE /api/skills/user/:id
 func (controller *SkillController) DeleteUserSkill(id int) freedom.Result {
 	userId := controller.Request.GetUserId()
 	if err := controller.SkillSev.DeleteUserSkill(id, userId); err != nil {
@@ -171,6 +186,7 @@ func (controller *SkillController) DeleteUserSkill(id int) freedom.Result {
 	return &infra.JSONResponse{}
 }
 
+// RefreshUserSkills 刷新同步用户创建的技能 POST /api/skills/user/refresh
 func (controller *SkillController) RefreshUserSkills() freedom.Result {
 	userId := controller.Request.GetUserId()
 	rsp, err := controller.SkillSev.RefreshUserSkills(userId)
@@ -180,6 +196,7 @@ func (controller *SkillController) RefreshUserSkills() freedom.Result {
 	return &infra.JSONResponse{Object: rsp}
 }
 
+// ListCategories 获取技能分类列表 GET /api/skills/categories
 func (controller *SkillController) ListCategories() freedom.Result {
 	rsp, err := controller.SkillSev.ListSkillCategoriesForUser()
 	if err != nil {
@@ -188,6 +205,7 @@ func (controller *SkillController) ListCategories() freedom.Result {
 	return &infra.JSONResponse{Object: rsp}
 }
 
+// ShareSkill 共享技能到团队 POST /api/skills/shares
 func (controller *SkillController) ShareSkill() freedom.Result {
 	userId := controller.Request.GetUserId()
 	var req vo.ShareSkillReq
@@ -201,6 +219,7 @@ func (controller *SkillController) ShareSkill() freedom.Result {
 	return &infra.JSONResponse{Object: rsp}
 }
 
+// ListSkillShares 团队技能列表 GET /api/skills/shares
 func (controller *SkillController) ListSkillShares() freedom.Result {
 	userId := controller.Request.GetUserId()
 	var req vo.SkillShareListReq
@@ -214,6 +233,7 @@ func (controller *SkillController) ListSkillShares() freedom.Result {
 	return &infra.JSONResponse{Object: rsp}
 }
 
+// GetSkillShareDetail 团队技能详情 GET /api/skills/shares/:id
 func (controller *SkillController) GetSkillShareDetail(id int) freedom.Result {
 	rsp, err := controller.SkillSev.GetSkillShareDetail(id)
 	if err != nil {
@@ -222,6 +242,7 @@ func (controller *SkillController) GetSkillShareDetail(id int) freedom.Result {
 	return &infra.JSONResponse{Object: rsp}
 }
 
+// UpdateSharedSkill 更新共享技能 PUT /api/skills/shares/:id
 func (controller *SkillController) UpdateSharedSkill(id int) freedom.Result {
 	userId := controller.Request.GetUserId()
 	if err := controller.SkillSev.UpdateSharedSkill(id, userId); err != nil {
@@ -230,6 +251,7 @@ func (controller *SkillController) UpdateSharedSkill(id int) freedom.Result {
 	return &infra.JSONResponse{}
 }
 
+// DeleteSkillShare 删除共享技能 DELETE /api/skills/shares/:id
 func (controller *SkillController) DeleteSkillShare(id int) freedom.Result {
 	userId := controller.Request.GetUserId()
 	if err := controller.SkillSev.DeleteSkillShare(id, userId); err != nil {
@@ -238,6 +260,7 @@ func (controller *SkillController) DeleteSkillShare(id int) freedom.Result {
 	return &infra.JSONResponse{}
 }
 
+// InstallSharedSkill 安装团队共享技能 POST /api/skills/shares/:id/install
 func (controller *SkillController) InstallSharedSkill(id int) freedom.Result {
 	userId := controller.Request.GetUserId()
 	rsp, err := controller.SkillSev.InstallSharedSkill(userId, id)

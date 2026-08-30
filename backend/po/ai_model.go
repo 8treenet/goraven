@@ -25,7 +25,7 @@ type AIModel struct {
 	ExtraFields         string    `gorm:"column:extra_fields;type:text"`                       // 额外配置，JSON格式，如 {"thinking":{"type":"enabled"}}
 	ProxyURL            string    `gorm:"column:proxy_url;type:varchar(256)"`                  // 代理地址，非必填，如 http://127.0.0.1:7890
 	ContextLen          int       `gorm:"column:context_len;default:200"`                      // 上下文长度，单位KB，默认200，内部使用时需*1024
-	IsDefault           uint8     `gorm:"column:is_default;default:0"`                         // 是否默认模型: 0否 1是（全局唯一）
+	IsDefault           uint8     `gorm:"column:is_default;default:0"`                         // 是否默认模型: 0否 1是（可多个组成默认池，对话使用默认模型时随机选取）
 	IsFlash             int       `gorm:"column:is_flash;default:0"`                          // 是否 Flash 模型: 0否 1是（全局唯一），用于历史对话压缩和子 agent
 	IsVisual            int       `gorm:"column:is_visual;default:0"`                          // 是否多模态识别模型: 0否 1是（全局唯一），用于图片理解
 	Status              uint8     `gorm:"column:status;default:1"`                            // 状态: 0禁用 1启用，禁用后会话中不出现该模型

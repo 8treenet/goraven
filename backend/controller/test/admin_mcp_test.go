@@ -7,6 +7,7 @@ import (
 	"github.com/8treenet/freedom/infra/requests"
 )
 
+// TestGetMCPs MCP 列表 GET /api/admin/mcp
 func TestGetMCPs(t *testing.T) {
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/mcp").
 		Get().
@@ -15,6 +16,7 @@ func TestGetMCPs(t *testing.T) {
 	t.Log(str, httpResp)
 }
 
+// TestGetMCPsWithSearch MCP 列表带搜索
 func TestGetMCPsWithSearch(t *testing.T) {
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/mcp?search=Web").
 		Get().
@@ -23,6 +25,7 @@ func TestGetMCPsWithSearch(t *testing.T) {
 	t.Log(str, httpResp)
 }
 
+// TestGetMCPsWithTransportFilter MCP 列表按传输类型筛选
 func TestGetMCPsWithTransportFilter(t *testing.T) {
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/mcp?transport=Stdio").
 		Get().
@@ -31,6 +34,7 @@ func TestGetMCPsWithTransportFilter(t *testing.T) {
 	t.Log(str, httpResp)
 }
 
+// TestGetMCPsWithStatusFilter MCP 列表按状态筛选
 func TestGetMCPsWithStatusFilter(t *testing.T) {
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/mcp?status=1").
 		Get().
@@ -39,6 +43,7 @@ func TestGetMCPsWithStatusFilter(t *testing.T) {
 	t.Log(str, httpResp)
 }
 
+// TestGetMCPDetail MCP 详情 GET /api/admin/mcp/:id
 func TestGetMCPDetail(t *testing.T) {
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/mcp/3").
 		Get().
@@ -47,6 +52,7 @@ func TestGetMCPDetail(t *testing.T) {
 	t.Log(str, httpResp)
 }
 
+// TestCreateMCPStdio 创建 Stdio/npx 类型 MCP
 func TestCreateMCPStdio(t *testing.T) {
 	req := vo.AdminCreateMCPReq{
 		Name:        "sequential-thinking-test",
@@ -67,6 +73,7 @@ func TestCreateMCPStdio(t *testing.T) {
 	t.Log(str, httpResp)
 }
 
+// TestCreateMCPStdioUvx 创建 Stdio/uvx 类型 MCP
 func TestCreateMCPStdioUvx(t *testing.T) {
 	req := vo.AdminCreateMCPReq{
 		Name:        "mcp-server-fetch-test",
@@ -87,6 +94,7 @@ func TestCreateMCPStdioUvx(t *testing.T) {
 	t.Log(str, httpResp)
 }
 
+// TestCreateMCPSSE 创建 SSE 类型 MCP
 func TestCreateMCPSSE(t *testing.T) {
 	req := vo.AdminCreateMCPReq{
 		Name:         "sse-mcp-test",
@@ -107,6 +115,7 @@ func TestCreateMCPSSE(t *testing.T) {
 	t.Log(str, httpResp)
 }
 
+// TestCreateMCPHTTP 创建 StreamableHttp 类型 MCP
 func TestCreateMCPHTTP(t *testing.T) {
 	req := vo.AdminCreateMCPReq{
 		Name:         "web-search1",
@@ -127,6 +136,7 @@ func TestCreateMCPHTTP(t *testing.T) {
 	t.Log(str, httpResp)
 }
 
+// TestCreateMCPWithEnv 创建带环境变量的 Stdio MCP
 func TestCreateMCPWithEnv(t *testing.T) {
 	req := vo.AdminCreateMCPReq{
 		Name:        "github-mcp-test",
@@ -149,6 +159,7 @@ func TestCreateMCPWithEnv(t *testing.T) {
 	t.Log(str, httpResp)
 }
 
+// TestUpdateMCP 编辑 MCP PUT /api/admin/mcp/:id
 func TestUpdateMCP(t *testing.T) {
 	req := vo.AdminUpdateMCPReq{
 		DisplayName:  "WebSearch234",
@@ -165,6 +176,7 @@ func TestUpdateMCP(t *testing.T) {
 	t.Log(str, httpResp)
 }
 
+// TestUpdateMCPStatus 启用/禁用 MCP PUT /api/admin/mcp/:id/status
 func TestUpdateMCPStatus(t *testing.T) {
 	req := map[string]interface{}{
 		"status": 0,
@@ -177,6 +189,7 @@ func TestUpdateMCPStatus(t *testing.T) {
 	t.Log(str, httpResp)
 }
 
+// TestEnableMCP 启用 MCP
 func TestEnableMCP(t *testing.T) {
 	req := map[string]interface{}{
 		"status": 1,
@@ -189,6 +202,7 @@ func TestEnableMCP(t *testing.T) {
 	t.Log(str, httpResp)
 }
 
+// TestDeleteMCP 删除 MCP DELETE /api/admin/mcp/:id
 func TestDeleteMCP(t *testing.T) {
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/mcp/4").
 		Delete().
@@ -197,6 +211,7 @@ func TestDeleteMCP(t *testing.T) {
 	t.Log(str, httpResp)
 }
 
+// TestCheckMCPHealth 手动触发 MCP 健康检查 POST /api/admin/mcp/healthCheck
 func TestCheckMCPHealth(t *testing.T) {
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/mcp/healthCheck").
 		Post().
@@ -205,6 +220,7 @@ func TestCheckMCPHealth(t *testing.T) {
 	t.Log(str, httpResp)
 }
 
+// TestGetRecommendMCPs 推荐 MCP 列表 GET /api/admin/mcp/recommend
 func TestGetRecommendMCPs(t *testing.T) {
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/mcp/recommend").
 		Get().

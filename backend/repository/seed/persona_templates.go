@@ -1,5 +1,6 @@
 package seed
 
+// PersonaTemplateSeed holds static seed data for persona templates.
 type PersonaTemplateSeed struct {
 	EnName         string
 	ZhName         string
@@ -13,6 +14,7 @@ type PersonaTemplateSeed struct {
 	SortOrder      int
 }
 
+// PersonaTemplates contains the default persona template seed data.
 var PersonaTemplates = []PersonaTemplateSeed{
 	{
 		EnName:         "General Assistant",

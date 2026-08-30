@@ -77,6 +77,14 @@ export const router = createBrowserRouter([
         lazy: lazyImport(() => import('@/features/personas/PersonaDetailPage')),
       },
       {
+        path: 'automation',
+        lazy: lazyImport(() => import('@/features/automation/AutomationListPage')),
+      },
+      {
+        path: 'automation/:id',
+        lazy: lazyImport(() => import('@/features/automation/AutomationDetailPage')),
+      },
+      {
         path: 'profile',
         lazy: lazyImport(() => import('@/features/profile/ProfilePage')),
       },

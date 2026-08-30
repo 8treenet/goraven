@@ -13,16 +13,19 @@ func init() {
 	})
 }
 
+// MCPController 用户可用的 MCP 工具相关接口
 type MCPController struct {
 	McpSev  *service.McpService
 	Request *infra.Request
 }
 
+// BeforeActivation 绑定路由前缀 /api/mcp
 func (controller *MCPController) BeforeActivation(b freedom.BeforeActivation) {
 	b.Handle("GET", "/", "GetMCPs")
 	b.Handle("GET", "/byIds", "GetMCPsByIDs")
 }
 
+// GetMCPs 获取用户可选 MCP 列表 GET /api/mcp
 func (controller *MCPController) GetMCPs() freedom.Result {
 	rsp, err := controller.McpSev.ListEnabledMCPs()
 	if err != nil {
@@ -31,6 +34,7 @@ func (controller *MCPController) GetMCPs() freedom.Result {
 	return &infra.JSONResponse{Object: rsp}
 }
 
+// GetMCPsByIDs 根据指定的 mcpId 列表获取 MCP 列表 GET /api/mcp/byIds?ids=1&ids=2
 func (controller *MCPController) GetMCPsByIDs() freedom.Result {
 	var query struct {
 		IDs []int `url:"ids" validate:"required"`

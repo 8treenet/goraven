@@ -1,12 +1,12 @@
 package service
 
 import (
+	"os"
 	"goraven/backend/repository"
 	"goraven/backend/vo"
 	"goraven/config"
 	"goraven/core/plugin"
 	"goraven/util/disk"
-	"os"
 	"time"
 
 	"github.com/8treenet/freedom"
@@ -24,11 +24,14 @@ func init() {
 	})
 }
 
+// SystemInfoService 系统信息服务
+// 聚合概览、数据库、磁盘、MCP 健康、生态统计、插件等运维关键数据
 type SystemInfoService struct {
 	Worker  freedom.Worker
 	SysRepo *repository.SystemInfoRepository
 }
 
+// GetSystemInfo 获取系统信息完整快照
 func (service *SystemInfoService) GetSystemInfo(forceRefresh bool) (*vo.SystemInfoRsp, error) {
 	if forceRefresh {
 		service.SysRepo.InvalidateCache()

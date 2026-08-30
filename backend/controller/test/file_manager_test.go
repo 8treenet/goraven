@@ -8,19 +8,21 @@ import (
 	"github.com/8treenet/freedom/infra/requests"
 )
 
+// apiRsp 通用 API 响应结构
 type apiRsp struct {
 	Code int             `json:"code"`
 	Msg  string          `json:"msg"`
 	Data json.RawMessage `json:"data,omitempty"`
 }
 
+// TestFileManagerListRoot 列出根目录 GET /api/fileManager/list
 func TestFileManagerListRoot(t *testing.T) {
 	var rsp struct {
-		Code int                   `json:"code"`
-		Msg  string                `json:"msg"`
-		Data vo.FileManagerListRsp `json:"data,omitempty"`
+		Code int                    `json:"code"`
+		Msg  string                 `json:"msg"`
+		Data vo.FileManagerListRsp  `json:"data,omitempty"`
 	}
-	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/list").
+	httpResp := requests.NewHTTPRequest(domain + "/api/fileManager/list").
 		Get().
 		SetHeaderValue("Authorization", "Bearer "+token).
 		ToJSON(&rsp)
@@ -36,13 +38,14 @@ func TestFileManagerListRoot(t *testing.T) {
 	}
 }
 
+// TestFileManagerListDocuments 列出 documents 目录 GET /api/fileManager/list?dir=documents
 func TestFileManagerListDocuments(t *testing.T) {
 	var rsp struct {
-		Code int                   `json:"code"`
-		Msg  string                `json:"msg"`
-		Data vo.FileManagerListRsp `json:"data,omitempty"`
+		Code int                    `json:"code"`
+		Msg  string                 `json:"msg"`
+		Data vo.FileManagerListRsp  `json:"data,omitempty"`
 	}
-	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/list?dir=documents").
+	httpResp := requests.NewHTTPRequest(domain + "/api/fileManager/list?dir=documents").
 		Get().
 		SetHeaderValue("Authorization", "Bearer "+token).
 		ToJSON(&rsp)
@@ -58,13 +61,14 @@ func TestFileManagerListDocuments(t *testing.T) {
 	}
 }
 
+// TestFileManagerListSortBySize 按大小排序 GET /api/fileManager/list?dir=documents&sort=size&order=desc
 func TestFileManagerListSortBySize(t *testing.T) {
 	var rsp struct {
-		Code int                   `json:"code"`
-		Msg  string                `json:"msg"`
-		Data vo.FileManagerListRsp `json:"data,omitempty"`
+		Code int                    `json:"code"`
+		Msg  string                 `json:"msg"`
+		Data vo.FileManagerListRsp  `json:"data,omitempty"`
 	}
-	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/list?dir=documents&sort=size&order=desc").
+	httpResp := requests.NewHTTPRequest(domain + "/api/fileManager/list?dir=documents&sort=size&order=desc").
 		Get().
 		SetHeaderValue("Authorization", "Bearer "+token).
 		ToJSON(&rsp)
@@ -80,13 +84,14 @@ func TestFileManagerListSortBySize(t *testing.T) {
 	}
 }
 
+// TestFileManagerMkdirAndDelete 创建目录后删除 POST /api/fileManager/mkdir → DELETE /api/fileManager/delete
 func TestFileManagerMkdirAndDelete(t *testing.T) {
-
+	// 创建目录
 	mkdirReq := vo.FileManagerMkdirReq{
 		Path: "test_mkdir_dir",
 	}
 	var mkdirRsp apiRsp
-	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/mkdir").
+	httpResp := requests.NewHTTPRequest(domain + "/api/fileManager/mkdir").
 		Post().
 		SetJSONBody(mkdirReq).
 		SetHeaderValue("Authorization", "Bearer "+token).
@@ -99,12 +104,13 @@ func TestFileManagerMkdirAndDelete(t *testing.T) {
 	}
 	t.Log("mkdir success: test_mkdir_dir")
 
+	// 验证目录存在
 	var listRsp struct {
-		Code int                   `json:"code"`
-		Msg  string                `json:"msg"`
-		Data vo.FileManagerListRsp `json:"data,omitempty"`
+		Code int                    `json:"code"`
+		Msg  string                 `json:"msg"`
+		Data vo.FileManagerListRsp  `json:"data,omitempty"`
 	}
-	requests.NewHTTPRequest(domain+"/api/fileManager/list").
+	requests.NewHTTPRequest(domain + "/api/fileManager/list").
 		Get().
 		SetHeaderValue("Authorization", "Bearer "+token).
 		ToJSON(&listRsp)
@@ -119,11 +125,12 @@ func TestFileManagerMkdirAndDelete(t *testing.T) {
 		t.Fatal("mkdir verification failed: test_mkdir_dir not found in root listing")
 	}
 
+	// 删除目录
 	deleteReq := vo.FileManagerDeleteReq{
 		Paths: []string{"test_mkdir_dir"},
 	}
 	var delRsp apiRsp
-	httpResp = requests.NewHTTPRequest(domain+"/api/fileManager/delete").
+	httpResp = requests.NewHTTPRequest(domain + "/api/fileManager/delete").
 		Delete().
 		SetJSONBody(deleteReq).
 		SetHeaderValue("Authorization", "Bearer "+token).
@@ -137,11 +144,12 @@ func TestFileManagerMkdirAndDelete(t *testing.T) {
 	t.Log("delete success: test_mkdir_dir")
 }
 
+// TestFileManagerRename 重命名 PUT /api/fileManager/rename
 func TestFileManagerRename(t *testing.T) {
-
+	// 先创建测试目录
 	mkdirReq := vo.FileManagerMkdirReq{Path: "test_rename_before"}
 	var mkdirRsp apiRsp
-	requests.NewHTTPRequest(domain+"/api/fileManager/mkdir").
+	requests.NewHTTPRequest(domain + "/api/fileManager/mkdir").
 		Post().
 		SetJSONBody(mkdirReq).
 		SetHeaderValue("Authorization", "Bearer "+token).
@@ -150,12 +158,13 @@ func TestFileManagerRename(t *testing.T) {
 		t.Fatalf("mkdir for rename failed: code=%d msg=%s", mkdirRsp.Code, mkdirRsp.Msg)
 	}
 
+	// 重命名
 	renameReq := vo.FileManagerRenameReq{
 		OldPath: "test_rename_before",
 		NewPath: "test_rename_after",
 	}
 	var renameRsp apiRsp
-	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/rename").
+	httpResp := requests.NewHTTPRequest(domain + "/api/fileManager/rename").
 		Put().
 		SetJSONBody(renameReq).
 		SetHeaderValue("Authorization", "Bearer "+token).
@@ -168,33 +177,36 @@ func TestFileManagerRename(t *testing.T) {
 	}
 	t.Log("rename success: test_rename_before → test_rename_after")
 
+	// 清理
 	deleteReq := vo.FileManagerDeleteReq{Paths: []string{"test_rename_after"}}
-	requests.NewHTTPRequest(domain+"/api/fileManager/delete").
+	requests.NewHTTPRequest(domain + "/api/fileManager/delete").
 		Delete().
 		SetJSONBody(deleteReq).
 		SetHeaderValue("Authorization", "Bearer "+token).
 		ToJSON(&apiRsp{})
 }
 
+// TestFileManagerCompressAndDecompress 压缩和解压 POST /api/fileManager/compress → POST /api/fileManager/decompress
 func TestFileManagerCompressAndDecompress(t *testing.T) {
-
+	// 创建测试文件
 	mkdirReq := vo.FileManagerMkdirReq{Path: "test_compress_src"}
-	requests.NewHTTPRequest(domain+"/api/fileManager/mkdir").
+	requests.NewHTTPRequest(domain + "/api/fileManager/mkdir").
 		Post().
 		SetJSONBody(mkdirReq).
 		SetHeaderValue("Authorization", "Bearer "+token).
 		ToJSON(&apiRsp{})
 
+	// 压缩 documents 目录
 	compressReq := vo.FileManagerCompressReq{
 		Paths:      []string{"test_compress_src"},
 		OutputName: "test_compress_src.zip",
 	}
 	var compressRsp struct {
-		Code int                       `json:"code"`
-		Msg  string                    `json:"msg"`
-		Data vo.FileManagerCompressRsp `json:"data,omitempty"`
+		Code int                        `json:"code"`
+		Msg  string                     `json:"msg"`
+		Data vo.FileManagerCompressRsp  `json:"data,omitempty"`
 	}
-	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/compress").
+	httpResp := requests.NewHTTPRequest(domain + "/api/fileManager/compress").
 		Post().
 		SetJSONBody(compressReq).
 		SetHeaderValue("Authorization", "Bearer "+token).
@@ -207,12 +219,13 @@ func TestFileManagerCompressAndDecompress(t *testing.T) {
 	}
 	t.Logf("compress success: zipPath=%s", compressRsp.Data.ZipPath)
 
+	// 解压到同名子目录
 	decompressReq := vo.FileManagerDecompressReq{
 		Path:     compressRsp.Data.ZipPath,
 		ToSubDir: true,
 	}
 	var decompressRsp apiRsp
-	httpResp = requests.NewHTTPRequest(domain+"/api/fileManager/decompress").
+	httpResp = requests.NewHTTPRequest(domain + "/api/fileManager/decompress").
 		Post().
 		SetJSONBody(decompressReq).
 		SetHeaderValue("Authorization", "Bearer "+token).
@@ -225,23 +238,25 @@ func TestFileManagerCompressAndDecompress(t *testing.T) {
 	}
 	t.Log("decompress success")
 
+	// 清理
 	deleteReq := vo.FileManagerDeleteReq{
 		Paths: []string{"test_compress_src", "test_compress_src.zip", "test_compress_src"},
 	}
-	requests.NewHTTPRequest(domain+"/api/fileManager/delete").
+	requests.NewHTTPRequest(domain + "/api/fileManager/delete").
 		Delete().
 		SetJSONBody(deleteReq).
 		SetHeaderValue("Authorization", "Bearer "+token).
 		ToJSON(&apiRsp{})
 }
 
+// TestFileManagerUsage 磁盘使用统计 GET /api/fileManager/usage
 func TestFileManagerUsage(t *testing.T) {
 	var rsp struct {
-		Code int                    `json:"code"`
-		Msg  string                 `json:"msg"`
-		Data vo.FileManagerUsageRsp `json:"data,omitempty"`
+		Code int                     `json:"code"`
+		Msg  string                  `json:"msg"`
+		Data vo.FileManagerUsageRsp  `json:"data,omitempty"`
 	}
-	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/usage").
+	httpResp := requests.NewHTTPRequest(domain + "/api/fileManager/usage").
 		Get().
 		SetHeaderValue("Authorization", "Bearer "+token).
 		ToJSON(&rsp)
@@ -255,8 +270,10 @@ func TestFileManagerUsage(t *testing.T) {
 		rsp.Data.TotalSize, rsp.Data.UsedSize, rsp.Data.FileCount)
 }
 
+// TestFileManagerUpload 上传文件到用户空间 POST /api/fileManager/upload
+// 前置条件：先完成 HFS 分片上传（create → chunk → merge），拿到 uploadId
 func TestFileManagerUpload(t *testing.T) {
-
+	// 设置 uploadId（需要先手动执行 HFS 上传流程获取，或通过 TestHfsCreateUpload/TestHfsUploadChunk/TestHfsMergeUpload 自动化获取）
 	uploadId := ""
 	if uploadId == "" {
 		t.Skip("请设置 uploadId 变量（先完成 HFS 分片上传流程获取）")
@@ -267,11 +284,11 @@ func TestFileManagerUpload(t *testing.T) {
 		Dir:      "documents",
 	}
 	var rsp struct {
-		Code int                     `json:"code"`
-		Msg  string                  `json:"msg"`
-		Data vo.FileManagerUploadRsp `json:"data,omitempty"`
+		Code int                       `json:"code"`
+		Msg  string                    `json:"msg"`
+		Data vo.FileManagerUploadRsp   `json:"data,omitempty"`
 	}
-	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/upload").
+	httpResp := requests.NewHTTPRequest(domain + "/api/fileManager/upload").
 		Post().
 		SetJSONBody(uploadReq).
 		SetHeaderValue("Authorization", "Bearer "+token).

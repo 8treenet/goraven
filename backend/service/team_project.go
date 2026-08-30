@@ -16,6 +16,7 @@ import (
 	"goraven/backend/repository"
 	"goraven/backend/vo"
 	"goraven/backend/vo/errs"
+	"goraven/config"
 	"goraven/util"
 
 	"github.com/8treenet/freedom"
@@ -124,7 +125,7 @@ func (service *TeamProjectService) Create(userId, projectName, description strin
 		return nil, errs.ErrTeamProjectAlreadyExists
 	}
 
-	projectDir := projectName
+	projectDir := filepath.Join(config.Get().GetTeamProjectDir(), projectName)
 	if err := os.MkdirAll(projectDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create project directory: %w", err)
 	}
@@ -150,7 +151,7 @@ func (service *TeamProjectService) DeleteProject(userId string, id int) error {
 	if project.CreatorId != userId {
 		return errs.ErrTeamProjectPermission
 	}
-	projectDir := filepath.Join(project.ProjectName)
+	projectDir := filepath.Join(config.Get().GetTeamProjectDir(), project.ProjectName)
 	os.RemoveAll(projectDir)
 	service.TPRepo.RemoveMembersByProjectId(id)
 	return service.TPRepo.Delete(id)
@@ -212,8 +213,8 @@ func (service *TeamProjectService) AdminListTeamProjects(req *vo.AdminTeamProjec
 			Created:     p.Created,
 			Updated:     p.Updated,
 		}
-		if !p.LastActiveAt.IsZero() {
-			item.LastActiveAt = &p.LastActiveAt
+		if p.LastActiveTime != nil {
+			item.LastActiveAt = p.LastActiveTime
 		}
 		if u, ok := userMap[p.CreatorId]; ok {
 			item.CreatorName = u.Nickname
@@ -243,7 +244,7 @@ func (service *TeamProjectService) AdminDeleteProject(id int) error {
 	if err != nil {
 		return errs.ErrTeamProjectNotFound
 	}
-	projectDir := filepath.Join(project.ProjectName)
+	projectDir := filepath.Join(config.Get().GetTeamProjectDir(), project.ProjectName)
 	os.RemoveAll(projectDir)
 	service.TPRepo.RemoveMembersByProjectId(id)
 	return service.TPRepo.Delete(id)
@@ -262,7 +263,38 @@ func (service *TeamProjectService) AdminUpdateDescription(id int, description st
 
 // getProjectDir 获取团队项目的物理目录绝对路径
 func getProjectDir(projectName string) string {
-	return filepath.Join(projectName)
+	return filepath.Join(config.Get().GetTeamProjectDir(), projectName)
+}
+
+// resolveSharedAkPath 校验共享空间（团队项目）临时凭证的请求路径，解析出待下载文件的绝对路径
+// reqPath 为 URL 中携带的路径，boundPath 为签发凭证时绑定的路径，二者均为 ak 空间路径，
+// 形如 /projects/<项目名>/<项目内相对路径>。
+// file 类型：reqPath 必须与绑定路径完全一致；
+// dir 类型：reqPath 必须严格位于绑定目录内，不能是目录本身
+func resolveSharedAkPath(teamRoot, boundPath, typ, reqPath string) (string, error) {
+	cleanReq := filepath.Clean(reqPath)
+	cleanBound := filepath.Clean(boundPath)
+	if typ == "file" {
+		if cleanReq != cleanBound {
+			return "", errs.ErrTempAccessPathNotAllowed
+		}
+	} else if cleanReq == cleanBound || !strings.HasPrefix(cleanReq, cleanBound+string(filepath.Separator)) {
+		return "", errs.ErrTempAccessPathNotAllowed
+	}
+
+	// 从 ak 空间路径解析项目名与项目内相对路径：/projects/<项目名>/<相对路径>
+	// 路径比较已保证 cleanReq 必然位于签发时绑定的 /projects/<项目名>/ 之下
+	name, sub, ok := strings.Cut(strings.TrimPrefix(cleanReq, "/projects/"), "/")
+	if !ok || name == "" || name == "." || name == ".." {
+		return "", errs.ErrTempAccessPathNotAllowed
+	}
+
+	projectDir := filepath.Join(teamRoot, name)
+	absPath := filepath.Join(projectDir, sub)
+	if !strings.HasPrefix(filepath.Clean(absPath), filepath.Clean(projectDir)+string(filepath.Separator)) {
+		return "", errs.ErrTempAccessPathNotAllowed
+	}
+	return absPath, nil
 }
 
 // validateProject 校验团队项目存在且目录有效，返回项目记录和物理目录
@@ -529,9 +561,11 @@ func (service *TeamProjectService) CreateTempAccess(id int, req *vo.TempAccessRe
 	}
 
 	ak := "rvnt_" + util.UUID()
+	// Path 统一存 ak 空间路径 /projects/<项目名>/<项目内相对路径>，与前端 buildAkPath 及 ak 下载 URL 一致
 	cache := &repository.TempAccessCache{
 		UserName: user.Username,
-		Path:     cleanPath,
+		Space:    repository.TempSpaceShared,
+		Path:     filepath.Join("/projects", project.ProjectName, filepath.Clean("/"+strings.TrimPrefix(req.Path, "/"))),
 		Type:     req.Type,
 	}
 	if err := service.HFSRepo.SetTempAccess(ak, cache); err != nil {

@@ -3,6 +3,8 @@ paths:
   chroma_dir: "./data/chroma"
   # User space root directory
   user_space: "./data/users"
+  # Team projects root directory
+  team_project_dir: "./data/team_projects"
   # Frontend static files directory
   frontend_dir: "./frontend/dist"
   # Python scripts directory

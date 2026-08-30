@@ -15,11 +15,12 @@ GoRaven 采用左侧边栏 + 右侧主内容区布局。侧边栏可折叠为仅
 
 - **顶部**：GoRaven logo + 折叠/展开按钮
 - **新建对话按钮**：点击进入空白对话页，开始新的 AI 交互
-- **工作区导航**（折叠分组）：
+- **控制台**（折叠分组）：
   - 仪表盘：查看个人用量统计
-  - 文件管理：管理个人工作空间文件
+  - 工作空间：管理个人工作空间文件
   - 技能中心：管理已安装的技能，浏览技能市场
   - 角色管理：创建和管理 AI 角色（预配置模型、MCP、技能的系统提示）
+  - 自动化：查看和管理定时/周期自动化任务（/automation）
 - **会话历史**：按时间分组（今天 / 近7天 / 近30天），支持无限滚动加载，每条会话可重命名或归档删除
 - **底部用户区**：显示头像和用户名，点击弹出菜单：
   - 个人设置
@@ -39,7 +40,7 @@ GoRaven 采用左侧边栏 + 右侧主内容区布局。侧边栏可折叠为仅
 ### 新建对话（/chat，无会话）
 
 **顶部工具栏**：
-- 模型/角色选择下拉框，分为「模型」和「角色」两个区域。选择一个角色会自动配置模型、MCP 工具和技能；选择一个模型会清除角色选择。
+- 模型/角色选择下拉框，分为「模型」和「角色」两个区域。选择一个角色即使用该角色独立配置的模型、MCP 工具和技能（每个角色单独配置）；选择一个模型会清除角色选择。「模型」区首项为虚拟的「Auto」选项：不绑定具体模型，后端在对话开始时从默认模型池随机选取。
 - 如果系统尚未配置任何模型，显示「无模型」警告按钮，点击后弹窗说明配置步骤。
 - 移动端显示菜单按钮。
 
@@ -49,7 +50,7 @@ GoRaven 采用左侧边栏 + 右侧主内容区布局。侧边栏可折叠为仅
 - **文本输入框**：支持多行，自动增高（上限约4行），Enter 发送（Shift+Enter 换行）。中文输入法下 Enter 不会误发送。
 - **配置按钮（+ 扳手图标）**：打开浮动面板，可选择本次对话使用的 MCP 工具和技能。选中的工具/技能会显示高亮。当选择了角色时，此按钮禁用（角色已预配置工具和技能）。
 - **文件上传按钮（回形针图标）**：点击选择本地文件，最多 10 个。上传使用分块方式支持大文件。图片文件会显示缩略图预览。上传完毕或失败有状态提示。可点击移除已上传文件。
-- **项目目录按钮（文件夹图标）**：选择 projects/ 下的子目录作为本次对话的工作空间。选择后高亮显示。有「清空选择」选项。若选择的项目为团队共享项目（直接选择自己的已共享项目或通过团队项目列表进入），系统会加锁保护，若被其他会话占用则提示「该团队共享项目正在被其他会话使用」。
+- **项目目录按钮（文件夹图标）**：选择 projects/ 下的子目录或团队项目作为本次对话的工作空间。选择后高亮显示。有「清空选择」选项。若选择的项目为团队项目，系统会加锁保护，若被其他会话占用则提示「该团队项目正在被其他会话使用」。
 - **Thinking 开关**：切换模型的深度思考模式。发送前可随意切换，发送后不可改。
 - **发送/停止按钮**：向上箭头样式，高亮色。输入为空时灰色不可用。发送后变为停止按钮（圆形停止图标）。发送后有约 3 秒冷却期，期间停止按钮暂时不可用（防止误触），冷却结束后可随时停止生成。停止后已生成的部分内容会保存为一条截断消息。
 
@@ -96,27 +97,23 @@ GoRaven 采用左侧边栏 + 右侧主内容区布局。侧边栏可折叠为仅
 
 顶部有刷新按钮。
 
-## 文件管理页（/files）
+## 工作空间页（/files）
 
 管理用户的个人工作空间文件。
 
-**工具栏**：
-- 返回上级目录
-- 当前目录名
-- 上传文件
-- 新建文件夹
-- 删除选中项（default 目录和只读文件不可删）
-- 压缩选中文件（创建 zip 包）
-- 解压（仅选中单个 .zip 文件时可点击，可选是否解压到子目录）
-- 刷新
+**顶部导航**：Segmented Tab 切换三个视图：「我的文件」「我的项目」「团队项目」。Tab 行右侧有图标按钮：
+- 「＋」按钮：在「我的文件」下弹出下拉菜单（上传文件 / 新建文件夹）；在「我的项目」下直接弹出「新建项目」弹框；在「团队项目」下弹出「新建团队项目」弹框。
+- 「刷新」按钮
 
-**文件列表**：表格形式，列包括复选框（全选/单选，支持 Shift 连选）、名称（双击进入目录）、大小、修改时间。
+**文件列表**：表格形式，列包括复选框（全选/单选）、名称、大小、修改时间。单击行即执行默认动作（目录→进入，文件→预览），点击复选框为批量选择唯一入口。
 
-**键盘快捷键**：F2 重命名选中文件、Delete 或 Backspace 删除选中项、Shift+点击连续多选。
+**选择驱动操作条**：勾选文件后，Tab 下方动态浮出操作条（已选 N 项｜下载｜删除｜压缩｜解压｜✕ 取消）。未选中时不显示任何操作按钮。
 
-**右键菜单**：预览、下载、重命名、删除、共享到团队（仅 projects/ 下的目录）、取消共享（仅已共享的目录）。
+**右键菜单**：预览、下载、重命名、删除。右键空白处弹出上传/新建菜单。
 
-**共享限制**：projects/ 下已共享的子目录不可删除和重命名，需先取消共享。
+**底部状态栏**：显示文件计数（共 N 项）。
+
+> 注：根目录列表中不展示 projects/ 文件夹，进入 projects/ 仅能通过「我的项目」Tab。
 
 **预览对话框**：支持以下文件类型的在线预览：
 
@@ -136,21 +133,19 @@ GoRaven 采用左侧边栏 + 右侧主内容区布局。侧边栏可折叠为仅
 - 如果是 Vite 等构建工具产物，构建时需设置 base 为 ./ （或命令行加 --base=./）使产物使用相对路径。
 - 依赖 localStorage / sessionStorage 的 SPA 应用无法在沙箱预览中正常运行（浏览器安全限制）。
 
-**拖拽上传**：支持拖拽文件到页面区域上传。
-
 用户工作空间下有固定目录，不可删除：
 
 | 目录 | 用途 |
 |------|------|
-| documents/ | 文档类文件，AI 可读写 |
-| projects/ | 项目代码，对话中可选子目录作为工作空间 |
+| documents/ | 文档类文件，AI 可读写（根目录列表可见） |
+| projects/ | 项目代码，对话中可选子目录作为工作空间（根目录列表不展示——通过「我的项目」Tab 进入） |
 | images/ | 图片文件存储 |
 | videos/ | 视频文件存储 |
 | downloads/ | 下载文件默认存放位置 |
 | temp/ | 临时文件（附件解析结果、中间产物），AI 可读写 |
-| skills/ | 已安装技能的文件存放位置（文件管理器中不可见——技能通过数据库管理和授权） |
+| skills/ | 已安装技能的文件存放位置（工作空间页面中不可见——技能通过数据库管理和授权） |
 
-> **文件管理器隐藏规则**：根目录下「skills/」目录不展示（技能通过数据库管理，禁止文件操作）；以「.」开头的文件和目录（如 .DS_Store、.profile）也不展示——但 .profile 可通过工具栏「环境变量」按钮编辑。
+> **工作空间页面隐藏规则**：根目录列表不展示「skills/」（技能通过数据库管理，禁止文件操作）和「projects/」（通过「我的项目」Tab 进入）；以「.」开头的文件和目录（如 .DS_Store、.profile）也不展示——.profile 可通过个人设置页的「环境变量」区块编辑。
 
 其中 documents/、projects/、temp/ 是 AI Agent 在执行任务时最常操作的目录。
 
@@ -160,8 +155,8 @@ GoRaven 采用左侧边栏 + 右侧主内容区布局。侧边栏可折叠为仅
 
 **文件格式**：每行 KEY=VALUE，# 注释，支持 export KEY=VALUE（自动去除 export）。
 
-**用户操作**（/files 页面）：
-- 工具栏「环境变量」按钮（{} 图标）打开编辑对话框，增删改键值对，自动保存到 .profile
+**用户操作**（/profile 个人设置页）：
+- 「环境变量」区块的「管理」按钮打开编辑对话框，增删改键值对，自动保存到 .profile
 
 **AI 操作**（通过文件工具）：
 - 用 read_file / write_file 直接读写工作空间根目录的 .profile
@@ -171,23 +166,26 @@ GoRaven 采用左侧边栏 + 右侧主内容区布局。侧边栏可折叠为仅
 **注入规则**：.profile 变量后注入，同名覆盖系统环境变量。
 
 **典型场景**：
-- 用户在文件管理页设置 BRAVE_SEARCH_API_KEY=xxx，之后所有对话中 AI 的命令都能直接用 $BRAVE_SEARCH_API_KEY
-- AI 发现需要 GITHUB_TOKEN 时提示用户：「需要 GITHUB_TOKEN，请在文件管理页的环境变量中添加，或直接告诉我值我帮你写入 .profile」
+- 用户在个人设置页设置 BRAVE_SEARCH_API_KEY=xxx，之后所有对话中 AI 的命令都能直接用 $BRAVE_SEARCH_API_KEY
+- AI 发现需要 GITHUB_TOKEN 时提示用户：「需要 GITHUB_TOKEN，请在个人设置页的环境变量中添加，或直接告诉我值我帮你写入 .profile」
 
-### 团队项目
+### 我的项目与团队项目
 
-文件管理页右上角「团队项目」按钮可切换到团队项目列表视图，查看所有团队成员共享的项目。
+工作空间页顶部通过 Segmented Tab 切换三个视图：
+
+- **「我的文件」Tab**：浏览个人工作空间根目录。
+- **「我的项目」Tab**：进入 projects/ 目录（该目录在根目录列表中隐藏）。/projects 视为此视图的根目录，不显示 projects 目录名和返回按钮。「＋」按钮在此 Tab 下为「新建项目」。
+- **「团队项目」Tab**：查看所有团队项目。
 
 **团队项目列表**：
-- 以卡片网格展示所有共享项目，每张卡片显示项目名、所有者（头像+姓名）、简介、更新时间。
+- 以卡片网格展示所有团队项目，每张卡片显示项目名、创建者（头像+姓名）、简介、更新时间。
 - 单击卡片进入项目文件浏览。
-- 项目所有者卡片右上角有「更多」菜单（悬停显示），可编辑简介和取消共享。
-- 顶部有「我的文件」按钮（右上角）可返回个人文件管理。
+- 项目创建者卡片右上角有「更多」菜单（悬停显示），可编辑简介、成员管理（设置访问权限：全员开放/仅成员可见，添加/移除成员）和删除项目。
+- 空状态时显示「新建项目」按钮。
 
 **项目文件浏览**：
-- 进入共享项目后，界面与文件管理页一致：返回上级按钮、当前目录名、上传、新建文件夹、删除、压缩、解压、刷新。
+- 进入团队项目后，界面与工作空间页一致：选择驱动操作条、右键菜单、底部状态栏。
 - 支持完整的文件操作：上传、新建、删除、重命名、压缩、解压、预览、下载。
-- 顶部右上角有「我的文件」按钮可直接返回个人文件管理。
 - 返回上级按钮在项目根目录时返回团队项目列表。
 
 ## 技能管理页（/skills）
@@ -214,13 +212,22 @@ GoRaven 采用左侧边栏 + 右侧主内容区布局。侧边栏可折叠为仅
 
 保存/取消按钮固定在顶部。
 
+## 自动化任务页（/automation）
+
+管理用户的自动化任务（定时/周期任务，由 AI 在对话中创建）。
+
+**任务列表**：顶部 Tab 按状态筛选（全部/启用中/已停用/已完成）。卡片显示标题、状态徽章、调度描述、下次执行时间与执行次数，支持分页。卡片操作：点击进入详情、立即执行、启用/停用开关、删除（弹窗确认）。
+
+**任务详情（/automation/:id）**：左侧为需求描述（可编辑保存）与执行记录（每次执行的时间与用时，展开可查看本次问答）；右侧为调度（执行类型、执行时间、下次执行）与运行配置（模型/角色/项目/MCP/技能）。顶部操作：返回、立即执行、启用/停用、删除。
+
 ## 个人资料页（/profile）
 
 个人设置，分为：
 1. **个人信息**：头像（可点击上传）、昵称（可编辑）、用户名（只读）、角色标签、邮箱（可编辑）、注册时间。
 2. **外观**：主题模式选择（浅色/深色/跟随系统）。
-3. **账号安全**：修改密码（需验证当前密码，新密码至少 8 位且包含字母和数字）。
-4. **关于**：项目介绍 + 退出登录。
+3. **环境变量**：管理用户空间的全局环境变量（.profile），点击「管理」按钮打开编辑对话框。
+4. **账号安全**：修改密码（需验证当前密码，新密码至少 8 位且包含字母和数字）。
+5. **关于**：项目介绍 + 退出登录。
 
 ## 其他页面
 
@@ -260,11 +267,12 @@ GoRaven uses a left sidebar + right main content layout. The sidebar is collapsi
 
 - **Top**: GoRaven logo + collapse/expand toggle button
 - **New Chat button**: Navigate to a blank chat page to start a new AI interaction
-- **Workspace navigation** (collapsible groups):
+- **Console** (collapsible groups):
   - Dashboard: View personal usage statistics
-  - File Manager: Manage personal workspace files
+  - Workspace: Manage personal workspace files
   - Skills Center: Manage installed skills, browse the skill marketplace
   - Personas: Create and manage AI personas (pre-configured system prompts with models, MCP tools, and skills)
+  - Automation: View and manage scheduled/recurring automation tasks (/automation)
 - **Session history**: Grouped by time (Today / Past 7 days / Past 30 days), infinite scroll loading. Each session can be renamed or archived (deleted).
 - **Bottom user area**: Shows avatar and username. Click opens a popover menu with:
   - Profile
@@ -284,7 +292,7 @@ Users can run multiple conversations simultaneously. Click any session in the si
 ### New Chat (/chat, no session)
 
 **Top toolbar**:
-- Model/Persona selector dropdown with two sections: Models and Personas. Selecting a persona auto-configures the model, MCP tools, and skills. Selecting a model clears the persona selection.
+- Model/Persona selector dropdown with two sections: Models and Personas. Selecting a persona uses that persona's independently configured model, MCP tools, and skills (each persona is configured separately). Selecting a model clears the persona selection. The first "Auto" entry under Models is virtual: it binds to no specific model; the backend picks one at random from the default model pool when the chat starts.
 - If no models are configured, a "No model" warning button appears with a dialog explaining setup steps.
 - Menu button on mobile.
 
@@ -294,7 +302,7 @@ Users can run multiple conversations simultaneously. Click any session in the si
 - **Text input**: Supports multi-line, auto-grows (max ~4 lines). Enter to send (Shift+Enter for newline). IME input (e.g. Chinese) is handled correctly — Enter while composing won't accidentally send.
 - **Config button (+ wrench icon)**: Opens a floating panel to select MCP tools and skills for this conversation. Selected items show highlighted. Disabled when a persona is selected (personas pre-configure tools/skills).
 - **File upload button (paperclip icon)**: Select local files, up to 10. Uses chunked upload for large files. Image files show preview thumbnails. Status indicators for upload progress/success/failure. Click to remove uploaded files.
-- **Project directory button (folder icon)**: Select a subdirectory under projects/ as the workspace for this chat. Highlighted when selected. Has a "Clear selection" option. If the selected project is a team shared project (whether directly selecting your own shared project or entering via the team project list), the system locks the project — if another session is already using it, an error "the shared project is currently in use by another session" is shown.
+- **Project directory button (folder icon)**: Select a subdirectory under projects/ or a team project as the workspace for this chat. Highlighted when selected. Has a "Clear selection" option. If the selected project is a team project, the system locks the project — if another session is already using it, an error "the team project is currently in use by another session" is shown.
 - **Thinking toggle**: Enables/disables the model's deep thinking mode. Can be toggled freely before sending, locked after sending.
 - **Send/Stop button**: Up-arrow icon, highlight color. Greyed out when input is empty. After sending, becomes a stop button (circle stop icon). There is a ~3 second cooldown after sending during which the stop button is temporarily disabled (to prevent accidental cancellation). After the cooldown, you can stop generation at any time. Stopped content is saved as a truncated message.
 
@@ -340,27 +348,23 @@ Displays personal usage statistics for the current user.
 
 Refresh button at the top.
 
-## Files Page (/files)
+## Workspace (/files)
 
 Manages the user's personal workspace files.
 
-**Toolbar**:
-- Navigate to parent directory
-- Current directory name
-- Upload files
-- New folder
-- Delete selected (default directories and read-only files cannot be deleted)
-- Compress selected (create zip archive)
-- Decompress (only enabled when a single .zip file is selected; option to extract to subdirectory)
-- Refresh
+**Top navigation**: A Segmented Tab switches between three views: "My Files", "My Projects", and "Team Projects". Icon buttons on the right of the Tab row:
+- "+" button: Under "My Files", opens a dropdown (Upload Files / New Folder); under "My Projects", opens a "New Project" dialog directly; under "Team Projects", opens a "New Team Project" dialog.
+- "Refresh" button
 
-**File list**: Table with columns: checkbox (select all/individual, supports Shift range selection), name (double-click to enter directories), size, modified time.
+**File list**: Table with columns: checkbox (select all/individual), name, size, modified time. Single-clicking a row performs the default action (directory → enter, file → preview). Clicking the checkbox is the only way to batch-select.
 
-**Keyboard shortcuts**: F2 to rename selected file, Delete or Backspace to delete selected items, Shift+click for range selection.
+**Selection-driven action bar**: After selecting files, an action bar appears below the Tab (N selected | Download | Delete | Compress | Decompress | ✕ Cancel). No action buttons are shown when nothing is selected.
 
-**Right-click menu**: Preview, Download, Rename, Delete, Share to Team (only for subdirectories under projects/), Unshare (only for shared directories).
+**Right-click menu**: Preview, Download, Rename, Delete. Right-clicking empty space shows an Upload/New menu.
 
-**Sharing restrictions**: Shared subdirectories under projects/ cannot be deleted or renamed — unshare first.
+**Bottom status bar**: Shows file count (Total N items).
+
+> Note: The projects/ folder is not shown in the root directory listing; the only way into projects/ is via the "My Projects" Tab.
 
 **Preview dialog** supports the following file types:
 
@@ -380,21 +384,19 @@ Manages the user's personal workspace files.
 - For Vite or similar build output, set base to ./ (or pass --base=./ on CLI) so build artifacts use relative paths.
 - SPAs depending on localStorage / sessionStorage cannot run in sandbox preview (browser security restriction).
 
-**Drag-and-drop**: Files can be dragged onto the page area to upload.
-
 Fixed user workspace directories (cannot be deleted):
 
 | Directory | Purpose |
 |-----------|---------|
-| documents/ | Document files, readable and writable by AI |
-| projects/ | Project code; subdirectories can be selected as chat workspace |
+| documents/ | Document files, readable and writable by AI (visible in root listing) |
+| projects/ | Project code; subdirectories can be selected as chat workspace (not shown in root listing — enter via the "My Projects" Tab) |
 | images/ | Image file storage |
 | videos/ | Video file storage |
 | downloads/ | Default download location |
 | temp/ | Temporary files (attachment parsing results, intermediate artifacts), AI can read/write |
-| skills/ | Installed skill files (hidden in the file manager — skills are managed and authorized through the database) |
+| skills/ | Installed skill files (hidden in the workspace page — skills are managed and authorized through the database) |
 
-> **File manager hidden rules**: The "skills/" directory is not shown at root level (skills are managed via database, file operations are disallowed); files and directories starting with "." (e.g. .DS_Store, .profile) are also not shown — though .profile can still be edited via the "Environment Variables" button in the toolbar.
+> **Workspace page hidden rules**: The root directory listing does not show "skills/" (skills are managed via database, file operations are disallowed) or "projects/" (enter via the "My Projects" Tab); files and directories starting with "." (e.g. .DS_Store, .profile) are also not shown — .profile can be edited via the "Environment Variables" section on the Profile page.
 
 Of these, documents/, projects/, and temp/ are the directories most commonly operated on by the AI Agent during task execution.
 
@@ -404,8 +406,8 @@ The .profile file at the workspace root manages user environment variables. **Bo
 
 **File format**: One KEY=VALUE per line, # for comments. Also supports export KEY=VALUE (export prefix auto-stripped).
 
-**User operations** (/files page):
-- Toolbar "Environment Variables" button ({} icon) opens an editor dialog for add/modify/delete key-value pairs, auto-saved to .profile
+**User operations** (/profile page):
+- The "Manage" button in the "Environment Variables" section opens an editor dialog for add/modify/delete key-value pairs, auto-saved to .profile
 
 **AI operations** (via file tools):
 - Read/write .profile directly from workspace root using read_file / write_file tools
@@ -415,23 +417,26 @@ The .profile file at the workspace root manages user environment variables. **Bo
 **Injection rule**: .profile vars are injected last, overriding same-name system environment variables.
 
 **Typical scenarios**:
-- User sets BRAVE_SEARCH_API_KEY=xxx in the Files page env vars dialog; AI can then use $BRAVE_SEARCH_API_KEY in all subsequent conversations
-- AI discovers it needs GITHUB_TOKEN and prompts: "I need GITHUB_TOKEN. Please add it in the Files page Environment Variables, or tell me the value and I'll write it to .profile."
+- User sets BRAVE_SEARCH_API_KEY=xxx in the Profile page env vars dialog; AI can then use $BRAVE_SEARCH_API_KEY in all subsequent conversations
+- AI discovers it needs GITHUB_TOKEN and prompts: "I need GITHUB_TOKEN. Please add it in the Environment Variables section of the Profile page, or tell me the value and I'll write it to .profile."
 
-### Team Projects
+### My Projects & Team Projects
 
-The "Team Projects" button in the top-right of the Files page switches to the team project list view, showing all projects shared by team members.
+The Workspace page uses a Segmented Tab at the top to switch between three views:
+
+- **"My Files" Tab**: Browse the personal workspace root directory.
+- **"My Projects" Tab**: Enter the projects/ directory (hidden in the root listing). /projects is treated as the root for this view — no directory name or back button shown. The "+" button acts as "New Project" here.
+- **"Team Projects" Tab**: View all team projects.
 
 **Team project list**:
-- Displays all shared projects as a card grid. Each card shows the project name, owner (avatar + name), description, and update time.
+- Displays all team projects as a card grid. Each card shows the project name, creator (avatar + name), description, and update time.
 - Click a card to enter the project file browser.
-- Project owners see a "More" menu on their cards (on hover) for editing the description and unsharing.
-- A "My Files" button in the top-right returns to personal file management.
+- Project creators see a "More" menu on their cards (on hover) for editing the description, managing members (access scope: All users / Members only, add/remove members), and deleting the project.
+- Empty state shows a "New Project" button.
 
 **Project file browser**:
-- Inside a shared project, the interface is consistent with the Files page: back button, current directory name, upload, new folder, delete, compress, decompress, refresh.
+- Inside a team project, the interface is consistent with the Workspace page: selection-driven action bar, right-click menu, bottom status bar.
 - Supports full file operations: upload, create, delete, rename, compress, decompress, preview, and download.
-- A "My Files" button in the top-right returns directly to personal file management.
 - The back button at the project root returns to the team project list.
 
 ## Skills Page (/skills)
@@ -458,13 +463,22 @@ Create and manage AI personas (pre-configured system prompts + model + MCP + ski
 
 Save/Cancel buttons fixed at top.
 
+## Automation Page (/automation)
+
+Manage the user's automation tasks (scheduled/recurring, created by the AI in conversations).
+
+**Task list**: Top tabs filter by status (All / Enabled / Disabled / Done). Cards show title, status badge, schedule description, next run time, and run count; paginated. Card actions: click to open detail, Execute Now, Enable/Disable toggle, Delete (with confirmation).
+
+**Task detail (/automation/:id)**: Left side shows the requirement (editable) and execution records (start time and duration per run; expand a record to view its Q&A). Right side shows the schedule (execution type, time, next run) and run configuration (model/persona/project/MCP/skills). Toolbar: Back, Execute Now, Enable/Disable, Delete.
+
 ## Profile Page (/profile)
 
 Personal settings:
 1. **Personal Info**: Avatar (uploadable), nickname (editable), username (read-only), role badge, email (editable), registration date.
 2. **Appearance**: Theme mode selector (Light / Dark / System).
-3. **Account Security**: Change password (requires current password, new password must be at least 8 chars with letters and numbers).
-4. **About**: Project description + Logout.
+3. **Environment Variables**: Manage workspace-level global environment variables (.profile). Click the "Manage" button to open the editor dialog.
+4. **Account Security**: Change password (requires current password, new password must be at least 8 chars with letters and numbers).
+5. **About**: Project description + Logout.
 
 ## Other Pages
 

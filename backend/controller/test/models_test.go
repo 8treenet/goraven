@@ -63,10 +63,10 @@ func TestCreateModel(t *testing.T) {
 		APIKey:              "ddd-8a36-4dfd-a026-bed断点c",
 		BaseURL:             "https://ark.cn-beijing.volces.com/api/v3",
 		ExtraFields:         "{\"thinking\":{\"type\":\"enabled\"}}",
-
+		//ProxyURL:            "http://127.0.0.1:33210",
 		ContextLen: 200,
 		IsDefault:  0,
-		IsFlash:    0,
+		IsFlash: 0,
 		Remark:     "test model",
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/models").
@@ -79,7 +79,11 @@ func TestCreateModel(t *testing.T) {
 
 func TestUpdateModel(t *testing.T) {
 	req := vo.AdminUpdateModelReq{
-
+		// ProviderDisplayName: "DeepSeek V3",
+		// ModelName:           "deepseek-chat123",
+		// ContextLen: 256,
+		// Remark:     "updated",
+		//APIKey:     "123",
 		ProxyURL: "http://127.0.0.1:7898",
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/models/1").

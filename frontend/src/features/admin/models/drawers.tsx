@@ -323,6 +323,7 @@ export function AddModelDrawer({
                 onChange={(v) => setForm((f) => ({ ...f, isDefault: v ? 1 : 0 }))}
               />
             </label>
+            <p className="text-xs text-text-muted">{t('adminModels.defaultHint')}</p>
             <label className="flex items-center justify-between">
               <span className="text-sm text-text-2">
                 {t('adminModels.flashModel')}</span>
@@ -353,6 +354,7 @@ export function AddModelDrawer({
               onChange={(e) => setForm((f) => ({ ...f, extraFields: e.target.value }))}
               placeholder='{"thinking":{"type":"enabled"}}'
               rows={3}
+              spellCheck={false}
               className="min-h-[60px] w-full rounded-lg border border-border-strong bg-transparent px-2.5 py-1.5 font-mono text-xs text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-3 focus:ring-ring/50"
             />
           </div>
@@ -637,6 +639,7 @@ export function EditModelDrawer({
                 onChange={(v) => setForm((f) => ({ ...f, isDefault: v ? 1 : 0 }))}
               />
             </label>
+            <p className="text-xs text-text-muted">{t('adminModels.defaultHint')}</p>
             <label className="flex items-center justify-between">
               <span className="text-sm text-text-2">
                 {t('adminModels.flashModel')}</span>
@@ -666,6 +669,7 @@ export function EditModelDrawer({
               value={form.extraFields}
               onChange={(e) => setForm((f) => ({ ...f, extraFields: e.target.value }))}
               rows={3}
+              spellCheck={false}
               className="min-h-[60px] w-full rounded-lg border border-border-strong bg-transparent px-2.5 py-1.5 font-mono text-xs text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-3 focus:ring-ring/50"
             />
           </div>

@@ -2,7 +2,7 @@ package seed
 
 const SystemSkillGoRavenFeatures = `---
 name: goraven-features
-description: GoRaven 平台功能概述。涵盖对话模式、附件处理、技能系统、MCP 集成、文件管理、会话分享、前端渲染与 goraven 标签、系统设置。当需了解业务功能如何工作或用户询问具体功能时调用。
+description: GoRaven 平台功能概述。涵盖对话模式、附件处理、技能系统、MCP 集成、工作空间、会话分享、自动化任务、前端渲染与 goraven 标签、系统设置。当需了解业务功能如何工作或用户询问具体功能时调用。
 ---
 
 # 平台功能
@@ -116,6 +116,8 @@ MCP（Model Context Protocol）允许连接外部服务扩展你的工具能力�
 - **压缩模型** —— 用于上下文压缩和会话标题生成
 - **多模态模型** —— 用于 goraven_visual_understand 工具
 
+每个模型可设置访问权限：**全员开放**（所有用户可选）或**仅成员可见**（仅指定成员可选），由管理员通过「权限和成员」弹窗配置。
+
 这三种模型不可删除，防止关键功能静默丢失。添加/编辑模型时支持「保存并测试」验证连通性。界面操作见 ` + "`goraven-admin-ui`" + `。
 
 ## 角色（Persona）详情
@@ -126,7 +128,7 @@ MCP（Model Context Protocol）允许连接外部服务扩展你的工具能力�
 
 界面操作见 ` + "`goraven-user-ui`" + `，模板管理见 ` + "`goraven-admin-ui`" + `。
 
-## 文件管理
+## 工作空间
 
 用户拥有独立的文件空间，固定目录结构：
 
@@ -142,23 +144,23 @@ MCP（Model Context Protocol）允许连接外部服务扩展你的工具能力�
 
 支持上传、新建文件夹、删除、压缩/解压、重命名、预览（文本/图片/视频/音频/PDF）。界面操作见 ` + "`goraven-user-ui`" + `。
 
-### 团队项目共享
+### 团队项目
 
-用户可将 projects/ 下的子目录共享给团队成员，实现跨用户协作。
+用户可独立创建团队项目，所有团队成员均可访问。
 
-- **共享**：在文件管理页右键 projects/ 下的子目录，选择「共享到团队」，填写简介后共享。已共享的目录显示 Users 图标徽章。
-- **共享限制**：已共享的项目子目录不可删除和重命名，需先取消共享。
-- **团队项目列表**：在文件管理页右上角点击「团队项目」按钮，查看所有团队成员共享的项目卡片（显示项目名、所有者、简介、更新时间）。单击卡片进入项目文件浏览。
-- **项目文件浏览**：进入共享项目后，可像普通文件管理一样上传、新建、删除、重命名、压缩、解压、预览和下载文件。顶部导航与文件管理一致（返回上级 + 当前目录名）。
-- **管理权限**：仅项目所有者可编辑简介和取消共享（卡片右上角菜单）。
-- **取消共享**：取消共享后团队成员将无法访问该项目。
-- **并发控制**：开始对话时系统对共享项目加锁（Redis SetNX，30 分钟 TTL），同一时刻只有一个 Agent 可操作该项目。对话完成后自动释放锁。若项目正被其他会话占用则返回错误提示。该锁对两种访问方式均生效：通过团队项目列表访问（会话记录中保存 shared_project_id），以及项目所有者在对话中直接选择自己的已共享项目。
+- **创建**：在工作空间页切换到「团队项目」Tab，点击「新建项目」按钮，输入项目目录名（仅允许字母、数字、连字符和下划线）和简介后创建。项目名全局唯一。
+- **团队项目列表**：在工作空间页切换到「团队项目」Tab，查看所有团队项目卡片（显示项目名、创建者、简介、更新时间）。单击卡片进入项目文件浏览。
+- **项目文件浏览**：进入团队项目后，可像普通工作空间页面一样上传、新建、删除、重命名、压缩、解压、预览和下载文件。交互与工作空间页一致（选择驱动操作条 + 右键菜单）。
+- **访问权限**：创建者可设置项目为「全员开放」（默认，所有用户可见）或「仅成员可见」（仅创建者和成员可见），并通过「成员管理」添加/移除成员（卡片右上角菜单）。
+- **管理权限**：仅项目创建者可编辑简介、管理成员和删除项目（卡片右上角菜单）。
+- **删除项目**：删除后所有团队成员将无法访问该项目，此操作不可撤销。
+- **并发控制**：开始对话时系统对团队项目加锁（Redis SetNX，30 分钟 TTL），同一时刻只有一个 Agent 可操作该项目。对话完成后自动释放锁。若项目正被其他会话占用则返回错误提示。
 
 ### 环境变量（.profile）
 工作空间根目录的 .profile 文件管理用户环境变量，**用户和 AI 均可读写**。
 
 - 格式：每行 KEY=VALUE，# 注释，支持 export KEY=VALUE
-- 用户可在 /files 页面通过「环境变量」按钮（{} 图标）编辑
+- 用户可在 /profile（个人设置）页面通过「环境变量」区块的「管理」按钮编辑
 - 你执行 shell 命令时，系统**自动将 .profile 中所有变量注入命令环境**，无需 source/export，直接用 $VAR_NAME 引用
 - .profile 变量后注入，同名覆盖系统环境变量
 - 遇鉴权失败或缺少环境变量时，先读 .profile 排查，向用户确认后再写入，**禁止猜测填充**
@@ -178,6 +180,10 @@ MCP（Model Context Protocol）允许连接外部服务扩展你的工具能力�
 - 可设置有效期和分享类型（公开/内部）
 - 其他人通过链接查看对话内容（只读）
 - 技能也可分享给团队内多用户
+
+## 自动化任务
+
+用户可创建定时/周期任务：单次定时、按间隔循环、每天/每周固定时刻。到点后系统自动新建会话执行需求（沿用创建会话的模型、角色、项目目录、MCP 与技能配置），触发会话不出现在侧边栏。创建与修改通过内置工具完成，流程与调度语义详见 ` + "`goraven-automation`" + ` 技能，管理界面见 ` + "`goraven-user-ui`" + `。
 
 ## 前端渲染与标签
 
@@ -218,12 +224,12 @@ MCP（Model Context Protocol）允许连接外部服务扩展你的工具能力�
 
 ## 前端界面
 
-用户通过左侧边栏操作平台。普通用户可访问仪表盘、文件管理、技能中心、角色管理及历史会话；管理员额外拥有用户管理、系统设置、模型配置等页面。详细界面与操作说明见 ` + "`goraven-user-ui`" + `（用户侧）和 ` + "`goraven-admin-ui`" + `（管理端）技能。
+用户通过左侧边栏操作平台。普通用户可访问仪表盘、工作空间、技能中心、角色管理及历史会话；管理员额外拥有用户管理、系统设置、模型配置等页面。详细界面与操作说明见 ` + "`goraven-user-ui`" + `（用户侧）和 ` + "`goraven-admin-ui`" + `（管理端）技能。
 `
 
 const SystemSkillGoRavenFeaturesEn = `---
 name: goraven-features
-description: GoRaven platform features overview. Covers chat modes, attachments, skill system, MCP integration, file management, session sharing, frontend rendering and goraven tags, and system settings. Invoke when you need to understand how business features work or the user asks about specific functionality.
+description: GoRaven platform features overview. Covers chat modes, attachments, skill system, MCP integration, workspace, session sharing, automation tasks, frontend rendering and goraven tags, and system settings. Invoke when you need to understand how business features work or the user asks about specific functionality.
 ---
 
 # Platform Features
@@ -334,6 +340,8 @@ Admins can configure multiple LLM models, each specifying a provider, API key, B
 - **Compress model** — used for context compression and session title generation
 - **Visual model** — used by the goraven_visual_understand tool
 
+Each model can set an access scope: **All users** (everyone can select it) or **Members only** (only listed members can select it), configured by admins via the "Permissions & Members" dialog.
+
 These three models cannot be deleted to prevent silent loss of critical functionality. A "Save & Test" button verifies connectivity when adding/editing. UI details in ` + "`goraven-admin-ui`" + `.
 
 ## Persona Details
@@ -344,7 +352,7 @@ When creating or updating a persona, the system auto-detects MCP tool name confl
 
 UI details in ` + "`goraven-user-ui`" + `, template management in ` + "`goraven-admin-ui`" + `.
 
-## File Management
+## Workspace
 
 Each user has an independent file space with a fixed directory structure:
 
@@ -360,23 +368,23 @@ Each user has an independent file space with a fixed directory structure:
 
 Supports upload, new folder, delete, compress/decompress, rename, and preview (text/images/video/audio/PDF). UI details in ` + "`goraven-user-ui`" + `.
 
-### Team Project Sharing
+### Team Projects
 
-Users can share subdirectories under projects/ with team members for cross-user collaboration.
+Users can independently create team projects accessible to all team members.
 
-- **Sharing**: In the File Manager, right-click a subdirectory under projects/ and select "Share to Team". Enter a description and share. Shared directories show a Users icon badge.
-- **Sharing restrictions**: Shared project subdirectories cannot be deleted or renamed — unshare first.
-- **Team project list**: Click the "Team Projects" button in the top-right of the File Manager to see all shared project cards (project name, owner, description, update time). Click a card to enter the project file browser.
-- **Project file browser**: Inside a shared project, you can upload, create, delete, rename, compress, decompress, preview, and download files just like normal file management. The top navigation is consistent with the File Manager (back button + current directory name).
-- **Management permissions**: Only the project owner can edit the description and unshare (card top-right menu).
-- **Unsharing**: Unsharing removes team members' access to the project.
-- **Concurrency control**: When starting a chat, the system acquires a lock on the shared project (Redis SetNX, 30min TTL), ensuring only one Agent operates on it at a time. The lock is automatically released when the chat completes. If the project is already in use by another session, an error is returned. This lock applies both when accessing a shared project via the team project list (the session stores a shared_project_id) and when the project owner directly selects their own shared project in a chat.
+- **Creating**: On the Workspace page, switch to the "Team Projects" Tab, click "New Project", enter a project directory name (only letters, numbers, hyphens and underscores allowed) and description. Project names are globally unique.
+- **Team project list**: Switch to the "Team Projects" Tab on the Workspace page to see all team project cards (project name, creator, description, update time). Click a card to enter the project file browser.
+- **Project file browser**: Inside a team project, you can upload, create, delete, rename, compress, decompress, preview, and download files just like normal file operations. The interaction is consistent with the Workspace page (selection-driven action bar + right-click menu).
+- **Management permissions**: Only the project creator can edit the description, manage members, and delete the project (card top-right menu).
+- **Access control**: The creator can set the project to "All users" (default, visible to everyone) or "Members only" (visible only to the creator and listed members), and add/remove members via "Manage Members" (card top-right menu).
+- **Deleting**: Deleting a project removes all team members' access. This action cannot be undone.
+- **Concurrency control**: When starting a chat, the system acquires a lock on the team project (Redis SetNX, 30min TTL), ensuring only one Agent operates on it at a time. The lock is automatically released when the chat completes. If the project is already in use by another session, an error is returned.
 
 ### Environment Variables (.profile)
 The .profile file at the workspace root manages user environment variables. **Both user and AI can read and write it.**
 
 - Format: one KEY=VALUE per line, # for comments. Also supports export KEY=VALUE.
-- Users can edit via the "Environment Variables" button ({} icon) on the /files page
+- Users can edit via the "Manage" button in the "Environment Variables" section on the /profile (Profile) page
 - When you execute shell commands, the system **auto-injects all .profile variables into the command environment** — no source/export needed, reference with $VAR_NAME directly
 - .profile vars are injected last, overriding same-name system environment variables
 - On auth failure or missing env var, inspect .profile first, confirm with user before writing — **never guess values**
@@ -396,6 +404,10 @@ Users can generate share links for sessions:
 - Configurable expiry and share type (public/internal)
 - Others view the shared conversation via the link (read-only)
 - Skills can also be shared with team members
+
+## Automation Tasks
+
+Users can create scheduled/recurring tasks: one-off time, fixed interval, or daily/weekly schedule. When due, the system spawns a fresh session to execute the requirement (reusing the creating session's model, persona, project directory, MCP and skill configuration); triggered sessions never appear in the sidebar. Tasks are created and modified through built-in tools — flow and scheduling semantics in the ` + "`goraven-automation`" + ` skill, management UI in ` + "`goraven-user-ui`" + `.
 
 ## Frontend Rendering & Tags
 
@@ -429,5 +441,5 @@ Admins can tune key settings at /admin/settings that affect your runtime behavio
 
 ## Frontend UI
 
-Users navigate through the left sidebar. Regular users access Dashboard, Files, Skills, Personas, and session history; admins additionally have User Management, System Settings, Model Configuration, and more. For detailed UI and operation instructions, see the ` + "`goraven-user-ui`" + ` (user-side) and ` + "`goraven-admin-ui`" + ` (admin-side) skills.
+Users navigate through the left sidebar. Regular users access Dashboard, Workspace, Skills, Personas, and session history; admins additionally have User Management, System Settings, Model Configuration, and more. For detailed UI and operation instructions, see the ` + "`goraven-user-ui`" + ` (user-side) and ` + "`goraven-admin-ui`" + ` (admin-side) skills.
 `

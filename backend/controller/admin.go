@@ -330,7 +330,7 @@ func (controller *AdminController) GetModelDetail(id string) freedom.Result {
 	return &infra.JSONResponse{Object: detail}
 }
 
-// SetDefaultModel 设为默认模型 PUT /api/admin/models/:id/default
+// SetDefaultModel 切换默认模型开关（加入/移出默认池） PUT /api/admin/models/:id/default
 func (controller *AdminController) SetDefaultModel(id string) freedom.Result {
 	modelId, err := strconv.Atoi(id)
 	if err != nil {

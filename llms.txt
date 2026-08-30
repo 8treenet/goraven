@@ -1,73 +1,83 @@
 # GoRaven
 
-> Open-source, self-hosted team AI Agent platform. Models, tools, knowledge, skills, workflows — all in one runtime. The Agent doesn't just chat; it actually gets work done.
+> GoRaven is an open-source, self-hosted AI workbench for teams. It brings models, Agents, tools, skills, knowledge, and workspaces into one runtime so an Agent can inspect information, take controlled actions, and deliver results instead of only generating text.
 
-GoRaven gives every team member an independent Agent workspace. The Agent reads files, writes code, runs commands, calls APIs, searches knowledge bases, analyzes data, and delivers results. Built with Go (Freedom framework + Cloudwego Eino ADK) on the backend and React + TypeScript + Tailwind CSS on the frontend.
+GoRaven is built around team sharing and reliable execution. Each member has an isolated workspace, while teams can share projects and skills. Administrators manage models, tools, and access boundaries. Models provide language understanding and generation; Agents organize steps, use capabilities, and complete tasks within those boundaries.
 
-## Documentation
+## Core Concepts
 
-- [README](README.md): Project overview, features, quick start, architecture, and design principles (English)
-- [README_CN](README_CN.md): 项目概览、功能特性、快速开始、架构与设计原则（中文）
-- [PRODUCT](PRODUCT.md): Product definition, target users, brand personality, and design principles
-- [DESIGN](DESIGN.md): Design system specification — colors, typography, elevation, components, do's and don'ts
-- [CLAUDE](CLAUDE.md): Comprehensive developer guide — build commands, architecture, agent core, SSE protocol, database, config
+- **Workspace**: An isolated working area shared by a user and their Agent. It contains files, projects, skills, and task artifacts without mixing data between users.
+- **Model**: The language capability used for understanding, reasoning, and generation. A session normally selects one model, and its context capacity affects how much information can be handled at once.
+- **Agent**: A goal-oriented execution partner. It interprets a request, breaks it into steps, reads context, invokes tools, and adapts to results rather than returning only a suggestion.
+- **Session**: A persistent task conversation. It records user and Agent messages, execution state, and the model and capabilities selected for that interaction.
+- **Context**: The information available for the current task, including conversation history, attachments, workspace files, skill instructions, and retrieved knowledge. Summaries and pruning keep long-running sessions usable.
+- **Tool**: An executable capability that lets an Agent act, such as filesystem operations, terminal execution, web access, document processing, visualization, automation, or external service calls.
+- **Skill**: Reusable task knowledge and behavioral rules, commonly described in `SKILL.md`. A skill can constrain a workflow, provide domain knowledge, or teach an Agent how to use a capability.
+- **Knowledge**: Organized and indexed project, policy, or business material. Agents can retrieve relevant knowledge during execution so answers and actions are grounded in available sources.
+- **Persona**: A reusable way of working, usually combining instructions, a model, tools, and skills for a specialized task.
+- **Permission**: The boundary controlling who can see or operate on users, models, tools, projects, and shared content.
+
+## How a Task Is Completed
+
+1. A user states a goal and may select a Persona, model, tools, skills, attachments, or project for the session.
+2. The Agent reads the relevant session context, workspace material, and knowledge, then breaks the goal into executable steps.
+3. The Agent invokes tools and skills as needed, observes each result, and adjusts the next step while providing progress feedback.
+4. Messages, process information, and results are retained in the session or workspace. The final delivery may be an answer, file, chart, or other task artifact.
+
+## Platform Self-Description Skills
+
+The following source files define GoRaven's own descriptions of its capabilities, interfaces, and runtime conventions. Use the entry that matches the question domain:
+
+- [goraven-guide](backend/repository/seed/skill_goraven_guide.go#L3): Master index for GoRaven platform knowledge and navigation to more specific self-description skills.
+- [goraven-features](backend/repository/seed/skill_goraven_features.go#L3): User-facing capabilities including chat, attachments, skills, external tools, workspaces, projects, sharing, automation, and system settings.
+- [goraven-runtime](backend/repository/seed/skill_goraven_runtime.go#L3): Agent runtime environment, available capabilities, safety constraints, context management, and multi-user isolation.
+- [goraven-user-ui](backend/repository/seed/skill_goraven_user_ui.go#L3): Regular-user pages, layout, and daily operation guidance.
+- [goraven-admin-ui](backend/repository/seed/skill_goraven_admin_ui.go#L3): Administrator pages and management guidance for system settings, users, models, external tools, skills, and system information.
+- [goraven-automation](backend/repository/seed/skill_goraven_automation.go#L3): Rules and workflow for scheduled, recurring, and delayed task execution.
+- [goraven-doc-parse](backend/repository/seed/skill_goraven_doc_parse.go#L3): Supported office and markup document formats, conversion behavior, and limitations.
+- [goraven-llmwiki](backend/repository/seed/skill_goraven_llmwiki.go#L3): Rules and workflow for building and maintaining structured project knowledge indexes.
 
 ## Backend
 
-- [main.go](main.go): Application bootstrap — Freedom app, DB/Redis wiring, middleware, frontend serving
-- [config/config.yaml](config/config.yaml): Runtime configuration — paths, database, Redis, system settings
-- [backend/controller/](backend/controller/): HTTP controllers (chat, session, user, skill, mcp, persona, admin, dashboard)
-- [backend/service/](backend/service/): Business logic layer — orchestrates agents, repositories, and external services
-- [backend/repository/](backend/repository/): GORM data access, seed data, system config, pagination helpers
-- [backend/po/](backend/po/): Persistent objects (GORM models) — User, Session, Message, AIModel, MCPEndpoint, Skill
-- [backend/vo/](backend/vo/): View objects (request/response DTOs) for all API endpoints
-- [backend/infra/](backend/infra/): Auth (bearer token), request/response helpers, code constants
+- [main.go](main.go): Application bootstrap, database and cache wiring, middleware installation, API mounting, and frontend serving.
+- [config/config.yaml](config/config.yaml): Runtime configuration for paths, database, cache, system behavior, and service settings.
+- [backend/controller/](backend/controller/): HTTP controllers for installation, chat, sessions, users, skills, external tools, personas, dashboards, files, sharing, automation, and administration.
+- [backend/service/](backend/service/): Business logic that coordinates agents, repositories, user-facing operations, and external services.
+- [backend/repository/](backend/repository/): Data access, migrations, seed data, system configuration, statistics, and pagination helpers.
+- [backend/po/](backend/po/): Persistent data models for users, sessions, messages, models, external tool endpoints, skills, personas, projects, files, and automation.
+- [backend/vo/](backend/vo/): Request and response view objects used by the HTTP API.
+- [backend/infra/](backend/infra/): Authentication, request and response helpers, file serving, caching wrappers, and shared status codes.
 
 ## Agent Core
 
-- [core/agent/](core/agent/): Agent implementations — MainAgent (conversational), DynamicAgent (sub-tasks), SystemAgent (dependencies)
-- [core/agent/prompt.go](core/agent/prompt.go): Bilingual system prompt building (zh/en)
-- [core/agent/compress.go](core/agent/compress.go): Automatic context compression when token threshold exceeded
-- [core/agent/safety_review.go](core/agent/safety_review.go): Command validation — two tiers (strict for agents, relaxed for system)
-- [core/provider/](core/provider/): LLM provider adapters — OpenAI, Claude, Gemini, DeepSeek, Qwen, GLM, Ollama, OpenRouter
-- [core/tools/](core/tools/): Built-in tools — filesystem ops, MCP client, web fetch, file preview
-- [core/plugin/](core/plugin/): Plugin system — AgentLifecycleHook, RoundHook, ToolHook, SSEHook
-- [core/sandbox/](core/sandbox/): File system isolation per user — local and Docker backends
-- [core/knowledge/](core/knowledge/): RAG pipeline via docling + Chroma vector DB
-- [core/middleware/](core/middleware/): Agent middlewares — context pruning, tool error handling, skill backend
-- [core/iface/](core/iface/): Shared interfaces — SkillAccessor, MCPFilter, FileURLGenerator
+- [core/agent/](core/agent/): Agent implementations and shared execution logic, including the primary conversational Agent, delegated sub-agents, and system tasks.
+- [core/agent/main_runner.go](core/agent/main_runner.go): Active runner lifecycle, streaming events, reply persistence, cancellation, and recovery support.
+- [core/agent/prompt.go](core/agent/prompt.go): System prompt construction for the supported interface languages.
+- [core/agent/compress.go](core/agent/compress.go): Automatic context compression when a session approaches its context limit.
+- [core/agent/safety_review.go](core/agent/safety_review.go): Command safety validation with strict and system-level policies.
+- [core/provider/](core/provider/): Adapters for hosted, compatible, and local language model providers.
+- [core/tools/](core/tools/): Built-in filesystem, external tool, web, document, visualization, time, and automation capabilities.
+- [core/plugin/](core/plugin/): Plugin registration and lifecycle hooks for Agent creation, conversation rounds, tool calls, and streamed events.
+- [core/sandbox/](core/sandbox/): Per-user filesystem and shell isolation with local and container-backed implementations.
+- [core/knowledge/](core/knowledge/): Document conversion and chunking pipeline used to prepare material for knowledge retrieval.
+- [core/middleware/](core/middleware/): Execution middleware for context pruning, tool error handling, and skill integration.
+- [core/iface/](core/iface/): Shared contracts between the Agent core and backend services.
 
 ## Frontend
 
-- [frontend/package.json](frontend/package.json): Dependencies — React 18, Vite 8, TypeScript 6, Tailwind CSS 4, shadcn/ui, Zustand
-- [frontend/src/](frontend/src/): Source code — features (chat, files, skills, personas, admin), components, API layer, i18n
-- [frontend/vite.config.ts](frontend/vite.config.ts): Vite configuration with API proxy to backend
-
-## System Skills
-
-- [goraven-guide](backend/repository/seed/skill_goraven_guide.go): Skill index — routes questions to the appropriate knowledge skill below
-- [goraven-runtime](backend/repository/seed/skill_goraven_runtime.go): Runtime environment — Docker container, toolchain, built-in tools, safety rules, multi-user isolation
-- [goraven-features](backend/repository/seed/skill_goraven_features.go): Platform capabilities — personas, skills, MCP, workspace, team projects, sharing, system settings
-- [goraven-user-ui](backend/repository/seed/skill_goraven_user_ui.go): User-facing pages — chat, dashboard, workspace, skills center, personas, profile
-- [goraven-admin-ui](backend/repository/seed/skill_goraven_admin_ui.go): Admin pages — user management, models, MCP, settings, system info
+- [frontend/package.json](frontend/package.json): Frontend dependencies and scripts for the React, TypeScript, Vite, styling, state, data-fetching, and charting stack.
+- [frontend/src/](frontend/src/): Frontend source for chat, files, skills, personas, administration, shared components, API clients, state stores, and localization.
+- [frontend/vite.config.ts](frontend/vite.config.ts): Frontend build configuration and development API proxy.
 
 ## Plugins
 
-- [plugins/README.md](plugins/README.md): Plugin development guide with hook interfaces and error handling conventions
-- [plugins/plugins.go](plugins/plugins.go): Plugin registration entry point
+- [plugins/README.md](plugins/README.md): Plugin development guide covering hook interfaces and error-handling conventions.
+- [plugins/plugins.go](plugins/plugins.go): Registration entry point for built-in and third-party plugin factories.
 
-## Infrastructure
+## Terminology
 
-- [docker/Dockerfile](docker/Dockerfile): Multi-stage build — Go binary + frontend into Ubuntu 22.04 with Go, Node.js, Python
-- [docker/build.sh](docker/build.sh): Cross-architecture build script (amd64/arm64)
-- [docker/config.yaml](docker/config.yaml): Docker-specific runtime configuration
-- [scripts/docling/](scripts/docling/): Python scripts for document processing (convert, chunk, read)
-
-## Utilities
-
-- [util/](util/): Shared utilities — Markdown parsing, HTTP helpers, zip, UUID, file operations, captcha
-
-## Optional
-
-- [go.mod](go.mod): Go module definition and dependency list
-- [frontend/tsconfig.json](frontend/tsconfig.json): TypeScript compiler configuration
+- **Agent** is the task execution entity; a **model** is the language capability used by an Agent.
+- **Tools** perform actions; **skills** provide reusable knowledge, rules, and workflows.
+- A **session** records one task interaction; **context** is the information actually available for the current step.
+- A **workspace** is an isolated user working area; a **project** is an organized set of material that can be processed or shared.
+- **Platform self-description skills** describe GoRaven's own features, interfaces, runtime constraints, and specialized workflows. They are distinct from business skills installed by users.

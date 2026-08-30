@@ -7,13 +7,14 @@ import (
 	"github.com/8treenet/freedom/infra/requests"
 )
 
+// TestGetUserModels 用户可选模型列表 GET /api/providers/models
 func TestGetUserModels(t *testing.T) {
 	var rsp struct {
-		Code int                `json:"code"`
-		Msg  string             `json:"msg"`
+		Code int               `json:"code"`
+		Msg  string            `json:"msg"`
 		Data []vo.UserModelItem `json:"data,omitempty"`
 	}
-	httpResp := requests.NewHTTPRequest(domain+"/api/providers/models").
+	httpResp := requests.NewHTTPRequest(domain + "/api/providers/models").
 		Get().
 		SetHeaderValue("Authorization", "Bearer "+token).
 		ToJSON(&rsp)
@@ -30,13 +31,14 @@ func TestGetUserModels(t *testing.T) {
 	}
 }
 
+// TestGetUserMCPs 用户可选 MCP 列表 GET /api/mcp
 func TestGetUserMCPs(t *testing.T) {
 	var rsp struct {
 		Code int              `json:"code"`
 		Msg  string           `json:"msg"`
 		Data []vo.UserMCPItem `json:"data,omitempty"`
 	}
-	httpResp := requests.NewHTTPRequest(domain+"/api/mcp").
+	httpResp := requests.NewHTTPRequest(domain + "/api/mcp").
 		Get().
 		SetHeaderValue("Authorization", "Bearer "+token).
 		ToJSON(&rsp)
@@ -53,13 +55,14 @@ func TestGetUserMCPs(t *testing.T) {
 	}
 }
 
+// TestGetSimpleSkills 用户可选技能精简列表 GET /api/skills/simpleSkills
 func TestGetSimpleSkills(t *testing.T) {
 	var rsp struct {
 		Code int                         `json:"code"`
 		Msg  string                      `json:"msg"`
 		Data []vo.UserAvailableSkillItem `json:"data,omitempty"`
 	}
-	httpResp := requests.NewHTTPRequest(domain+"/api/skills/simpleSkills").
+	httpResp := requests.NewHTTPRequest(domain + "/api/skills/simpleSkills").
 		Get().
 		SetHeaderValue("Authorization", "Bearer "+token).
 		ToJSON(&rsp)

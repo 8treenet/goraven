@@ -484,6 +484,7 @@ function McpForm({
             <textarea
               value={form.description}
               onChange={(e) => updateField('description', e.target.value)}
+              spellCheck={false}
               placeholder={t('adminMcp.descriptionPlaceholder')}
               rows={3}
               className="w-full resize-none rounded-lg border border-border-strong bg-transparent px-2.5 py-2 text-sm text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-2 focus:ring-ring/30"
@@ -691,6 +692,7 @@ function McpForm({
             <textarea
               value={form.remark}
               onChange={(e) => updateField('remark', e.target.value)}
+              spellCheck={false}
               placeholder={t('common.optional')}
               rows={2}
               className="w-full resize-none rounded-lg border border-border-strong bg-transparent px-2.5 py-2 text-sm text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-2 focus:ring-ring/30"
@@ -1505,6 +1507,7 @@ export function Component() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              spellCheck={false}
               placeholder={t('adminMcp.searchPlaceholder')}
               className="h-7 w-48 rounded-lg border border-border-strong bg-transparent pl-7 pr-2 text-xs text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-2 focus:ring-ring/30"
             />

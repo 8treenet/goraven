@@ -7,6 +7,7 @@ import (
 	"github.com/8treenet/freedom/infra/requests"
 )
 
+// TestAdminDashboard 管理员仪表盘聚合数据 GET /api/admin/dashboard
 func TestAdminDashboard(t *testing.T) {
 
 	var rsp struct {
@@ -46,6 +47,7 @@ func TestAdminDashboard(t *testing.T) {
 
 }
 
+// TestAdminDashboardTokenTrend Token 趋势 GET /api/admin/dashboard/tokenTrend?days=30
 func TestAdminDashboardTokenTrend(t *testing.T) {
 	var rsp struct {
 		Code int              `json:"code"`
@@ -71,6 +73,7 @@ func TestAdminDashboardTokenTrend(t *testing.T) {
 		t.Logf("  last:  date=%s prompt=%d completion=%d", last.Date, last.PromptTokens, last.CompletionTokens)
 	}
 
+	// 测试 7 天粒度
 	var rsp7 struct {
 		Code int              `json:"code"`
 		Msg  string           `json:"msg"`
@@ -88,6 +91,7 @@ func TestAdminDashboardTokenTrend(t *testing.T) {
 	}
 	t.Logf("tokenTrend 7d: %d points", len(rsp7.Data.Items))
 
+	// 测试缺省参数
 	var rspDef struct {
 		Code int              `json:"code"`
 		Msg  string           `json:"msg"`
@@ -106,6 +110,7 @@ func TestAdminDashboardTokenTrend(t *testing.T) {
 	t.Logf("tokenTrend default: %d points", len(rspDef.Data.Items))
 }
 
+// TestAdminDashboardActiveUsers 活跃用户趋势 GET /api/admin/dashboard/activeUsers?days=30
 func TestAdminDashboardActiveUsers(t *testing.T) {
 	var rsp struct {
 		Code int                   `json:"code"`
@@ -131,6 +136,7 @@ func TestAdminDashboardActiveUsers(t *testing.T) {
 		t.Logf("  last:  date=%s count=%d", last.Date, last.Count)
 	}
 
+	// 测试 7 天粒度
 	var rsp7 struct {
 		Code int                   `json:"code"`
 		Msg  string                `json:"msg"`
@@ -148,6 +154,7 @@ func TestAdminDashboardActiveUsers(t *testing.T) {
 	}
 	t.Logf("activeUsers 7d: %d points", len(rsp7.Data.Items))
 
+	// 测试缺省参数
 	var rspDef struct {
 		Code int                   `json:"code"`
 		Msg  string                `json:"msg"`

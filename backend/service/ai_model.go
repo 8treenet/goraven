@@ -90,9 +90,9 @@ func (service *AIModelService) ListEnabledModels(userId string) ([]vo.UserModelI
 			Icon:                m.Icon,
 			ContextLen:          m.ContextLen,
 			IsDefault:           m.IsDefault,
-			IsFlash:             m.IsFlash,
-			IsVisual:            m.IsVisual,
-		})
+		IsFlash:             m.IsFlash,
+		IsVisual:            m.IsVisual,
+	})
 	}
 	return items, nil
 }
@@ -229,7 +229,7 @@ func (svc *AIModelService) UpdateModel(id int, req *vo.AdminUpdateModelReq) erro
 		updates["context_len"] = req.ContextLen
 	}
 	if req.IsDefault != nil {
-		updates["is_default"] = int(*req.IsDefault) // VO 字段是 uint8，必须转 int，否则 repository 的 interface{} == 1 比较会因类型不匹配跳过先清逻辑
+		updates["is_default"] = int(*req.IsDefault) // VO 字段是 uint8，必须转 int
 	}
 	if req.IsFlash != nil {
 		updates["is_flash"] = *req.IsFlash
@@ -355,11 +355,18 @@ func (svc *AIModelService) GetModelDetail(id int) (*vo.AdminModelDetailRsp, erro
 	}, nil
 }
 
+// SetDefaultModel 切换默认模型开关（加入/移出默认池）
+// 默认模型允许多个，对话使用默认模型时从池中随机选取
 func (svc *AIModelService) SetDefaultModel(id int) error {
-	if _, err := svc.ModelRepo.GetModelByID(id); err != nil {
+	existing, err := svc.ModelRepo.GetModelByID(id)
+	if err != nil {
 		return errs.ErrModelNotFound
 	}
-	if err := svc.ModelRepo.UpdateModel(id, map[string]interface{}{"is_default": 1}); err != nil {
+	isDefault := 1
+	if existing.IsDefault == 1 {
+		isDefault = 0
+	}
+	if err := svc.ModelRepo.UpdateModel(id, map[string]interface{}{"is_default": isDefault}); err != nil {
 		return err
 	}
 	svc.invalidateDashboardCache()
@@ -428,7 +435,7 @@ func (svc *AIModelService) RecommendModels(providerID string, apiKey string, bas
 
 func (svc *AIModelService) testModelKeys(providerID, apiKey, baseURL, extraFields, proxyURL, modelName string, contextLen int) error {
 	if apiKey == "" {
-		if providerID == "OllamaProviderName" {
+		if providerID == provider.OllamaProviderName {
 			pv, err := provider.GetProviderByName(providerID, provider.ProviderConfig{BaseURL: baseURL})
 			if err != nil {
 				return errs.NewFormatError("provider error: %v", "供应商错误: %v", err)

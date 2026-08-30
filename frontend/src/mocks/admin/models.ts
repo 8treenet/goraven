@@ -587,14 +587,13 @@ export async function toggleModelStatus(id: number, status: number): Promise<voi
   )
 }
 
-/** Set a model as the default */
+/** Toggle a model in/out of the default pool (multiple defaults allowed) */
 export async function setDefaultModel(id: number): Promise<void> {
   await mutationDelay()
 
-  models = models.map((m) => ({
-    ...m,
-    isDefault: m.aiModelId === id ? 1 : 0,
-  }))
+  models = models.map((m) =>
+    m.aiModelId === id ? { ...m, isDefault: m.isDefault === 1 ? 0 : 1 } : m,
+  )
 }
 
 /** Set a model as the flash model */

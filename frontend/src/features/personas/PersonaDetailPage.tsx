@@ -148,9 +148,9 @@ export function Component() {
           <section>
             <h2 className="mb-3 text-sm font-semibold text-text-1">{t('personas.modelConfig')}</h2>
             <div className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5">
-              <ModelIcon icon={data.modelIcon} />
+              <ModelIcon icon={data.aiModelId === 0 ? '/favicon.svg' : data.modelIcon} />
               <span className="text-xs text-text-1">
-                {data.aiModelId === 0 ? t('personas.useDefaultModel') : data.modelName}
+                {data.aiModelId === 0 ? t('chat.autoModel') : data.modelName}
               </span>
             </div>
           </section>

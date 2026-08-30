@@ -2,6 +2,7 @@ package seed
 
 import "goraven/backend/po"
 
+// RecommendMCPEndpoints 推荐的 MCP 端点种子数据
 var RecommendMCPEndpoints = []po.MCPEndpoint{
 	{
 		Name:        "github",

@@ -24,17 +24,22 @@ func init() {
 	})
 }
 
+// DashboardRepository 仪表盘数据仓库
+// 提供 Token 趋势、活跃趋势、模型/用户/工具排行等聚合查询
 type DashboardRepository struct {
 	freedom.Repository
 }
 
+// quoteUser 返回当前数据库正确引号包裹的 user 表名
+// PG/SQLite 用双引号，MySQL 用反引号（user 是 PG 保留字）
 func (repo *DashboardRepository) quoteUser() string {
 	if config.Get().System.DBType == "mysql" {
 		return "`user`"
 	}
 	return `"user"`
 }
-
+// dateExpr 根据数据库类型生成从毫秒时间戳提取日期的 SQL 表达式
+// message.timestamp 为 Unix 毫秒，需转换为 YYYY-MM-DD 格式
 func (repo *DashboardRepository) dateExpr() string {
 	switch config.Get().System.DBType {
 	case "mysql":
@@ -46,6 +51,10 @@ func (repo *DashboardRepository) dateExpr() string {
 	}
 }
 
+// GetActiveUsersInRange 查询指定天数范围内的活跃用户数（从 message JOIN session 去重 userId）
+// message 表通过 sessionId 关联 session 表获取 userId
+// startDaysAgo 为起始偏移天数（含），endDaysAgo 为结束偏移天数（不含），均为正数
+// 示例：GetActiveUsersInRange(7, 0) 返回近 7 日活跃用户数
 func (repo *DashboardRepository) GetActiveUsersInRange(startDaysAgo, endDaysAgo int) (int64, error) {
 	dates := genDateRange(startDaysAgo-1, endDaysAgo)
 	if len(dates) == 0 {
@@ -62,11 +71,13 @@ func (repo *DashboardRepository) GetActiveUsersInRange(startDaysAgo, endDaysAgo 
 	return count, err
 }
 
+// GetSessionCounts 查询会话总数和本周新增会话数
 func (repo *DashboardRepository) GetSessionCounts() (total int64, newThisWeek int64, err error) {
 	if err = repo.db().Model(&po.Session{}).Where("deleted = 0").Count(&total).Error; err != nil {
 		return 0, 0, err
 	}
 
+	// 本周一 00:00:00
 	now := time.Now()
 	weekday := now.Weekday()
 	if weekday == time.Sunday {
@@ -80,6 +91,7 @@ func (repo *DashboardRepository) GetSessionCounts() (total int64, newThisWeek in
 	return total, newThisWeek, nil
 }
 
+// GetTodayTokens 查询今日 Token 消耗（从 user_daily_stats）
 func (repo *DashboardRepository) GetTodayTokens() (int64, error) {
 	today := time.Now().Format("2006-01-02")
 	var total int64
@@ -91,12 +103,15 @@ func (repo *DashboardRepository) GetTodayTokens() (int64, error) {
 	return total, err
 }
 
+// GetEnabledModelCount 查询启用模型数
 func (repo *DashboardRepository) GetEnabledModelCount() (int64, error) {
 	var count int64
 	err := repo.db().Model(&po.AIModel{}).Where("status = 1 AND deleted = 0").Count(&count).Error
 	return count, err
 }
 
+// GetTokensInDateRange 查询 user_daily_stats 中指定日期范围的 Token 总和
+// 返回 promptTokens 总和和 completionTokens 总和
 func (repo *DashboardRepository) GetTokensInDateRange(dateRange []string) (prompt int64, completion int64, err error) {
 	type result struct {
 		Prompt     int64
@@ -111,6 +126,7 @@ func (repo *DashboardRepository) GetTokensInDateRange(dateRange []string) (promp
 	return r.Prompt, r.Completion, err
 }
 
+// GetSparkline 查询近 7 日 Token 消耗迷你趋势（按天聚合）
 func (repo *DashboardRepository) GetSparkline(dateRange []string) ([]vo.SparklineItem, error) {
 	var rows []struct {
 		StatDate string `gorm:"column:stat_date"`
@@ -138,6 +154,7 @@ func (repo *DashboardRepository) GetSparkline(dateRange []string) ([]vo.Sparklin
 	return result, nil
 }
 
+// GetTokenTrend 查询 Token 消耗趋势（按天聚合 prompt + completion）
 func (repo *DashboardRepository) GetTokenTrend(dateRange []string) ([]vo.TokenTrendItem, error) {
 	var rows []struct {
 		StatDate         string `gorm:"column:stat_date"`
@@ -165,6 +182,7 @@ func (repo *DashboardRepository) GetTokenTrend(dateRange []string) ([]vo.TokenTr
 		}
 	}
 
+	// 保证返回完整的日期序列，缺失日期填 0
 	result := make([]vo.TokenTrendItem, 0, len(dateRange))
 	for _, d := range dateRange {
 		if item, ok := dateMap[d]; ok {
@@ -176,6 +194,11 @@ func (repo *DashboardRepository) GetTokenTrend(dateRange []string) ([]vo.TokenTr
 	return result, nil
 }
 
+// GetModelUsage 查询模型使用分布
+// 按模型显示名聚合 Token，JOIN ai_model 获取模型名称。
+// 已删除模型（ai_model.deleted=1 或缺失）的 session 会合并为「已删除模型」单条，
+// 避免按 aiModelId 分组产生多条 Unknown 重复行污染 Top 5 与百分比。
+// dateRange 可选：传入非空则按 session.created 过滤日期范围；传入 nil/空则不过滤（全量）。
 func (repo *DashboardRepository) GetModelUsage(dateRange []string) ([]vo.ModelUsageItem, error) {
 	deletedLabel := "已删除模型"
 	if config.Get().GetLanguage() == "en" {
@@ -207,6 +230,7 @@ func (repo *DashboardRepository) GetModelUsage(dateRange []string) ([]vo.ModelUs
 		return nil, err
 	}
 
+	// 计算总和，取 Top 5，其余合并为「其他」
 	var totalTokens int64
 	for _, r := range rows {
 		totalTokens += r.Tokens
@@ -261,12 +285,17 @@ func (repo *DashboardRepository) GetModelUsage(dateRange []string) ([]vo.ModelUs
 	return result, nil
 }
 
+// parseDateRange 将日期字符串列表转换为 time.Time 范围
+// dateRange[0] 为开始日期，dateRange[len-1] 为结束日期，endDate 为结束日期 + 1 天（开区间）
 func parseDateRange(dateRange []string) (time.Time, time.Time) {
 	startDate, _ := time.Parse("2006-01-02", dateRange[0])
 	endDate, _ := time.Parse("2006-01-02", dateRange[len(dateRange)-1])
 	return startDate, endDate.AddDate(0, 0, 1)
 }
 
+// GetUserTokenRank 查询用户 Token 消耗排行（Top 9）
+// 从 user_daily_stats 聚合，JOIN user 获取用户名
+// dateRange 可选：传入非空则按 stat_date 过滤日期范围；传入 nil/空则不过滤（全量）
 func (repo *DashboardRepository) GetUserTokenRank(dateRange []string) ([]vo.UserTokenRankItem, error) {
 	type row struct {
 		UserId     string
@@ -311,6 +340,8 @@ func (repo *DashboardRepository) GetUserTokenRank(dateRange []string) ([]vo.User
 	return result, nil
 }
 
+// GetActiveUserTrend 查询活跃用户趋势（从 message JOIN session 按天去重 userId）
+// 返回完整的日期序列，没有数据的日期填 0
 func (repo *DashboardRepository) GetActiveUserTrend(dateRange []string) ([]vo.ActiveUserTrendItem, error) {
 	var rows []struct {
 		Date  string
@@ -331,12 +362,15 @@ func (repo *DashboardRepository) GetActiveUserTrend(dateRange []string) ([]vo.Ac
 
 	dateMap := make(map[string]int64, len(rows))
 	for _, r := range rows {
-
+		// dateExpr() 在不同数据库返回不同类型：SQLite 返回 "2006-01-02" 纯文本，
+		// MySQL/PG 的 DATE 函数返回值被 driver 扫描为 time.Time → GORM 转成 RFC3339 字符串。
+		// 统一截取前 10 字符（YYYY-MM-DD）确保与 dateRange 的 key 精确匹配。
 		if len(r.Date) >= 10 {
 			dateMap[r.Date[:10]] = r.Count
 		}
 	}
 
+	// 保证返回完整的日期序列，缺失日期填 0
 	result := make([]vo.ActiveUserTrendItem, 0, len(dateRange))
 	for _, d := range dateRange {
 		result = append(result, vo.ActiveUserTrendItem{
@@ -347,6 +381,8 @@ func (repo *DashboardRepository) GetActiveUserTrend(dateRange []string) ([]vo.Ac
 	return result, nil
 }
 
+// GetToolUsageRank 查询指定类型的工具使用排行（近 7 天 Top 10）
+// toolType: skill / mcp / tool
 func (repo *DashboardRepository) GetToolUsageRank(toolType string, dateRange []string) ([]vo.ToolUsageRankItem, error) {
 	var rows []struct {
 		ToolName string `gorm:"column:tool_name"`
@@ -374,6 +410,11 @@ func (repo *DashboardRepository) GetToolUsageRank(toolType string, dateRange []s
 	return result, nil
 }
 
+// ────────────────────────────────────────────────────
+// 用户范围查询（按 userId 过滤）
+// ────────────────────────────────────────────────────
+
+// GetUserTodayTokens 查询指定用户今日 Token 消耗（从 user_daily_stats）
 func (repo *DashboardRepository) GetUserTodayTokens(userId string) (int64, error) {
 	today := time.Now().Format("2006-01-02")
 	var total int64
@@ -385,6 +426,7 @@ func (repo *DashboardRepository) GetUserTodayTokens(userId string) (int64, error
 	return total, err
 }
 
+// GetUserDailyTokenLimit 查询指定用户的每日 Token 限额（单位 M，0=不限制）
 func (repo *DashboardRepository) GetUserDailyTokenLimit(userId string) (int, error) {
 	var limit int
 	err := repo.db().
@@ -395,6 +437,7 @@ func (repo *DashboardRepository) GetUserDailyTokenLimit(userId string) (int, err
 	return limit, err
 }
 
+// GetUserTotalTokens 查询指定用户历史累计 Token 消耗（从 user_daily_stats 全量聚合）
 func (repo *DashboardRepository) GetUserTotalTokens(userId string) (int64, error) {
 	var total int64
 	err := repo.db().
@@ -405,6 +448,7 @@ func (repo *DashboardRepository) GetUserTotalTokens(userId string) (int64, error
 	return total, err
 }
 
+// GetUserTokensInDateRange 查询指定用户在日期范围内的 Token 总和
 func (repo *DashboardRepository) GetUserTokensInDateRange(userId string, dateRange []string) (prompt int64, completion int64, err error) {
 	type result struct {
 		Prompt     int64
@@ -419,6 +463,7 @@ func (repo *DashboardRepository) GetUserTokensInDateRange(userId string, dateRan
 	return r.Prompt, r.Completion, err
 }
 
+// GetUserSparkline 查询指定用户近 7 日 Token 消耗迷你趋势（按天聚合）
 func (repo *DashboardRepository) GetUserSparkline(userId string, dateRange []string) ([]vo.SparklineItem, error) {
 	var rows []struct {
 		StatDate string `gorm:"column:stat_date"`
@@ -446,6 +491,7 @@ func (repo *DashboardRepository) GetUserSparkline(userId string, dateRange []str
 	return result, nil
 }
 
+// GetUserTokenTrend 查询指定用户 Token 消耗趋势（按天聚合 prompt + completion）
 func (repo *DashboardRepository) GetUserTokenTrend(userId string, dateRange []string) ([]vo.TokenTrendItem, error) {
 	var rows []struct {
 		StatDate         string `gorm:"column:stat_date"`
@@ -484,6 +530,10 @@ func (repo *DashboardRepository) GetUserTokenTrend(userId string, dateRange []st
 	return result, nil
 }
 
+// GetUserModelUsage 查询指定用户的模型使用分布
+// 按模型显示名聚合 Token，JOIN ai_model 获取模型名称。
+// 已删除模型（ai_model.deleted=1 或缺失）的 session 会合并为「已删除模型」单条。
+// dateRange 可选：传入非空则按 session.created 过滤日期范围；传入 nil/空则不过滤（全量）。
 func (repo *DashboardRepository) GetUserModelUsage(userId string, dateRange []string) ([]vo.ModelUsageItem, error) {
 	deletedLabel := "已删除模型"
 	if config.Get().GetLanguage() == "en" {
@@ -569,6 +619,8 @@ func (repo *DashboardRepository) GetUserModelUsage(userId string, dateRange []st
 	return result, nil
 }
 
+// GetUserToolUsageRank 查询指定用户指定类型的工具使用排行（近 7 天 Top 10）
+// toolType: skill / mcp / tool
 func (repo *DashboardRepository) GetUserToolUsageRank(userId, toolType string, dateRange []string) ([]vo.ToolUsageRankItem, error) {
 	var rows []struct {
 		ToolName string `gorm:"column:tool_name"`
@@ -596,6 +648,7 @@ func (repo *DashboardRepository) GetUserToolUsageRank(userId, toolType string, d
 	return result, nil
 }
 
+// GetUserSessionCounts 查询指定用户的会话总数和本周新增会话数
 func (repo *DashboardRepository) GetUserSessionCounts(userId string) (total int64, newThisWeek int64, err error) {
 	if err = repo.db().Model(&po.Session{}).Where("deleted = 0 AND user_id = ?", userId).Count(&total).Error; err != nil {
 		return 0, 0, err
@@ -614,8 +667,14 @@ func (repo *DashboardRepository) GetUserSessionCounts(userId string) (total int6
 	return total, newThisWeek, nil
 }
 
+// ═══════════════════════════════════════════════════════════════
+// 缓存
+// ═══════════════════════════════════════════════════════════════
+
 const dashboardCacheTTL = 10 * time.Minute
 
+// getDashboardCache 从 Redis 读取缓存数据，反序列化到 result
+// 缓存不存在或解析失败返回 false
 func (repo *DashboardRepository) GetDashboardCache(key string, result interface{}) bool {
 	cached, err := repo.Redis().Get(context.Background(), key).Bytes()
 	if err != nil {
@@ -627,6 +686,7 @@ func (repo *DashboardRepository) GetDashboardCache(key string, result interface{
 	return true
 }
 
+// setDashboardCache 将数据序列化后写入 Redis，TTL 为 10 分钟
 func (repo *DashboardRepository) SetDashboardCache(key string, data interface{}) {
 	b, err := json.Marshal(data)
 	if err != nil {
@@ -635,6 +695,9 @@ func (repo *DashboardRepository) SetDashboardCache(key string, data interface{})
 	repo.Redis().Set(context.Background(), key, b, dashboardCacheTTL)
 }
 
+// InvalidateAllDashboardCache 失效所有仪表盘相关缓存（管理员 + 所有用户）
+// 模型增删改、启停状态变化等会影响多个用户的仪表盘聚合，调用此方法可立即让前端看到最新数据
+// 适配本地 go-cache（infra.PatternDeleter）与真实 Redis（SCAN+DEL）两种后端
 func (repo *DashboardRepository) InvalidateAllDashboardCache() {
 	ctx := context.Background()
 	const pattern = "dashboard:"
@@ -647,6 +710,8 @@ func (repo *DashboardRepository) InvalidateAllDashboardCache() {
 	}
 }
 
+// invalidateRedisByPattern 真实 Redis 后端：使用 SCAN 迭代匹配前缀并删除
+// 避免 KEYS 在大 keyspace 下阻塞 Redis
 func invalidateRedisByPattern(ctx context.Context, client *redis.Client, pattern string) {
 	var cursor uint64
 	for {
@@ -664,6 +729,8 @@ func invalidateRedisByPattern(ctx context.Context, client *redis.Client, pattern
 	}
 }
 
+// genDateRange 生成日期范围字符串列表（YYYY-MM-DD）
+// startDaysAgo 为起始偏移天数（含，如 6 表示 6 天前），endDaysAgo 为结束偏移天数（含，如 0 表示今天）
 func genDateRange(startDaysAgo, endDaysAgo int) []string {
 	if startDaysAgo < endDaysAgo {
 		return nil
@@ -680,6 +747,7 @@ func genDateRange(startDaysAgo, endDaysAgo int) []string {
 	return result
 }
 
+// db 获取数据库连接
 func (repo *DashboardRepository) db() *gorm.DB {
 	var db *gorm.DB
 	if err := repo.FetchDB(&db); err != nil {

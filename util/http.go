@@ -37,6 +37,7 @@ func NewDebugHTTPClient() *http.Client {
 	}
 }
 
+// GetProxyHTTPClient
 // proxyURL: http://127.0.0.1:33210
 func GetProxyHTTPClient(proxyURL string) *http.Client {
 	proxyClientsMutex.Lock()

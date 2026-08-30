@@ -337,6 +337,7 @@ function TemplateDrawer({
                 value={form.roleInfo}
                 onChange={(e) => setForm((f) => ({ ...f, roleInfo: e.target.value }))}
                 placeholder={t('adminPersonaTemplates.promptPlaceholder')}
+                spellCheck={false}
                 maxLength={500}
                 className="min-h-[200px] resize-y rounded-lg border border-border-strong bg-transparent px-2.5 py-2 text-sm text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-3 focus:ring-ring/50 font-mono"
               />
@@ -379,6 +380,7 @@ function TemplateDrawer({
             value={form.roleInfo}
             onChange={(e) => setForm((f) => ({ ...f, roleInfo: e.target.value }))}
             placeholder={t('adminPersonaTemplates.promptPlaceholder')}
+            spellCheck={false}
             maxLength={500}
             className="flex-1 resize-none rounded-lg border border-border-strong bg-transparent px-3 py-2.5 text-sm text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-3 focus:ring-ring/50 font-mono"
           />
@@ -1076,6 +1078,7 @@ export function Component() {
               type="text"
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
+              spellCheck={false}
               placeholder={t('adminPersonaTemplates.searchPlaceholder')}
               className="h-7 w-44 rounded-lg border border-border-strong bg-transparent pl-7 pr-2 text-xs text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-2 focus:ring-ring/30"
             />

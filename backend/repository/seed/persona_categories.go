@@ -1,5 +1,6 @@
 package seed
 
+// PersonaCategorySeed holds static seed data for persona categories.
 type PersonaCategorySeed struct {
 	EnName    string
 	ZhName    string
@@ -7,6 +8,7 @@ type PersonaCategorySeed struct {
 	IsDefault uint8
 }
 
+// PersonaCategories contains the default persona category seed data.
 var PersonaCategories = []PersonaCategorySeed{
 	{EnName: "General", ZhName: "通用", Icon: "bot", IsDefault: 1},
 	{EnName: "Programming", ZhName: "编程开发", Icon: "code"},

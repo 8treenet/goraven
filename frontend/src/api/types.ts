@@ -880,3 +880,62 @@ export type SSEEvent =
   | SSEEndEvent
   | SSEContextEvent
   | SSEHeartbeatEvent
+
+/* ---------- Automation ---------- */
+
+/** 执行类型：1单次固定时间 2按间隔 3每天固定时间 4每周固定时间 */
+export const AutomationExecType = {
+  Once: 1,
+  Interval: 2,
+  Daily: 3,
+  Weekly: 4,
+} as const
+
+/** 任务状态：0停用 1启用 2已完成 */
+export const AutomationStatus = {
+  Disabled: 0,
+  Enabled: 1,
+  Done: 2,
+} as const
+
+export interface AutomationTaskItem {
+  id: number
+  title: string
+  userId: string
+  execType: number
+  runAt: string | null
+  intervalMinutes: number
+  fixedTime: string
+  weekday: number
+  mcpIds: string
+  skillIds: string
+  project: string
+  sharedProjectId: number
+  aiModelId: number
+  personaId: number
+  aiModelName: string
+  personaName: string
+  sharedProjectName: string
+  mcpNames: string[]
+  skillNames: string[]
+  nextRunAt: string
+  status: number
+  deleted: number
+  created: string
+  updated: string
+}
+
+export interface AutomationTaskDetail extends AutomationTaskItem {
+  requirement: string
+}
+
+export interface AutomationExecutionItem {
+  id: number
+  startedAt: string
+  finishedAt: string
+}
+
+export interface AutomationQARsp {
+  question: string
+  answer: string
+}

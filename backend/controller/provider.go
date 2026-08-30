@@ -33,6 +33,7 @@ func (controller *ProvidersController) GetModels() freedom.Result {
 	if err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
+
 	return &infra.JSONResponse{Object: rsp}
 }
 

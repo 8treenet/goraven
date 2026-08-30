@@ -54,6 +54,7 @@ export function ShareDialog({
                     <input
                       value={projectName}
                       onChange={(e) => onProjectNameChange?.(e.target.value)}
+                      spellCheck={false}
                       placeholder={t('files.projectNamePlaceholder')}
                       className={`mt-1 w-full rounded-md border bg-transparent px-3 py-2 text-sm text-text-1 placeholder:text-text-muted outline-none focus:ring-2 focus:ring-ring/30 ${nameInvalid ? 'border-destructive focus:border-destructive' : 'border-border focus:border-ring'}`}
                       autoFocus
@@ -73,6 +74,7 @@ export function ShareDialog({
                 <textarea
                   value={description}
                   onChange={(e) => onDescriptionChange(e.target.value)}
+                  spellCheck={false}
                   placeholder={t('files.descriptionPlaceholder')}
                   className="mt-1 h-20 w-full resize-none rounded-md border border-border bg-transparent px-3 py-2 text-sm text-text-1 placeholder:text-text-muted outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
                   autoFocus={mode === 'editShare'}

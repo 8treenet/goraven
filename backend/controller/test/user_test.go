@@ -31,6 +31,7 @@ func TestGetUserInfo(t *testing.T) {
 	t.Log("user info response:", respBody)
 }
 
+// TestUpdateProfile 修改个人资料 PUT /api/user/profile
 func TestUpdateProfile(t *testing.T) {
 	token = "rvn_45014c60766f4df9970d1bec6362f84f"
 	nickname := "测试昵称"
@@ -90,6 +91,7 @@ func TestUpdateProfile(t *testing.T) {
 	t.Log("set email response:", respBody4)
 }
 
+// TestChangePassword 修改密码 PUT /api/user/password
 func TestChangePassword(t *testing.T) {
 	req := vo.UserPasswordReq{
 		CurrentPassword: "e10adc3949ba59abbe56e057f20f883e",
@@ -106,6 +108,7 @@ func TestChangePassword(t *testing.T) {
 	t.Log("change password (same) response:", respBody)
 }
 
+// TestUserLogout 退出登录 POST /api/user/logout
 func TestUserLogout(t *testing.T) {
 	token = "rvn_fb1aa9e24935423d9e0c4eed74c76e31"
 	respBody, resp := requests.NewHTTPRequest(domain+"/api/user/logout").
@@ -159,6 +162,7 @@ func TestUserDashboard(t *testing.T) {
 	}
 }
 
+// TestUserDashboardTokenTrend 用户个人 Token 趋势 GET /api/dashboard/tokenTrend?days=30
 func TestUserDashboardTokenTrend(t *testing.T) {
 	var rsp struct {
 		Code int              `json:"code"`
@@ -189,6 +193,7 @@ func TestUserDashboardTokenTrend(t *testing.T) {
 		}
 	}
 
+	// 测试 7 天粒度
 	var rsp7 struct {
 		Code int              `json:"code"`
 		Msg  string           `json:"msg"`
@@ -206,6 +211,7 @@ func TestUserDashboardTokenTrend(t *testing.T) {
 	}
 	t.Logf("tokenTrend 7d: %d points", len(rsp7.Data.Items))
 
+	// 测试缺省参数
 	var rspDef struct {
 		Code int              `json:"code"`
 		Msg  string           `json:"msg"`

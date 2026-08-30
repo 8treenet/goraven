@@ -11,10 +11,13 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var Version = "0.4.3"
+// Version GoRaven 版本号，通过 ldflags 注入: go build -ldflags "-X goraven/config.Version=1.0.0"
+var Version = "v0.5.0"
 
+// StartTime 进程启动时间
 var StartTime = time.Now()
 
+// Get .
 func Get() *Configuration {
 	once.Do(func() {
 		cfg = newConfig()
@@ -34,6 +37,7 @@ var userSpaceCache = struct {
 
 const userSpaceCacheTTL = 72 * time.Hour
 
+// Configuration .
 type Configuration struct {
 	App        freedom.Configuration
 	Other      map[string]interface{} `toml:"other" yaml:"other"`
@@ -46,28 +50,32 @@ type Configuration struct {
 	configPath string
 }
 
+// DBConf database connection configuration
 type DBConf struct {
 	Addr            string `toml:"addr" yaml:"addr"`
 	MaxOpenConns    int    `toml:"max_open_conns" yaml:"max_open_conns"`
 	MaxIdleConns    int    `toml:"max_idle_conns" yaml:"max_idle_conns"`
-	ConnMaxLifeTime int    `toml:"conn_max_life_time" yaml:"conn_max_life_time"`
-	ConnMaxIdleTime int    `toml:"conn_max_idle_time" yaml:"conn_max_idle_time"`
+	ConnMaxLifeTime int    `toml:"conn_max_life_time" yaml:"conn_max_life_time"` // seconds
+	ConnMaxIdleTime int    `toml:"conn_max_idle_time" yaml:"conn_max_idle_time"` // seconds
 }
 
+// PathsConf .
 type PathsConf struct {
-	SqliteDB          string `toml:"sqlite_db" yaml:"sqlite_db"`
-	ChromaDIR         string `toml:"chroma_dir" yaml:"chroma_dir"`
-	UserSpace         string `toml:"user_space" yaml:"user_space"`
-	FrontendDir       string `toml:"frontend_dir" yaml:"frontend_dir"`
-	Scripts           string `toml:"scripts" yaml:"scripts"`
-	SkillsHub         string `toml:"skills_hub" yaml:"skills_hub"`
-	SkillShareDir     string `toml:"skill_share_dir" yaml:"skill_share_dir"`
-	UploadDir         string `toml:"upload_dir" yaml:"upload_dir"`
-	SkillInstalledDir string `toml:"skill_installed_dir" yaml:"skill_installed_dir"`
+	SqliteDB          string `toml:"sqlite_db" yaml:"sqlite_db"`                     // SQLite 数据库路径
+	ChromaDIR         string `toml:"chroma_dir" yaml:"chroma_dir"`                   // Chroma 向量库目录
+	UserSpace         string `toml:"user_space" yaml:"user_space"`                   // 用户工作空间根目录
+	TeamProjectDir    string `toml:"team_project_dir" yaml:"team_project_dir"`       // 团队项目根目录
+	FrontendDir       string `toml:"frontend_dir" yaml:"frontend_dir"`               // 前端静态文件目录
+	Scripts           string `toml:"scripts" yaml:"scripts"`                         // Python 脚本目录
+	SkillsHub         string `toml:"skills_hub" yaml:"skills_hub"`                   // 技能中心目录
+	SkillShareDir     string `toml:"skill_share_dir" yaml:"skill_share_dir"`         // 团队技能共享目录
+	UploadDir         string `toml:"upload_dir" yaml:"upload_dir"`                   // 上传文件目录
+	SkillInstalledDir string `toml:"skill_installed_dir" yaml:"skill_installed_dir"` // 技能依赖安装记录目录
 }
 
+// ToolsConf 工具配置（init 阶段使用，不适合放 DB）
 type ToolsConf struct {
-	HTTPTimeoutSeconds int `toml:"http_timeout_seconds" yaml:"http_timeout_seconds"`
+	HTTPTimeoutSeconds int `toml:"http_timeout_seconds" yaml:"http_timeout_seconds"` // HTTP 工具超时时间（秒），默认 60
 }
 
 type RedisConf struct {
@@ -83,16 +91,18 @@ type RedisConf struct {
 	PoolTimeout  int    `toml:"pool_timeout" yaml:"pool_timeout"`
 }
 
+// SystemConf 系统配置
 type SystemConf struct {
-	Language    string `toml:"language" yaml:"language"`
-	Initialized bool   `toml:"initialized" yaml:"initialized"`
-	DBType      string `toml:"db_type" yaml:"db_type"`
-	CacheType   string `toml:"cache_type" yaml:"cache_type"`
+	Language    string `toml:"language" yaml:"language"`       // 语言: "zh" 中文, "en" 英文
+	Initialized bool   `toml:"initialized" yaml:"initialized"` // 是否已初始化
+	DBType      string `toml:"db_type" yaml:"db_type"`         // 数据库类型: sqlite, mysql, pg
+	CacheType   string `toml:"cache_type" yaml:"cache_type"`   // 缓存类型: local, redis
 }
 
+// BehaviorConf 行为配置
 type BehaviorConf struct {
-	PreviewUser string `toml:"preview_user" yaml:"preview_user"`
-	Docker      bool   `toml:"docker" yaml:"docker"`
+	PreviewUser string `toml:"preview_user" yaml:"preview_user"` // 预览用户ID，非空时跳过登录直接以此用户身份预览
+	Docker      bool   `toml:"docker" yaml:"docker"`             // 是否 Docker 环境运行
 }
 
 func newConfig() *Configuration {
@@ -145,9 +155,11 @@ func newConfig() *Configuration {
 	os.MkdirAll(result.GetDownloadTempDir(), 0755)
 	os.MkdirAll(result.GetClawHUBCacheDir(), 0755)
 	os.MkdirAll(result.GetSkillInstalledDir(), 0755)
+	os.MkdirAll(result.GetTeamProjectDir(), 0755)
 	return result
 }
 
+// ParseConfigPath .
 func ParseConfigPath() string {
 	confdir := os.Getenv("GORAVEN_CONF")
 	if confdir != "" {
@@ -191,6 +203,7 @@ func (conf *Configuration) GetUserSpace(userName string) string {
 	return userSpace
 }
 
+// GetUserSkillDir
 func (conf *Configuration) GetChromaPath(datasetID int) string {
 	path := fmt.Sprintf("%s/%d.db", conf.Paths.ChromaDIR, datasetID)
 	return path
@@ -270,11 +283,13 @@ func findMappingValue(mapping *yaml.Node, key string) *yaml.Node {
 	return mapping.Content[idx+1]
 }
 
+// BuildInfo 构建及运行时信息
 type BuildInfo struct {
-	Version   string
-	StartTime time.Time
+	Version   string    // GoRaven 版本号
+	StartTime time.Time // 进程启动时间
 }
 
+// GetBuildInfo 获取构建及运行时信息
 func (conf *Configuration) GetBuildInfo() *BuildInfo {
 	return &BuildInfo{
 		Version:   Version,
@@ -296,18 +311,22 @@ func (conf *Configuration) GetUploadDir() string {
 	return "/goraven/data/upload"
 }
 
+// GetUploadTempDir 分片上传临时目录
 func (conf *Configuration) GetUploadTempDir() string {
 	return filepath.Join(os.TempDir(), "goraven-upload")
 }
 
+// GetDownloadTempDir 下载目录（ClawHub 技能 zip 等临时下载）
 func (conf *Configuration) GetDownloadTempDir() string {
 	return filepath.Join(os.TempDir(), "goraven-download")
 }
 
+// GetClawHUBCacheDir clawhub的市场文件缓存目录
 func (conf *Configuration) GetClawHUBCacheDir() string {
 	return filepath.Join(os.TempDir(), "goraven-clawhub-cache")
 }
 
+// GetSkillShareDir 团队技能共享目录
 func (conf *Configuration) GetSkillShareDir() string {
 	if conf.Paths.SkillShareDir != "" {
 		return conf.Paths.SkillShareDir
@@ -315,9 +334,18 @@ func (conf *Configuration) GetSkillShareDir() string {
 	return "/goraven/data/skill_share"
 }
 
+// GetSkillInstalledDir 技能依赖安装记录目录
 func (conf *Configuration) GetSkillInstalledDir() string {
 	if conf.Paths.SkillInstalledDir != "" {
 		return conf.Paths.SkillInstalledDir
 	}
 	return "/goraven/skill_installed"
+}
+
+// GetTeamProjectDir 团队项目根目录
+func (conf *Configuration) GetTeamProjectDir() string {
+	if conf.Paths.TeamProjectDir != "" {
+		return conf.Paths.TeamProjectDir
+	}
+	return "/goraven/data/team_projects"
 }

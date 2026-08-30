@@ -24,6 +24,7 @@ func init() {
 	})
 }
 
+// PersonaService 角色模板与分类服务
 type PersonaService struct {
 	Worker      freedom.Worker
 	PersonaRepo *repository.PersonaRepository
@@ -32,6 +33,11 @@ type PersonaService struct {
 	SkillRepo   *repository.SkillRepository
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// 角色模板
+// ════════════════════════════════════════════════════════════════════════════
+
+// ListPersonaTemplates 角色模板分页列表
 func (service *PersonaService) ListPersonaTemplates(req *vo.AdminPersonaTemplateListReq) (*infra.PageResponse, error) {
 	templates, pr, err := service.PersonaRepo.PaginatePersonaTemplates(req)
 	if err != nil {
@@ -69,6 +75,7 @@ func (service *PersonaService) ListPersonaTemplates(req *vo.AdminPersonaTemplate
 	}, nil
 }
 
+// GetPersonaTemplateDetail 角色模板详情（含完整 roleInfo，用于编辑回填）
 func (service *PersonaService) GetPersonaTemplateDetail(templateId int) (*vo.AdminPersonaTemplateDetailRsp, error) {
 	tmpl, err := service.PersonaRepo.GetPersonaTemplateByID(templateId)
 	if err != nil {
@@ -98,6 +105,7 @@ func (service *PersonaService) GetPersonaTemplateDetail(templateId int) (*vo.Adm
 	return rsp, nil
 }
 
+// CreatePersonaTemplate 创建角色模板
 func (service *PersonaService) CreatePersonaTemplate(req *vo.AdminCreatePersonaTemplateReq) error {
 	if req.RoleInfo == "" {
 		return errs.ErrPersonaTemplateRoleInfoRequired
@@ -120,6 +128,7 @@ func (service *PersonaService) CreatePersonaTemplate(req *vo.AdminCreatePersonaT
 	return service.PersonaRepo.CreatePersonaTemplate(tmpl)
 }
 
+// UpdatePersonaTemplate 编辑角色模板
 func (service *PersonaService) UpdatePersonaTemplate(templateId int, req *vo.AdminUpdatePersonaTemplateReq) error {
 	if _, err := service.PersonaRepo.GetPersonaTemplateByID(templateId); err != nil {
 		return errs.ErrPersonaTemplateNotFound
@@ -161,6 +170,7 @@ func (service *PersonaService) UpdatePersonaTemplate(templateId int, req *vo.Adm
 	return service.PersonaRepo.UpdatePersonaTemplate(templateId, updates)
 }
 
+// DeletePersonaTemplate 删除角色模板（软删除）
 func (service *PersonaService) DeletePersonaTemplate(templateId int) error {
 	if _, err := service.PersonaRepo.GetPersonaTemplateByID(templateId); err != nil {
 		return errs.ErrPersonaTemplateNotFound
@@ -168,6 +178,11 @@ func (service *PersonaService) DeletePersonaTemplate(templateId int) error {
 	return service.PersonaRepo.SoftDeletePersonaTemplate(templateId)
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// 角色分类
+// ════════════════════════════════════════════════════════════════════════════
+
+// ListPersonaCategories 角色分类分页列表
 func (service *PersonaService) ListPersonaCategories(req *vo.AdminPersonaCategoryListReq) (*infra.PageResponse, error) {
 	categories, pr, err := service.PersonaRepo.PaginatePersonaCategories(req)
 	if err != nil {
@@ -196,10 +211,12 @@ func (service *PersonaService) ListPersonaCategories(req *vo.AdminPersonaCategor
 	}, nil
 }
 
+// GetAllPersonaCategories 获取所有角色分类（用于下拉选择）
 func (service *PersonaService) GetAllPersonaCategories() ([]vo.AdminPersonaCategoryItem, error) {
 	return service.PersonaRepo.GetAllPersonaCategories()
 }
 
+// GetPersonaCategoryDetail 角色分类详情
 func (service *PersonaService) GetPersonaCategoryDetail(categoryId int) (*vo.AdminPersonaCategoryDetailRsp, error) {
 	cat, err := service.PersonaRepo.GetPersonaCategoryByID(categoryId)
 	if err != nil {
@@ -215,6 +232,7 @@ func (service *PersonaService) GetPersonaCategoryDetail(categoryId int) (*vo.Adm
 	}, nil
 }
 
+// CreatePersonaCategory 创建角色分类
 func (service *PersonaService) CreatePersonaCategory(req *vo.AdminCreatePersonaCategoryReq) error {
 	cat := &po.PersonaCategory{
 		Name: req.Name,
@@ -223,6 +241,7 @@ func (service *PersonaService) CreatePersonaCategory(req *vo.AdminCreatePersonaC
 	return service.PersonaRepo.CreatePersonaCategory(cat)
 }
 
+// UpdatePersonaCategory 编辑角色分类（默认分类不可编辑）
 func (service *PersonaService) UpdatePersonaCategory(categoryId int, req *vo.AdminUpdatePersonaCategoryReq) error {
 	cat, err := service.PersonaRepo.GetPersonaCategoryByID(categoryId)
 	if err != nil {
@@ -247,6 +266,7 @@ func (service *PersonaService) UpdatePersonaCategory(categoryId int, req *vo.Adm
 	return service.PersonaRepo.UpdatePersonaCategory(categoryId, updates)
 }
 
+// DeletePersonaCategory 删除角色分类（默认分类不可删除，非默认分类删除时引用数据归属到默认分类）
 func (service *PersonaService) DeletePersonaCategory(categoryId int) error {
 	cat, err := service.PersonaRepo.GetPersonaCategoryByID(categoryId)
 	if err != nil {
@@ -271,6 +291,7 @@ func (service *PersonaService) DeletePersonaCategory(categoryId int) error {
 	return service.PersonaRepo.SoftDeletePersonaCategory(categoryId)
 }
 
+// batchGetCategoryMap 从模板列表中提取 categoryId 并批量查询分类
 func (service *PersonaService) batchGetCategoryMap(templates []po.PersonaTemplate) map[int]po.PersonaCategory {
 	ids := make([]int, 0)
 	for _, t := range templates {
@@ -294,6 +315,11 @@ func (service *PersonaService) batchGetCategoryMap(templates []po.PersonaTemplat
 	return m
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// 用户角色
+// ════════════════════════════════════════════════════════════════════════════
+
+// validateMcpIds 校验 mcpIds 对应的 MCP 端点存在（未删除）
 func (service *PersonaService) validateMcpIds(mcpIds []int) error {
 	for _, id := range mcpIds {
 		_, err := service.McpRepo.GetMCPEndpointByID(id)
@@ -304,6 +330,7 @@ func (service *PersonaService) validateMcpIds(mcpIds []int) error {
 	return nil
 }
 
+// validateSkillIds 校验 skillIds 对应的技能已安装（属于当前用户且 installStatus=2）
 func (service *PersonaService) validateSkillIds(userId string, skillIds []int) error {
 	for _, id := range skillIds {
 		if _, err := service.SkillRepo.GetInstalledUserSkillByID(id, userId); err != nil {
@@ -313,6 +340,7 @@ func (service *PersonaService) validateSkillIds(userId string, skillIds []int) e
 	return nil
 }
 
+// validateAIModelId 校验 aiModelId 对应的模型存在且启用，0 表示使用默认模型跳过校验
 func (service *PersonaService) validateAIModelId(aiModelId int) error {
 	if aiModelId == 0 {
 		return nil
@@ -327,6 +355,7 @@ func (service *PersonaService) validateAIModelId(aiModelId int) error {
 	return nil
 }
 
+// splitToolIds 将 persona_tool 列表按 toolType 拆分为 mcpIds 和 skillIds
 func (service *PersonaService) splitToolIds(tools []po.PersonaTool) ([]int, []int) {
 	mcpIds := make([]int, 0)
 	skillIds := make([]int, 0)
@@ -341,6 +370,7 @@ func (service *PersonaService) splitToolIds(tools []po.PersonaTool) ([]int, []in
 	return mcpIds, skillIds
 }
 
+// buildPersonaTools 根据 mcpIds 和 skillIds 构建 persona_tool 记录列表
 func (service *PersonaService) buildPersonaTools(personaId int, userId string, mcpIds []int, skillIds []int) []po.PersonaTool {
 	tools := make([]po.PersonaTool, 0, len(mcpIds)+len(skillIds))
 	for _, id := range mcpIds {
@@ -362,6 +392,7 @@ func (service *PersonaService) buildPersonaTools(personaId int, userId string, m
 	return tools
 }
 
+// ListUserPersonasSimple 获取用户角色简要信息（聊天页选择器用，仅基础字段）
 func (service *PersonaService) ListUserPersonasSimple(userId string) ([]vo.UserPersonaSimpleItem, error) {
 	personas, err := service.PersonaRepo.ListUserPersonasByUserId(userId)
 	if err != nil {
@@ -378,6 +409,7 @@ func (service *PersonaService) ListUserPersonasSimple(userId string) ([]vo.UserP
 	return items, nil
 }
 
+// ListUserPersonas 获取用户角色列表（含分类、模型、MCP、技能信息）
 func (service *PersonaService) ListUserPersonas(userId string) ([]vo.UserPersonaListItem, error) {
 	personas, err := service.PersonaRepo.ListUserPersonasByUserId(userId)
 	if err != nil {
@@ -447,10 +479,10 @@ func (service *PersonaService) ListUserPersonas(userId string) ([]vo.UserPersona
 	items := make([]vo.UserPersonaListItem, 0, len(personas))
 	for _, p := range personas {
 		item := vo.UserPersonaListItem{
-			PersonaId:  p.PersonaId,
-			Name:       p.Name,
-			Icon:       p.Icon,
-			RoleInfo:   p.RoleInfo,
+			PersonaId: p.PersonaId,
+			Name:      p.Name,
+			Icon:      p.Icon,
+			RoleInfo:  p.RoleInfo,
 			CategoryId: p.CategoryId,
 			McpNames:   []string{},
 			SkillNames: []string{},
@@ -484,27 +516,30 @@ func (service *PersonaService) ListUserPersonas(userId string) ([]vo.UserPersona
 	return items, nil
 }
 
+// GetUserPersona 获取用户角色详情（编辑页回填）
 func (service *PersonaService) GetUserPersona(personaId int, userId string) (*vo.UserPersonaDetailRsp, error) {
 	persona, err := service.PersonaRepo.GetUserPersonaByID(personaId, userId)
 	if err != nil {
 		return nil, errs.ErrPersonaNotFound
 	}
 
+	// 从 persona_tool 关联表读取 MCP/技能 ID
 	tools, _ := service.PersonaRepo.ListPersonaToolsByPersona(personaId)
 
+	// 校验并清理无效的工具关联：MCP 须存在且启用未删除，技能须已安装
 	validTools := make([]po.PersonaTool, 0, len(tools))
 	for _, t := range tools {
 		switch t.ToolType {
 		case "mcp":
 			mcp, err := service.McpRepo.GetMCPEndpointByID(t.ToolId)
 			if err != nil || mcp.Status != po.MCPEndpointStatusEnabled {
-
+				// MCP 不存在、已删除或已禁用，清理 persona_tool 记录
 				_ = service.PersonaRepo.DeletePersonaTool(personaId, "mcp", t.ToolId)
 				continue
 			}
 		case "skill":
 			if _, err := service.SkillRepo.GetInstalledUserSkillByID(t.ToolId, userId); err != nil {
-
+				// 技能未安装或不存在，清理 persona_tool 记录
 				_ = service.PersonaRepo.DeletePersonaTool(personaId, "skill", t.ToolId)
 				continue
 			}
@@ -527,6 +562,7 @@ func (service *PersonaService) GetUserPersona(personaId int, userId string) (*vo
 		Updated:    persona.Updated,
 	}
 
+	// 关联分类信息
 	if persona.CategoryId > 0 {
 		if cat, err := service.PersonaRepo.GetPersonaCategoryByID(persona.CategoryId); err == nil {
 			rsp.CategoryName = cat.Name
@@ -534,6 +570,7 @@ func (service *PersonaService) GetUserPersona(personaId int, userId string) (*vo
 		}
 	}
 
+	// 关联模型名称
 	if persona.AIModelId > 0 {
 		if model, err := service.ModelRepo.GetModelByID(persona.AIModelId); err == nil {
 			rsp.ModelName = model.ProviderDisplayName + " - " + model.DisplayName
@@ -544,36 +581,44 @@ func (service *PersonaService) GetUserPersona(personaId int, userId string) (*vo
 	return rsp, nil
 }
 
+// CreateUserPersona 创建用户角色
 func (service *PersonaService) CreateUserPersona(userId string, req *vo.CreateUserPersonaReq, mcpService *McpService, skillService *SkillService) error {
-
+	// 校验分类存在
 	if _, err := service.PersonaRepo.GetPersonaCategoryByID(req.CategoryId); err != nil {
 		return errs.ErrPersonaCategoryNotFound
 	}
 
+	// 校验 mcpIds：每个 MCP 端点须存在且启用
 	if err := service.validateMcpIds(req.McpIds); err != nil {
 		return err
 	}
 
+	// 校验 skillIds：每个技能须已安装
 	if err := service.validateSkillIds(userId, req.SkillIds); err != nil {
 		return err
 	}
 
+	// 校验 MCP 工具名称冲突
 	if err := mcpService.CheckMCPToolNameConflicts(req.McpIds); err != nil {
 		return err
 	}
 
+	// 校验技能名称冲突
 	if err := skillService.CheckSkillNameConflicts(userId, req.SkillIds); err != nil {
 		return err
 	}
 
+	// 校验 aiModelId：模型须存在且启用（0 表示默认模型，跳过）
 	if err := service.validateAIModelId(req.AIModelId); err != nil {
 		return err
 	}
 
+	// 校验角色设定长度
 	if utf8.RuneCountInString(req.RoleInfo) > 500 {
 		return errs.ErrPersonaRoleInfoTooLong
 	}
 
+	// 如果选了模板，校验模板存在并递增使用次数
 	if req.TemplateId != nil && *req.TemplateId > 0 {
 		if _, err := service.PersonaRepo.GetPersonaTemplateByIDForUser(*req.TemplateId); err != nil {
 			return errs.ErrPersonaTemplateNotFound
@@ -593,9 +638,11 @@ func (service *PersonaService) CreateUserPersona(userId string, req *vo.CreateUs
 		return err
 	}
 
+	// 写入 persona_tool 关联记录
 	return service.PersonaRepo.BatchCreatePersonaTools(service.buildPersonaTools(persona.PersonaId, userId, req.McpIds, req.SkillIds))
 }
 
+// UpdateUserPersona 编辑用户角色
 func (service *PersonaService) UpdateUserPersona(personaId int, userId string, req *vo.UpdateUserPersonaReq, mcpService *McpService, skillService *SkillService) error {
 	if _, err := service.PersonaRepo.GetUserPersonaByID(personaId, userId); err != nil {
 		return errs.ErrPersonaNotFound
@@ -627,11 +674,11 @@ func (service *PersonaService) UpdateUserPersona(personaId int, userId string, r
 		if err := service.validateMcpIds(*req.McpIds); err != nil {
 			return err
 		}
-
+		// 校验 MCP 工具名称冲突
 		if err := mcpService.CheckMCPToolNameConflicts(*req.McpIds); err != nil {
 			return err
 		}
-
+		// 先删旧 MCP 关联，再写入新的
 		_ = service.PersonaRepo.DeletePersonaToolsByPersonaAndType(personaId, "mcp")
 		_ = service.PersonaRepo.BatchCreatePersonaTools(service.buildPersonaTools(personaId, userId, *req.McpIds, nil))
 	}
@@ -639,11 +686,11 @@ func (service *PersonaService) UpdateUserPersona(personaId int, userId string, r
 		if err := service.validateSkillIds(userId, *req.SkillIds); err != nil {
 			return err
 		}
-
+		// 校验技能名称冲突
 		if err := skillService.CheckSkillNameConflicts(userId, *req.SkillIds); err != nil {
 			return err
 		}
-
+		// 先删旧技能关联，再写入新的
 		_ = service.PersonaRepo.DeletePersonaToolsByPersonaAndType(personaId, "skill")
 		_ = service.PersonaRepo.BatchCreatePersonaTools(service.buildPersonaTools(personaId, userId, nil, *req.SkillIds))
 	}
@@ -661,24 +708,29 @@ func (service *PersonaService) UpdateUserPersona(personaId int, userId string, r
 	return service.PersonaRepo.UpdateUserPersona(personaId, userId, updates)
 }
 
+// DeleteUserPersona 删除用户角色（软删除，关联 session.personaId 置零，清除 persona_tool 关联）
 func (service *PersonaService) DeleteUserPersona(personaId int, userId string) error {
 	if _, err := service.PersonaRepo.GetUserPersonaByID(personaId, userId); err != nil {
 		return errs.ErrPersonaNotFound
 	}
 
+	// 将关联会话的 personaId 置零
 	_ = service.PersonaRepo.ClearSessionPersonaId(personaId, userId)
 
+	// 清除 persona_tool 关联记录
 	_ = service.PersonaRepo.DeletePersonaToolsByPersona(personaId)
 
 	return service.PersonaRepo.SoftDeleteUserPersona(personaId, userId)
 }
 
+// ListPersonaTemplatesForUser 获取用户可选角色模板列表
 func (service *PersonaService) ListPersonaTemplatesForUser(categoryId *int) ([]vo.UserPersonaTemplateItem, error) {
 	templates, err := service.PersonaRepo.ListPersonaTemplatesForUser(categoryId)
 	if err != nil {
 		return nil, err
 	}
 
+	// 批量查询分类信息
 	categoryMap := service.batchGetCategoryMapFromTemplates(templates)
 
 	items := make([]vo.UserPersonaTemplateItem, 0, len(templates))
@@ -699,6 +751,7 @@ func (service *PersonaService) ListPersonaTemplatesForUser(categoryId *int) ([]v
 	return items, nil
 }
 
+// GetPersonaTemplateDetailForUser 获取角色模板详情（含完整 roleInfo，用于预填角色设定）
 func (service *PersonaService) GetPersonaTemplateDetailForUser(templateId int) (*vo.UserPersonaTemplateDetailRsp, error) {
 	tmpl, err := service.PersonaRepo.GetPersonaTemplateByIDForUser(templateId)
 	if err != nil {
@@ -724,6 +777,7 @@ func (service *PersonaService) GetPersonaTemplateDetailForUser(templateId int) (
 	return rsp, nil
 }
 
+// ListPersonaCategoriesForUser 获取角色分类列表（用户端，按 sortOrder 排序）
 func (service *PersonaService) ListPersonaCategoriesForUser() ([]vo.UserPersonaCategoryItem, error) {
 	categories, err := service.PersonaRepo.ListPersonaCategoriesForUser()
 	if err != nil {
@@ -741,6 +795,7 @@ func (service *PersonaService) ListPersonaCategoriesForUser() ([]vo.UserPersonaC
 	return items, nil
 }
 
+// batchGetCategoryMapFromTemplates 从模板列表中提取 categoryId 并批量查询分类
 func (service *PersonaService) batchGetCategoryMapFromTemplates(templates []po.PersonaTemplate) map[int]po.PersonaCategory {
 	return service.batchGetCategoryMap(templates)
 }
