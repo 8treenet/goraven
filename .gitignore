@@ -16,3 +16,4 @@ opencode.json
 AGENTS.md
 frontend/node_modules
 frontend/dist
+/data
