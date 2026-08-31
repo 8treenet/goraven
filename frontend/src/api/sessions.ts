@@ -2,7 +2,7 @@ import http from './http'
 import type { PaginatedResponse, SessionSimple, SessionDetail, ShareInfo, CreateShareRequest } from './types'
 
 /** GET /api/sessions */
-export function getSessions(params?: { page?: number; pageSize?: number }) {
+export function getSessions(params?: { page?: number; pageSize?: number; project?: string; sharedProjectId?: number }) {
   return http.get<PaginatedResponse<SessionSimple>>('/sessions', { params })
 }
 

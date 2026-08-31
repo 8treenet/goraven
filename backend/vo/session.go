@@ -21,9 +21,11 @@ type SessionUpdateReq struct {
 
 // SessionListReq 会话列表请求
 type SessionListReq struct {
-	Page      int  `url:"page"`      // 页码，默认 1
-	PageSize  int  `url:"pageSize"`  // 每页条数，默认 20
-	PersonaId *int `url:"personaId"` // 按角色筛选，nil 不筛选
+	Page            int    `url:"page"`            // 页码，默认 1
+	PageSize        int    `url:"pageSize"`        // 每页条数，默认 20
+	PersonaId       *int   `url:"personaId"`       // 按角色筛选，nil 不筛选
+	Project         string `url:"project"`         // 按个人项目目录名筛选，空不筛选
+	SharedProjectId *int   `url:"sharedProjectId"` // 按团队项目ID筛选，nil 不筛选
 }
 
 // SessionListItem 会话列表条目（侧边栏"所有对话"使用）

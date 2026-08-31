@@ -112,12 +112,18 @@ func (repo *MsgSessionRepository) UpdateSession(sessionId string, userId string,
 }
 
 // ListSessions 获取用户未归档且未删除的会话列表（侧边栏"所有对话"），分页
-// 支持按 personaId 筛选，按 status DESC 置顶进行中的会话，再按 lastChatTime DESC
+// 支持按 personaId/项目筛选，按 status DESC 置顶进行中的会话，再按 lastChatTime DESC
 // 过滤 automation_task_id = 0：自动化任务产生的会话不在侧边栏展示（任务详情页单独查看）
 func (repo *MsgSessionRepository) ListSessions(userId string, req *vo.SessionListReq) ([]po.Session, *PageResult, error) {
 	query := repo.db().Model(&po.Session{}).Where("user_id = ? AND deleted = 0 AND is_archived = 0 AND automation_task_id = 0", userId)
 	if req.PersonaId != nil {
 		query = query.Where("persona_id = ?", *req.PersonaId)
+	}
+	if req.Project != "" {
+		query = query.Where("project = ? AND shared_project_id = 0", req.Project)
+	}
+	if req.SharedProjectId != nil {
+		query = query.Where("shared_project_id = ?", *req.SharedProjectId)
 	}
 	query = query.Order("status DESC, last_chat_time DESC")
 

@@ -32,6 +32,15 @@ const en = {
   'sidebar.archive': 'Archive',
   'sidebar.close': 'Close',
   'sidebar.menu': 'Menu',
+  'sidebar.filterAll': 'All',
+  'sidebar.filterPersonalProjects': 'Personal Projects',
+  'sidebar.filterTeamProjects': 'Team Projects',
+  'sidebar.filterPersonalBadge': 'Personal',
+  'sidebar.filterTeamBadge': 'Team',
+  'sidebar.filterLoading': 'Loading…',
+  'sidebar.filterFailed': 'Failed to load',
+  'sidebar.filterEmpty': 'No projects',
+  'sidebar.filterClear': 'Clear filter',
 
   // common
   'common.previous': 'Previous',

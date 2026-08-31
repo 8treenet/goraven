@@ -32,6 +32,15 @@ const zh = {
   'sidebar.archive': '归档',
   'sidebar.close': '关闭',
   'sidebar.menu': '菜单',
+  'sidebar.filterAll': '全部',
+  'sidebar.filterPersonalProjects': '个人项目',
+  'sidebar.filterTeamProjects': '团队项目',
+  'sidebar.filterPersonalBadge': '个人',
+  'sidebar.filterTeamBadge': '团队',
+  'sidebar.filterLoading': '正在加载…',
+  'sidebar.filterFailed': '加载失败',
+  'sidebar.filterEmpty': '暂无项目',
+  'sidebar.filterClear': '清除筛选',
 
   // common
   'common.previous': '上一步',

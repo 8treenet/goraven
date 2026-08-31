@@ -5,6 +5,7 @@ import { providersApi, personasApi, mcpApi, skillsApi, chatApi, sessionsApi } fr
 import { connectChatStream } from '@/api/sse'
 import type { ChatRequest, ChatResponse, SessionDetail, Message as ApiMessage, SharedProjectInfo } from '@/api/types'
 import { uuid } from '@/lib/utils'
+import { useSidebarStore } from './sidebar-store'
 
 export type RoleType = 'user' | 'assistant'
 
@@ -137,6 +138,9 @@ const backgroundTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 const BACKGROUND_TIMEOUT_MS = 5 * 60 * 1000
 
 const LAST_USED_MODEL_KEY = 'goraven.lastUsedModelId'
+
+// 会话列表请求序号：筛选切换时旧请求结果作废，避免乱序覆盖
+let sessionRefreshSeq = 0
 
 // 上次使用的模型选择：具体模型 ID 或 'default'（默认模型，对话时后端从默认池随机选取）
 function getLastUsedModelChoice(): string | null {
@@ -948,8 +952,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   refreshSessions: async () => {
+    const filter = useSidebarStore.getState().projectFilter
+    const params = {
+      page: 1,
+      project: filter?.type === 'personal' ? filter.name : undefined,
+      sharedProjectId: filter?.type === 'team' ? filter.id : undefined,
+    }
+    const seq = ++sessionRefreshSeq
     try {
-      const data = await sessionsApi.getSessions({ page: 1 })
+      const data = await sessionsApi.getSessions(params)
+      if (seq !== sessionRefreshSeq) return
       const existing = get().sessions
       const existingMap = new Map(existing.map((s) => [s.id, s]))
 
@@ -999,9 +1011,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
   loadMoreSessions: async () => {
     const { sessionPage, sessionHasMore } = get()
     if (!sessionHasMore) return
+    const filter = useSidebarStore.getState().projectFilter
+    const seq = sessionRefreshSeq
     try {
       const nextPage = sessionPage + 1
-      const data = await sessionsApi.getSessions({ page: nextPage })
+      const data = await sessionsApi.getSessions({
+        page: nextPage,
+        project: filter?.type === 'personal' ? filter.name : undefined,
+        sharedProjectId: filter?.type === 'team' ? filter.id : undefined,
+      })
+      if (seq !== sessionRefreshSeq) return
 
       const cutoff = new Date()
       cutoff.setDate(cutoff.getDate() - 30)

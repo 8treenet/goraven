@@ -15,6 +15,10 @@ import {
   X,
   User,
   LogOut,
+  Filter,
+  Folder,
+  Users,
+  LoaderCircle,
 } from 'lucide-react'
 import {
   IconGrid,
@@ -30,14 +34,16 @@ import {
   IconAutomation,
 } from '@/components/icons'
 import { cn } from '@/lib/utils'
-import { useSidebarStore } from '@/stores/sidebar-store'
+import { useSidebarStore, type ProjectFilter } from '@/stores/sidebar-store'
 import { useUserStore } from '@/stores/user-store'
 import type { CurrentUser } from '@/stores/user-store'
 import { useChatStore } from '@/stores/chat-store'
 import { useT, type TranslationKey } from '@/i18n'
 import { logout } from '@/api/auth'
 import { sessionsApi } from '@/api'
-import type { SessionSimple } from '@/api/types'
+import { listFiles } from '@/api/files'
+import { listTeamProjects } from '@/api/team-projects'
+import type { SessionSimple, TeamProjectItem } from '@/api/types'
 
 /* ============================================
    Guest user fallback
@@ -222,10 +228,11 @@ function UserMenu() {
   const sessionHasMore = useChatStore((s) => s.sessionHasMore)
   const loadMoreSessions = useChatStore((s) => s.loadMoreSessions)
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const projectFilter = useSidebarStore((s) => s.projectFilter)
 
   useEffect(() => {
     refreshSessions()
-  }, [refreshSessions])
+  }, [refreshSessions, projectFilter])
 
   useEffect(() => {
     const sentinel = sentinelRef.current
@@ -343,6 +350,7 @@ function UserMenu() {
         </div>
       ) : (
         <div className="py-2 space-y-2">
+          <ProjectFilterRow />
           {groupedSessions.length === 0 && (
             <p className="px-2 text-xs text-text-muted">{t('sidebar.noSessions')}</p>
           )}
@@ -484,6 +492,188 @@ function MobileSessionItem({
       onDelete={onDelete}
       onNavigateOverride={handleNavigate}
     />
+  )
+}
+
+/* ============================================
+   Project Filter (desktop expanded only)
+   ============================================ */
+
+function ProjectFilterRow() {
+  const t = useT()
+  const projectFilter = useSidebarStore((s) => s.projectFilter)
+  const setProjectFilter = useSidebarStore((s) => s.setProjectFilter)
+  const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [personalProjects, setPersonalProjects] = useState<string[]>([])
+  const [teamProjects, setTeamProjects] = useState<TeamProjectItem[]>([])
+  const [loadFailed, setLoadFailed] = useState(false)
+
+  const loadProjects = useCallback(() => {
+    setLoading(true)
+    setLoadFailed(false)
+    Promise.all([
+      listFiles('projects')
+        .then((data) => data.items.filter((item) => item.isDir).map((item) => item.name)),
+      listTeamProjects().then((data) => data.items ?? []),
+    ])
+      .then(([personal, team]) => {
+        setPersonalProjects(personal)
+        setTeamProjects(team)
+      })
+      .catch(() => {
+        setLoadFailed(true)
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
+  const handleOpenChange = useCallback((next: boolean) => {
+    setOpen(next)
+    if (next) loadProjects()
+  }, [loadProjects])
+
+  const handleSelect = useCallback((filter: ProjectFilter | null) => {
+    setProjectFilter(filter)
+    setOpen(false)
+  }, [setProjectFilter])
+
+  const handleClear = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    setProjectFilter(null)
+  }, [setProjectFilter])
+
+  const filtered = projectFilter !== null
+
+  return (
+    <Popover.Root open={open} onOpenChange={handleOpenChange}>
+      <div
+        className={cn(
+          'flex items-center rounded-md transition-colors hover:bg-bg-hover',
+          filtered ? 'text-text-1' : 'text-text-3',
+        )}
+      >
+        <Popover.Trigger asChild>
+          <button
+            className="flex min-w-0 flex-1 items-center gap-1.5 px-2 py-1 text-xs"
+            title={projectFilter?.name ?? t('sidebar.filterAll')}
+          >
+            <Filter className="size-3 shrink-0 text-interactive" />
+            <span className="min-w-0 flex-1 truncate text-left">
+              {projectFilter ? projectFilter.name : t('sidebar.filterAll')}
+            </span>
+            {projectFilter && (
+              <span
+                className={cn(
+                  'shrink-0 rounded px-1 py-px text-[10px] font-medium leading-none',
+                  projectFilter.type === 'team'
+                    ? 'bg-highlight-soft text-highlight'
+                    : 'bg-interactive-soft text-interactive',
+                )}
+              >
+                {projectFilter.type === 'team' ? t('sidebar.filterTeamBadge') : t('sidebar.filterPersonalBadge')}
+              </span>
+            )}
+            <ChevronDown className="size-3 shrink-0 text-text-3" />
+          </button>
+        </Popover.Trigger>
+        {filtered && (
+          <button
+            onClick={handleClear}
+            aria-label={t('sidebar.filterClear')}
+            className="flex size-5 shrink-0 items-center justify-center rounded-full text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1"
+          >
+            <X className="size-3" />
+          </button>
+        )}
+      </div>
+
+      <Popover.Portal>
+        <Popover.Content
+          side="bottom"
+          align="start"
+          sideOffset={4}
+          className="z-50 max-h-80 w-56 overflow-y-auto rounded-lg border border-border bg-bg-layer-2 p-1 shadow-pop outline-none"
+        >
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-4 text-xs text-text-3">
+              <LoaderCircle className="size-3.5 animate-spin" />
+              {t('sidebar.filterLoading')}
+            </div>
+          ) : loadFailed ? (
+            <p className="px-2 py-4 text-center text-xs text-text-3">{t('sidebar.filterFailed')}</p>
+          ) : (
+            <>
+              <ProjectFilterItem
+                icon={Filter}
+                selected={!filtered}
+                onClick={() => handleSelect(null)}
+                label={t('sidebar.filterAll')}
+              />
+              {personalProjects.length > 0 && (
+                <>
+                  <p className="px-2 pb-0.5 pt-2 text-[11px] uppercase tracking-wide text-text-3">
+                    {t('sidebar.filterPersonalProjects')}
+                  </p>
+                  {personalProjects.map((name) => (
+                    <ProjectFilterItem
+                      key={name}
+                      icon={Folder}
+                      selected={projectFilter?.type === 'personal' && projectFilter.name === name}
+                      onClick={() => handleSelect({ type: 'personal', name })}
+                      label={name}
+                    />
+                  ))}
+                </>
+              )}
+              {teamProjects.length > 0 && (
+                <>
+                  <p className="px-2 pb-0.5 pt-2 text-[11px] uppercase tracking-wide text-text-3">
+                    {t('sidebar.filterTeamProjects')}
+                  </p>
+                  {teamProjects.map((p) => (
+                    <ProjectFilterItem
+                      key={p.id}
+                      icon={Users}
+                      selected={projectFilter?.type === 'team' && projectFilter.id === p.id}
+                      onClick={() => handleSelect({ type: 'team', id: p.id, name: p.projectName })}
+                      label={p.projectName}
+                    />
+                  ))}
+                </>
+              )}
+              {personalProjects.length === 0 && teamProjects.length === 0 && (
+                <p className="px-2 py-4 text-center text-xs text-text-3">{t('sidebar.filterEmpty')}</p>
+              )}
+            </>
+          )}
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  )
+}
+
+function ProjectFilterItem({
+  icon: Icon,
+  label,
+  selected,
+  onClick,
+}: {
+  icon: React.ComponentType<{ className?: string }>
+  label: string
+  selected: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
+        selected ? 'bg-highlight-soft font-medium text-highlight' : 'text-text-1 hover:bg-bg-layer-3',
+      )}
+    >
+      <Icon className={cn('size-3.5 shrink-0', selected ? 'text-highlight' : 'text-text-3')} />
+      <span className="min-w-0 flex-1 truncate text-left">{label}</span>
+    </button>
   )
 }
 
