@@ -143,6 +143,14 @@ docker run -d --restart=always --name goraven-agent \
   <img src="https://raw.githubusercontent.com/8treenet/blog/refs/heads/master/img/cnd.png" alt="GoRaven 运营面板" width="90%" />
 </p>
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/8treenet/blog/refs/heads/master/img/raven_model_cn.png" alt="GoRaven 模型管理" width="90%" />
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/8treenet/blog/refs/heads/master/img/raven_user_cn.png" alt="GoRaven 用户管理" width="90%" />
+</p>
+
 ---
 
 ## 架构
