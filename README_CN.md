@@ -27,7 +27,7 @@
 </p>
 
 <p align="center">
-  <img src="https://github.com/8treenet/blog/blob/master/img/cn_chat.png?raw=true" alt="GoRaven 聊天界面" width="90%" />
+  <img src="https://raw.githubusercontent.com/8treenet/blog/refs/heads/master/img/cn_chat.png" alt="GoRaven 聊天界面" width="90%" />
 </p>
 
 ---
@@ -140,7 +140,7 @@ docker run -d --restart=always --name goraven-agent \
 ---
 
 <p align="center">
-  <img src="https://github.com/8treenet/blog/blob/master/img/cnd.png?raw=true" alt="GoRaven 运营面板" width="90%" />
+  <img src="https://raw.githubusercontent.com/8treenet/blog/refs/heads/master/img/cnd.png" alt="GoRaven 运营面板" width="90%" />
 </p>
 
 ---
@@ -148,7 +148,7 @@ docker run -d --restart=always --name goraven-agent \
 ## 架构
 
 <p align="center">
-  <img src="https://github.com/8treenet/blog/blob/master/img/architecture.svg?raw=true" alt="GoRaven Architecture" width="90%" />
+  <img src="https://raw.githubusercontent.com/8treenet/blog/refs/heads/master/img/architecture.svg" alt="GoRaven Architecture" width="90%" />
 </p>
 
 ---

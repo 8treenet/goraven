@@ -27,7 +27,7 @@
 </p>
 
 <p align="center">
-  <img src="https://github.com/8treenet/blog/blob/master/img/enchat.png?raw=true" alt="GoRaven Chat" width="90%" />
+  <img src="https://raw.githubusercontent.com/8treenet/blog/refs/heads/master/img/enchat.png" alt="GoRaven Chat" width="90%" />
 </p>
 
 ---
@@ -127,7 +127,7 @@ After startup, visit `http://localhost:8000` and follow the setup wizard to crea
 ---
 
 <p align="center">
-  <img src="https://github.com/8treenet/blog/blob/master/img/end.png?raw=true" alt="GoRaven Dashboard" width="90%" />
+  <img src="https://raw.githubusercontent.com/8treenet/blog/refs/heads/master/img/end.png" alt="GoRaven Dashboard" width="90%" />
 </p>
 
 ---
@@ -135,7 +135,7 @@ After startup, visit `http://localhost:8000` and follow the setup wizard to crea
 ## Architecture
 
 <p align="center">
-  <img src="https://github.com/8treenet/blog/blob/master/img/architecture.svg?raw=true" alt="GoRaven Architecture" width="90%" />
+  <img src="https://raw.githubusercontent.com/8treenet/blog/refs/heads/master/img/architecture.svg" alt="GoRaven Architecture" width="90%" />
 </p>
 
 ---
