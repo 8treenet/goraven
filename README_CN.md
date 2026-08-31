@@ -122,7 +122,7 @@ docker run -d --restart=always --name goraven-agent \
   8treenet/goraven:v0.5.0
 ```
 
-`GORAVEN_CHINA_MIRROR=1` 启用国内加速源（运行时依赖），并自动设置时区为 `Asia/Shanghai`。
+`GORAVEN_CHINA_MIRROR=1` 启用大陆加速源（运行时依赖）并自动设置时区 `-e TZ=Asia/Shanghai`。
 
 
 ### 持久化数据
