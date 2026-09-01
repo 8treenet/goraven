@@ -217,12 +217,17 @@ func (service *ChatService) StartChat(
 		service.DailyStatsRepo.AddToolDailyStats(userId, "skill", name)
 	})
 	mainAgent.SetSkillAccessor(simpleSkillFilter)
-	agent.RegisterRunnerHold(session.SessionId)
+	// CAS 抢占会话构建锁：同会话已有构建中的/活跃的 Runner 时直接拒绝，
+	// 防止并发 StartChat 导致双 Runner 交错写消息。
+	if !agent.HoldRunner(session.SessionId) {
+		return nil, errs.ErrChatSessionActive
+	}
 	service.Worker.DeferRecycle()
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
 				freedom.Logger().Errorf("StartChat panic: %v\n%s", r, debug.Stack())
+				agent.ClearRunnerHold(session.SessionId)
 				if spLocked {
 					service.SharedProjectRepo.UnlockTeamProject(spId)
 				}

@@ -47,6 +47,13 @@ type collectedMsg struct {
 var activeRunners sync.Map
 var runnerHold sync.Map
 
+// HoldRunner 以 CAS 语义注册构建 hold：如果尚无 hold 则注册并返回 true；
+// 已存在（同会话正在构建）则返回 false。用于防止同一会话并发启动多个 Runner。
+func HoldRunner(sessionId string) bool {
+	_, loaded := runnerHold.LoadOrStore(sessionId, true)
+	return !loaded
+}
+
 func RegisterRunnerHold(sessionId string) {
 	runnerHold.Store(sessionId, true)
 }
@@ -96,6 +103,8 @@ type MainRunner struct {
 	runner               *adk.Runner
 	history              []adk.Message
 	sseChan              chan *SSEEvent
+	sseMu                sync.Mutex // 保护 sseChan 的生命周期，防止 send on closed channel
+	sseClosed            bool
 	saveReplyContent     string
 	saveReasoningContent string
 	// 0未开始拉取，1开始拉取
@@ -210,11 +219,32 @@ func (runner *MainRunner) dispatchSSE(event *SSEEvent) {
 		return
 	}
 
+	runner.sendSSE(event)
+}
+
+// sendSSE 将事件写入 SSE 通道。与 closeSSEChan 互斥，杜绝 send on closed channel。
+func (runner *MainRunner) sendSSE(event *SSEEvent) {
+	runner.sseMu.Lock()
+	defer runner.sseMu.Unlock()
+	if runner.sseClosed {
+		return
+	}
 	select {
 	case runner.sseChan <- event:
 	case <-time.After(500 * time.Millisecond):
 		freedom.Logger().Debug("send sse event timeout")
 	}
+}
+
+// closeSSEChan 关闭 SSE 通道，可安全重复调用。
+func (runner *MainRunner) closeSSEChan() {
+	runner.sseMu.Lock()
+	defer runner.sseMu.Unlock()
+	if runner.sseClosed {
+		return
+	}
+	runner.sseClosed = true
+	close(runner.sseChan)
 }
 
 func (runner *MainRunner) sendSSEToolEvent(name, arguments string) (eventTool string) {
@@ -310,6 +340,9 @@ func (runner *MainRunner) Query(runctx context.Context, content string) (err err
 	runner.stop = false
 	runner.fetchStatus = 0
 	runner.Mutex.Unlock()
+	runner.sseMu.Lock()
+	runner.sseClosed = false
+	runner.sseMu.Unlock()
 
 	runner.history, err = runner.getHistory()
 	if err != nil {
@@ -337,7 +370,7 @@ func (runner *MainRunner) Query(runctx context.Context, content string) (err err
 			}
 			runner.Terminat()
 			runner.sendSSEEvent(&SSEEvent{Type: SSEEventTypeEnd})
-			close(runner.sseChan)
+			runner.closeSSEChan()
 			DeleteRunner(runner.mainAgent.param.SessionId())
 			runner.mainAgent.msgRepo.UpdateSessionStatus(runner.mainAgent.param.SessionId(), 0)
 
