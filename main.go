@@ -53,7 +53,7 @@ func installMiddleware(app freedom.Application) {
 	app.InstallMiddleware(middleware.NewRecover())
 	app.InstallMiddleware(middleware.NewTrace("x-request-id"))
 	//One Loger per request New.
-	app.InstallMiddleware(middleware.NewRequestLogger("x-request-id"))
+	app.InstallMiddleware(infra.NewAccessLogger("x-request-id"))
 	//The middleware output of the log line.
 	app.Logger().Handle(middleware.DefaultLogRowHandle)
 
