@@ -125,11 +125,15 @@ func (service *InstallService) Init(req *vo.InstallInitReq) (*vo.InstallInitRsp,
 
 	var userId string
 	var existingUser po.User
+	hashedPassword, err := util.HashPassword(req.Password)
+	if err != nil {
+		return nil, err
+	}
 	err = db.Where("super_admin = ?", 1).First(&existingUser).Error
 	if err == nil {
 		// 超管已存在，更新除 userId 外的所有字段
 		existingUser.Username = req.Username
-		existingUser.Password = util.MD5(req.Password) // 前端传明文，后端做 MD5
+		existingUser.Password = hashedPassword
 		existingUser.Email = req.Email
 		existingUser.Role = 1
 		existingUser.SuperAdmin = 1
@@ -144,7 +148,7 @@ func (service *InstallService) Init(req *vo.InstallInitReq) (*vo.InstallInitRsp,
 		user := &po.User{
 			UserId:     userId,
 			Username:   req.Username,
-			Password:   util.MD5(req.Password), // 前端传明文，后端做 MD5
+			Password:   hashedPassword,
 			Email:      req.Email,
 			Role:       1,
 			SuperAdmin: 1,
