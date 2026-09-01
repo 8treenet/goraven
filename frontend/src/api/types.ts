@@ -364,6 +364,7 @@ export interface DashboardOverview {
 export interface TokenTrendItem {
   date: string
   promptTokens: number
+  promptCachedTokens: number
   completionTokens: number
 }
 

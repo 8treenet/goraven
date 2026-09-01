@@ -373,6 +373,19 @@ function TrendChartPanel({
     return Math.ceil(m / 1000) * 1000
   }, [data])
 
+  const hasCached = useMemo(
+    () => data.some((d) => d.promptCachedTokens > 0),
+    [data],
+  )
+  const chartData = useMemo(
+    () =>
+      data.map((d) => ({
+        ...d,
+        promptTokens: Math.max(0, d.promptTokens - d.promptCachedTokens),
+      })),
+    [data],
+  )
+
   const trendOptions = useMemo(() => [
     { label: t('dashboard.last7d'), value: 7 as TrendDays },
     { label: t('dashboard.last30d'), value: 30 as TrendDays },
@@ -405,7 +418,7 @@ function TrendChartPanel({
       {/* Chart */}
       <div className="mt-3 flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} barCategoryGap="20%">
+          <BarChart data={chartData} barCategoryGap="20%">
             <CartesianGrid
               strokeDasharray="3 3"
               stroke="var(--color-bg-layer-3)"
@@ -426,8 +439,11 @@ function TrendChartPanel({
               tickFormatter={(v: number) => formatNumber(v)}
               width={45}
             />
-            <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--color-bg-hover)' }} />
+            <Tooltip content={<ChartTooltip showTotal />} cursor={{ fill: 'var(--color-bg-hover)' }} />
             <Bar dataKey="promptTokens" name="Prompt" stackId="a" fill={colors[0]} radius={0} />
+            {hasCached && (
+              <Bar dataKey="promptCachedTokens" name={t('dashboard.cachedTokens')} stackId="a" fill={colors[3]} radius={0} />
+            )}
             <Bar dataKey="completionTokens" name="Completion" stackId="a" fill={colors[1]} radius={[3, 3, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>

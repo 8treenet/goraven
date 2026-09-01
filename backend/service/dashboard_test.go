@@ -155,10 +155,15 @@ func TestDashboard_DataFlow(t *testing.T) {
 		t.Fatalf("GetTokenTrend error: %v", err)
 	}
 	t.Logf("GetTokenTrend(%s): %d items", today, len(items))
+	foundCached := false
 	for _, item := range items {
-		t.Logf("  date=%s prompt=%d completion=%d", item.Date, item.PromptTokens, item.CompletionTokens)
-		if item.PromptTokens > 0 || item.CompletionTokens > 0 {
-			t.Logf("  ★ DATA FOUND")
+		if item.PromptCachedTokens > 0 {
+			foundCached = true
 		}
+		t.Logf("  date=%s prompt=%d cached=%d completion=%d",
+			item.Date, item.PromptTokens, item.PromptCachedTokens, item.CompletionTokens)
+	}
+	if !foundCached {
+		t.Fatalf("GetTokenTrend returned no cached prompt tokens, want > 0 after AddDailyStats(..., 20)")
 	}
 }

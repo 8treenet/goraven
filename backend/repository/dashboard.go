@@ -157,13 +157,14 @@ func (repo *DashboardRepository) GetSparkline(dateRange []string) ([]vo.Sparklin
 // GetTokenTrend 查询 Token 消耗趋势（按天聚合 prompt + completion）
 func (repo *DashboardRepository) GetTokenTrend(dateRange []string) ([]vo.TokenTrendItem, error) {
 	var rows []struct {
-		StatDate         string `gorm:"column:stat_date"`
-		PromptTokens     int64  `gorm:"column:prompt_tokens"`
-		CompletionTokens int64  `gorm:"column:completion_tokens"`
+		StatDate           string `gorm:"column:stat_date"`
+		PromptTokens       int64  `gorm:"column:prompt_tokens"`
+		PromptCachedTokens int64  `gorm:"column:prompt_cached_tokens"`
+		CompletionTokens   int64  `gorm:"column:completion_tokens"`
 	}
 	err := repo.db().
 		Model(&po.UserDailyStats{}).
-		Select("stat_date, COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens, COALESCE(SUM(completion_tokens), 0) AS completion_tokens").
+		Select("stat_date, COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens, COALESCE(SUM(prompt_cached_tokens), 0) AS prompt_cached_tokens, COALESCE(SUM(completion_tokens), 0) AS completion_tokens").
 		Where("stat_date IN ?", dateRange).
 		Group("stat_date").
 		Order("stat_date ASC").
@@ -176,9 +177,10 @@ func (repo *DashboardRepository) GetTokenTrend(dateRange []string) ([]vo.TokenTr
 	for i := range rows {
 		ds := rows[i].StatDate
 		dateMap[ds] = &vo.TokenTrendItem{
-			Date:             ds,
-			PromptTokens:     rows[i].PromptTokens,
-			CompletionTokens: rows[i].CompletionTokens,
+			Date:               ds,
+			PromptTokens:       rows[i].PromptTokens,
+			PromptCachedTokens: rows[i].PromptCachedTokens,
+			CompletionTokens:   rows[i].CompletionTokens,
 		}
 	}
 
@@ -494,13 +496,14 @@ func (repo *DashboardRepository) GetUserSparkline(userId string, dateRange []str
 // GetUserTokenTrend 查询指定用户 Token 消耗趋势（按天聚合 prompt + completion）
 func (repo *DashboardRepository) GetUserTokenTrend(userId string, dateRange []string) ([]vo.TokenTrendItem, error) {
 	var rows []struct {
-		StatDate         string `gorm:"column:stat_date"`
-		PromptTokens     int64  `gorm:"column:prompt_tokens"`
-		CompletionTokens int64  `gorm:"column:completion_tokens"`
+		StatDate           string `gorm:"column:stat_date"`
+		PromptTokens       int64  `gorm:"column:prompt_tokens"`
+		PromptCachedTokens int64  `gorm:"column:prompt_cached_tokens"`
+		CompletionTokens   int64  `gorm:"column:completion_tokens"`
 	}
 	err := repo.db().
 		Model(&po.UserDailyStats{}).
-		Select("stat_date, COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens, COALESCE(SUM(completion_tokens), 0) AS completion_tokens").
+		Select("stat_date, COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens, COALESCE(SUM(prompt_cached_tokens), 0) AS prompt_cached_tokens, COALESCE(SUM(completion_tokens), 0) AS completion_tokens").
 		Where("user_id = ? AND stat_date IN ?", userId, dateRange).
 		Group("stat_date").
 		Order("stat_date ASC").
@@ -513,9 +516,10 @@ func (repo *DashboardRepository) GetUserTokenTrend(userId string, dateRange []st
 	for i := range rows {
 		ds := rows[i].StatDate
 		dateMap[ds] = &vo.TokenTrendItem{
-			Date:             ds,
-			PromptTokens:     rows[i].PromptTokens,
-			CompletionTokens: rows[i].CompletionTokens,
+			Date:               ds,
+			PromptTokens:       rows[i].PromptTokens,
+			PromptCachedTokens: rows[i].PromptCachedTokens,
+			CompletionTokens:   rows[i].CompletionTokens,
 		}
 	}
 

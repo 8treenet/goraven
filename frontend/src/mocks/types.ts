@@ -362,6 +362,7 @@ export interface SparklineItem {
 export interface TokenTrendItem {
   date: string
   promptTokens: number
+  promptCachedTokens: number
   completionTokens: number
 }
 

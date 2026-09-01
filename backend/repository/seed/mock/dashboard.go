@@ -55,6 +55,11 @@ func offsetDate(daysAgo int) string {
 	return today.AddDate(0, 0, -daysAgo).Format("2006-01-02")
 }
 
+// mockCachedTokens 返回 mock 缓存 prompt token（prompt 的 90%，模拟高缓存命中率，确定性取值）
+func mockCachedTokens(prompt int64) int64 {
+	return prompt * 90 / 100
+}
+
 // BuildUserDashboard 构建用户仪表盘 mock 数据
 // 日期基于当前时间动态生成，数值固定不变，刷新不跳动
 func BuildUserDashboard() *vo.UserDashboardRsp {
@@ -62,9 +67,10 @@ func BuildUserDashboard() *vo.UserDashboardRsp {
 	tokenTrend := make([]vo.TokenTrendItem, 0, 30)
 	for _, t := range tokenTrendOffsets {
 		tokenTrend = append(tokenTrend, vo.TokenTrendItem{
-			Date:             offsetDate(t.daysAgo),
-			PromptTokens:     t.promptTokens,
-			CompletionTokens: t.completionTokens,
+			Date:               offsetDate(t.daysAgo),
+			PromptTokens:       t.promptTokens,
+			PromptCachedTokens: mockCachedTokens(t.promptTokens),
+			CompletionTokens:   t.completionTokens,
 		})
 	}
 
@@ -328,9 +334,10 @@ func BuildAdminTokenTrend(days int) *vo.TokenTrendRsp {
 				continue
 			}
 			items = append(items, vo.TokenTrendItem{
-				Date:             offsetDate(t.daysAgo),
-				PromptTokens:     t.promptTokens,
-				CompletionTokens: t.completionTokens,
+				Date:               offsetDate(t.daysAgo),
+				PromptTokens:       t.promptTokens,
+				PromptCachedTokens: mockCachedTokens(t.promptTokens),
+				CompletionTokens:   t.completionTokens,
 			})
 		}
 		return &vo.TokenTrendRsp{Items: items}
@@ -355,17 +362,19 @@ func BuildAdminTokenTrend(days int) *vo.TokenTrendRsp {
 	for i := days - 1; i >= len(tokenTrendOffsets); i-- {
 		p := earlyPattern[i%len(earlyPattern)]
 		items = append(items, vo.TokenTrendItem{
-			Date:             offsetDate(i),
-			PromptTokens:     p.prompt,
-			CompletionTokens: p.completion,
+			Date:               offsetDate(i),
+			PromptTokens:       p.prompt,
+			PromptCachedTokens: mockCachedTokens(p.prompt),
+			CompletionTokens:   p.completion,
 		})
 	}
 	// 近 30 天：daysAgo 29→0（tokenTrendOffsets 本身已是旧→新顺序）
 	for _, t := range tokenTrendOffsets {
 		items = append(items, vo.TokenTrendItem{
-			Date:             offsetDate(t.daysAgo),
-			PromptTokens:     t.promptTokens,
-			CompletionTokens: t.completionTokens,
+			Date:               offsetDate(t.daysAgo),
+			PromptTokens:       t.promptTokens,
+			PromptCachedTokens: mockCachedTokens(t.promptTokens),
+			CompletionTokens:   t.completionTokens,
 		})
 	}
 
@@ -438,9 +447,10 @@ func BuildUserTokenTrend(days int) *vo.TokenTrendRsp {
 				continue
 			}
 			items = append(items, vo.TokenTrendItem{
-				Date:             offsetDate(t.daysAgo),
-				PromptTokens:     t.promptTokens,
-				CompletionTokens: t.completionTokens,
+				Date:               offsetDate(t.daysAgo),
+				PromptTokens:       t.promptTokens,
+				PromptCachedTokens: mockCachedTokens(t.promptTokens),
+				CompletionTokens:   t.completionTokens,
 			})
 		}
 		return &vo.TokenTrendRsp{Items: items}
@@ -465,17 +475,19 @@ func BuildUserTokenTrend(days int) *vo.TokenTrendRsp {
 	for i := days - 1; i >= len(tokenTrendOffsets); i-- {
 		p := earlyPattern[i%len(earlyPattern)]
 		items = append(items, vo.TokenTrendItem{
-			Date:             offsetDate(i),
-			PromptTokens:     p.prompt,
-			CompletionTokens: p.completion,
+			Date:               offsetDate(i),
+			PromptTokens:       p.prompt,
+			PromptCachedTokens: mockCachedTokens(p.prompt),
+			CompletionTokens:   p.completion,
 		})
 	}
 	// 近 30 天：daysAgo 29→0（tokenTrendOffsets 本身已是旧→新顺序）
 	for _, t := range tokenTrendOffsets {
 		items = append(items, vo.TokenTrendItem{
-			Date:             offsetDate(t.daysAgo),
-			PromptTokens:     t.promptTokens,
-			CompletionTokens: t.completionTokens,
+			Date:               offsetDate(t.daysAgo),
+			PromptTokens:       t.promptTokens,
+			PromptCachedTokens: mockCachedTokens(t.promptTokens),
+			CompletionTokens:   t.completionTokens,
 		})
 	}
 

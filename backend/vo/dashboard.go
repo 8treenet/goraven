@@ -64,10 +64,12 @@ type SparklineItem struct {
 
 // TokenTrendItem Token 消耗趋势单日数据
 // 按天聚合 prompt + completion token，支撑堆叠柱状图
+// PromptCachedTokens 为 prompt token 中缓存命中的子集
 type TokenTrendItem struct {
-	Date             string `json:"date"`             // 日期 YYYY-MM-DD
-	PromptTokens     int64  `json:"promptTokens"`     // 当日 prompt token
-	CompletionTokens int64  `json:"completionTokens"` // 当日 completion token
+	Date               string `json:"date"`               // 日期 YYYY-MM-DD
+	PromptTokens       int64  `json:"promptTokens"`       // 当日 prompt token
+	PromptCachedTokens int64  `json:"promptCachedTokens"` // 当日缓存命中的 prompt token（prompt 子集）
+	CompletionTokens   int64  `json:"completionTokens"`   // 当日 completion token
 }
 
 // ModelUsageItem 模型使用分布项

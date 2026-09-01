@@ -429,9 +429,11 @@ export function generateTrendData(days: number): TokenTrendItem[] {
     d.setDate(d.getDate() - (days - 1 - i))
     const dateStr = `${d.getMonth() + 1}/${d.getDate()}`
     const base = 3000 + Math.sin(i * 0.3) * 1000 + Math.random() * 2000
+    const prompt = Math.round(base * (0.5 + Math.random() * 0.3))
     return {
       date: dateStr,
-      promptTokens: Math.round(base * (0.5 + Math.random() * 0.3)),
+      promptTokens: prompt,
+      promptCachedTokens: Math.round(prompt * 0.4),
       completionTokens: Math.round(base * (0.2 + Math.random() * 0.3)),
     }
   })
