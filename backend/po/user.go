@@ -30,7 +30,7 @@ const (
 type User struct {
 	UserId     string    `gorm:"primaryKey;column:user_id;type:varchar(64)"`            // 主键唯一ID，与 session.userId 保持一致
 	Username   string    `gorm:"uniqueIndex;column:username;type:varchar(64);not null"` // 登录账号，全局唯一
-	Password   string    `gorm:"column:password;type:varchar(256);not null"`            // 密码（存储 MD5 哈希值，由后端统一哈希，禁止明文）
+	Password   string    `gorm:"column:password;type:varchar(256);not null"`            // 密码（存储 bcrypt 哈希值，由后端统一哈希，禁止明文）
 	Email      string    `gorm:"column:email;type:varchar(128)"`                        // 邮箱
 	Role       uint8     `gorm:"column:role;default:0;not null"`                        // 角色：0普通用户 1管理员
 	SuperAdmin uint8     `gorm:"column:super_admin;default:0;not null"`                 // 超级管理员：0否 1是
