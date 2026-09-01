@@ -267,6 +267,7 @@ export interface SessionDetail extends SessionSimple {
   contextTokens: number
   promptTokensCount: number
   completionTokensCount: number
+  promptCachedTokens: number
   mcpIds: number[]
   skillIds: number[]
   modelName: string

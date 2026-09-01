@@ -394,6 +394,7 @@ const en = {
   'personas.tokenUsage': 'Token Usage',
   'personas.currentContext': 'Current Context',
   'personas.totalPrompt': 'Total Prompt',
+  'personas.totalPromptCached': 'Prompt / Cached',
   'personas.totalCompletion': 'Total Completion',
   'personas.mcpTools': 'MCP Tools',
   'personas.skillSelection': 'Skill Selection',

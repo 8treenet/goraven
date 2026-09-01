@@ -299,6 +299,7 @@ func (service *ChatService) StartChat(
 			AIModelId:             session.AIModelId,
 			PromptTokensCount:     session.PromptTokensCount,
 			CompletionTokensCount: session.CompletionTokensCount,
+			PromptCachedTokens:    session.PromptCachedTokens,
 			McpIds:                mcpIds,
 			SkillIds:              skillIds,
 			LastChatTime:          session.LastChatTime,

@@ -394,6 +394,7 @@ const zh = {
   'personas.tokenUsage': 'Token 使用',
   'personas.currentContext': '当前上下文',
   'personas.totalPrompt': '累计输入',
+  'personas.totalPromptCached': '累计输入/缓存',
   'personas.totalCompletion': '累计输出',
   'personas.mcpTools': 'MCP 工具',
   'personas.skillSelection': '技能选择',

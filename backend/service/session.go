@@ -97,6 +97,7 @@ func (service *SessionService) GetSession(sessionId string, userId string) (*vo.
 		ContextTokens:         session.ContextTokens,
 		PromptTokensCount:     session.PromptTokensCount,
 		CompletionTokensCount: session.CompletionTokensCount,
+		PromptCachedTokens:    session.PromptCachedTokens,
 		McpIds:                parseJSONInts(session.McpIds),
 		SkillIds:              parseJSONInts(session.SkillIds),
 		LastChatTime:          session.LastChatTime,

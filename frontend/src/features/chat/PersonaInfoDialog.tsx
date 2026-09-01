@@ -35,6 +35,7 @@ export function PersonaInfoDialog({
   contextTokens,
   promptTokensCount,
   completionTokensCount,
+  promptCachedTokens,
   open,
   onOpenChange,
 }: {
@@ -43,6 +44,7 @@ export function PersonaInfoDialog({
   contextTokens: number
   promptTokensCount: number
   completionTokensCount: number
+  promptCachedTokens: number
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
@@ -254,8 +256,13 @@ export function PersonaInfoDialog({
                     </span>
                   </div>
                   <div className="flex items-center">
-                    <span className="w-32 shrink-0 text-xs text-text-3">{t('personas.totalPrompt')}</span>
-                    <span className="text-sm text-text-1 tabular-nums">{formatTokensInK(promptTokensCount)}</span>
+                    <span className="w-32 shrink-0 text-xs text-text-3">
+                      {promptCachedTokens > 0 ? t('personas.totalPromptCached') : t('personas.totalPrompt')}
+                    </span>
+                    <span className="text-sm text-text-1 tabular-nums">
+                      {formatTokensInK(promptTokensCount)}
+                      {promptCachedTokens > 0 && ` / ${formatTokensInK(promptCachedTokens)}`}
+                    </span>
                   </div>
                   <div className="flex items-center">
                     <span className="w-32 shrink-0 text-xs text-text-3">{t('personas.totalCompletion')}</span>

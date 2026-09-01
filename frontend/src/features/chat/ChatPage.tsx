@@ -388,6 +388,7 @@ function SessionChat({ sessionId }: { sessionId: string }) {
         contextTokens={sessionDetail?.contextTokens ?? session.contextTokens ?? 0}
         promptTokensCount={sessionDetail?.promptTokensCount ?? session.promptTokensCount ?? 0}
         completionTokensCount={sessionDetail?.completionTokensCount ?? session.completionTokensCount ?? 0}
+        promptCachedTokens={sessionDetail?.promptCachedTokens ?? session.promptCachedTokens ?? 0}
         open={personaDialogOpen}
         onOpenChange={setPersonaDialogOpen}
       />
@@ -398,6 +399,7 @@ function SessionChat({ sessionId }: { sessionId: string }) {
         contextTokens={sessionDetail?.contextTokens ?? session.contextTokens ?? 0}
         promptTokensCount={sessionDetail?.promptTokensCount ?? session.promptTokensCount ?? 0}
         completionTokensCount={sessionDetail?.completionTokensCount ?? session.completionTokensCount ?? 0}
+        promptCachedTokens={sessionDetail?.promptCachedTokens ?? session.promptCachedTokens ?? 0}
         open={modelDialogOpen}
         onOpenChange={setModelDialogOpen}
       />

@@ -593,6 +593,7 @@ function sessionToDetail(s: RichSession): SessionDetail {
     contextTokens: 0,
     promptTokensCount: 0,
     completionTokensCount: 0,
+    promptCachedTokens: 0,
     mcpIds: s.mcpIds,
     skillIds: s.skillIds,
     lastChatTime: s.lastChatTime,

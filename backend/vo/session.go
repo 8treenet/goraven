@@ -52,6 +52,7 @@ type SessionDetailRsp struct {
 	ContextTokens         int                `json:"contextTokens"`                  // 当前上下文长度
 	PromptTokensCount     int                `json:"promptTokensCount" gorm:"column:prompt_tokens_count"`     //累计promptTokensCount
 	CompletionTokensCount int                `json:"completionTokensCount" gorm:"column:completion_tokens_count"` //累计completionTokensCount
+	PromptCachedTokens    int                `json:"promptCachedTokens"`             //累计缓存promptTokens
 	McpIds                []int              `json:"mcpIds"`                         // MCP配置ID列表，有角色时为空
 	SkillIds              []int              `json:"skillIds"`                       // 技能ID列表，有角色时为空
 	LastChatTime          time.Time          `json:"lastChatTime"`                   // 最后聊天时间

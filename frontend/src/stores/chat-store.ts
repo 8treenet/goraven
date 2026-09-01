@@ -99,6 +99,7 @@ export interface Session {
   contextLimit: number
   promptTokensCount: number
   completionTokensCount: number
+  promptCachedTokens: number
 }
 
 /* ============================================
@@ -704,6 +705,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         contextLimit: d.contextLimit,
         promptTokensCount: d.promptTokensCount,
         completionTokensCount: d.completionTokensCount,
+        promptCachedTokens: d.promptCachedTokens,
       } : {
         id: sessionId,
         title: content.slice(0, 50),
@@ -724,6 +726,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         contextLimit: 0,
         promptTokensCount: 0,
         completionTokensCount: 0,
+        promptCachedTokens: 0,
       }
 
       set((s) => ({
@@ -818,6 +821,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         contextLimit: detail.contextLimit,
         promptTokensCount: detail.promptTokensCount,
         completionTokensCount: detail.completionTokensCount,
+        promptCachedTokens: detail.promptCachedTokens,
       }
 
       console.warn(`[loadSession/${id}] Zustand set() — ${messages.length} messages ready`)
@@ -999,6 +1003,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           contextLimit: prev?.contextLimit ?? 0,
           promptTokensCount: prev?.promptTokensCount ?? 0,
           completionTokensCount: prev?.completionTokensCount ?? 0,
+          promptCachedTokens: prev?.promptCachedTokens ?? 0,
         })
       }
 
@@ -1055,6 +1060,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           contextLimit: 0,
           promptTokensCount: 0,
           completionTokensCount: 0,
+          promptCachedTokens: 0,
         })
       }
 

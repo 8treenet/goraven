@@ -124,6 +124,7 @@ export interface SessionDetail {
   contextTokens: number
   promptTokensCount: number
   completionTokensCount: number
+  promptCachedTokens: number
   mcpIds: number[]
   skillIds: number[]
   lastChatTime: string
