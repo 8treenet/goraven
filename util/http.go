@@ -33,9 +33,6 @@ type convHeaderKey struct{}
 // WithConversationHeader 设置供应商请求的会话归并 header：key 为 header 名（如 X-Opencode-Session），value 为逻辑运行 ID。
 // 包装即生效边界：覆盖外层设置；key 或 value 为空表示本次运行不注入。
 func WithConversationHeader(ctx context.Context, key, value string) context.Context {
-	if key == "" || value == "" {
-		return ctx
-	}
 	return context.WithValue(ctx, convHeaderKey{}, convHeader{key: key, value: value})
 }
 
