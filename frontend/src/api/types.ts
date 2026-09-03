@@ -939,7 +939,6 @@ export interface AutomationExecutionItem {
   finishedAt: string
 }
 
-export interface AutomationQARsp {
-  question: string
+export interface AutomationAnswerRsp {
   answer: string
 }

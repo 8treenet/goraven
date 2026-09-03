@@ -66,8 +66,7 @@ type AutomationTaskRequirementReq struct {
 	Requirement string `json:"requirement"` // 需求描述，不可为空
 }
 
-// AutomationQARsp 执行问答对响应（首条用户问题 + 助手最终回复）
-type AutomationQARsp struct {
-	Question string `json:"question"` // 用户问题内容
-	Answer   string `json:"answer"`   // 助手回复内容
+// AutomationAnswerRsp 执行回复响应（助手最终回复内容）
+type AutomationAnswerRsp struct {
+	Answer string `json:"answer"` // 助手回复内容
 }

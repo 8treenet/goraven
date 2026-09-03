@@ -231,8 +231,8 @@ func (service *AutomationService) ListExecutions(taskId int, userId string, req 
 	}, nil
 }
 
-// GetExecutionQA 获取执行记录的问答对（首条用户问题 + 助手最终回复的内容）
-func (service *AutomationService) GetExecutionQA(taskId, executionId int, userId string) (*vo.AutomationQARsp, error) {
+// GetExecutionAnswer 获取执行记录的回复内容（助手最终回复）
+func (service *AutomationService) GetExecutionAnswer(taskId, executionId int, userId string) (*vo.AutomationAnswerRsp, error) {
 	if _, err := service.AutomationTaskRepo.GetTask(taskId, userId); err != nil {
 		return nil, errs.ErrAutomationTaskNotFound
 	}
@@ -245,8 +245,7 @@ func (service *AutomationService) GetExecutionQA(taskId, executionId int, userId
 	if err != nil {
 		return nil, err
 	}
-	question, answer := extractQA(messages)
-	return &vo.AutomationQARsp{Question: question, Answer: answer}, nil
+	return &vo.AutomationAnswerRsp{Answer: extractAnswer(messages)}, nil
 }
 
 // DeleteTask 删除自动化任务（软删除）
@@ -331,18 +330,14 @@ func (service *AutomationService) ExecuteTask(id int, userId string, chat depend
 	return nil
 }
 
-// extractQA 从会话消息中提取第一轮问答对：首条用户消息为问题，最后一条助手消息为回复
-// 自动化任务不支持连续对话，会话内仅一轮用户交互
-func extractQA(messages []po.Message) (question, answer string) {
+// extractAnswer 从会话消息中提取助手最终回复（最后一条助手消息）
+// 自动化任务不支持连续对话，会话内仅一轮用户交互，输入始终为任务需求
+func extractAnswer(messages []po.Message) string {
+	var answer string
 	for _, m := range messages {
-		switch m.RoleType {
-		case po.RoleTypeUser:
-			if question == "" {
-				question = m.Content
-			}
-		case po.RoleTypeAssistant:
+		if m.RoleType == po.RoleTypeAssistant {
 			answer = m.Content
 		}
 	}
-	return
+	return answer
 }

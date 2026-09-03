@@ -1057,7 +1057,7 @@ const zh = {
   'automation.emptyTasks': '暂无自动化任务',
   'automation.emptyTasksHint': '任务由 AI 在对话中创建，创建后按设定时间自动执行',
   'automation.emptyExecutions': '暂无执行记录',
-  'automation.emptyQA': '暂无问答内容',
+  'automation.emptyAnswer': '暂无回复内容',
   'automation.confirmDeleteTitle': '删除自动化任务？',
   'automation.confirmDeleteDesc': '删除后任务「{name}」将从列表中移除，已产生的执行记录不受影响。',
   'automation.doneCannotToggle': '已完成的任务无法变更状态',

@@ -1057,7 +1057,7 @@ const en = {
   'automation.emptyTasks': 'No automation tasks',
   'automation.emptyTasksHint': 'Tasks are created by AI in chat and run automatically on schedule',
   'automation.emptyExecutions': 'No executions yet',
-  'automation.emptyQA': 'No Q&A content',
+  'automation.emptyAnswer': 'No reply content',
   'automation.confirmDeleteTitle': 'Delete automation task?',
   'automation.confirmDeleteDesc': 'Task "{name}" will be removed from the list. Existing execution records are not affected.',
   'automation.doneCannotToggle': 'Completed tasks cannot be toggled',

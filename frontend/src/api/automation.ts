@@ -5,7 +5,7 @@ import type {
   AutomationTaskItem,
   AutomationTaskDetail,
   AutomationExecutionItem,
-  AutomationQARsp,
+  AutomationAnswerRsp,
 } from './types'
 
 /** GET /api/automationTasks?page=1&pageSize=20&status=1（status 不传时不过滤） */
@@ -24,8 +24,8 @@ export function getTaskExecutions(id: number, params?: PaginationParams) {
 }
 
 /** GET /api/automationTasks/:id/executions/:executionId/messages */
-export function getExecutionQA(taskId: number, executionId: number) {
-  return http.get<AutomationQARsp>(`/automationTasks/${taskId}/executions/${executionId}/messages`)
+export function getExecutionAnswer(taskId: number, executionId: number) {
+  return http.get<AutomationAnswerRsp>(`/automationTasks/${taskId}/executions/${executionId}/messages`)
 }
 
 /** DELETE /api/automationTasks/:id */

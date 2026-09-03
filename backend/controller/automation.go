@@ -21,7 +21,7 @@ func init() {
 // GET /api/automationTasks                                        任务分页列表（不含需求描述）
 // GET /api/automationTasks/{id}                                   任务详情（含需求描述）
 // GET /api/automationTasks/{id}/executions                        执行记录分页
-// GET /api/automationTasks/{id}/executions/{executionId}/messages 执行问答对
+// GET /api/automationTasks/{id}/executions/{executionId}/messages 执行回复内容
 // DELETE /api/automationTasks/{id}                                删除任务（软删除）
 // PUT /api/automationTasks/{id}/status                            启用/停用任务
 // PUT /api/automationTasks/{id}/requirement                       修改任务需求描述
@@ -37,7 +37,7 @@ func (controller *AutomationController) BeforeActivation(b freedom.BeforeActivat
 	b.Handle("GET", "/", "ListTasks")
 	b.Handle("GET", "/{id:int}", "GetTask")
 	b.Handle("GET", "/{id:int}/executions", "ListExecutions")
-	b.Handle("GET", "/{id:int}/executions/{executionId:int}/messages", "GetExecutionMessages")
+	b.Handle("GET", "/{id:int}/executions/{executionId:int}/messages", "GetExecutionAnswer")
 	b.Handle("DELETE", "/{id:int}", "DeleteTask")
 	b.Handle("PUT", "/{id:int}/status", "UpdateTaskStatus")
 	b.Handle("PUT", "/{id:int}/requirement", "UpdateTaskRequirement")
@@ -94,13 +94,13 @@ func (controller *AutomationController) ListExecutions(id int) freedom.Result {
 	return &infra.JSONResponse{Object: rsp}
 }
 
-// GetExecutionMessages 获取执行记录的问答对 GET /api/automationTasks/:id/executions/:executionId/messages
-func (controller *AutomationController) GetExecutionMessages(id int, executionId int) freedom.Result {
+// GetExecutionAnswer 获取执行记录的回复内容 GET /api/automationTasks/:id/executions/:executionId/messages
+func (controller *AutomationController) GetExecutionAnswer(id int, executionId int) freedom.Result {
 	if config.Get().Behavior.PreviewUser != "" {
-		return &infra.JSONResponse{Object: mock.BuildAutomationQA(id, executionId)}
+		return &infra.JSONResponse{Object: mock.BuildAutomationAnswer(id, executionId)}
 	}
 	userId := controller.Request.GetUserId()
-	rsp, err := controller.AutomationSev.GetExecutionQA(id, executionId, userId)
+	rsp, err := controller.AutomationSev.GetExecutionAnswer(id, executionId, userId)
 	if err != nil {
 		return &infra.JSONResponse{Error: err}
 	}

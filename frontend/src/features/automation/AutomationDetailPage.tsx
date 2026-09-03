@@ -13,11 +13,11 @@ import {
 import { useT, t as translate } from '@/i18n'
 import { cn } from '@/lib/utils'
 import { AutomationStatus } from '@/api/types'
-import type { AutomationTaskDetail, AutomationExecutionItem, AutomationQARsp } from '@/api/types'
+import type { AutomationTaskDetail, AutomationExecutionItem, AutomationAnswerRsp } from '@/api/types'
 import {
   getAutomationTask,
   getTaskExecutions,
-  getExecutionQA,
+  getExecutionAnswer,
   updateTaskStatus,
   updateTaskRequirement,
   deleteTask,
@@ -47,7 +47,7 @@ export function Component() {
   const [execTotalPage, setExecTotalPage] = useState(1)
   const [execTotalCount, setExecTotalCount] = useState(0)
   const [expandedId, setExpandedId] = useState<number | null>(null)
-  const [qaCache, setQaCache] = useState<Record<number, AutomationQARsp>>({})
+  const [qaCache, setQaCache] = useState<Record<number, AutomationAnswerRsp>>({})
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [reqEditOpen, setReqEditOpen] = useState(false)
@@ -85,7 +85,7 @@ export function Component() {
     setExpandedId(exec.id)
     if (!qaCache[exec.id]) {
       try {
-        const qa = await getExecutionQA(taskId, exec.id)
+        const qa = await getExecutionAnswer(taskId, exec.id)
         setQaCache((prev) => ({ ...prev, [exec.id]: qa }))
       } catch {
         toast.error(translate('common.loadFailed'))
@@ -278,30 +278,18 @@ export function Component() {
                         </span>
                       </button>
                       {expanded && (
-                        <div className="mt-2.5 flex flex-col gap-2 border-t border-dashed border-border-custom pt-2.5">
+                        <div className="mt-2.5 border-t border-dashed border-border-custom pt-2.5">
                           {!qa ? (
-                            <span className="py-2 text-center text-xs text-text-3">{t('common.loading')}</span>
+                            <span className="block py-2 text-center text-xs text-text-3">{t('common.loading')}</span>
+                          ) : qa.answer ? (
+                            <Markdown
+                              mode="static"
+                              className="text-[12.5px] leading-relaxed text-text-2 [&_p]:m-0 [&_p]:whitespace-pre-wrap"
+                            >
+                              {qa.answer}
+                            </Markdown>
                           ) : (
-                            <>
-                              <div className="max-w-[92%] self-end rounded-lg bg-interactive-soft px-2.5 py-1.5 text-[12.5px] leading-relaxed text-text-1">
-                                {qa.question ? (
-                                  <Markdown mode="static" className="[&_p]:m-0 [&_p]:whitespace-pre-wrap">
-                                    {qa.question}
-                                  </Markdown>
-                                ) : (
-                                  t('automation.emptyQA')
-                                )}
-                              </div>
-                              <div className="max-w-[92%] self-start rounded-lg border border-border-custom bg-bg-layer-1 px-2.5 py-1.5 text-[12.5px] leading-relaxed text-text-2">
-                                {qa.answer ? (
-                                  <Markdown mode="static" className="[&_p]:m-0 [&_p]:whitespace-pre-wrap">
-                                    {qa.answer}
-                                  </Markdown>
-                                ) : (
-                                  t('automation.emptyQA')
-                                )}
-                              </div>
-                            </>
+                            <p className="py-2 text-center text-xs text-text-3">{t('automation.emptyAnswer')}</p>
                           )}
                         </div>
                       )}

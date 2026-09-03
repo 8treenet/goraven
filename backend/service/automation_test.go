@@ -7,12 +7,11 @@ import (
 	"goraven/backend/vo"
 )
 
-func TestExtractQA(t *testing.T) {
+func TestExtractAnswer(t *testing.T) {
 	cases := []struct {
-		name         string
-		messages     []po.Message
-		wantQuestion string
-		wantAnswer   string
+		name       string
+		messages   []po.Message
+		wantAnswer string
 	}{
 		{
 			name: "常规问答对",
@@ -20,8 +19,7 @@ func TestExtractQA(t *testing.T) {
 				{RoleType: po.RoleTypeUser, Content: "每天早上整理昨日新闻"},
 				{RoleType: po.RoleTypeAssistant, Content: "已为你整理完成。"},
 			},
-			wantQuestion: "每天早上整理昨日新闻",
-			wantAnswer:   "已为你整理完成。",
+			wantAnswer: "已为你整理完成。",
 		},
 		{
 			name: "多条助手消息取最后一条",
@@ -30,8 +28,7 @@ func TestExtractQA(t *testing.T) {
 				{RoleType: po.RoleTypeAssistant, Content: "中间过程"},
 				{RoleType: po.RoleTypeAssistant, Content: "最终回复"},
 			},
-			wantQuestion: "问题",
-			wantAnswer:   "最终回复",
+			wantAnswer: "最终回复",
 		},
 		{
 			name: "忽略 summary 等其他角色",
@@ -40,39 +37,32 @@ func TestExtractQA(t *testing.T) {
 				{RoleType: po.RoleTypeUser, Content: "问题"},
 				{RoleType: po.RoleTypeAssistant, Content: "回复"},
 			},
-			wantQuestion: "问题",
-			wantAnswer:   "回复",
+			wantAnswer: "回复",
 		},
 		{
-			name:         "空消息列表",
-			messages:     []po.Message{},
-			wantQuestion: "",
-			wantAnswer:   "",
+			name:       "空消息列表",
+			messages:   []po.Message{},
+			wantAnswer: "",
 		},
 		{
 			name: "缺少助手回复",
 			messages: []po.Message{
 				{RoleType: po.RoleTypeUser, Content: "问题"},
 			},
-			wantQuestion: "问题",
-			wantAnswer:   "",
+			wantAnswer: "",
 		},
 		{
 			name: "缺少用户问题",
 			messages: []po.Message{
 				{RoleType: po.RoleTypeAssistant, Content: "回复"},
 			},
-			wantQuestion: "",
-			wantAnswer:   "回复",
+			wantAnswer: "回复",
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			question, answer := extractQA(c.messages)
-			if question != c.wantQuestion {
-				t.Errorf("question = %q, want %q", question, c.wantQuestion)
-			}
+			answer := extractAnswer(c.messages)
 			if answer != c.wantAnswer {
 				t.Errorf("answer = %q, want %q", answer, c.wantAnswer)
 			}

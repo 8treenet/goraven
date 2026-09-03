@@ -2,7 +2,6 @@ package mock
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"goraven/backend/infra"
@@ -12,7 +11,7 @@ import (
 )
 
 // 自动化任务演示数据（PreviewUser 在线展示用）
-// 任务/需求/问答文案迁移自前端 mocks/automation.ts；
+// 任务/需求/回复文案迁移自前端 mocks/automation.ts；
 // 模型/角色/MCP/技能的 ID 与名称对齐 preview 种子库（02/03 SQL），
 // 与站点其它演示页面（仪表盘排行等）保持一致。
 // 文案区分中英文：按 config system.language 取值（bilingual），
@@ -193,49 +192,32 @@ func buildAutomationTaskItem(t automationTaskMock) vo.AutomationTaskItem {
 	}
 }
 
-// automationQAMock 精写的执行问答内容
-type automationQAMock struct {
-	question bilingual
-	answer   bilingual
+// automationAnswerMock 精写的执行回复内容
+type automationAnswerMock struct {
+	answer bilingual
 }
 
-// automationQAFixed 固定问答表，key 为 "taskId_executionId"
-var automationQAFixed = map[string]automationQAMock{
+// automationAnswerFixed 固定回复表，key 为 "taskId_executionId"
+var automationAnswerFixed = map[string]automationAnswerMock{
 	"1_128": {
-		question: bilingual{
-			zh: "汇总昨日项目进展、今日计划与风险项，生成站会纪要",
-			en: "Summarize yesterday's project progress, today's plan, and risk items; generate standup minutes",
-		},
 		answer: bilingual{
 			zh: "【站会纪要】昨日：完成报表模块联调，接口通过率 100%；今日：启动数据看板开发，预计本周五提测；风险：MCP 数据库连接偶发超时，已反馈管理员跟进。",
 			en: "[Standup Minutes] Yesterday: completed report module integration testing with 100% API pass rate; Today: started data dashboard development, QA submission expected Friday; Risks: occasional MCP database connection timeouts, reported to admin for follow-up.",
 		},
 	},
 	"1_127": {
-		question: bilingual{
-			zh: "汇总昨日项目进展、今日计划与风险项，生成站会纪要",
-			en: "Summarize yesterday's project progress, today's plan, and risk items; generate standup minutes",
-		},
 		answer: bilingual{
 			zh: "【站会纪要】昨日：修复权限模块越权漏洞并发布；今日：推进报表导出功能，下午评审数据模型；风险：无未关闭风险项。",
 			en: "[Standup Minutes] Yesterday: fixed the privilege escalation vulnerability in the permission module and released; Today: advancing report export feature, data model review this afternoon; Risks: no open risk items.",
 		},
 	},
 	"2_212": {
-		question: bilingual{
-			zh: "审查本周代码变更，输出风险点清单",
-			en: "Review this week's code changes and produce a risk list",
-		},
 		answer: bilingual{
 			zh: "【审查报告】本周共 14 个 PR 合并。风险：订单服务存在一处 N+1 查询，建议加索引；工具库新增全局单例未做并发保护，已提单跟进。",
 			en: "[Review Report] 14 PRs merged this week. Risks: an N+1 query in the order service, index recommended; a new global singleton in the utility library lacks concurrency protection, ticket filed for follow-up.",
 		},
 	},
 	"4_401": {
-		question: bilingual{
-			zh: "汇总本季度经营数据，生成经营分析报告",
-			en: "Aggregate this quarter's business data and generate the business analysis report",
-		},
 		answer: bilingual{
 			zh: "【经营报告】Q3 收入环比增长 12.4%，成本率下降 2.1 个百分点；活跃用户增长 8.7%。目标完成度 92%，详见报告附件。",
 			en: "[Business Report] Q3 revenue grew 12.4% QoQ and cost ratio dropped 2.1 percentage points; active users grew 8.7%. Goal completion at 92%, see the report attachment for details.",
@@ -245,8 +227,8 @@ var automationQAFixed = map[string]automationQAMock{
 
 // automationFallbackAnswer 兜底回复模板（%s 为任务标题）
 var automationFallbackAnswer = bilingual{
-	zh: "已执行任务「%s」，执行结果已生成，可查看上方问答对了解本次输出。",
-	en: "Task \"%s\" has been executed and the results are ready. Check the Q&A above for this run's output.",
+	zh: "已执行任务「%s」，执行结果已生成，可展开执行记录查看本次输出。",
+	en: "Task \"%s\" has been executed and the results are ready. Expand the execution record to view this run's output.",
 }
 
 // BuildAutomationTasks 构建自动化任务分页列表 mock 数据，status 非 nil 时按状态过滤
@@ -294,31 +276,19 @@ func BuildAutomationExecutions(taskId, page, pageSize int) *infra.PageResponse {
 	return paginateAutomation(items, page, pageSize)
 }
 
-// BuildAutomationQA 构建执行问答对 mock 数据：优先取精写内容，
-// 其余执行记录按需求首句 + 通用回复模板生成
-func BuildAutomationQA(taskId, executionId int) *vo.AutomationQARsp {
-	if qa, ok := automationQAFixed[fmt.Sprintf("%d_%d", taskId, executionId)]; ok {
-		return &vo.AutomationQARsp{Question: qa.question.s(), Answer: qa.answer.s()}
+// BuildAutomationAnswer 构建执行回复 mock 数据：优先取精写内容，
+// 其余执行记录按通用回复模板生成
+func BuildAutomationAnswer(taskId, executionId int) *vo.AutomationAnswerRsp {
+	if ans, ok := automationAnswerFixed[fmt.Sprintf("%d_%d", taskId, executionId)]; ok {
+		return &vo.AutomationAnswerRsp{Answer: ans.answer.s()}
 	}
 	spec, ok := findAutomationTask(taskId)
 	if !ok {
-		return &vo.AutomationQARsp{}
+		return &vo.AutomationAnswerRsp{}
 	}
-	return &vo.AutomationQARsp{
-		Question: automationFirstSentence(spec.requirement),
-		Answer:   fmt.Sprintf(automationFallbackAnswer.s(), spec.title.s()),
+	return &vo.AutomationAnswerRsp{
+		Answer: fmt.Sprintf(automationFallbackAnswer.s(), spec.title.s()),
 	}
-}
-
-// automationFirstSentence 取需求描述的首句作为兜底问答的问题
-// 中文按句号切分，英文按 ". " 切分
-func automationFirstSentence(requirement bilingual) string {
-	if config.Get().GetLanguage() == "en" {
-		q, _, _ := strings.Cut(requirement.s(), ". ")
-		return q
-	}
-	q, _, _ := strings.Cut(requirement.s(), "。")
-	return q
 }
 
 // findAutomationTask 按 ID 查找演示任务配置

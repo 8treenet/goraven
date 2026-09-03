@@ -142,31 +142,27 @@ func TestBuildAutomationExecutions(t *testing.T) {
 	}
 }
 
-// TestBuildAutomationQA 校验问答对：精写表命中、兜底生成与未知任务。
-func TestBuildAutomationQA(t *testing.T) {
+// TestBuildAutomationAnswer 校验执行回复：精写表命中、兜底生成与未知任务。
+func TestBuildAutomationAnswer(t *testing.T) {
 	// 精写内容
-	qa := BuildAutomationQA(1, 128)
-	if qa.Question != "汇总昨日项目进展、今日计划与风险项，生成站会纪要" {
-		t.Errorf("fixed question = %q", qa.Question)
-	}
-	if qa.Answer == "" {
-		t.Error("fixed answer should not be empty")
+	ans := BuildAutomationAnswer(1, 128)
+	if !strings.HasPrefix(ans.Answer, "【站会纪要】") {
+		t.Errorf("fixed answer = %q", ans.Answer)
 	}
 
-	// 兜底：问题取需求首句
-	qa = BuildAutomationQA(1, 105)
-	wantQuestion := "每天早上 9 点汇总昨日项目进展、今日计划与风险项，整理成结构化站会纪要，并通过邮件发送给团队成员"
-	if qa.Question != wantQuestion {
-		t.Errorf("fallback question = %q", qa.Question)
+	// 兜底：回复模板含任务标题
+	ans = BuildAutomationAnswer(1, 105)
+	if !strings.Contains(ans.Answer, "每日站会总结") {
+		t.Errorf("fallback answer = %q", ans.Answer)
 	}
-	if qa.Answer == "" {
+	if ans.Answer == "" {
 		t.Error("fallback answer should not be empty")
 	}
 
 	// 未知任务返回空结构
-	qa = BuildAutomationQA(99, 1)
-	if qa.Question != "" || qa.Answer != "" {
-		t.Errorf("unknown task should return empty QA, got %+v", qa)
+	ans = BuildAutomationAnswer(99, 1)
+	if ans.Answer != "" {
+		t.Errorf("unknown task should return empty answer, got %+v", ans)
 	}
 }
 
@@ -193,24 +189,17 @@ func TestBuildAutomationEn(t *testing.T) {
 		t.Errorf("en Requirement = %q", detail.Requirement)
 	}
 
-	// 精写问答
-	qa := BuildAutomationQA(1, 128)
-	if qa.Question != "Summarize yesterday's project progress, today's plan, and risk items; generate standup minutes" {
-		t.Errorf("en fixed question = %q", qa.Question)
-	}
-	if !strings.HasPrefix(qa.Answer, "[Standup Minutes]") {
-		t.Errorf("en fixed answer = %q", qa.Answer)
+	// 精写回复
+	ans := BuildAutomationAnswer(1, 128)
+	if !strings.HasPrefix(ans.Answer, "[Standup Minutes]") {
+		t.Errorf("en fixed answer = %q", ans.Answer)
 	}
 
-	// 兜底：英文按 ". " 切需求首句，回复模板为英文
-	qa = BuildAutomationQA(1, 105)
-	wantQuestion := "Every day at 9 AM, summarize yesterday's project progress, today's plan, and risk items into structured standup minutes, and email them to team members"
-	if qa.Question != wantQuestion {
-		t.Errorf("en fallback question = %q", qa.Question)
-	}
+	// 兜底：回复模板为英文
+	ans = BuildAutomationAnswer(1, 105)
 	wantAnswer := `Task "Daily Standup Summary" has been executed`
-	if !strings.HasPrefix(qa.Answer, wantAnswer) {
-		t.Errorf("en fallback answer = %q", qa.Answer)
+	if !strings.HasPrefix(ans.Answer, wantAnswer) {
+		t.Errorf("en fallback answer = %q", ans.Answer)
 	}
 }
 
