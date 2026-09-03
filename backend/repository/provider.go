@@ -44,25 +44,26 @@ func (repo *ProviderRepository) PaginateModels(req *vo.AdminModelListReq) ([]vo.
 	items := make([]vo.AdminModelItem, 0, len(models))
 	for _, m := range models {
 		items = append(items, vo.AdminModelItem{
-			AIModelId:           m.AIModelId,
-			ProviderDisplayName: m.ProviderDisplayName,
-			DisplayName:         m.DisplayName,
-			ProviderID:          m.ProviderID,
-			ModelName:           m.ModelName,
-			Icon:                m.Icon,
-			APIKeyMasked:        maskAPIKey(m.APIKey),
-			BaseURL:             m.BaseURL,
-			ProxyURL:            m.ProxyURL,
-			ContextLen:          m.ContextLen,
-			ExtraFields:         m.ExtraFields,
-			IsDefault:           m.IsDefault,
-		IsFlash:             m.IsFlash,
-		IsVisual:            m.IsVisual,
-			Status:              m.Status,
-			Access:              m.Access,
-			Remark:              m.Remark,
-			Created:             m.Created,
-			Updated:             m.Updated,
+			AIModelId:             m.AIModelId,
+			ProviderDisplayName:   m.ProviderDisplayName,
+			DisplayName:           m.DisplayName,
+			ProviderID:            m.ProviderID,
+			ModelName:             m.ModelName,
+			Icon:                  m.Icon,
+			APIKeyMasked:          maskAPIKey(m.APIKey),
+			BaseURL:               m.BaseURL,
+			ProxyURL:              m.ProxyURL,
+			ConversationHeaderKey: m.ConversationHeaderKey,
+			ContextLen:            m.ContextLen,
+			ExtraFields:           m.ExtraFields,
+			IsDefault:             m.IsDefault,
+			IsFlash:               m.IsFlash,
+			IsVisual:              m.IsVisual,
+			Status:                m.Status,
+			Access:                m.Access,
+			Remark:                m.Remark,
+			Created:               m.Created,
+			Updated:               m.Updated,
 		})
 	}
 
@@ -253,7 +254,14 @@ func (repo *ProviderRepository) createChatModelFromPO(model *po.AIModel, reasoni
 		pv.SetProxy(model.ProxyURL)
 	}
 
-	return pv.CreateModel(model.ModelName, reasoning, model.ContextLenInTokens())
+	result, err := pv.CreateModel(model.ModelName, reasoning, model.ContextLenInTokens())
+	if err != nil {
+		return nil, err
+	}
+
+	// 会话归并 header 名，按模型行配置，空则不注入
+	result.SetConversationHeaderKey(model.ConversationHeaderKey)
+	return result, nil
 }
 
 // CreateChatModelFromID 根据模型ID创建聊天模型，支持控制推理模式

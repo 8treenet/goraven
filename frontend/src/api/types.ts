@@ -423,6 +423,7 @@ export interface AdminModelItem {
   apiKeyMasked: string
   baseUrl: string
   proxyUrl: string
+  conversationHeaderKey: string
   contextLen: number
   extraFields: string
   isDefault: number
@@ -445,6 +446,7 @@ export interface AdminModelDetail {
   apiKey: string
   baseUrl: string
   proxyUrl: string
+  conversationHeaderKey: string
   contextLen: number
   extraFields: string
   isDefault: number

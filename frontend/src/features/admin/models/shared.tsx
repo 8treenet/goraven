@@ -32,6 +32,7 @@ export interface ModelFormData {
   apiKey: string
   baseUrl: string
   proxyUrl: string
+  conversationHeaderKey: string
   contextLen: number
   extraFields: string
   isDefault: number
@@ -48,6 +49,7 @@ export interface ModelEditFormData {
   apiKey: string
   baseUrl: string
   proxyUrl: string
+  conversationHeaderKey: string
   contextLen: number
   extraFields: string
   isDefault: number

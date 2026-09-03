@@ -17,6 +17,7 @@ export function createModel(data: {
   apiKey?: string
   baseUrl?: string
   proxyUrl?: string
+  conversationHeaderKey?: string
   contextLen?: number
   extraFields?: string
   isDefault?: number
@@ -38,6 +39,7 @@ export function updateModel(
     apiKey?: string
     baseUrl?: string
     proxyUrl?: string
+    conversationHeaderKey?: string
     contextLen?: number
     extraFields?: string
     isDefault?: number

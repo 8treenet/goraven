@@ -229,10 +229,10 @@ func (service *ChatService) StartChat(
 			}
 		}()
 
-		// 设置 Flash 模型（复用默认模型，reasoning=false）
-		flashModel, cerr := service.ModelRepo.GetDefaultChatModel()
+		// 设置 Flash 模型（优先 isFlash=1 > 会话模型 > 默认模型，reasoning=false）
+		flashModel, cerr := service.ModelRepo.GetFlashChatModel(session.AIModelId)
 		if cerr != nil {
-			freedom.Logger().Warnf("GetDefaultChatModel for flash: %v", cerr)
+			freedom.Logger().Warnf("GetFlashChatModel for flash: %v", cerr)
 			flashModel = chatModel
 		}
 		mainAgent.SetFlashModel(flashModel)

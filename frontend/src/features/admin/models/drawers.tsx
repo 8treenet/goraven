@@ -40,6 +40,7 @@ export function AddModelDrawer({
     apiKey: '',
     baseUrl: '',
     proxyUrl: '',
+    conversationHeaderKey: '',
     contextLen: 200,
     extraFields: '',
     isDefault: 0,
@@ -63,6 +64,7 @@ export function AddModelDrawer({
         apiKey: '',
         baseUrl: '',
         proxyUrl: '',
+        conversationHeaderKey: '',
         contextLen: 200,
         extraFields: '',
         isDefault: 0,
@@ -87,6 +89,7 @@ export function AddModelDrawer({
         apiKey: '',
         baseUrl: duplicateModel.baseUrl,
         proxyUrl: duplicateModel.proxyUrl,
+        conversationHeaderKey: '',
         contextLen: duplicateModel.contextLen,
         extraFields: '',
         isDefault: 0,
@@ -105,6 +108,7 @@ export function AddModelDrawer({
             ...f,
             apiKey: detail.apiKey || '',
             extraFields: detail.extraFields || '',
+            conversationHeaderKey: detail.conversationHeaderKey || '',
           }))
         })
         .catch(() => {
@@ -124,6 +128,7 @@ export function AddModelDrawer({
         apiKey: '',
         baseUrl: '',
         proxyUrl: '',
+        conversationHeaderKey: '',
         contextLen: 200,
         extraFields: '',
         isDefault: 0,
@@ -311,6 +316,18 @@ export function AddModelDrawer({
           />
         </div>
 
+        {/* conversation header key */}
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs text-text-2">{t('adminModels.conversationHeaderKey')}</Label>
+          <Input
+            value={form.conversationHeaderKey}
+            onChange={(e) => setForm((f) => ({ ...f, conversationHeaderKey: e.target.value }))}
+            placeholder={`X-Opencode-Session（${t('common.optional')}）`}
+            className="h-8 text-sm font-mono"
+          />
+          <p className="text-xs text-text-muted">{t('adminModels.conversationHeaderKeyHint')}</p>
+        </div>
+
         {/* flags */}
         <div className="flex flex-col gap-2">
           <Label className="text-xs text-text-2">{t('adminModels.modelLabels')}</Label>
@@ -419,6 +436,7 @@ export function EditModelDrawer({
     apiKey: '',
     baseUrl: '',
     proxyUrl: '',
+    conversationHeaderKey: '',
     contextLen: 200,
     extraFields: '',
     isDefault: 0,
@@ -443,6 +461,7 @@ export function EditModelDrawer({
         apiKey: '',
         baseUrl: model.baseUrl,
         proxyUrl: model.proxyUrl,
+        conversationHeaderKey: model.conversationHeaderKey || '',
         contextLen: model.contextLen,
         extraFields: '',
         isDefault: model.isDefault,
@@ -463,6 +482,7 @@ export function EditModelDrawer({
             ...f,
             apiKey: detail.apiKey || '',
             extraFields: detail.extraFields || '',
+            conversationHeaderKey: detail.conversationHeaderKey || '',
           }))
         })
         .catch(() => {
@@ -491,6 +511,9 @@ export function EditModelDrawer({
     const submitData: any = { ...form }
     if (!connectionChanged) {
       delete submitData.apiKey
+    }
+    if (submitData.conversationHeaderKey === (model.conversationHeaderKey || '')) {
+      delete submitData.conversationHeaderKey
     }
     onSave(submitData)
       .then(() => {
@@ -625,6 +648,18 @@ export function EditModelDrawer({
             onChange={(e) => setForm((f) => ({ ...f, contextLen: Number(e.target.value) || 0 }))}
             className="h-8 text-sm"
           />
+        </div>
+
+        {/* conversation header key */}
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs text-text-2">{t('adminModels.conversationHeaderKey')}</Label>
+          <Input
+            value={form.conversationHeaderKey}
+            onChange={(e) => setForm((f) => ({ ...f, conversationHeaderKey: e.target.value }))}
+            placeholder={`X-Opencode-Session（${t('common.optional')}）`}
+            className="h-8 text-sm font-mono"
+          />
+          <p className="text-xs text-text-muted">{t('adminModels.conversationHeaderKeyHint')}</p>
         </div>
 
         {/* flags */}

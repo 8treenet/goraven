@@ -24,6 +24,32 @@ var (
 	proxyClientsMutex sync.Mutex
 )
 
+type convHeader struct {
+	key, value string
+}
+
+type convHeaderKey struct{}
+
+// WithConversationHeader 设置供应商请求的会话归并 header：key 为 header 名（如 X-Opencode-Session），value 为逻辑运行 ID。
+// 包装即生效边界：覆盖外层设置；key 或 value 为空表示本次运行不注入。
+func WithConversationHeader(ctx context.Context, key, value string) context.Context {
+	if key == "" || value == "" {
+		return ctx
+	}
+	return context.WithValue(ctx, convHeaderKey{}, convHeader{key: key, value: value})
+}
+
+// ConversationHeaderFromCtx 读取会话归并 header 的 key/value，未设置时返回空串
+func ConversationHeaderFromCtx(ctx context.Context) (key, value string) {
+	if ctx == nil {
+		return "", ""
+	}
+	if h, ok := ctx.Value(convHeaderKey{}).(convHeader); ok {
+		return h.key, h.value
+	}
+	return "", ""
+}
+
 func GetGoRavenHTTPClient() *http.Client {
 	return goravenHTTPClient
 }
@@ -78,6 +104,10 @@ func (t *goravenTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	req.Header.Set("HTTP-Referer", "https://goraven.dev")
 	req.Header.Set("X-Title", "GoRaven")
 	req.Header.Set("X-OpenRouter-Title", "GoRaven")
+	// 供应商会话归并 header（如 X-Opencode-Session），header 名由 AgentParam 配置，空则不注入
+	if key, value := ConversationHeaderFromCtx(req.Context()); key != "" && value != "" {
+		req.Header.Set(key, value)
+	}
 	if !t.debug {
 		return t.Transport.RoundTrip(req)
 	}

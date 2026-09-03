@@ -90,9 +90,9 @@ func (service *AIModelService) ListEnabledModels(userId string) ([]vo.UserModelI
 			Icon:                m.Icon,
 			ContextLen:          m.ContextLen,
 			IsDefault:           m.IsDefault,
-		IsFlash:             m.IsFlash,
-		IsVisual:            m.IsVisual,
-	})
+			IsFlash:             m.IsFlash,
+			IsVisual:            m.IsVisual,
+		})
 	}
 	return items, nil
 }
@@ -151,21 +151,22 @@ func (svc *AIModelService) CreateModel(req *vo.AdminCreateModelReq) error {
 	}
 
 	model := &po.AIModel{
-		ProviderDisplayName: req.ProviderDisplayName,
-		DisplayName:         displayName,
-		ProviderID:          req.ProviderID,
-		ModelName:           req.ModelName,
-		Icon:                req.Icon,
-		APIKey:              req.APIKey,
-		BaseURL:             baseURL,
-		ExtraFields:         req.ExtraFields,
-		ProxyURL:            req.ProxyURL,
-		ContextLen:          contextLen,
-		IsDefault:           req.IsDefault,
-		IsFlash:             req.IsFlash,
-		IsVisual:            req.IsVisual,
-		Status:              1,
-		Remark:              req.Remark,
+		ProviderDisplayName:   req.ProviderDisplayName,
+		DisplayName:           displayName,
+		ProviderID:            req.ProviderID,
+		ModelName:             req.ModelName,
+		Icon:                  req.Icon,
+		APIKey:                req.APIKey,
+		BaseURL:               baseURL,
+		ExtraFields:           req.ExtraFields,
+		ProxyURL:              req.ProxyURL,
+		ConversationHeaderKey: req.ConversationHeaderKey,
+		ContextLen:            contextLen,
+		IsDefault:             req.IsDefault,
+		IsFlash:               req.IsFlash,
+		IsVisual:              req.IsVisual,
+		Status:                1,
+		Remark:                req.Remark,
 	}
 
 	if err := svc.ModelRepo.CreateModel(model); err != nil {
@@ -224,6 +225,9 @@ func (svc *AIModelService) UpdateModel(id int, req *vo.AdminUpdateModelReq) erro
 		if req.ProxyURL != existing.ProxyURL {
 			needTest = true
 		}
+	}
+	if req.ConversationHeaderKey != nil {
+		updates["conversation_header_key"] = *req.ConversationHeaderKey
 	}
 	if req.ContextLen > 0 {
 		updates["context_len"] = req.ContextLen
@@ -333,25 +337,26 @@ func (svc *AIModelService) GetModelDetail(id int) (*vo.AdminModelDetailRsp, erro
 		return nil, errs.ErrModelNotFound
 	}
 	return &vo.AdminModelDetailRsp{
-		AIModelId:           model.AIModelId,
-		ProviderDisplayName: model.ProviderDisplayName,
-		DisplayName:         model.DisplayName,
-		ProviderID:          model.ProviderID,
-		ModelName:           model.ModelName,
-		Icon:                model.Icon,
-		APIKey:              model.APIKey,
-		BaseURL:             model.BaseURL,
-		ExtraFields:         model.ExtraFields,
-		ProxyURL:            model.ProxyURL,
-		ContextLen:          model.ContextLen,
-		IsDefault:           model.IsDefault,
-		IsFlash:             model.IsFlash,
-		IsVisual:            model.IsVisual,
-		Status:              model.Status,
-		Access:              model.Access,
-		Remark:              model.Remark,
-		Created:             model.Created,
-		Updated:             model.Updated,
+		AIModelId:             model.AIModelId,
+		ProviderDisplayName:   model.ProviderDisplayName,
+		DisplayName:           model.DisplayName,
+		ProviderID:            model.ProviderID,
+		ModelName:             model.ModelName,
+		Icon:                  model.Icon,
+		APIKey:                model.APIKey,
+		BaseURL:               model.BaseURL,
+		ExtraFields:           model.ExtraFields,
+		ProxyURL:              model.ProxyURL,
+		ConversationHeaderKey: model.ConversationHeaderKey,
+		ContextLen:            model.ContextLen,
+		IsDefault:             model.IsDefault,
+		IsFlash:               model.IsFlash,
+		IsVisual:              model.IsVisual,
+		Status:                model.Status,
+		Access:                model.Access,
+		Remark:                model.Remark,
+		Created:               model.Created,
+		Updated:               model.Updated,
 	}, nil
 }
 
