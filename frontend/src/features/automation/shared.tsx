@@ -119,7 +119,7 @@ export function scheduleTimeValue(task: AutomationTaskItem, t: T): string {
   }
 }
 
-export function StatusBadge({ status, t }: { status: number; t: T }) {
+export function StatusBadge({ status, t, className }: { status: number; t: T; className?: string }) {
   const config = {
     [AutomationStatus.Enabled]: {
       className: 'bg-emerald-500/10 text-emerald-600',
@@ -147,6 +147,7 @@ export function StatusBadge({ status, t }: { status: number; t: T }) {
       className={cn(
         'inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium',
         config.className,
+        className,
       )}
     >
       <span className={cn('size-1.5 rounded-full', config.dot)} />
@@ -191,7 +192,7 @@ export function Pagination({
 
   return (
     <div className="flex items-center justify-between border-t border-border-custom px-4 py-2">
-      <span className="text-xs text-text-3">{t('automation.totalTasks').replace('{n}', String(totalCount))}</span>
+      <span className="hidden text-xs text-text-3 md:inline">{t('automation.totalTasks').replace('{n}', String(totalCount))}</span>
       <div className="flex items-center gap-1">
         <button
           onClick={() => onPageChange(page - 1)}

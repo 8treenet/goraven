@@ -449,22 +449,41 @@ function MobileUserMenu() {
   }, [refreshSessions])
 
   return (
-    <div className="py-2 space-y-2">
-      {groupedSessions.length === 0 && (
-        <p className="px-2 text-xs text-text-muted">{t('sidebar.noSessions')}</p>
-      )}
-      {groupedSessions.map((group) => (
-        <div key={group.key}>
-          <p className="px-2 py-0.5 text-xs text-text-muted">{t(TIME_GROUP_I18N[group.key])}</p>
-          <div className="mt-0.5 space-y-[3px]">
-            {group.sessions.map((s) => (
-              <MobileSessionItem key={s.sessionId} session={s} onRename={handleRename} onDelete={handleDelete} onClose={closeMobile} />
-            ))}
+    <>
+      <SidebarGroup
+        label={t('sidebar.console')}
+        groupKey="workspace"
+        collapsed={false}
+      >
+        <NavItem
+          to="/automation"
+          icon={IconAutomation}
+          label={t('sidebar.automation')}
+          collapsed={false}
+          accent
+          onNavigate={closeMobile}
+        />
+      </SidebarGroup>
+
+      <div className="my-2 border-t border-border" />
+
+      <div className="py-2 space-y-2">
+        {groupedSessions.length === 0 && (
+          <p className="px-2 text-xs text-text-muted">{t('sidebar.noSessions')}</p>
+        )}
+        {groupedSessions.map((group) => (
+          <div key={group.key}>
+            <p className="px-2 py-0.5 text-xs text-text-muted">{t(TIME_GROUP_I18N[group.key])}</p>
+            <div className="mt-0.5 space-y-[3px]">
+              {group.sessions.map((s) => (
+                <MobileSessionItem key={s.sessionId} session={s} onRename={handleRename} onDelete={handleDelete} onClose={closeMobile} />
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
-      <div ref={sentinelRef} className="h-1" />
-    </div>
+        ))}
+        <div ref={sentinelRef} className="h-1" />
+      </div>
+    </>
   )
 }
 
@@ -773,6 +792,7 @@ function NavItem({
   collapsed,
   indent,
   accent = false,
+  onNavigate,
 }: {
   to: string
   icon: React.ComponentType<{ className?: string }>
@@ -780,14 +800,20 @@ function NavItem({
   collapsed: boolean
   indent?: boolean
   accent?: boolean
+  onNavigate?: () => void
 }) {
   const navigate = useNavigate()
   const location = useLocation()
   const isActive = location.pathname === to
 
+  const handleClick = () => {
+    navigate(to)
+    onNavigate?.()
+  }
+
   return (
     <button
-      onClick={() => navigate(to)}
+      onClick={handleClick}
       className={cn(
         'flex w-full items-center gap-2 rounded-md py-1.5 text-sm transition-colors',
         collapsed ? 'justify-center px-0' : indent ? 'pl-7 pr-2' : 'px-2',

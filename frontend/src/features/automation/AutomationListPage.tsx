@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Play, Ellipsis, Trash2, AlertCircle, RefreshCw, HelpCircle } from 'lucide-react'
+import { Play, Ellipsis, Trash2, AlertCircle, RefreshCw, HelpCircle, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { useT, t as translate } from '@/i18n'
 import { cn } from '@/lib/utils'
+import { useSidebarStore } from '@/stores/sidebar-store'
 import { AutomationStatus } from '@/api/types'
 import type { AutomationTaskItem } from '@/api/types'
 import { getAutomationTasks, updateTaskStatus, deleteTask, executeTask } from '@/api/automation'
@@ -46,6 +47,7 @@ const TAB_STATUS: Record<TabKey, number | undefined> = {
 export function Component() {
   const navigate = useNavigate()
   const t = useT()
+  const openMobile = useSidebarStore((s) => s.openMobile)
   const [state, setState] = useState<PageState>('loading')
   const [tasks, setTasks] = useState<AutomationTaskItem[]>([])
   const [tab, setTab] = useState<TabKey>('all')
@@ -134,7 +136,14 @@ export function Component() {
   return (
     <div>
       {/* Sticky toolbar */}
-      <div className="sticky top-0 z-10 flex h-10 items-center justify-between border-b border-border-custom bg-bg-base px-4">
+      <div className="sticky top-0 z-10 flex h-10 items-center gap-2 border-b border-border-custom bg-bg-base px-4">
+        <button
+          onClick={openMobile}
+          aria-label={t('sidebar.menu')}
+          className="shrink-0 text-text-1 transition-colors md:hidden"
+        >
+          <Menu className="size-4" />
+        </button>
         <div className="flex items-center gap-1.5">
           <h1 className="text-[18px] font-semibold text-text-1">{t('automation.title')}</h1>
           <Tooltip>
@@ -159,7 +168,7 @@ export function Component() {
             key={key}
             onClick={() => handleTabChange(key)}
             className={cn(
-              'relative px-3 py-1.5 text-[13px] transition-colors',
+              'relative px-2.5 py-1.5 text-[13px] transition-colors md:px-3',
               tab === key
                 ? 'font-medium text-text-1 after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[2px] after:rounded-full after:bg-highlight'
                 : 'text-text-3 hover:text-text-2',
@@ -190,13 +199,16 @@ export function Component() {
             return (
               <div
                 key={task.id}
-                className="flex items-center gap-3 border-b border-border-custom px-4 py-3 transition-colors hover:bg-bg-hover"
+                className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border-custom px-4 py-3 transition-colors hover:bg-bg-hover md:flex-nowrap md:gap-3"
               >
                 <button
-                  className="flex min-w-0 flex-1 flex-col items-start gap-1.5 text-left"
+                  className="flex w-full min-w-0 flex-col items-start gap-1.5 text-left md:w-auto md:flex-1"
                   onClick={() => handleRowClick(task.id)}
                 >
-                  <span className="truncate text-sm font-semibold text-text-1">{task.title}</span>
+                  <span className="flex w-full min-w-0 items-center gap-2">
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-text-1">{task.title}</span>
+                    <StatusBadge status={task.status} t={t} className="md:hidden" />
+                  </span>
                   <span className="flex flex-wrap items-center gap-1.5 text-[11px] text-text-3">
                     {meta.map((m) => (
                       <span key={m} className="rounded border border-border-custom px-1.5 py-0.5 text-text-2">
@@ -206,11 +218,11 @@ export function Component() {
                   </span>
                 </button>
 
-                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5 md:flex-none md:shrink-0 md:items-end">
                   <span className="text-[11px] text-text-3">
                     {next.label}：{next.value}
                   </span>
-                  <StatusBadge status={task.status} t={t} />
+                  <StatusBadge status={task.status} t={t} className="hidden md:inline-flex" />
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">

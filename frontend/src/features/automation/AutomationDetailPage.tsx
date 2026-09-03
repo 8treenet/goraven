@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ChevronLeft, ChevronDown, Play, AlertCircle, RefreshCw, Pencil } from 'lucide-react'
+import { ChevronLeft, ChevronDown, Play, AlertCircle, RefreshCw, Pencil, Power, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -174,27 +174,38 @@ export function Component() {
       <div className="flex h-11 shrink-0 items-center gap-3 border-b border-border-custom bg-bg-base px-3">
         <button
           onClick={() => navigate('/automation')}
-          className="flex items-center gap-0.5 rounded-md px-1.5 py-1 text-[13px] text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
+          aria-label={t('common.back')}
+          className="flex shrink-0 items-center gap-0.5 rounded-md px-1.5 py-1 text-[13px] text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
         >
           <ChevronLeft className="size-4" />
-          {t('common.back')}
+          <span className="hidden md:inline">{t('common.back')}</span>
         </button>
         {detail && (
           <>
-            <span className="text-[15px] font-semibold text-text-1">{detail.title}</span>
+            <span className="min-w-0 truncate text-[15px] font-semibold text-text-1">{detail.title}</span>
             <StatusBadge status={detail.status} t={t} />
-            <div className="ml-auto flex items-center gap-2">
-              <Button size="sm" disabled={done || busy} onClick={handleExecute}>
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              <Button size="sm" disabled={done || busy} onClick={handleExecute} title={t('automation.executeNow')}>
                 <Play className="size-3.5" />
-                {t('automation.executeNow')}
+                <span className="hidden md:inline">{t('automation.executeNow')}</span>
               </Button>
               {!done && (
-                <Button size="sm" variant="outline" disabled={busy} onClick={handleToggleStatus}>
-                  {detail.status === AutomationStatus.Enabled ? t('automation.disable') : t('automation.enable')}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={handleToggleStatus}
+                  title={detail.status === AutomationStatus.Enabled ? t('automation.disable') : t('automation.enable')}
+                >
+                  <Power className="size-3.5" />
+                  <span className="hidden md:inline">
+                    {detail.status === AutomationStatus.Enabled ? t('automation.disable') : t('automation.enable')}
+                  </span>
                 </Button>
               )}
-              <Button size="sm" variant="destructive" onClick={() => setDeleteOpen(true)}>
-                {t('automation.delete')}
+              <Button size="sm" variant="destructive" onClick={() => setDeleteOpen(true)} title={t('automation.delete')}>
+                <Trash2 className="size-3.5" />
+                <span className="hidden md:inline">{t('automation.delete')}</span>
               </Button>
             </div>
           </>
@@ -214,7 +225,7 @@ export function Component() {
         </div>
       )}
       {state === 'data' && detail && (
-        <div className="flex min-h-0 flex-1 gap-4 overflow-y-auto p-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 md:flex-row">
           {/* Left main */}
           <div className="flex min-w-0 flex-1 flex-col gap-4">
             <div className="rounded-lg border border-border-custom bg-bg-base">
@@ -323,7 +334,7 @@ export function Component() {
           </div>
 
           {/* Right sidebar */}
-          <div className="flex w-64 shrink-0 flex-col gap-4">
+          <div className="flex w-full flex-col gap-4 md:w-64 md:shrink-0">
             <div className="rounded-lg border border-border-custom bg-bg-base">
               <div className="border-b border-border-custom px-3.5 py-2.5 text-[13px] font-semibold text-text-1">
                 {t('automation.schedule')}
@@ -439,12 +450,12 @@ function KV({ k, v }: { k: string; v: string }) {
 
 function DetailSkeleton() {
   return (
-    <div className="flex flex-1 gap-4 overflow-hidden p-4">
+    <div className="flex flex-1 flex-col gap-4 overflow-hidden p-4 md:flex-row">
       <div className="flex-1 space-y-4">
         <div className="h-28 rounded-lg bg-bg-layer-3 animate-pulse" />
         <div className="h-72 rounded-lg bg-bg-layer-3 animate-pulse" />
       </div>
-      <div className="w-64 space-y-4">
+      <div className="w-full space-y-4 md:w-64">
         <div className="h-40 rounded-lg bg-bg-layer-3 animate-pulse" />
         <div className="h-44 rounded-lg bg-bg-layer-3 animate-pulse" />
       </div>
