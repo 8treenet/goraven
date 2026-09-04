@@ -432,7 +432,7 @@ function ThemeSegment() {
   }, [setTheme])
 
   return (
-    <div className="inline-flex rounded-md bg-bg-layer-2 p-0.5">
+    <div className="grid w-full grid-cols-3 gap-0.5 rounded-md bg-bg-layer-2 p-0.5 sm:inline-flex sm:w-auto">
       {THEME_OPTIONS.map((opt) => {
         const active = theme === opt.value
         return (
@@ -440,14 +440,14 @@ function ThemeSegment() {
             key={opt.value}
             onClick={() => handleChange(opt.value)}
             className={cn(
-              'flex cursor-pointer items-center gap-1.5 rounded-sm px-3 py-1 text-sm transition-colors',
+              'flex cursor-pointer items-center justify-center gap-1.5 rounded-sm px-2 py-1.5 text-sm transition-colors sm:px-3 sm:py-1',
               active
                 ? 'bg-highlight text-highlight-fg shadow-sm'
                 : 'text-text-3 hover:text-text-2',
             )}
           >
-            <opt.icon className="size-3.5" />
-            <span>{t(opt.key)}</span>
+            <opt.icon className="size-4 sm:size-3.5" />
+            <span className="hidden sm:inline">{t(opt.key)}</span>
           </button>
         )
       })}
@@ -740,8 +740,8 @@ export function Component() {
         <div className="mb-8">
           <h2 className="mb-4 text-sm font-semibold text-text-2">{t('profile.appearance')}</h2>
 
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-text-2">{t('profile.themeMode')}</span>
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <span className="hidden text-sm text-text-2 sm:block">{t('profile.themeMode')}</span>
             <ThemeSegment />
           </div>
         </div>
