@@ -2,200 +2,136 @@ package seed
 
 const SystemSkillGoRavenDocParse = `---
 name: goraven-doc-parse
-description: "读取或转换文档（PDF/DOCX/PPTX/XLSX/HTML/CSV/LaTeX）为文本。不支持图片和扫描件。"
+description: "读取或转换文档（PDF/DOCX/PPTX/XLSX/HTML/CSV/LaTeX/ASCIIDOC）为文本。不支持图片和扫描件。聊天附件中的文档是原始文件，需通过本技能读取。"
 ---
 
 # 文档读取与转换
 
-通过 shell 调用 Python 脚本处理文档，提取其中的文字和结构信息。
+使用 goraven_doc_parse 工具处理文档，支持两种模式：
+
+- **read**：提取文档文本到工具返回值，适合即时阅读和理解内容
+- **convert**：将文档转换为 Markdown 文件保存到磁盘，适合持久化或后续加工
 
 ### 支持格式
 
 - PDF（仅含文字层的，扫描件/图片 PDF 无法处理）
-- DOCX（Word）
-- PPTX（PowerPoint）
-- XLSX（Excel）
-- HTML
-- CSV
-- LaTeX
-- ASCIIDOC
+- DOCX（Word）、PPTX（PowerPoint）、XLSX（Excel）
+- HTML、CSV、LaTeX、ASCIIDOC
 
 ### 不支持
 
-- 图片（PNG/JPEG/TIFF 等）——无 OCR 能力
+- 图片（PNG/JPEG/TIFF 等）
 - 扫描件 PDF（无文字层）
 
-纯文本文件（.txt、.json、.yaml、.xml、.md 等）无需使用本技能，直接用文件读取工具即可。
+纯文本文件（.txt、.json、.yaml、.xml、.md 等）无需本技能，直接用文件读取工具即可。
 
-## 脚本位置
+## read 模式：读取内容
 
-- 读取脚本：/goraven/scripts/docling/read.py
-- 转换脚本：/goraven/scripts/docling/convert.py
+参数：
 
-Python 环境已就绪（venv 在 PATH 中），直接用 python 命令调用。
+- mode（必填）：固定为 "read"
+- file_path（必填）：文档在沙盒内的绝对路径，聊天附件直接使用 <goraven-upload> 标签中给出的路径
+- format：markdown（默认，保留标题/表格结构）或 text（纯文本）
+- max_chars：最大输出字符数，超出截断，缺省 50000
+- pages：页码过滤，如 "1-5" 或 "1,3,5-8"，仅 PDF 有效
 
-## 模式一：读取（read）
+参数示例：
 
-将文档内容提取到终端输出，适合即时阅读和理解文档内容。
+{"mode": "read", "file_path": "/goraven/data/users/admin/temp/report.pdf"}
 
-### 命令格式
+{"mode": "read", "file_path": "/goraven/data/users/admin/temp/report.pdf", "pages": "1-3", "max_chars": 30000}
 
-python /goraven/scripts/docling/read.py --input <文件路径> [--format markdown|text] [--max-chars <上限>] [--pages <页码>]
+{"mode": "read", "file_path": "/goraven/data/users/admin/temp/report.docx", "format": "text"}
 
-### 参数说明
+返回 content 为文档文本；truncated 为 true 表示内容被截断，可用 pages 分页或增大 max_chars 后续读取。
 
-- --input（必填）：文档文件的绝对路径
-- --format：输出格式，markdown（默认，保留标题/表格结构）或 text（纯文本）
-- --max-chars：最大输出字符数，超出部分截断。大文档建议设置（如 50000）避免输出过长
-- --pages：页码过滤，如 1-5 或 1,3,5-8，仅读取指定页
+## convert 模式：转换为 Markdown
 
-### 使用示例
+参数：
 
-# 读取 PDF 全文
-python /goraven/scripts/docling/read.py --input /path/to/report.pdf
+- mode（必填）：固定为 "convert"
+- file_path（必填）：源文档在沙盒内的绝对路径，聊天附件直接使用 <goraven-upload> 标签中给出的路径
+- output_path（必填）：输出 Markdown 文件的绝对路径（.md 后缀，且不能与 file_path 相同）
 
-# 只读前 3 页，限制输出长度
-python /goraven/scripts/docling/read.py --input /path/to/report.pdf --pages 1-3 --max-chars 30000
+参数示例：
 
-# 以纯文本格式读取 Word 文档
-python /goraven/scripts/docling/read.py --input /path/to/doc.docx --format text
+{"mode": "convert", "file_path": "/goraven/data/users/admin/temp/report.pdf", "output_path": "/goraven/data/users/admin/documents/report.md"}
 
-### 适用场景
-
-- 用户要求阅读、总结、分析某个文档
-- 需要从文档中提取信息回答问题
-- 预览文档内容决定后续操作
-
-## 模式二：转换（convert）
-
-将文档转换为 Markdown 文件保存到磁盘，适合持久化存储或后续加工。
-
-### 命令格式
-
-python /goraven/scripts/docling/convert.py --input <源文件路径> --output <输出.md路径>
-
-### 参数说明
-
-- --input（必填）：源文档的绝对路径
-- --output（必填）：输出 Markdown 文件的绝对路径（含 .md 后缀）
-
-### 使用示例
-
-# 将 PDF 转为 Markdown 保存
-python /goraven/scripts/docling/convert.py --input /path/to/report.pdf --output /path/to/output/report.md
-
-### 适用场景
-
-- 用户要求将文档转为 Markdown 格式保存
-- 需要持久化文档的结构化文本版本
-- 为后续编辑、引用或知识库入库做准备
+返回 output_path 为保存后的文件路径。
 
 ## 规则
 
-- 文件路径必须使用绝对路径
-- 输出目录不存在时脚本会自动创建
-- 首次调用可能较慢（模型加载），后续调用会快很多
-- 如果脚本报错 ModuleNotFoundError，说明 docling 未安装，执行：uv pip install --no-cache -r /goraven/scripts/docling/requirements.txt
-- 读取大文档时优先使用 --max-chars 或 --pages 控制输出量，避免占满上下文
-- 转换后的 .md 文件存放位置由用户指定或放在源文件同目录下
+- 文件路径必须使用沙盒内的绝对路径（附件取 <goraven-upload> 标签中的路径）；工具对工作空间下的相对形式路径也做了兼容处理
+- 读取大文档优先用 max_chars 或 pages 控制输出量，避免占满上下文
+- 首次调用可能较慢（模型加载），属正常现象
+- 若工具报错缺少 docling 依赖，把错误信息中的安装命令转告用户执行
+- 转换后的 .md 存放位置由用户指定或放在源文件同目录
 `
 
 const SystemSkillGoRavenDocParseEn = `---
 name: goraven-doc-parse
-description: "Read or convert documents (PDF/DOCX/PPTX/XLSX/HTML/CSV/LaTeX) to text. Images and scanned files not supported."
+description: "Read or convert documents (PDF/DOCX/PPTX/XLSX/HTML/CSV/LaTeX/ASCIIDOC) to text. Images and scanned files not supported. Chat attachments are stored as original files — use this skill to read them."
 ---
 
 # Document Reading & Conversion
 
-Process documents via Python scripts through shell, extracting text and structural information.
+Use the goraven_doc_parse tool to process documents. Two modes:
+
+- **read**: extract document text into the tool response. Best for immediate reading and comprehension.
+- **convert**: convert the document to a Markdown file on disk. Best for persistent storage or further processing.
 
 ### Supported Formats
 
 - PDF (text layer only — scanned/image PDFs cannot be processed)
-- DOCX (Word)
-- PPTX (PowerPoint)
-- XLSX (Excel)
-- HTML
-- CSV
-- LaTeX
-- ASCIIDOC
+- DOCX (Word), PPTX (PowerPoint), XLSX (Excel)
+- HTML, CSV, LaTeX, ASCIIDOC
 
 ### Not Supported
 
-- Images (PNG/JPEG/TIFF, etc.) — no OCR capability
+- Images (PNG/JPEG/TIFF, etc.)
 - Scanned PDFs (no text layer)
 
 Plain text files (.txt, .json, .yaml, .xml, .md, etc.) do not need this skill — use the file read tool directly.
 
-## Script Locations
+## Mode 1: read
 
-- Read script: /goraven/scripts/docling/read.py
-- Convert script: /goraven/scripts/docling/convert.py
+Parameters:
 
-The Python environment is ready (venv is in PATH). Call directly with the python command.
+- mode (required): always "read"
+- file_path (required): absolute path of the document in the sandbox; for chat attachments use the path given in the <goraven-upload> tag
+- format: markdown (default, preserves headings/tables) or text (plain text)
+- max_chars: max output characters, truncated beyond. Default 50000
+- pages: page filter, e.g. "1-5" or "1,3,5-8", PDF only
 
-## Mode 1: Read
+Parameter examples:
 
-Extract document content to terminal output. Best for immediate reading and comprehension.
+{"mode": "read", "file_path": "/goraven/data/users/admin/temp/report.pdf"}
 
-### Command Format
+{"mode": "read", "file_path": "/goraven/data/users/admin/temp/report.pdf", "pages": "1-3", "max_chars": 30000}
 
-python /goraven/scripts/docling/read.py --input <file_path> [--format markdown|text] [--max-chars <limit>] [--pages <range>]
+{"mode": "read", "file_path": "/goraven/data/users/admin/temp/report.docx", "format": "text"}
 
-### Parameters
+Returns content as the document text; truncated = true means content was cut off — use pages or a larger max_chars to continue reading.
 
-- --input (required): absolute path to the document
-- --format: output format — markdown (default, preserves headings/tables) or text (plain text)
-- --max-chars: maximum output characters; content beyond this is truncated. Recommended for large documents (e.g. 50000)
-- --pages: page filter, e.g. 1-5 or 1,3,5-8 — only read specified pages
+## Mode 2: convert
 
-### Examples
+Parameters:
 
-# Read entire PDF
-python /goraven/scripts/docling/read.py --input /path/to/report.pdf
+- mode (required): always "convert"
+- file_path (required): absolute path of the source document in the sandbox; for chat attachments use the path given in the <goraven-upload> tag
+- output_path (required): absolute path for the output Markdown file (.md extension, must differ from file_path)
 
-# Read first 3 pages with output limit
-python /goraven/scripts/docling/read.py --input /path/to/report.pdf --pages 1-3 --max-chars 30000
+Parameter example:
 
-# Read Word document as plain text
-python /goraven/scripts/docling/read.py --input /path/to/doc.docx --format text
+{"mode": "convert", "file_path": "/goraven/data/users/admin/temp/report.pdf", "output_path": "/goraven/data/users/admin/documents/report.md"}
 
-### Use Cases
-
-- User asks to read, summarize, or analyze a document
-- Need to extract information from a document to answer questions
-- Preview document content before deciding next steps
-
-## Mode 2: Convert
-
-Convert a document to a Markdown file saved on disk. Best for persistent storage or further processing.
-
-### Command Format
-
-python /goraven/scripts/docling/convert.py --input <source_path> --output <output.md_path>
-
-### Parameters
-
-- --input (required): absolute path to the source document
-- --output (required): absolute path for the output Markdown file (with .md extension)
-
-### Examples
-
-# Convert PDF to Markdown
-python /goraven/scripts/docling/convert.py --input /path/to/report.pdf --output /path/to/output/report.md
-
-### Use Cases
-
-- User asks to convert a document to Markdown format
-- Need a persistent structured text version of a document
-- Prepare content for editing, referencing, or knowledge base ingestion
+Returns output_path as the saved file path.
 
 ## Rules
 
-- Always use absolute file paths
-- Output directories are created automatically if missing
-- First invocation may be slow (model loading); subsequent calls are much faster
-- If the script reports ModuleNotFoundError, docling is not installed. Run: uv pip install --no-cache -r /goraven/scripts/docling/requirements.txt
-- For large documents, prefer --max-chars or --pages to control output volume and avoid filling the context
+- Always use absolute paths inside the sandbox (for attachments use the path from the <goraven-upload> tag); workspace-relative path forms are tolerated as a fallback
+- For large documents, prefer max_chars or pages to control output volume and avoid filling the context
+- The first call may be slow (model loading) — this is normal
+- If the tool reports a missing docling dependency, relay the install command from the error message to the user
 - Place converted .md files where the user specifies, or in the same directory as the source file
 `

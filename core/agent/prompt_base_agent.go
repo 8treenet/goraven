@@ -123,12 +123,12 @@ func buildBaseInstructionPromptZh(param AgentParam, isSubAgent bool) string {
 		b.WriteString(`## 消息附件
 用户在对话中发送的图片、文档等附件会以 <goraven-upload> 标签形式出现在消息中。
 <goraven-upload size="245KB">
-  /goraven/data/users/admin/temp/607ae7ba.md
+  /goraven/data/users/admin/temp/607ae7ba.pdf
 </goraven-upload>
 
 规则:
-- 使用文件读取工具访问附件内容
-- 非媒体附件（PDF/Word/PPT/Excel/HTML等）已通过 docling 自动解析为.md，内容是提取的文字和表格
+- 附件均以原始文件形式存放在 temp/ 目录
+- 文档类附件（PDF/Word/PPT/Excel/HTML等）是二进制原始文件，必须通过 goraven-doc-parse 技能读取内容，禁止用文件读取工具直接读取
 - 附件是用户任务的重要上下文，优先理解附件内容再执行任务
 
 `)
@@ -300,12 +300,12 @@ Project Knowledge Index (LLMWiki):
 		b.WriteString(`## Message Attachments
 Images, documents, and other attachments sent by users in conversation appear as <goraven-upload> tags.
 <goraven-upload size="245KB">
-  /goraven/data/users/admin/temp/607ae7ba.md
+  /goraven/data/users/admin/temp/607ae7ba.pdf
 </goraven-upload>
 
 Rules:
-- Use file reading tools to access attachment content
-- Non-media attachments (PDF/Word/PPT/Excel/HTML etc.) are automatically parsed into .md via docling, containing extracted text and tables
+- All attachments are stored as original files under temp/
+- Document attachments (PDF/Word/PPT/Excel/HTML etc.) are binary original files — use the goraven-doc-parse skill to read their content; never read them directly with file tools
 - Attachments are important context for the user's task; understand attachment content before executing the task
 
 `)

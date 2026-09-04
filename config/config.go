@@ -12,7 +12,7 @@ import (
 )
 
 // Version GoRaven 版本号，通过 ldflags 注入: go build -ldflags "-X goraven/config.Version=1.0.0"
-var Version = "v0.5.2"
+var Version = "v0.5.3"
 
 // StartTime 进程启动时间
 var StartTime = time.Now()
@@ -348,4 +348,12 @@ func (conf *Configuration) GetTeamProjectDir() string {
 		return conf.Paths.TeamProjectDir
 	}
 	return "/goraven/data/team_projects"
+}
+
+// GetScriptsDir Python 脚本目录
+func (conf *Configuration) GetScriptsDir() string {
+	if conf.Paths.Scripts != "" {
+		return conf.Paths.Scripts
+	}
+	return "./scripts"
 }

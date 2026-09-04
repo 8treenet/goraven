@@ -152,6 +152,8 @@ func (c *Compress) ShouldCompress(history []*schema.Message) bool {
 }
 
 func (c *Compress) DoCompress(ctx context.Context, runner *MainRunner, history []*schema.Message) ([]*schema.Message, error) {
+	// 一次性运行：使用压缩模型配置的 header 名与新的运行 ID
+	ctx = util.WithConversationHeader(ctx, c.chatModel.GetConversationHeaderKey(), util.UUID())
 	if !c.ShouldCompress(history) {
 		c.result = &CompressResult{Compressed: false, History: history}
 		return history, nil
@@ -245,6 +247,8 @@ func (c *Compress) DoCompress(ctx context.Context, runner *MainRunner, history [
 // ForceCompress 手动压缩全部历史消息，无任何条件限制
 // 将所有非系统消息压缩为一份摘要，返回仅含摘要的新历史
 func (c *Compress) ForceCompress(ctx context.Context, history []*schema.Message) ([]*schema.Message, error) {
+	// 一次性运行：使用压缩模型配置的 header 名与新的运行 ID
+	ctx = util.WithConversationHeader(ctx, c.chatModel.GetConversationHeaderKey(), util.UUID())
 	var allMessages []*schema.Message
 	var allRoundIds []string
 	var lastCompressedMsgTs int64

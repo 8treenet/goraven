@@ -28,7 +28,7 @@ import { Markdown } from '@/components/common/markdown'
 
 type PageState = 'loading' | 'data' | 'error'
 
-const EXEC_PAGE_SIZE = 4
+const EXEC_PAGE_SIZE = 10
 
 /* ============================================
    Page

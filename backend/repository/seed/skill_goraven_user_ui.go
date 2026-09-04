@@ -142,7 +142,7 @@ GoRaven 采用左侧边栏 + 右侧主内容区布局。侧边栏可折叠为仅
 | images/ | 图片文件存储 |
 | videos/ | 视频文件存储 |
 | downloads/ | 下载文件默认存放位置 |
-| temp/ | 临时文件（附件解析结果、中间产物），AI 可读写 |
+| temp/ | 临时文件（附件、中间产物），AI 可读写 |
 | skills/ | 已安装技能的文件存放位置（工作空间页面中不可见——技能通过数据库管理和授权） |
 
 > **工作空间页面隐藏规则**：根目录列表不展示「skills/」（技能通过数据库管理，禁止文件操作）和「projects/」（通过「我的项目」Tab 进入）；以「.」开头的文件和目录（如 .DS_Store、.profile）也不展示——.profile 可通过个人设置页的「环境变量」区块编辑。
@@ -393,7 +393,7 @@ Fixed user workspace directories (cannot be deleted):
 | images/ | Image file storage |
 | videos/ | Video file storage |
 | downloads/ | Default download location |
-| temp/ | Temporary files (attachment parsing results, intermediate artifacts), AI can read/write |
+| temp/ | Temporary files (attachments, intermediate artifacts), AI can read/write |
 | skills/ | Installed skill files (hidden in the workspace page — skills are managed and authorized through the database) |
 
 > **Workspace page hidden rules**: The root directory listing does not show "skills/" (skills are managed via database, file operations are disallowed) or "projects/" (enter via the "My Projects" Tab); files and directories starting with "." (e.g. .DS_Store, .profile) are also not shown — .profile can be edited via the "Environment Variables" section on the Profile page.

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"goraven/config"
+	"goraven/util"
 
 	"github.com/8treenet/freedom"
 	"github.com/cloudwego/eino/adk"
@@ -39,6 +40,8 @@ type SystemRunner struct {
 }
 
 func (sr *SystemRunner) Run(ctx context.Context, query string) (result *SystemResult, err error) {
+	// 一次性运行：使用系统代理模型配置的 header 名与新的运行 ID，安装流程内多轮工具调用共享
+	ctx = util.WithConversationHeader(ctx, sr.sysAgent.chatModel.GetConversationHeaderKey(), util.UUID())
 	runCtx, cancel := context.WithTimeout(ctx, 20*time.Minute)
 	defer cancel()
 

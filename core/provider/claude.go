@@ -2,9 +2,9 @@ package provider
 
 import (
 	"context"
-	"net/url"
 	"goraven/core/iface"
 	"goraven/util"
+	"net/url"
 
 	"github.com/8treenet/freedom/infra/requests"
 	"github.com/anthropics/anthropic-sdk-go"
@@ -89,6 +89,7 @@ func (provider *ClaudeProvider) SetProxy(addr string) error {
 
 type ClaudeModel struct {
 	claude.ChatModel
+	iface.ConversationHeaderKeyHolder
 	modelName  string
 	contextLen int
 }

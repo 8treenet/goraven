@@ -3,9 +3,9 @@ package provider
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"goraven/core/iface"
 	"goraven/util"
+	"net/url"
 
 	"github.com/8treenet/freedom/infra/requests"
 	"github.com/cloudwego/eino-ext/components/model/ollama"
@@ -98,6 +98,7 @@ func (provider *OllamaProvider) Models() ([]ModelInfo, error) {
 
 type OllamaModel struct {
 	ollama.ChatModel
+	iface.ConversationHeaderKeyHolder
 	modelName  string
 	contextLen int
 }

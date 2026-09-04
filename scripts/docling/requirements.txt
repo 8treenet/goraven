@@ -4,5 +4,10 @@
 # Core library
 docling>=2.115.0
 
+# OpenCV 4.13+ Linux wheels link against X11/XCB libs (libxcb.so.1),
+# breaking headless Docker containers; pin below 4.13.
+# rapidocr (pulled by docling) requires opencv-python, so pin that variant.
+opencv-python<4.13
+
 # GPU acceleration (optional - auto-detected by docling)
 # torch>=2.0  # Uncomment if GPU acceleration needed

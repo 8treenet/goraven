@@ -3,9 +3,9 @@ package provider
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"goraven/core/iface"
 	"goraven/util"
+	"net/url"
 
 	"github.com/8treenet/freedom/infra/requests"
 	"github.com/cloudwego/eino-ext/components/model/qwen"
@@ -90,6 +90,7 @@ func (provider *QwenProvider) Models() ([]ModelInfo, error) {
 
 type QwenModel struct {
 	qwen.ChatModel
+	iface.ConversationHeaderKeyHolder
 	modelName  string
 	contextLen int
 }

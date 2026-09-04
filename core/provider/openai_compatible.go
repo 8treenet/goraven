@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"goraven/core/iface"
 	"goraven/util"
+	"net/url"
 
 	"github.com/8treenet/freedom/infra/requests"
 	"github.com/cloudwego/eino-ext/components/model/openai"
@@ -96,6 +96,7 @@ func (provider *OpenAICompatibleProvider) Models() ([]ModelInfo, error) {
 
 type OpenAICompatibleModel struct {
 	openai.ChatModel
+	iface.ConversationHeaderKeyHolder
 	modelName    string
 	providerName string
 	contextLen   int

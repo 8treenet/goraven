@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"goraven/core/iface"
+	"goraven/util"
 	"strings"
 
 	"github.com/8treenet/freedom"
@@ -57,6 +58,8 @@ func (t *SessionTitler) Generate(ctx context.Context, userContent, assistantRepl
 	user := truncateRunesForSessionTitle(userContent, sessionTitleInputMaxRunes)
 	reply := truncateRunesForSessionTitle(assistantReply, sessionTitleInputMaxRunes)
 
+	// 一次性运行：使用标题模型配置的 header 名与新的运行 ID
+	ctx = util.WithConversationHeader(ctx, t.chatModel.GetConversationHeaderKey(), util.UUID())
 	resp, err := t.chatModel.Generate(ctx, []*schema.Message{
 		schema.SystemMessage(i18n.systemPrompt),
 		schema.UserMessage(fmt.Sprintf(i18n.userPrompt, user, reply)),

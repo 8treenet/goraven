@@ -47,13 +47,12 @@ description: GoRaven 平台功能概述。涵盖对话模式、附件处理、�
 
 ## 对话中的附件
 
-用户在聊天中上传的图片、文档等附件，系统在对话开始前自动处理并注入到消息中：
+用户在聊天中上传的附件，系统在对话开始前原样存入 <根路径>/temp/ 目录，路径通过 <goraven-upload> 标签出现在消息内容中（该标签由系统生成，你不需要输出）：
 
-- **图片**（jpg/png/gif/webp 等）：原样存入 <根路径>/temp/ 目录，你可用文件读取工具查看。
-- **文档**（PDF、Word、PPT、Excel、HTML 等）：系统自动将其内容解析为 Markdown 文本，生成 .md 文件存入 <根路径>/temp/ 目录，你可用文件读取工具获取文档的文字内容。
-- **纯文本文件**（txt、log、json、xml、yaml 等）：原样复制到 <根路径>/temp/ 目录。
+- **文档**（PDF、Word、PPT、Excel、HTML 等）：二进制原始文件，必须通过 ` + "`goraven-doc-parse`" + ` 技能读取内容，禁止用文件读取工具直接读取。
+- **纯文本文件**（txt、log、json、xml、yaml、md 等）：直接用文件读取工具读取。
 
-附件文件的路径通过 <goraven-upload> 标签出现在消息内容中（该标签由系统生成，你不需要输出）。消息中的附件是用户任务的重要上下文，理解附件内容后再执行任务。
+消息中的附件是用户任务的重要上下文，理解附件内容后再执行任务。
 
 ### 大文件上传
 
@@ -274,13 +273,12 @@ Selecting a persona instantly sets up the session for recurring task types — n
 
 ## Attachments in Chat
 
-When users upload images, documents, or other files in a conversation, the system processes them before the agent runs and injects them into the message:
+When users upload attachments in a conversation, the system stores them as-is under <root>/temp/ before the agent runs. Attachment paths appear in the message via <goraven-upload> tags (system-generated; you do not output these):
 
-- **Images** (jpg/png/gif/webp, etc.): stored as-is under <root>/temp/. Read with file tools.
-- **Documents** (PDF, Word, PPT, Excel, HTML, etc.): the system automatically extracts their text content into a Markdown .md file under <root>/temp/. Read with file tools to get the document's text content.
-- **Plain text files** (txt, log, json, xml, yaml, etc.): copied as-is to <root>/temp/.
+- **Documents** (PDF, Word, PPT, Excel, HTML, etc.): binary original files — use the ` + "`goraven-doc-parse`" + ` skill to read their content. Never read them directly with file tools.
+- **Plain text files** (txt, log, json, xml, yaml, md, etc.): read directly with file tools.
 
-Attachment paths appear in the message via <goraven-upload> tags (system-generated; you do not output these). Attachments provide important context — understand them before executing the task.
+Attachments provide important context — understand them before executing the task.
 
 ### Large File Upload
 The frontend supports chunked upload: large files are split into chunks, each verified by MD5 checksum, then merged. Completed uploads are moved into the user space.

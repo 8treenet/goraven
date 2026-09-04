@@ -305,6 +305,8 @@ func (runner *MainRunner) Query(runctx context.Context, content string) (err err
 		return errors.New("runner status not empty")
 	}
 
+	runctx = util.WithConversationHeader(runctx, runner.mainAgent.param.ChatModel.GetConversationHeaderKey(), runner.mainAgent.param.SessionId())
+
 	runner.Mutex.Lock()
 	runner.sseChan = make(chan *SSEEvent, 20000)
 	runner.stop = false

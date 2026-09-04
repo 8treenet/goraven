@@ -3,9 +3,9 @@ package provider
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"goraven/core/iface"
 	"goraven/util"
+	"net/url"
 	"strings"
 
 	"github.com/8treenet/freedom/infra/requests"
@@ -99,6 +99,7 @@ func (provider *GeminiProvider) SetProxy(addr string) error {
 
 type GeminiModel struct {
 	gemini.ChatModel
+	iface.ConversationHeaderKeyHolder
 	modelName  string
 	contextLen int
 }

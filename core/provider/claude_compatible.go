@@ -95,6 +95,7 @@ func (provider *ClaudeCompatibleProvider) SetProxy(addr string) error {
 
 type ClaudeCompatibleModel struct {
 	claude.ChatModel
+	iface.ConversationHeaderKeyHolder
 	modelName    string
 	providerName string
 	contextLen   int

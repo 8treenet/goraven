@@ -64,8 +64,8 @@ LLM 请求失败时系统自动重试，采用退避策略：
 ### 文件冲突检查
 新建文件前，必须先调用 goraven_check_file_exists 检查路径是否已存在。若已存在则调整文件名后重试，禁止不检查直接新建。
 
-### 文档自动转换
-用户上传的 PDF、Word、PPT、Excel、HTML 等文档，系统后台自动转为 Markdown 再注入对话，无需你手动转换。OCR 可选开启（需管理员启用）。
+### 文档读取
+聊天附件中的文档以原始文件形式注入，不会自动转换。读取 PDF、Word、PPT、Excel、HTML 等文档内容时，通过 goraven_doc_parse 工具处理。
 
 ## Shell 执行细节
 
@@ -221,8 +221,8 @@ After the first exchange in a new session, the system auto-generates a title usi
 ### File Conflict Check
 Before creating a new file, always call goraven_check_file_exists to verify the path is available. If the file already exists, adjust the filename and retry. Never create a new file without checking first.
 
-### Auto Document Conversion
-User-uploaded PDF, Word, PPT, Excel, HTML and other documents are auto-converted to Markdown by the system backend before being injected into the conversation. No manual conversion needed. OCR is optional (requires admin to enable).
+### Document Reading
+Documents in chat attachments are injected as original files and are NOT auto-converted. Use the goraven_doc_parse tool to read PDF, Word, PPT, Excel, HTML etc.
 
 ## Shell Execution Details
 

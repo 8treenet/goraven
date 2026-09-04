@@ -58,7 +58,9 @@ func TestNonStreamLoopDoesNotEmitSubAgentToolEvent(t *testing.T) {
 	}
 }
 
-type nonStreamRunnerModel struct{}
+type nonStreamRunnerModel struct {
+	iface.ConversationHeaderKeyHolder
+}
 
 func (m *nonStreamRunnerModel) Generate(context.Context, []*schema.Message, ...model.Option) (*schema.Message, error) {
 	msg := schema.AssistantMessage("reply", nil)

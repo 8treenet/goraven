@@ -12,7 +12,6 @@ import (
 	"goraven/backend/vo/errs"
 	"goraven/config"
 	"goraven/core/agent"
-	"goraven/core/knowledge"
 	"goraven/core/sandbox"
 	"goraven/core/tools"
 	"goraven/util"
@@ -587,12 +586,6 @@ func (service *ChatService) buildMCPTools(
 	return
 }
 
-// imageExtensions 图片文件扩展名，这些文件不需要通过 docling 转换
-var imageExtensions = map[string]bool{
-	".jpg": true, ".jpeg": true, ".png": true, ".gif": true,
-	".bmp": true, ".webp": true, ".svg": true, ".tiff": true, ".ico": true,
-}
-
 // formatFileSize 将字节数转换为可读的大小字符串
 func formatFileSize(size int64) string {
 	switch {
@@ -607,7 +600,7 @@ func formatFileSize(size int64) string {
 	}
 }
 
-// processAttachments 处理所有附件：查库验证、文档转 markdown、上传到沙盒临时目录
+// processAttachments 处理所有附件：查库验证、上传原文件到沙盒临时目录
 // 必须在 SaveSession 之前调用，避免处理失败产生孤儿会话
 func (service *ChatService) processAttachments(userId string, uploadIds []string) (string, error) {
 	if len(uploadIds) == 0 {
@@ -629,7 +622,7 @@ func (service *ChatService) processAttachments(userId string, uploadIds []string
 	return strings.Join(tags, ""), nil
 }
 
-// processOneAttachment 处理单个附件：查库、转换、上传、返回 goraven-upload 标签
+// processOneAttachment 处理单个附件：查库、上传原文件、返回 goraven-upload 标签
 func (service *ChatService) processOneAttachment(userId string, uploadId string) (string, error) {
 	upload, err := service.HFSRepo.GetUploadByUploadId(uploadId)
 	if err != nil {
@@ -665,39 +658,15 @@ func (service *ChatService) processOneAttachment(userId string, uploadId string)
 		)
 	}
 
-	ext := strings.ToLower(filepath.Ext(upload.FileName))
-	newUUID := util.UUID()
-	var uploadSrcPath, dstRelPath string
-
-	if imageExtensions[ext] {
-		uploadSrcPath = srcPath
-		dstRelPath = "/temp/" + newUUID + ext
-	} else {
-		convertedPath := filepath.Join(upload.TempDir, newUUID+".md")
-		if cerr := knowledge.ConvertFile(srcPath, convertedPath); cerr != nil {
-			freedom.Logger().Warnf(
-				"docling ConvertFile failed for %s (%s), falling back to original: %v",
-				upload.FileName, uploadId, cerr,
-			)
-			uploadSrcPath = srcPath
-			dstRelPath = "/temp/" + newUUID + ext
-		} else {
-			uploadSrcPath = convertedPath
-			dstRelPath = "/temp/" + newUUID + ".md"
-		}
-	}
+	dstRelPath := "/temp/" + util.UUID() + strings.ToLower(filepath.Ext(upload.FileName))
 
 	dstAbsPath := filepath.Join(sb.GetWorkspace(), dstRelPath)
-	if err := sb.Upload(uploadSrcPath, dstAbsPath); err != nil {
+	if err := sb.Upload(srcPath, dstAbsPath); err != nil {
 		return "", errs.NewFormatError(
 			"upload to sandbox failed: %v",
 			"上传文件到沙盒失败: %v",
 			err,
 		)
-	}
-
-	if uploadSrcPath != srcPath {
-		os.Remove(uploadSrcPath)
 	}
 
 	if err := service.HFSRepo.MarkUploadUsed(uploadId); err != nil {

@@ -326,6 +326,13 @@ var toolRegistry = map[string]ToolDisplay{
 		ActionEn: "Analyzing file content",
 		Icon:     "👁️",
 	},
+	"goraven_doc_parse": {
+		NameZh:   "文档解析",
+		NameEn:   "Doc Parse",
+		ActionZh: "正在解析文档",
+		ActionEn: "Parsing document",
+		Icon:     "📑",
+	},
 	"goraven_web_fetch": {
 		NameZh:   "网页获取",
 		NameEn:   "Web Fetch",

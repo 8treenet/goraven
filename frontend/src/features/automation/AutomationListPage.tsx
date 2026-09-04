@@ -57,6 +57,7 @@ export function Component() {
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<AutomationTaskItem | null>(null)
   const [busyId, setBusyId] = useState<number | null>(null)
+  const [hintOpen, setHintOpen] = useState(false)
 
   const fetchTasks = useCallback((targetTab: TabKey, targetPage: number, silent = false) => {
     if (!silent) setState('loading')
@@ -151,6 +152,7 @@ export function Component() {
               <button
                 type="button"
                 aria-label={t('automation.createHint')}
+                onClick={() => setHintOpen(true)}
                 className="flex items-center text-amber-500 transition-colors hover:text-amber-400"
               >
                 <HelpCircle className="size-3.5" />
@@ -279,6 +281,24 @@ export function Component() {
           />
         </div>
       )}
+
+      {/* Hint dialog */}
+      <Dialog open={hintOpen} onOpenChange={setHintOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HelpCircle className="size-4 text-amber-500" />
+              {t('automation.title')}
+            </DialogTitle>
+            <DialogDescription>{t('automation.createHint')}</DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 flex justify-end">
+            <Button variant="outline" size="default" onClick={() => setHintOpen(false)}>
+              {t('common.close')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete confirmation dialog */}
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>

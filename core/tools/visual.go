@@ -11,6 +11,7 @@ import (
 	"goraven/config"
 	"goraven/core/iface"
 	"goraven/core/sandbox"
+	"goraven/util"
 
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
@@ -295,6 +296,8 @@ func (v *VisualUnderstand) invokeAudio(ctx context.Context, absPath, ext, questi
 
 // callModel 调用视觉模型并返回文本结果
 func (v *VisualUnderstand) callModel(ctx context.Context, msg *schema.Message) (string, error) {
+	// 一次性识别运行：使用视觉模型配置的 header 名与新的运行 ID
+	ctx = util.WithConversationHeader(ctx, v.model.GetConversationHeaderKey(), util.UUID())
 	resp, err := v.model.Generate(ctx, []*schema.Message{msg})
 	if err != nil {
 		return "", fmt.Errorf("visual model call failed: %w", err)

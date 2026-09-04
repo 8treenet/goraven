@@ -8,6 +8,7 @@ import (
 	"goraven/core/plugin"
 	"goraven/core/sandbox"
 	"goraven/core/tools"
+	"goraven/util"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -16,6 +17,7 @@ import (
 	"github.com/cloudwego/eino/adk"
 	"github.com/cloudwego/eino/adk/middlewares/plantask"
 	einotool "github.com/cloudwego/eino/components/tool"
+	"github.com/cloudwego/eino/schema"
 )
 
 func init() {
@@ -152,6 +154,18 @@ func (main *MainAgent) NewRunner(ctx context.Context) (runner *MainRunner, e err
 		main.AddTool(visualTool)
 	}
 
+	// 文档解析工具：读取/转换 PDF、DOCX 等格式（子 agent 通过 toolList 复制自动获得）
+	// extraWorkspace 与沙盒放行逻辑一致：团队项目目录内的文档也可解析
+	extraWorkspace := ""
+	if main.param.ProjectWorkspace != "" && main.param.Project != "" {
+		extraWorkspace = filepath.Join(main.param.ProjectWorkspace, main.param.Project)
+	}
+	docTool, err := tools.NewDocParse(main.param.userSpace, extraWorkspace)
+	if err != nil {
+		return nil, err
+	}
+	main.AddTool(docTool)
+
 	// 创建自动化任务工具：注入持久化仓储与会话暂存上下文（MCP/技能/项目/模型/角色）
 	if main.param.AutomationTaskRepo != nil && main.param.Session != nil {
 		staging := tools.AutomationStaging{
@@ -189,12 +203,16 @@ func (main *MainAgent) NewRunner(ctx context.Context) (runner *MainRunner, e err
 	// workspace := config.Get().GetUserSpace(main.param.UserId())
 	// main.SetWorkspace(workspace)
 
-	subChatAgent, err := main.getSubAgent()
+	subChatAgent, subAgentModel, err := main.getSubAgent()
 	if err != nil {
 		e = err
 	}
 	subAgentTool := adk.NewAgentTool(ctx, subChatAgent)
-	main.AddTool(subAgentTool)
+	if invokable, ok := subAgentTool.(einotool.InvokableTool); ok {
+		main.AddTool(&conversationHeaderTool{inner: invokable, model: subAgentModel})
+	} else {
+		main.AddTool(subAgentTool)
+	}
 	// Enable internal events streaming so sub-agent's reasoning can be sent to frontend
 	main.SetEmitInternalEvents(true)
 
@@ -244,8 +262,8 @@ func (main *MainAgent) getPlanTask(ctx context.Context) (adk.ChatModelAgentMiddl
 	})
 }
 
-func (main *MainAgent) getSubAgent() (result *adk.ChatModelAgent, err error) {
-	subAgentModel := main.chatModel
+func (main *MainAgent) getSubAgent() (result *adk.ChatModelAgent, subAgentModel iface.BaseChatModel, err error) {
+	subAgentModel = main.chatModel
 	if main.flashModel != nil {
 		subAgentModel = main.flashModel
 	}
@@ -266,7 +284,7 @@ func (main *MainAgent) getSubAgent() (result *adk.ChatModelAgent, err error) {
 
 	pmid, err := pruning.New(main.param.SysCfg)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	subAgent.AddChatModelAgentMiddleware(pmid)
 
@@ -275,4 +293,20 @@ func (main *MainAgent) getSubAgent() (result *adk.ChatModelAgent, err error) {
 
 	result, err = subAgent.GetChatModelAgent()
 	return
+}
+
+// conversationHeaderTool 子代理工具装饰器：每次子代理任务是一次独立运行，
+// 以运行模型的会话归并 header 名与新生成的运行 ID 覆盖外层设置，任务内多轮工具调用共享该 ID
+type conversationHeaderTool struct {
+	inner einotool.InvokableTool
+	model iface.BaseChatModel
+}
+
+func (t *conversationHeaderTool) Info(ctx context.Context) (*schema.ToolInfo, error) {
+	return t.inner.Info(ctx)
+}
+
+func (t *conversationHeaderTool) InvokableRun(ctx context.Context, argumentsInJSON string, opts ...einotool.Option) (string, error) {
+	ctx = util.WithConversationHeader(ctx, t.model.GetConversationHeaderKey(), util.UUID())
+	return t.inner.InvokableRun(ctx, argumentsInJSON, opts...)
 }

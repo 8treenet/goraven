@@ -276,22 +276,20 @@ func seedSystemSkills(db *gorm.DB) error {
 		},
 	}
 
-	// docling 技能仅 Docker 环境创建（依赖容器内 Python venv + docling）
-	if config.Get().Behavior.Docker {
-		docContent := seed.SystemSkillGoRavenDocParse
-		docDescription := seed.ParseSkillDescription(docContent)
-		if config.Get().System.Language == "en" {
-			docContent = seed.SystemSkillGoRavenDocParseEn
-			docDescription = seed.ParseSkillDescription(docContent)
-		}
-		skills = append(skills, po.SystemSkill{
-			Name:        "goraven-doc-parse",
-			Description: docDescription,
-			Content:     docContent,
-			Version:     config.Version,
-			Status:      po.SystemSkillStatusEnabled,
-		})
+	// 文档解析技能：工具路径由 paths.scripts 区分本地/Docker，两种环境均播种
+	docContent := seed.SystemSkillGoRavenDocParse
+	docDescription := seed.ParseSkillDescription(docContent)
+	if config.Get().System.Language == "en" {
+		docContent = seed.SystemSkillGoRavenDocParseEn
+		docDescription = seed.ParseSkillDescription(docContent)
 	}
+	skills = append(skills, po.SystemSkill{
+		Name:        "goraven-doc-parse",
+		Description: docDescription,
+		Content:     docContent,
+		Version:     config.Version,
+		Status:      po.SystemSkillStatusEnabled,
+	})
 
 	names := make([]string, len(skills))
 	for i, s := range skills {

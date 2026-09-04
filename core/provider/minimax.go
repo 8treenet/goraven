@@ -114,6 +114,7 @@ func (provider *MiniMaxProvider) Models() ([]ModelInfo, error) {
 
 type MiniMaxModel struct {
 	claude.ChatModel
+	iface.ConversationHeaderKeyHolder
 	modelName  string
 	contextLen int
 }

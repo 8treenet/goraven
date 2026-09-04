@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"goraven/core/iface"
 	"goraven/util"
+	"net/url"
 
 	"github.com/8treenet/freedom/infra/requests"
 	"github.com/cloudwego/eino-ext/components/model/openai"
@@ -92,6 +92,7 @@ func (provider *VolcanoProvider) Models() ([]ModelInfo, error) {
 
 type VolcanoModel struct {
 	openai.ChatModel
+	iface.ConversationHeaderKeyHolder
 	modelName  string
 	contextLen int
 }

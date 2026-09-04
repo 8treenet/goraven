@@ -3,9 +3,9 @@ package provider
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"goraven/core/iface"
 	"goraven/util"
+	"net/url"
 
 	"github.com/8treenet/freedom/infra/requests"
 	"github.com/cloudwego/eino-ext/components/model/openrouter"
@@ -79,6 +79,7 @@ func (provider *OpenrouterProvider) SetProxy(addr string) error {
 
 type OpenrouterModel struct {
 	openrouter.ChatModel
+	iface.ConversationHeaderKeyHolder
 	modelName  string
 	contextLen int
 }

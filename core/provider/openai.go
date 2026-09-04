@@ -3,9 +3,9 @@ package provider
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"goraven/core/iface"
 	"goraven/util"
+	"net/url"
 
 	"github.com/8treenet/freedom/infra/requests"
 	"github.com/cloudwego/eino-ext/components/model/openai"
@@ -76,6 +76,7 @@ func (provider *OpenAIProvider) SetProxy(addr string) error {
 
 type OpenAIModel struct {
 	openai.ChatModel
+	iface.ConversationHeaderKeyHolder
 	modelName  string
 	contextLen int
 }
