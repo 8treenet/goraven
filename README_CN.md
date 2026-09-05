@@ -102,14 +102,14 @@ Agent 直接读写文件、执行 Shell、调用 MCP 工具链。内部 API、�
 **第一步：拉取镜像**
 
 ```bash
-docker pull 8treenet/goraven:v0.5.1
+docker pull 8treenet/goraven:v0.5.3
 ```
 
 > 国内网络拉取较慢时，可使用以下镜像仓库地址拉取，拉取后重命名为统一镜像名：
 > ```bash
 > # 以 docker.1panel.live 为例
-> docker pull docker.1panel.live/8treenet/goraven:v0.5.1
-> docker tag docker.1panel.live/8treenet/goraven:v0.5.1 8treenet/goraven:v0.5.1
+> docker pull docker.1panel.live/8treenet/goraven:v0.5.3
+> docker tag docker.1panel.live/8treenet/goraven:v0.5.3 8treenet/goraven:v0.5.3
 > ```
 > 其他镜像仓库地址同理：`docker.1ms.run`、`hub.rat.dev`
 
@@ -119,7 +119,7 @@ docker pull 8treenet/goraven:v0.5.1
 docker run -d --restart=always --name goraven-agent \
   -p 8000:8000 \
   -e GORAVEN_CHINA_MIRROR=1 \
-  8treenet/goraven:v0.5.1
+  8treenet/goraven:v0.5.3
 ```
 
 `GORAVEN_CHINA_MIRROR=1` 启用大陆加速源（运行时依赖）并自动设置时区 `-e TZ=Asia/Shanghai`。
@@ -132,7 +132,7 @@ docker run -d --restart=always --name goraven-agent \
   -p 8000:8000 \
   -v /opt/goraven:/goraven/data \
   -e GORAVEN_CHINA_MIRROR=1 \
-  8treenet/goraven:v0.5.1
+  8treenet/goraven:v0.5.3
 ```
 
 启动后访问 `http://localhost:8000`，按引导完成初始化，创建管理员账户即可使用。
