@@ -463,6 +463,14 @@ function MobileUserMenu() {
           accent
           onNavigate={closeMobile}
         />
+        <NavItem
+          to="/files"
+          icon={IconFolderFilled}
+          label={t('sidebar.workspace')}
+          collapsed={false}
+          accent
+          onNavigate={closeMobile}
+        />
       </SidebarGroup>
 
       <div className="my-2 border-t border-border" />

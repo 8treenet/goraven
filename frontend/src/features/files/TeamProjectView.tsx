@@ -158,7 +158,7 @@ export const TeamProjectView = forwardRef<TeamProjectViewHandle, TeamProjectView
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-auto p-4">
         {loading && (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-4">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,340px),1fr))] gap-4">
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
@@ -200,7 +200,7 @@ export const TeamProjectView = forwardRef<TeamProjectViewHandle, TeamProjectView
         )}
 
         {!loading && !error && projects.length > 0 && (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-4">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,340px),1fr))] gap-4">
             {projects.map((project) => (
               <div
                 key={project.id}
@@ -217,7 +217,7 @@ export const TeamProjectView = forwardRef<TeamProjectViewHandle, TeamProjectView
                         e.stopPropagation()
                         setMenuFor({ id: project.id, x: e.clientX, y: e.clientY })
                       }}
-                      className="shrink-0 rounded-sm p-0.5 text-text-3 opacity-0 transition-opacity hover:bg-bg-layer-3 hover:text-text-1 group-hover:opacity-100"
+                      className="shrink-0 rounded-sm p-0.5 text-text-3 opacity-100 transition-opacity hover:bg-bg-layer-3 hover:text-text-1 md:opacity-0 md:group-hover:opacity-100"
                     >
                       <MoreHorizontal className="size-4" />
                     </button>

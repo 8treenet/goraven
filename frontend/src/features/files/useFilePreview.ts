@@ -133,6 +133,10 @@ export function useFilePreview(options: UseFilePreviewOptions) {
           .catch(() => setPreviewError(true))
           .finally(() => setPreviewLoading(false))
       } else if (ptype === 'office') {
+        if (window.matchMedia('(max-width: 767px)').matches) {
+          setPreviewLoading(false)
+          return
+        }
         createAccess(filePath, 'file')
           .then((res) => {
             const akPath = buildAkPath(filePath).replace(/^\//, '').split('/').map(encodeURIComponent).join('/')

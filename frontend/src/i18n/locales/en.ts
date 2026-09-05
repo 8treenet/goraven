@@ -338,6 +338,7 @@ const en = {
   'files.preview': 'Preview',
   'files.previewUnsupported': 'This file type does not support preview',
   'files.previewFailedOffice': 'Office document preview failed, please download to view',
+  'files.previewOfficeMobile': 'Office online preview is not supported on mobile, please download to view',
   'files.rename': 'Rename',
   'files.teamProjects': 'Team Projects',
   'files.myProjects': 'My Projects',

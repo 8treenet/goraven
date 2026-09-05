@@ -338,6 +338,7 @@ const zh = {
   'files.preview': '预览',
   'files.previewUnsupported': '该文件类型不支持预览',
   'files.previewFailedOffice': 'Office 文档预览失败，请下载查看',
+  'files.previewOfficeMobile': '移动端暂不支持 Office 在线预览，请下载后查看',
   'files.rename': '重命名',
   'files.teamProjects': '团队项目',
   'files.myProjects': '我的项目',

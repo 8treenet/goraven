@@ -159,6 +159,17 @@ export function PreviewDialog({ item, type, url, text, sheets, loading, error, o
               className={cn('w-full rounded-sm bg-white', maximized ? 'h-full' : 'h-[65vh]')}
             />
           )}
+          {!loading && !error && !url && type === 'office' && (
+            <div className="flex flex-col items-center gap-3 py-8">
+              <p className="text-sm text-text-2">{t('files.previewOfficeMobile')}</p>
+              {onDownload && (
+                <Button variant="outline" size="sm" onClick={onDownload}>
+                  <Download className="size-3.5" />
+                  {t('files.download')}
+                </Button>
+              )}
+            </div>
+          )}
           {!loading && !error && sheets !== null && type === 'xlsx' && (
             <div className={cn('flex w-full flex-col', maximized ? 'flex-1 min-h-0' : 'max-h-[65vh]')}>
               {sheets.length > 1 && (
