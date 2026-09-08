@@ -1,9 +1,10 @@
 import { useState, useCallback } from 'react'
-import { Copy, Check, ThumbsUp, ThumbsDown, ChevronDown, ChevronRight, Brain } from 'lucide-react'
+import { Copy, Check, ThumbsUp, ThumbsDown, ChevronDown, ChevronRight, Brain, Clock, Timer } from 'lucide-react'
 import { Markdown } from '@/components/common/markdown'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { useT } from '@/i18n'
+import { formatDurationLabel, formatMsgTime } from './message-meta'
 
 export interface ReadonlyThinkingSegment {
   type: 'reasoning' | 'tool'
@@ -22,6 +23,8 @@ export interface ReadonlyMessage {
   content: string
   thinkingSegments?: ReadonlyThinkingSegment[]
   timestamp: string
+  created?: string
+  duration?: number
 }
 
 export function ReadonlyUserMessage({ content }: { content: string }) {
@@ -39,9 +42,13 @@ export function ReadonlyUserMessage({ content }: { content: string }) {
 export function ReadonlyAssistantMessage({
   content,
   thinkingSegments,
+  created,
+  duration,
 }: {
   content: string
   thinkingSegments?: ReadonlyThinkingSegment[]
+  created?: string
+  duration?: number
 }) {
   const [thinkingOpen, setThinkingOpen] = useState(true)
   const t = useT()
@@ -55,6 +62,10 @@ export function ReadonlyAssistantMessage({
   }, [content])
 
   const hasThinking = !!thinkingSegments && thinkingSegments.length > 0
+
+  const metaTime = formatMsgTime(created)
+  const metaDuration = duration && duration > 0 ? formatDurationLabel(duration) : undefined
+  const showMeta = !!metaTime || !!metaDuration
 
   return (
     <div>
@@ -126,6 +137,22 @@ export function ReadonlyAssistantMessage({
             </TooltipTrigger>
             <TooltipContent>{t('chat.dislikeTooltip')}</TooltipContent>
           </Tooltip>
+          {showMeta && (
+            <span className="ml-auto flex shrink-0 items-center gap-2 text-xs text-text-muted tabular-nums">
+              {metaTime && (
+                <span className="flex items-center gap-1" title={created}>
+                  <Clock className="size-3" />
+                  {metaTime}
+                </span>
+              )}
+              {metaDuration && (
+                <span className="flex items-center gap-1">
+                  <Timer className="size-3" />
+                  {metaDuration}
+                </span>
+              )}
+            </span>
+          )}
         </div>
       )}
     </div>
@@ -173,6 +200,8 @@ export function ReadonlyMessageBlock({ message }: { message: ReadonlyMessage }) 
     <ReadonlyAssistantMessage
       content={message.content}
       thinkingSegments={message.thinkingSegments}
+      created={message.created}
+      duration={message.duration}
     />
   )
 }

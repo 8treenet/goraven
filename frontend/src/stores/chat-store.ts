@@ -77,6 +77,8 @@ export interface Message {
   timestamp: string
   roundId: string
   contextState: number
+  created?: string
+  duration?: number
 }
 
 export interface Session {
@@ -131,12 +133,14 @@ function mapApiMessage(m: ApiMessage): Message {
     timestamp: m.created,
     roundId: m.roundId,
     contextState: m.contextState,
+    created: m.created,
+    duration: m.roleType === 'assistant' ? m.duration : undefined,
   }
 }
 
 const pollIntervals = new Map<string, ReturnType<typeof setInterval>>()
 const backgroundTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
-const BACKGROUND_TIMEOUT_MS = 5 * 60 * 1000
+const BACKGROUND_TIMEOUT_MS = 10 * 60 * 1000
 
 const LAST_USED_MODEL_KEY = 'goraven.lastUsedModelId'
 
@@ -763,7 +767,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     set({ streamController: controller })
 
-    // 3-minute background timer: if no response, cut SSE and go to background
+    // 10-minute background timer: if no response, cut SSE and go to background
     clearTimeout(backgroundTimeouts.get(sessionId))
     const timeoutId = setTimeout(() => {
       const s = get()

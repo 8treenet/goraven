@@ -401,6 +401,17 @@
   display: none;
 }
 
+/* Streamdown 的 table-wrapper 默认自带 border/背景/p-2 内边距(即使 controls 关闭),
+   与内层滚动容器的 border 叠加形成双框,这里去掉外层装饰只保留内层单框 */
+.goraven-markdown [data-streamdown="table-wrapper"] {
+  margin: 0.75rem 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  gap: 0;
+}
+
 .goraven-markdown .table {
   width: 100%;
   margin: 0.75rem 0;

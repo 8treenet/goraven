@@ -37,6 +37,7 @@ export interface RichMessage {
   role: 'user' | 'assistant' | 'summary'
   content: string
   reasoningContent?: string
+  duration?: number
   toolCalls?: ToolCall[]
   timestamp: string
   roundId: number
@@ -626,6 +627,7 @@ function richMessageToItem(m: RichMessage): MessageItem {
     content: m.content,
     reasoningContent,
     roleType: m.role,
+    duration: m.duration,
     created: m.timestamp,
   }
 }

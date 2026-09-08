@@ -41,6 +41,8 @@ function toReadonlyMessage(m: ApiMessage): ReadonlyMessage {
     content: m.content,
     thinkingSegments,
     timestamp: m.created,
+    created: m.created,
+    duration: m.roleType === 'assistant' ? m.duration : undefined,
   }
 }
 

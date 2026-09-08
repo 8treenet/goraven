@@ -1,11 +1,12 @@
 import { useState, useCallback } from 'react'
-import { Brain, ChevronRight, ChevronDown, Copy, Check, ThumbsUp, ThumbsDown, Loader2 } from 'lucide-react'
+import { Brain, ChevronRight, ChevronDown, Copy, Check, ThumbsUp, ThumbsDown, Loader2, Clock, Timer } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useChatStore, type Message, type RetryInfo, type ThinkingSegment } from '@/stores/chat-store'
 import { Markdown } from '@/components/common/markdown'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { useT } from '@/i18n'
 import { BackgroundThinking } from './BackgroundThinking'
+import { formatDurationLabel, formatMsgTime } from './message-meta'
 
 function MessageList({ messages, isGenerating, isBackground, startTime }: { messages: Message[]; isGenerating: boolean; isBackground: boolean; startTime?: string }) {
   const streamingContent = useChatStore((s) => s.streamingContent)
@@ -48,6 +49,8 @@ function MessageBlock({ message }: { message: Message }) {
       <AssistantMessage
         content={message.content}
         thinkingSegments={message.thinkingSegments}
+        created={message.created}
+        duration={message.duration}
       />
     )
   }
@@ -71,11 +74,15 @@ function AssistantMessage({
   thinkingSegments,
   retry,
   isStreaming,
+  created,
+  duration,
 }: {
   content: string
   thinkingSegments?: ThinkingSegment[]
   retry?: RetryInfo | null
   isStreaming?: boolean
+  created?: string
+  duration?: number
 }) {
   const [thinkingOpen, setThinkingOpen] = useState(true)
   const t = useT()
@@ -91,6 +98,11 @@ function AssistantMessage({
   const hasThinking = isStreaming || (thinkingSegments && thinkingSegments.length > 0) || !!retry
 
   const segmentsToShow = isStreaming ? thinkingSegments?.slice(-20) : thinkingSegments
+
+  // 耗时/创建时间由历史接口（MessageItem.duration/created）提供；SSE 实时消息没有这两个字段，不展示
+  const metaTime = formatMsgTime(created)
+  const metaDuration = duration && duration > 0 ? formatDurationLabel(duration) : undefined
+  const showMeta = !!metaTime || !!metaDuration
 
   // A tool is "in flight" only while it is the very last segment AND no
   // content has started streaming yet. Once any new SSE content arrives
@@ -260,6 +272,22 @@ function AssistantMessage({
             </TooltipTrigger>
             <TooltipContent>{t('chat.dislikeTooltip')}</TooltipContent>
           </Tooltip>
+          {showMeta && (
+            <span className="ml-auto flex shrink-0 items-center gap-2 text-xs text-text-muted tabular-nums">
+              {metaTime && (
+                <span className="flex items-center gap-1" title={created}>
+                  <Clock className="size-3" />
+                  {metaTime}
+                </span>
+              )}
+              {metaDuration && (
+                <span className="flex items-center gap-1">
+                  <Timer className="size-3" />
+                  {metaDuration}
+                </span>
+              )}
+            </span>
+          )}
         </div>
       )}
     </div>

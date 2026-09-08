@@ -295,6 +295,7 @@ export interface Message {
   content: string
   reasoningContent: ReasoningItem[]
   roleType: 'user' | 'assistant' | 'summary'
+  duration?: number
   created: string
 }
 
