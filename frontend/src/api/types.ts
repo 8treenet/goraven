@@ -777,6 +777,25 @@ export interface TeamProjectCreateRsp {
   id: number
 }
 
+/* ---------- My Project ---------- */
+
+export interface MyProjectItem {
+  id: number
+  projectName: string
+  description: string
+  gitUrl: string
+  updatedAt: string
+  created: string
+}
+
+export interface MyProjectListRsp {
+  items: MyProjectItem[]
+}
+
+export interface MyProjectCreateRsp {
+  id: number
+}
+
 /* ---------- Team Project Members ---------- */
 
 export interface TeamProjectUserItem {

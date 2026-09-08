@@ -30,33 +30,33 @@ type SessionListReq struct {
 
 // SessionListItem 会话列表条目（侧边栏"所有对话"使用）
 type SessionListItem struct {
-	SessionId     string             `json:"sessionId"`              // 会话ID
-	Title         string             `json:"title"`                  // 会话标题
-	Status        uint8              `json:"status"`                 // 会话状态：0正常 1进行中
-	PersonaId     int                `json:"personaId"`              // 角色ID，0表示无角色绑定
-	Project       string             `json:"project"`                // 项目目录名称，空表示无项目
-	TeamProject   *TeamProjectInfo   `json:"sharedProject,omitempty"` // 团队项目，team_project_id>0 时非nil
-	LastChatTime  time.Time          `json:"lastChatTime"`           // 最后聊天时间
-	Created       time.Time          `json:"created"`                // 创建时间
+	SessionId    string           `json:"sessionId"`               // 会话ID
+	Title        string           `json:"title"`                   // 会话标题
+	Status       uint8            `json:"status"`                  // 会话状态：0正常 1进行中
+	PersonaId    int              `json:"personaId"`               // 角色ID，0表示无角色绑定
+	Project      string           `json:"project"`                 // 项目目录名称，空表示无项目
+	TeamProject  *TeamProjectInfo `json:"sharedProject,omitempty"` // 团队项目，team_project_id>0 时非nil
+	LastChatTime time.Time        `json:"lastChatTime"`            // 最后聊天时间
+	Created      time.Time        `json:"created"`                 // 创建时间
 }
 
 // SessionDetailRsp 会话详情响应（含模型、MCP/技能快照）
 type SessionDetailRsp struct {
-	SessionId             string             `json:"sessionId"`                      // 会话ID
-	Title                 string             `json:"title"`                          // 会话标题
-	Status                uint8              `json:"status"`                         // 会话状态：0正常 1进行中
-	PersonaId             int                `json:"personaId"`                      // 角色ID，0表示无角色绑定
-	Project               string             `json:"project"`                        // 项目目录名称，空表示无项目
-	TeamProject           *TeamProjectInfo   `json:"sharedProject,omitempty"`         // 团队项目，team_project_id>0 时非nil
-	AIModelId             int                `json:"aiModelId"`                      // 使用模型的ID
-	ContextTokens         int                `json:"contextTokens"`                  // 当前上下文长度
-	PromptTokensCount     int                `json:"promptTokensCount" gorm:"column:prompt_tokens_count"`     //累计promptTokensCount
-	CompletionTokensCount int                `json:"completionTokensCount" gorm:"column:completion_tokens_count"` //累计completionTokensCount
-	PromptCachedTokens    int                `json:"promptCachedTokens"`             //累计缓存promptTokens
-	McpIds                []int              `json:"mcpIds"`                         // MCP配置ID列表，有角色时为空
-	SkillIds              []int              `json:"skillIds"`                       // 技能ID列表，有角色时为空
-	LastChatTime          time.Time          `json:"lastChatTime"`                   // 最后聊天时间
-	Created               time.Time          `json:"created"`                        // 创建时间
+	SessionId             string           `json:"sessionId"`                                                   // 会话ID
+	Title                 string           `json:"title"`                                                       // 会话标题
+	Status                uint8            `json:"status"`                                                      // 会话状态：0正常 1进行中
+	PersonaId             int              `json:"personaId"`                                                   // 角色ID，0表示无角色绑定
+	Project               string           `json:"project"`                                                     // 项目目录名称，空表示无项目
+	TeamProject           *TeamProjectInfo `json:"sharedProject,omitempty"`                                     // 团队项目，team_project_id>0 时非nil
+	AIModelId             int              `json:"aiModelId"`                                                   // 使用模型的ID
+	ContextTokens         int              `json:"contextTokens"`                                               // 当前上下文长度
+	PromptTokensCount     int              `json:"promptTokensCount" gorm:"column:prompt_tokens_count"`         //累计promptTokensCount
+	CompletionTokensCount int              `json:"completionTokensCount" gorm:"column:completion_tokens_count"` //累计completionTokensCount
+	PromptCachedTokens    int              `json:"promptCachedTokens"`                                          //累计缓存promptTokens
+	McpIds                []int            `json:"mcpIds"`                                                      // MCP配置ID列表，有角色时为空
+	SkillIds              []int            `json:"skillIds"`                                                    // 技能ID列表，有角色时为空
+	LastChatTime          time.Time        `json:"lastChatTime"`                                                // 最后聊天时间
+	Created               time.Time        `json:"created"`                                                     // 创建时间
 
 	// 关联信息（service 层组装）
 	ModelName    string `json:"modelName,omitempty"`    // 模型名称（providerDisplayName - modelName）
@@ -74,6 +74,7 @@ type MessageItem struct {
 	Content          string                 `json:"content"`          // 消息内容
 	ReasoningContent []MessageReasoningItem `json:"reasoningContent"` // 推理/思考内容，开启思考且 assistant 类型才有
 	RoleType         string                 `json:"roleType"`         // 角色：user/assistant
+	Duration         int                    `json:"duration"`         // 耗时（毫秒），对应 po.Message.Duration，仅 assistant 类型消息有值
 	Created          string                 `json:"created"`          // 创建时间
 }
 

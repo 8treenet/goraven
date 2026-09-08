@@ -2,10 +2,8 @@ package service
 
 import (
 	"errors"
-	"io/fs"
 	"os"
 	"path/filepath"
-	"syscall"
 	"testing"
 
 	"goraven/backend/vo/errs"
@@ -94,33 +92,4 @@ func TestResolveSharedAkPath(t *testing.T) {
 			t.Errorf("other project should be rejected, got %v", err)
 		}
 	})
-}
-
-func TestMoveFileCrossDeviceFallsBackToCopy(t *testing.T) {
-	srcDir := t.TempDir()
-	dstDir := t.TempDir()
-	srcPath := srcDir + "/hello.md"
-	dstPath := dstDir + "/hello.md"
-	contents := []byte("hello from upload")
-	if err := os.WriteFile(srcPath, contents, 0644); err != nil {
-		t.Fatal(err)
-	}
-
-	rename := func(_, _ string) error {
-		return &os.LinkError{Op: "rename", Err: syscall.EXDEV}
-	}
-	if err := moveFileCrossDevice(srcPath, dstPath, rename); err != nil {
-		t.Fatalf("moveFileCrossDevice returned error: %v", err)
-	}
-
-	got, err := os.ReadFile(dstPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(got) != string(contents) {
-		t.Errorf("destination contents = %q, want %q", got, contents)
-	}
-	if _, err := os.Stat(srcPath); !errors.Is(err, fs.ErrNotExist) {
-		t.Errorf("source still exists or stat failed: %v", err)
-	}
 }

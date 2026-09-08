@@ -2,10 +2,9 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Share2, Shrink, Paperclip, ArrowUp, Square, Loader2, TriangleAlert, FolderGit2, FolderOpen, FolderClock, Menu, Users, AtSign, X } from 'lucide-react'
 import { cn, uuid } from '@/lib/utils'
-import { listFiles } from '@/api/files'
-import type { FileItem } from '@/api/types'
+import { listMyProjects } from '@/api/my-projects'
 import { listTeamProjects } from '@/api/team-projects'
-import type { TeamProjectItem } from '@/api/types'
+import type { TeamProjectItem, MyProjectItem } from '@/api/types'
 import { useChatStore, stopPolling, type Model, type McpEndpoint, type Skill } from '@/stores/chat-store'
 import { useSidebarStore } from '@/stores/sidebar-store'
 import { ShareDialog } from './ShareDialog'
@@ -792,7 +791,7 @@ function NewChatInput({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [projectOpen, setProjectOpen] = useState(false)
-  const [projectItems, setProjectItems] = useState<FileItem[]>([])
+  const [projectItems, setProjectItems] = useState<MyProjectItem[]>([])
   const [projectLoading, setProjectLoading] = useState(false)
   const [projectError, setProjectError] = useState(false)
   const [teamItems, setTeamItems] = useState<TeamProjectItem[]>([])
@@ -803,10 +802,9 @@ function NewChatInput({
   const loadProjects = useCallback(() => {
     setProjectLoading(true)
     setProjectError(false)
-    listFiles('projects')
+    listMyProjects()
       .then((data) => {
-        const dirs = data.items.filter((item) => item.isDir)
-        setProjectItems(dirs)
+        setProjectItems(data.items ?? [])
         setProjectLoading(false)
       })
       .catch(() => {
@@ -1245,11 +1243,11 @@ function NewChatInput({
               </div>
             ) : (
               projectItems.map((item) => {
-                const isSelected = formProjectPath === item.name
+                const isSelected = formProjectPath === item.projectName
                 return (
                   <button
-                    key={item.name}
-                    onClick={() => handleProjectSelect(item.name)}
+                    key={item.id}
+                    onClick={() => handleProjectSelect(item.projectName)}
                     className={cn(
                       'flex w-full items-center gap-2.5 px-4 py-2 text-[13px] transition-colors text-left outline-none',
                       isSelected
@@ -1261,7 +1259,7 @@ function NewChatInput({
                       'size-4 shrink-0',
                       isSelected ? 'text-interactive' : 'text-folder',
                     )} />
-                    <span className="truncate">{item.name}</span>
+                    <span className="truncate">{item.projectName}</span>
                     {isSelected && (
                       <span className="ml-auto shrink-0 text-xs text-interactive">{'✓'}</span>
                     )}

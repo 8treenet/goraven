@@ -74,10 +74,6 @@ export interface FileListProps {
   isProtected?: (item: FileItem) => boolean
   /** 根目录列表过滤（我的文件：隐藏 projects 目录） */
   filterAtRoot?: (item: FileItem) => boolean
-  /** 新建对话框标题（我的文件 /projects 下：新建项目） */
-  getCreateTitle?: (dir: string) => string | undefined
-  /** 是否允许空白处右键菜单（我的文件 /projects 下禁用） */
-  allowEmptyContextMenu?: (dir: string) => boolean
   /** 错误视图主文案，默认 common.loadFailed */
   errorTitle?: string
   /** 错误视图副文案（我的文件：files.errReadDir） */
@@ -107,8 +103,6 @@ export const FileList = forwardRef<FileListHandle, FileListProps>(function FileL
     evictCache,
     isProtected,
     filterAtRoot,
-    getCreateTitle,
-    allowEmptyContextMenu = () => true,
     errorTitle,
     errorHint,
     errorActionLabel,
@@ -814,7 +808,7 @@ export const FileList = forwardRef<FileListHandle, FileListProps>(function FileL
       )}
 
       {/* Empty space context menu */}
-      {emptyContextMenu && allowEmptyContextMenu(currentDir) && (
+      {emptyContextMenu && (
         <ContextMenu
           x={emptyContextMenu.x}
           y={emptyContextMenu.y}
@@ -836,7 +830,6 @@ export const FileList = forwardRef<FileListHandle, FileListProps>(function FileL
         value={dialogValue}
         error={dialogError}
         selectedItems={selectedItems}
-        createTitle={getCreateTitle?.(currentDir)}
         onValueChange={setDialogValue}
         onClearError={() => setDialogError(null)}
         onClose={closeDialog}

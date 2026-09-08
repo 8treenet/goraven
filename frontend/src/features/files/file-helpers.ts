@@ -48,7 +48,20 @@ export const TEXT_EXTS = new Set([
   'vue', 'svelte', 'graphql', 'gql', 'proto',
 ])
 
-export const ILLEGAL_CHARS = /[\/\\:*?"<>|]/
+export function validateDirName(name: string): string | null {
+  if (!name.trim()) return translate('files.errNameEmpty')
+  if (name === '.' || name === '..') return translate('files.errNameDot')
+  if (name.includes('/') || name.includes('\0')) return translate('files.errNameSlash')
+  if (new TextEncoder().encode(name).length > 255) return translate('files.errNameTooLong')
+  return null
+}
+
+export function validateName(name: string, existingNames: string[]): string | null {
+  const err = validateDirName(name)
+  if (err) return err
+  if (existingNames.includes(name.trim())) return translate('files.errNameExists')
+  return null
+}
 
 export function formatSize(bytes: number): string {
   if (bytes === 0) return '-'
@@ -157,11 +170,4 @@ export function sortItems(items: FileItem[], field: SortField, order: SortOrder)
     return order === 'asc' ? cmp : -cmp
   })
   return sorted
-}
-
-export function validateName(name: string, existingNames: string[]): string | null {
-  if (!name.trim()) return translate('files.errNameEmpty')
-  if (ILLEGAL_CHARS.test(name)) return translate('files.errIllegalChars')
-  if (existingNames.includes(name.trim())) return translate('files.errNameExists')
-  return null
 }

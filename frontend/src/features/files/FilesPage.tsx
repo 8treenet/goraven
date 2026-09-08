@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect, useRef, forwardRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo, forwardRef } from 'react'
 import {
   Upload,
   FolderPlus,
@@ -11,19 +11,24 @@ import { Button } from '@/components/ui/button'
 import { useT } from '@/i18n'
 import { listFiles, mkdir, rename, deleteFiles, compress, decompress } from '@/api/files'
 import { createTempAccess, getDownloadUrl } from '@/api/files'
-import type { FileItem, TeamProjectItem } from '@/api/types'
+import type { FileItem, TeamProjectItem, MyProjectItem } from '@/api/types'
 import { useFileUpload } from '@/hooks/useFileUpload'
 import { evictCachedBlob } from '@/lib/file-blob-cache'
 import { FileList, type FileListApi } from './FileList'
 import { TeamProjectView, type TeamProjectViewHandle } from './TeamProjectView'
 import { TeamProjectFiles, type TeamProjectFilesHandle } from './TeamProjectFiles'
+import { MyProjectView, type MyProjectViewHandle } from './MyProjectView'
+import { MyProjectFiles, type MyProjectFilesHandle } from './MyProjectFiles'
 
 export function Component() {
   const [tab, setTab] = useState<'files' | 'projects' | 'team'>('files')
   const [activeTeamProject, setActiveTeamProject] = useState<TeamProjectItem | null>(null)
+  const [activeMyProject, setActiveMyProject] = useState<MyProjectItem | null>(null)
   const [plusOpen, setPlusOpen] = useState(false)
   const plusRef = useRef<HTMLDivElement>(null)
   const mineRef = useRef<MineFilesHandle>(null)
+  const myViewRef = useRef<MyProjectViewHandle>(null)
+  const myFilesRef = useRef<MyProjectFilesHandle>(null)
   const teamFilesRef = useRef<TeamProjectFilesHandle>(null)
   const teamViewRef = useRef<TeamProjectViewHandle>(null)
   const t = useT()
@@ -33,6 +38,7 @@ export function Component() {
     setTab(newTab)
     setPlusOpen(false)
     if (newTab !== 'team') setActiveTeamProject(null)
+    if (newTab !== 'projects') setActiveMyProject(null)
   }, [])
 
   useEffect(() => {
@@ -110,17 +116,49 @@ export function Component() {
           </div>
         )}
 
-        {tab === 'projects' && (
+        {tab === 'projects' && !activeMyProject && (
           <div className="relative" ref={plusRef}>
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => { setPlusOpen(false); mineRef.current?.newFolder() }}
+              onClick={() => myViewRef.current?.createProject()}
               title={t('files.newProject')}
               className="text-highlight hover:text-highlight/80"
             >
               <Plus className="size-4" />
             </Button>
+          </div>
+        )}
+
+        {tab === 'projects' && activeMyProject && (
+          <div className="relative" ref={plusRef}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setPlusOpen((v) => !v)}
+              title={t('files.newFolderTitle')}
+              className="text-highlight hover:text-highlight/80"
+            >
+              <Plus className="size-4" />
+            </Button>
+            {plusOpen && (
+              <div className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-md border border-border bg-bg-layer-2 py-1 shadow-pop">
+                <button
+                  onClick={() => { setPlusOpen(false); myFilesRef.current?.upload() }}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
+                >
+                  <Upload className="size-3.5" />
+                  {t('files.upload')}
+                </button>
+                <button
+                  onClick={() => { setPlusOpen(false); myFilesRef.current?.newFolder() }}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
+                >
+                  <FolderPlus className="size-3.5" />
+                  {t('files.newFolderTitle')}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -174,10 +212,21 @@ export function Component() {
       {/* Content area */}
       <div className="flex-1 min-h-0">
         {tab === 'files' && (
-          <MineFiles ref={mineRef} key="root" initialDir="/" />
+          <MineFiles ref={mineRef} />
         )}
-        {tab === 'projects' && (
-          <MineFiles ref={mineRef} key="projects" initialDir="/projects" rootDir="/projects" />
+        {tab === 'projects' && !activeMyProject && (
+          <MyProjectView
+            ref={myViewRef}
+            onEnterProject={setActiveMyProject}
+          />
+        )}
+        {tab === 'projects' && activeMyProject && (
+          <MyProjectFiles
+            ref={myFilesRef}
+            key={activeMyProject.id}
+            project={activeMyProject}
+            onBack={() => setActiveMyProject(null)}
+          />
         )}
         {tab === 'team' && !activeTeamProject && (
           <TeamProjectView
@@ -203,7 +252,7 @@ interface MineFilesHandle {
   newFolder: () => void
 }
 
-const MineFiles = forwardRef<MineFilesHandle, { initialDir?: string; rootDir?: string }>(function MineFiles({ initialDir = '/', rootDir = '/' }, ref) {
+const MineFiles = forwardRef<MineFilesHandle>(function MineFiles(_, ref) {
   const t = useT()
   const { upload, progress: uploadProgress, isUploading } = useFileUpload()
 
@@ -222,14 +271,11 @@ const MineFiles = forwardRef<MineFilesHandle, { initialDir?: string; rootDir?: s
   const evictCache = useCallback((path: string) => evictCachedBlob(getDownloadUrl(path)), [])
   const isProtected = useCallback((item: FileItem) => !!item.isDefault, [])
   const filterAtRoot = useCallback((item: FileItem) => !(item.isDir && item.name === 'projects'), [])
-  const getCreateTitle = useCallback((dir: string) => (dir === '/projects' ? t('files.newProject') : undefined), [t])
-  const allowEmptyContextMenu = useCallback((dir: string) => dir !== '/projects', [])
 
   return (
     <FileList
       ref={ref}
-      initialDir={initialDir}
-      rootDir={rootDir}
+      initialDir="/"
       api={api}
       uploadFile={uploadFile}
       uploadProgress={uploadProgress}
@@ -237,8 +283,6 @@ const MineFiles = forwardRef<MineFilesHandle, { initialDir?: string; rootDir?: s
       evictCache={evictCache}
       isProtected={isProtected}
       filterAtRoot={filterAtRoot}
-      getCreateTitle={getCreateTitle}
-      allowEmptyContextMenu={allowEmptyContextMenu}
       errorHint={t('files.errReadDir')}
     />
   )

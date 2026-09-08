@@ -1,14 +1,10 @@
 package service
 
 import (
-	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
-	"syscall"
 	"time"
 
 	"goraven/backend/infra"
@@ -17,6 +13,7 @@ import (
 	"goraven/backend/vo"
 	"goraven/backend/vo/errs"
 	"goraven/config"
+	"goraven/core/fs"
 	"goraven/util"
 
 	"github.com/8treenet/freedom"
@@ -35,13 +32,17 @@ func init() {
 }
 
 // TeamProjectService 团队项目服务
+// 文件操作复用 FileManagerService 的 root 作用域方法（嵌入继承），
+// 不再内联重复实现文件管理器。
 type TeamProjectService struct {
-	Worker  freedom.Worker
-	TPRepo  *repository.TeamProjectRepository
-	HFSRepo *repository.HFSRepository
+	FileManagerService
+	TPRepo *repository.TeamProjectRepository
 }
 
-var teamProjectNameRegexp = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]*$`)
+// validateTeamProjectName 校验团队项目名是否符合 Linux 目录命名规则（项目名即物理目录名）。
+func validateTeamProjectName(projectName string) error {
+	return fs.ValidateDirName(projectName)
+}
 
 // --- 项目管理 ---
 
@@ -116,7 +117,7 @@ func (service *TeamProjectService) Get(userId string, id int) (*vo.TeamProjectIt
 // Create 创建团队项目（建目录 + 写DB）
 func (service *TeamProjectService) Create(userId, projectName, description string) (*vo.TeamProjectCreateRsp, error) {
 	projectName = strings.TrimSpace(projectName)
-	if projectName == "" || !teamProjectNameRegexp.MatchString(projectName) {
+	if err := validateTeamProjectName(projectName); err != nil {
 		return nil, errs.ErrTeamProjectInvalidName
 	}
 
@@ -317,108 +318,16 @@ func (service *TeamProjectService) ListFiles(id int, req *vo.FileManagerListReq)
 	if err != nil {
 		return nil, err
 	}
-
-	dir := req.Dir
-	if dir == "" || dir == "/" {
-		dir = "."
-	}
-	absDir := filepath.Join(projectDir, dir)
-
-	entries, err := os.ReadDir(absDir)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list directory: %w", err)
-	}
-
-	listItems := make([]vo.FileManagerListItem, 0, len(entries))
-	for _, entry := range entries {
-		if strings.HasPrefix(entry.Name(), ".") {
-			continue
-		}
-		info, _ := entry.Info()
-		var size int64
-		var modTime time.Time
-		if info != nil {
-			size = info.Size()
-			modTime = info.ModTime()
-		}
-		listItems = append(listItems, vo.FileManagerListItem{
-			Name:    entry.Name(),
-			Path:    filepath.Join(absDir, entry.Name()),
-			IsDir:   entry.IsDir(),
-			Size:    size,
-			ModTime: modTime,
-		})
-	}
-	return &vo.FileManagerListRsp{Items: listItems}, nil
+	return service.ListRoot(projectDir, req)
 }
 
 // Upload 将 HFS 分片上传合并后的文件移入团队项目目录
 func (service *TeamProjectService) Upload(id int, userId string, req *vo.FileManagerUploadReq) (*vo.FileManagerUploadRsp, error) {
-	upload, err := service.HFSRepo.GetUploadByUploadId(req.UploadId)
-	if err != nil {
-		return nil, fmt.Errorf("upload not found: %s", req.UploadId)
-	}
-	if upload.UserId != userId {
-		return nil, fmt.Errorf("permission denied")
-	}
-	if upload.Status != po.UploadStatusCompleted {
-		return nil, fmt.Errorf("upload not completed")
-	}
-
 	_, projectDir, err := service.validateProject(id)
 	if err != nil {
 		return nil, err
 	}
-
-	srcPath := filepath.Join(upload.TempDir, upload.FileName)
-	if _, err := os.Stat(srcPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("merged file not found in temp dir")
-	}
-
-	dstDir := filepath.Join(projectDir, req.Dir)
-	os.MkdirAll(dstDir, 0755)
-	dstPath := filepath.Join(dstDir, upload.FileName)
-	if err := moveFileCrossDevice(srcPath, dstPath, os.Rename); err != nil {
-		return nil, fmt.Errorf("failed to move file to project: %w", err)
-	}
-
-	service.HFSRepo.MarkUploadUsed(req.UploadId)
-	os.RemoveAll(upload.TempDir)
-
-	returnPath := filepath.Join(req.Dir, upload.FileName)
-	return &vo.FileManagerUploadRsp{Path: returnPath}, nil
-}
-
-// moveFileCrossDevice moves a file with a copy fallback for paths on different mounts.
-func moveFileCrossDevice(srcPath, dstPath string, rename func(string, string) error) error {
-	if err := rename(srcPath, dstPath); err == nil {
-		return nil
-	} else if !errors.Is(err, syscall.EXDEV) {
-		return err
-	}
-
-	src, err := os.Open(srcPath)
-	if err != nil {
-		return err
-	}
-	defer src.Close()
-
-	info, err := src.Stat()
-	if err != nil {
-		return err
-	}
-	dst, err := os.OpenFile(dstPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, info.Mode().Perm())
-	if err != nil {
-		return err
-	}
-	if _, err := io.Copy(dst, src); err != nil {
-		dst.Close()
-		return err
-	}
-	if err := dst.Close(); err != nil {
-		return err
-	}
-	return os.Remove(srcPath)
+	return service.UploadRoot(projectDir, userId, req)
 }
 
 // Mkdir 在项目内新建目录
@@ -427,7 +336,7 @@ func (service *TeamProjectService) Mkdir(id int, req *vo.FileManagerMkdirReq) er
 	if err != nil {
 		return err
 	}
-	return os.MkdirAll(filepath.Join(projectDir, req.Path), 0755)
+	return service.MkdirRoot(projectDir, req)
 }
 
 // Rename 重命名项目内文件
@@ -436,7 +345,7 @@ func (service *TeamProjectService) Rename(id int, req *vo.FileManagerRenameReq) 
 	if err != nil {
 		return err
 	}
-	return os.Rename(filepath.Join(projectDir, req.OldPath), filepath.Join(projectDir, req.NewPath))
+	return service.RenameRoot(projectDir, req)
 }
 
 // Delete 删除项目内文件
@@ -445,15 +354,7 @@ func (service *TeamProjectService) Delete(id int, req *vo.FileManagerDeleteReq) 
 	if err != nil {
 		return err
 	}
-	cleanBase := filepath.Clean(projectDir)
-	for _, p := range req.Paths {
-		absPath := filepath.Join(projectDir, p)
-		if !strings.HasPrefix(filepath.Clean(absPath), cleanBase+string(filepath.Separator)) {
-			continue
-		}
-		os.RemoveAll(absPath)
-	}
-	return nil
+	return service.DeleteRoot(projectDir, req)
 }
 
 // Compress 压缩项目内文件
@@ -462,22 +363,7 @@ func (service *TeamProjectService) Compress(id int, req *vo.FileManagerCompressR
 	if err != nil {
 		return nil, err
 	}
-	absPaths := make([]string, len(req.Paths))
-	for i, p := range req.Paths {
-		absPaths[i] = filepath.Join(projectDir, p)
-	}
-	outputName := req.OutputName
-	if outputName == "" {
-		outputName = "archive.zip"
-	}
-	if !strings.HasSuffix(outputName, ".zip") {
-		outputName += ".zip"
-	}
-	zipPath := filepath.Join(projectDir, outputName)
-	if err := util.CreateZip(absPaths, zipPath, projectDir); err != nil {
-		return nil, err
-	}
-	return &vo.FileManagerCompressRsp{ZipPath: outputName}, nil
+	return service.CompressRoot(projectDir, req)
 }
 
 // Decompress 解压项目内 zip 文件
@@ -486,40 +372,16 @@ func (service *TeamProjectService) Decompress(id int, req *vo.FileManagerDecompr
 	if err != nil {
 		return err
 	}
-	zipPath := filepath.Join(projectDir, req.Path)
-	destDir := projectDir
-	if req.ToSubDir {
-		base := strings.TrimSuffix(filepath.Base(req.Path), filepath.Ext(req.Path))
-		destDir = filepath.Join(projectDir, base)
-	}
-	return util.ExtractZip(zipPath, destDir)
+	return service.DecompressRoot(projectDir, req)
 }
 
-// Usage 项目磁盘使用统计（仅统计项目目录）
+// Usage 项目磁盘使用统计
 func (service *TeamProjectService) Usage(id int) (*vo.FileManagerUsageRsp, error) {
 	_, projectDir, err := service.validateProject(id)
 	if err != nil {
 		return nil, err
 	}
-	var usedSize int64
-	var fileCount int
-	err = filepath.Walk(projectDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() {
-			usedSize += info.Size()
-			fileCount++
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &vo.FileManagerUsageRsp{
-		UsedSize:  usedSize,
-		FileCount: fileCount,
-	}, nil
+	return service.UsageRoot(projectDir)
 }
 
 // CreateTempAccess 为团队项目内文件/目录创建临时访问凭证
@@ -584,21 +446,7 @@ func (service *TeamProjectService) Download(id int, subPath string) (string, str
 	if err != nil {
 		return "", "", err
 	}
-	absPath := filepath.Join(projectDir, subPath)
-	if !strings.HasPrefix(filepath.Clean(absPath), filepath.Clean(projectDir)+string(filepath.Separator)) {
-		return "", "", fmt.Errorf("invalid path")
-	}
-	info, err := os.Stat(absPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return "", "", fmt.Errorf("file not found")
-		}
-		return "", "", err
-	}
-	if info.IsDir() {
-		return "", "", fmt.Errorf("path is a directory, not a file")
-	}
-	return absPath, filepath.Base(subPath), nil
+	return service.DownloadRoot(projectDir, subPath)
 }
 
 // --- 成员管理 ---

@@ -48,14 +48,14 @@ func (service *SessionService) ListSessions(userId string, req *vo.SessionListRe
 	items := make([]vo.SessionListItem, 0, len(sessions))
 	for _, s := range sessions {
 		items = append(items, vo.SessionListItem{
-			SessionId:     s.SessionId,
-			Title:         s.Title,
-			Status:        s.Status,
-			PersonaId:     s.PersonaId,
-			Project:       s.Project,
-			TeamProject:   sharedMap[s.SessionId],
-			LastChatTime:  s.LastChatTime,
-			Created:       s.Created,
+			SessionId:    s.SessionId,
+			Title:        s.Title,
+			Status:       s.Status,
+			PersonaId:    s.PersonaId,
+			Project:      s.Project,
+			TeamProject:  sharedMap[s.SessionId],
+			LastChatTime: s.LastChatTime,
+			Created:      s.Created,
 		})
 	}
 	return &infra.PageResponse{
@@ -146,6 +146,7 @@ func (service *SessionService) GetMessages(sessionId string, userId string) ([]v
 			Content:          m.Content,
 			ReasoningContent: reasoningContent,
 			RoleType:         m.RoleType,
+			Duration:         m.Duration,
 			Created:          m.Created.Format("2006-01-02 15:04:05"),
 		})
 	}

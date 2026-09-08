@@ -41,7 +41,7 @@ import { useChatStore } from '@/stores/chat-store'
 import { useT, type TranslationKey } from '@/i18n'
 import { logout } from '@/api/auth'
 import { sessionsApi } from '@/api'
-import { listFiles } from '@/api/files'
+import { listMyProjects } from '@/api/my-projects'
 import { listTeamProjects } from '@/api/team-projects'
 import type { SessionSimple, TeamProjectItem } from '@/api/types'
 
@@ -540,8 +540,7 @@ function ProjectFilterRow() {
     setLoading(true)
     setLoadFailed(false)
     Promise.all([
-      listFiles('projects')
-        .then((data) => data.items.filter((item) => item.isDir).map((item) => item.name)),
+      listMyProjects().then((data) => (data.items ?? []).map((item) => item.projectName)),
       listTeamProjects().then((data) => data.items ?? []),
     ])
       .then(([personal, team]) => {

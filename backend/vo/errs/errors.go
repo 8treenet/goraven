@@ -437,8 +437,8 @@ var (
 		zhMessage: "同名团队项目已存在",
 	}
 	ErrTeamProjectInvalidName = &Error{
-		enMessage: "invalid project name: only letters, digits, hyphens and underscores allowed",
-		zhMessage: "项目名无效：仅允许字母、数字、连字符和下划线",
+		enMessage: "invalid project name: must not be empty, be \".\" or \"..\", contain \"/\", or exceed 255 bytes",
+		zhMessage: "项目名无效：不能为空、不能为“.”或“..”、不能包含“/”，长度不超过 255 字节",
 	}
 	ErrTeamProjectDirNotFound = &Error{
 		enMessage: "team project directory does not exist",
@@ -455,6 +455,22 @@ var (
 	ErrTeamProjectCannotRemoveCreator = &Error{
 		enMessage: "cannot remove the creator from members",
 		zhMessage: "不能移除创建者",
+	}
+	ErrUserProjectNotFound = &Error{
+		enMessage: "project not found",
+		zhMessage: "项目不存在",
+	}
+	ErrUserProjectAlreadyExists = &Error{
+		enMessage: "a project with this name already exists",
+		zhMessage: "同名项目已存在",
+	}
+	ErrUserProjectInvalidName = &Error{
+		enMessage: "invalid project name: must not be empty, be \".\" or \"..\", contain \"/\", or exceed 255 bytes",
+		zhMessage: "项目名无效：不能为空、不能为“.”或“..”、不能包含“/”，长度不超过 255 字节",
+	}
+	ErrUserProjectDirNotFound = &Error{
+		enMessage: "project directory does not exist",
+		zhMessage: "项目目录不存在",
 	}
 	ErrAutomationTaskNotFound = &Error{
 		enMessage: "automation task not found",

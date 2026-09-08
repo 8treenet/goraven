@@ -21,12 +21,14 @@ import {
 import { Button } from '@/components/ui/button'
 import { useT, t as translate } from '@/i18n'
 import { listFiles, getFileUrl } from '@/api/files'
+import { listMyProjects, listMyFiles, getMyDownloadUrl } from '@/api/my-projects'
 import {
   listTeamProjects,
   listTeamFiles,
   getTeamDownloadUrl,
 } from '@/api/team-projects'
-import type { FileItem, TeamProjectItem } from '@/api/types'
+import type { FileItem, TeamProjectItem, MyProjectItem } from '@/api/types'
+import { useUserStore } from '@/stores/user-store'
 import { getFileIcon, formatSize } from '../files/file-helpers'
 
 export interface PickedFile {
@@ -42,6 +44,8 @@ export interface PickedFile {
   isDir: boolean
   /** For team files, the shared project this file belongs to */
   teamProjectId?: number
+  /** For my-project files, the personal project this file belongs to */
+  myProjectId?: number
   /** Final URL the frontend can fetch to stream/download the file */
   url: string
 }
@@ -55,9 +59,12 @@ export interface FilePickerDialogProps {
 
 type Tab = 'mine' | 'projects' | 'team'
 
-function buildUrl(source: 'mine' | 'team', path: string, teamProjectId?: number): string {
-  if (source === 'mine') return getFileUrl(path)
-  if (teamProjectId !== undefined) return getTeamDownloadUrl(teamProjectId, path)
+function buildUrl(source: 'mine' | 'team', path: string, projectId?: number): string {
+  if (source === 'mine') {
+    if (projectId !== undefined) return getMyDownloadUrl(projectId, path)
+    return getFileUrl(path)
+  }
+  if (projectId !== undefined) return getTeamDownloadUrl(projectId, path)
   return path
 }
 
@@ -82,8 +89,10 @@ export function FilePickerDialog({
   const reset = useCallback(() => {
     setTab('mine')
     setTeamProject(null)
+    setMyProject(null)
     setMineBreadcrumbs([])
     setProjBreadcrumbs([])
+    setProjItems([])
     setTeamBreadcrumbs([])
   }, [])
 
@@ -133,20 +142,41 @@ export function FilePickerDialog({
       })
   }, [])
 
-  // ---------- Projects files ----------
+  // ---------- My projects ----------
+  const [myProjects, setMyProjects] = useState<MyProjectItem[]>([])
+  const [myProjectsLoading, setMyProjectsLoading] = useState(false)
+  const [myProjectsError, setMyProjectsError] = useState(false)
+  const [myProject, setMyProject] = useState<MyProjectItem | null>(null)
+
+  const loadMyProjects = useCallback(() => {
+    setMyProjectsLoading(true)
+    setMyProjectsError(false)
+    listMyProjects()
+      .then((data) => {
+        setMyProjects(data.items ?? [])
+        setMyProjectsLoading(false)
+      })
+      .catch(() => {
+        setMyProjectsError(true)
+        setMyProjectsLoading(false)
+      })
+  }, [])
+
+  // ---------- My project files ----------
   const [projItems, setProjItems] = useState<FileItem[]>([])
   const [projLoading, setProjLoading] = useState(false)
   const [projError, setProjError] = useState(false)
 
-  const projDir = useMemo(
-    () => (projBreadcrumbs.length === 0 ? 'projects' : `projects/${projBreadcrumbs.join('/')}`),
+  /** 项目内相对目录（不含项目名），'' 表示项目根 */
+  const projRel = useMemo(
+    () => projBreadcrumbs.join('/'),
     [projBreadcrumbs],
   )
 
-  const loadProj = useCallback((dir: string) => {
+  const loadProjFiles = useCallback((projectId: number, dir: string) => {
     setProjLoading(true)
     setProjError(false)
-    listFiles(dir)
+    listMyFiles(projectId, dir === '' ? undefined : dir)
       .then((data) => {
         setProjItems(data.items)
         setProjLoading(false)
@@ -203,9 +233,9 @@ export function FilePickerDialog({
     if (!open) return
     reset()
     loadMine('/')
-    loadProj('projects')
+    loadMyProjects()
     loadTeamProjects()
-  }, [open, reset, loadMine, loadProj, loadTeamProjects])
+  }, [open, reset, loadMine, loadMyProjects, loadTeamProjects])
 
   // ---------- Navigation: mine ----------
   const enterMineDir = useCallback(
@@ -225,22 +255,38 @@ export function FilePickerDialog({
     [mineBreadcrumbs, loadMine],
   )
 
-  // ---------- Navigation: projects ----------
+  // ---------- Navigation: my projects ----------
+  const enterMyProject = useCallback(
+    (project: MyProjectItem) => {
+      setMyProject(project)
+      setProjBreadcrumbs([])
+      loadProjFiles(project.id, '')
+    },
+    [loadProjFiles],
+  )
+
+  const exitMyProject = useCallback(() => {
+    setMyProject(null)
+    setProjBreadcrumbs([])
+    setProjItems([])
+  }, [])
+
   const enterProjDir = useCallback(
     (name: string) => {
       setProjBreadcrumbs((prev) => [...prev, name])
-      loadProj(projBreadcrumbs.length === 0 ? `projects/${name}` : `projects/${projBreadcrumbs.join('/')}/${name}`)
+      if (myProject) loadProjFiles(myProject.id, joinPath(projRel, name))
     },
-    [projBreadcrumbs, loadProj],
+    [projRel, myProject, loadProjFiles],
   )
 
   const navigateProjTo = useCallback(
     (index: number) => {
       const next = index < 0 ? [] : projBreadcrumbs.slice(0, index + 1)
       setProjBreadcrumbs(next)
-      loadProj(next.length === 0 ? 'projects' : `projects/${next.join('/')}`)
+      if (myProject)
+        loadProjFiles(myProject.id, next.length === 0 ? '' : next.join('/'))
     },
-    [projBreadcrumbs, loadProj],
+    [projBreadcrumbs, myProject, loadProjFiles],
   )
 
   // ---------- Navigation: team ----------
@@ -318,17 +364,20 @@ export function FilePickerDialog({
   }, [teamProject, teamBreadcrumbs, teamDir, teamDirAbs, pickFile])
 
   const pickCurrentProjDir = useCallback(() => {
+    if (!myProject) return
     const name =
-      projBreadcrumbs.length > 0 ? projBreadcrumbs[projBreadcrumbs.length - 1] : t('files.myProjects')
+      projBreadcrumbs.length > 0 ? projBreadcrumbs[projBreadcrumbs.length - 1] : myProject.projectName
+    const rel = projRel
     pickFile({
       source: 'mine',
+      myProjectId: myProject.id,
       name,
-      path: projDir,
+      path: `projects/${myProject.projectName}${rel ? `/${rel}` : ''}`,
       size: 0,
       isDir: true,
-      url: buildUrl('mine', projDir),
+      url: buildUrl('mine', rel, myProject.id),
     })
-  }, [projBreadcrumbs, projDir, t, pickFile])
+  }, [myProject, projBreadcrumbs, projRel, pickFile])
 
   const handleConfirm = useCallback(() => {
     if (tab === 'mine') pickCurrentMineDir()
@@ -341,7 +390,7 @@ export function FilePickerDialog({
     tab === 'mine'
       ? mineBreadcrumbs.length > 0
       : tab === 'projects'
-        ? projBreadcrumbs.length > 0
+        ? !!myProject
         : !!teamProject
 
   // Current directory display name for footer
@@ -351,8 +400,10 @@ export function FilePickerDialog({
         ? mineBreadcrumbs[mineBreadcrumbs.length - 1]
         : t('files.myFiles')
       : tab === 'projects'
-        ? projBreadcrumbs.length > 0
-          ? projBreadcrumbs[projBreadcrumbs.length - 1]
+        ? myProject
+          ? projBreadcrumbs.length > 0
+            ? projBreadcrumbs[projBreadcrumbs.length - 1]
+            : myProject.projectName
           : t('files.myProjects')
         : teamProject
           ? teamBreadcrumbs.length > 0
@@ -434,13 +485,17 @@ export function FilePickerDialog({
                 onRefresh={() => loadMine(mineDir)}
               />
             ) : tab === 'projects' ? (
-              <UserSpaceBreadcrumbs
-                rootLabel={t('files.myProjects')}
-                rootIcon={<FolderGit2 className="size-3.5 text-folder" />}
-                breadcrumbs={projBreadcrumbs}
-                onNavigate={navigateProjTo}
-                onRefresh={() => loadProj(projDir)}
-              />
+              myProject ? (
+                <ProjBreadcrumbs
+                  project={myProject}
+                  breadcrumbs={projBreadcrumbs}
+                  onBack={exitMyProject}
+                  onNavigate={navigateProjTo}
+                  onRefresh={() => loadProjFiles(myProject.id, projRel)}
+                />
+              ) : (
+                <span className="px-1 text-xs text-text-muted">{t('chat.filePickerMyProjectHint')}</span>
+              )
             ) : teamProject ? (
               <TeamBreadcrumbs
                 project={teamProject}
@@ -474,22 +529,34 @@ export function FilePickerDialog({
                 onEnterDir={(item) => enterMineDir(item.name)}
               />
             ) : tab === 'projects' ? (
-              <FileList
-                loading={projLoading}
-                error={projError}
-                items={projItems}
-                onPickFile={(item) =>
-                  pickFile({
-                    source: 'mine',
-                    name: item.name,
-                    path: item.path,
-                    size: item.size,
-                    isDir: false,
-                    url: buildUrl('mine', item.path),
-                  })
-                }
-                onEnterDir={(item) => enterProjDir(item.name)}
-              />
+              myProject ? (
+                <FileList
+                  loading={projLoading}
+                  error={projError}
+                  items={projItems}
+                  onPickFile={(item) => {
+                    const rel = joinPath(projRel, item.name)
+                    pickFile({
+                      source: 'mine',
+                      myProjectId: myProject.id,
+                      name: item.name,
+                      path: `projects/${myProject.projectName}${rel.startsWith('/') ? rel : `/${rel}`}`,
+                      size: item.size,
+                      isDir: false,
+                      url: buildUrl('mine', rel, myProject.id),
+                    })
+                  }}
+                  onEnterDir={(item) => enterProjDir(item.name)}
+                />
+              ) : (
+                <MyProjectGrid
+                  loading={myProjectsLoading}
+                  error={myProjectsError}
+                  projects={myProjects}
+                  onEnter={enterMyProject}
+                  onRetry={loadMyProjects}
+                />
+              )
             ) : teamProject ? (
               <FileList
                 loading={teamLoading}
@@ -652,6 +719,159 @@ function TeamBreadcrumbs({
         <RefreshCw className="size-3.5" />
       </button>
     </>
+  )
+}
+
+/* ============================================
+   My project breadcrumbs (project scoped)
+   ============================================ */
+
+function ProjBreadcrumbs({
+  project,
+  breadcrumbs,
+  onBack,
+  onNavigate,
+  onRefresh,
+}: {
+  project: MyProjectItem
+  breadcrumbs: string[]
+  onBack: () => void
+  onNavigate: (index: number) => void
+  onRefresh: () => void
+}) {
+  const t = useT()
+  return (
+    <>
+      <button
+        onClick={onBack}
+        className="inline-flex items-center rounded px-1.5 py-0.5 text-xs text-text-3 transition-colors hover:bg-bg-hover hover:text-text-1"
+        aria-label={t('files.backTooltip')}
+      >
+        <ArrowLeft className="size-3.5" />
+      </button>
+      <FolderGit2 className="size-3.5 text-folder" />
+      <button
+        onClick={onBack}
+        className={cn(
+          'truncate max-w-40 rounded px-1.5 py-0.5 text-xs transition-colors',
+          breadcrumbs.length === 0 ? 'text-text-1' : 'text-text-3 hover:bg-bg-hover hover:text-text-1',
+        )}
+      >
+        {project.projectName}
+      </button>
+      {breadcrumbs.map((seg, i) => (
+        <span key={i} className="inline-flex items-center gap-1">
+          <ChevronRight className="size-3 text-text-muted" />
+          <button
+            onClick={() => onNavigate(i)}
+            className={cn(
+              'rounded px-1.5 py-0.5 text-xs transition-colors',
+              i === breadcrumbs.length - 1 ? 'text-text-1' : 'text-text-3 hover:bg-bg-hover hover:text-text-1',
+            )}
+          >
+            {seg}
+          </button>
+        </span>
+      ))}
+      <button
+        onClick={onRefresh}
+        className="ml-auto rounded p-1 text-text-3 transition-colors hover:bg-bg-hover hover:text-text-1"
+        aria-label={t('common.refresh')}
+      >
+        <RefreshCw className="size-3.5" />
+      </button>
+    </>
+  )
+}
+
+/* ============================================
+   My project grid (when no project selected)
+   ============================================ */
+
+function MyProjectGrid({
+  loading,
+  error,
+  projects,
+  onEnter,
+  onRetry,
+}: {
+  loading: boolean
+  error: boolean
+  projects: MyProjectItem[]
+  onEnter: (project: MyProjectItem) => void
+  onRetry: () => void
+}) {
+  const t = useT()
+  const user = useUserStore((s) => s.currentUser)
+  const userName = user?.nickname || user?.username || ''
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="size-5 animate-spin text-text-muted" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-8">
+        <AlertCircle className="size-6 text-text-3" />
+        <button
+          onClick={onRetry}
+          className="inline-flex items-center gap-1.5 rounded-md bg-bg-layer-2 px-3 py-1.5 text-sm text-text-1 transition-colors hover:bg-bg-layer-3"
+        >
+          <RefreshCw className="size-4" />
+          {t('common.retry')}
+        </button>
+      </div>
+    )
+  }
+
+  if (projects.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 py-8">
+        <FolderGit2 className="size-6 text-text-3" />
+        <p className="text-sm text-text-3">{t('files.noMyProjects')}</p>
+        <p className="text-xs text-text-muted">{t('files.noMyProjectsHint')}</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3 p-4">
+      {projects.map((project) => (
+        <div
+          key={project.id}
+          onClick={() => onEnter(project)}
+          className="group flex cursor-pointer flex-col gap-1.5 rounded-lg border border-border bg-bg-layer-1 p-3 transition-colors hover:border-highlight/40 hover:bg-bg-hover"
+        >
+          <div className="flex items-center gap-1.5">
+            <FolderGit2 className="size-3.5 shrink-0 text-folder" />
+            <span className="truncate text-sm font-semibold text-text-1">
+              {project.projectName}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {user?.avatar ? (
+              <img
+                src={user.avatar}
+                alt={userName}
+                className="size-4 shrink-0 rounded-sm object-cover"
+              />
+            ) : (
+              <div className="inline-flex size-4 shrink-0 items-center justify-center rounded-sm bg-interactive text-[9px] font-medium text-white">
+                {userName.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <span className="truncate text-xs text-text-3">{userName}</span>
+          </div>
+          {project.description && (
+            <p className="line-clamp-2 text-xs text-text-2">{project.description}</p>
+          )}
+        </div>
+      ))}
+    </div>
   )
 }
 

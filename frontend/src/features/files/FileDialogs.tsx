@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useT } from '@/i18n'
 import type { FileItem } from '@/api/types'
+import { validateDirName } from './file-helpers'
 
 export type FileDialogMode = 'newFolder' | 'delete' | 'compress' | 'decompress' | null
 
@@ -17,7 +18,6 @@ interface FileDialogsProps {
   value: string
   error: string | null
   selectedItems: FileItem[]
-  createTitle?: string
   onValueChange: (value: string) => void
   onClearError: () => void
   onClose: () => void
@@ -32,7 +32,6 @@ export function FileDialogs({
   value,
   error,
   selectedItems,
-  createTitle,
   onValueChange,
   onClearError,
   onClose,
@@ -42,7 +41,8 @@ export function FileDialogs({
   onDecompress,
 }: FileDialogsProps) {
   const t = useT()
-  const folderNameInvalid = mode === 'newFolder' && value.length > 0 && !/^[a-zA-Z0-9\-_]+$/.test(value)
+  const folderNameError = mode === 'newFolder' && value.length > 0 ? validateDirName(value) : null
+  const folderNameInvalid = folderNameError !== null
   const folderCanSubmit = value.trim().length > 0 && !folderNameInvalid
 
   return (
@@ -51,7 +51,7 @@ export function FileDialogs({
         {mode === 'newFolder' && (
           <>
             <DialogHeader>
-              <DialogTitle>{createTitle || t('files.newFolderTitle')}</DialogTitle>
+              <DialogTitle>{t('files.newFolderTitle')}</DialogTitle>
               <DialogDescription>{t('files.folderNameLabel')}</DialogDescription>
             </DialogHeader>
             <div className="space-y-3">
@@ -69,7 +69,7 @@ export function FileDialogs({
                 autoFocus
               />
               {folderNameInvalid && (
-                <p className="text-xs text-destructive">{t('files.projectNameInvalid')}</p>
+                <p className="text-xs text-destructive">{folderNameError}</p>
               )}
               {error && <p className="text-sm text-text-3">{error}</p>}
               <div className="flex justify-end gap-2">

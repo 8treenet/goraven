@@ -102,7 +102,7 @@ GoRaven 采用左侧边栏 + 右侧主内容区布局。侧边栏可折叠为仅
 管理用户的个人工作空间文件。
 
 **顶部导航**：Segmented Tab 切换三个视图：「我的文件」「我的项目」「团队项目」。Tab 行右侧有图标按钮：
-- 「＋」按钮：在「我的文件」下弹出下拉菜单（上传文件 / 新建文件夹）；在「我的项目」下直接弹出「新建项目」弹框；在「团队项目」下弹出「新建团队项目」弹框。
+- 「＋」按钮：在「我的文件」下弹出下拉菜单（上传文件 / 新建文件夹）；在「我的项目」列表视图下弹出「新建项目」弹框、在项目文件视图下弹出下拉菜单（上传文件 / 新建文件夹）；在「团队项目」列表视图下弹出「新建团队项目」弹框、在团队项目文件视图下弹出下拉菜单（上传文件 / 新建文件夹）。
 - 「刷新」按钮
 
 **文件列表**：表格形式，列包括复选框（全选/单选）、名称、大小、修改时间。单击行即执行默认动作（目录→进入，文件→预览），点击复选框为批量选择唯一入口。
@@ -174,8 +174,14 @@ GoRaven 采用左侧边栏 + 右侧主内容区布局。侧边栏可折叠为仅
 工作空间页顶部通过 Segmented Tab 切换三个视图：
 
 - **「我的文件」Tab**：浏览个人工作空间根目录。
-- **「我的项目」Tab**：进入 projects/ 目录（该目录在根目录列表中隐藏）。/projects 视为此视图的根目录，不显示 projects 目录名和返回按钮。「＋」按钮在此 Tab 下为「新建项目」。
+- **「我的项目」Tab**：以卡片网格展示当前用户的个人项目，每张卡片显示项目名、简介、更新时间。单击卡片进入该项目文件浏览；卡片右上角「更多」菜单（悬停显示）可编辑项目（修改简介/改名，改名会同步项目目录）和删除项目；空状态时显示「新建项目」按钮。个人项目由数据库管理，物理目录位于用户空间 projects/ 下（根目录列表中隐藏）。
 - **「团队项目」Tab**：查看所有团队项目。
+
+**个人项目列表**：
+- 以卡片网格展示所有个人项目，每张卡片显示项目名、简介、更新时间。
+- 单击卡片进入项目文件浏览。
+- 卡片右上角有「更多」菜单（悬停显示），可重命名/编辑简介和删除项目。
+- 空状态时显示「新建项目」按钮。
 
 **团队项目列表**：
 - 以卡片网格展示所有团队项目，每张卡片显示项目名、创建者（头像+姓名）、简介、更新时间。
@@ -183,10 +189,10 @@ GoRaven 采用左侧边栏 + 右侧主内容区布局。侧边栏可折叠为仅
 - 项目创建者卡片右上角有「更多」菜单（悬停显示），可编辑简介、成员管理（设置访问权限：全员开放/仅成员可见，添加/移除成员）和删除项目。
 - 空状态时显示「新建项目」按钮。
 
-**项目文件浏览**：
-- 进入团队项目后，界面与工作空间页一致：选择驱动操作条、右键菜单、底部状态栏。
+**项目文件浏览（个人项目与团队项目一致）**：
+- 进入项目后，界面与工作空间页一致：选择驱动操作条、右键菜单、底部状态栏。
 - 支持完整的文件操作：上传、新建、删除、重命名、压缩、解压、预览、下载。
-- 返回上级按钮在项目根目录时返回团队项目列表。
+- 返回上级按钮在项目根目录时返回项目列表。
 
 ## 技能管理页（/skills）
 
@@ -353,7 +359,7 @@ Refresh button at the top.
 Manages the user's personal workspace files.
 
 **Top navigation**: A Segmented Tab switches between three views: "My Files", "My Projects", and "Team Projects". Icon buttons on the right of the Tab row:
-- "+" button: Under "My Files", opens a dropdown (Upload Files / New Folder); under "My Projects", opens a "New Project" dialog directly; under "Team Projects", opens a "New Team Project" dialog.
+- "+" button: Under "My Files", opens a dropdown (Upload Files / New Folder); under the "My Projects" list view, opens a "New Project" dialog, and under the project file view, opens a dropdown (Upload Files / New Folder); under the "Team Projects" list view, opens a "New Team Project" dialog, and under the team project file view, opens a dropdown (Upload Files / New Folder).
 - "Refresh" button
 
 **File list**: Table with columns: checkbox (select all/individual), name, size, modified time. Single-clicking a row performs the default action (directory → enter, file → preview). Clicking the checkbox is the only way to batch-select.
@@ -425,8 +431,14 @@ The .profile file at the workspace root manages user environment variables. **Bo
 The Workspace page uses a Segmented Tab at the top to switch between three views:
 
 - **"My Files" Tab**: Browse the personal workspace root directory.
-- **"My Projects" Tab**: Enter the projects/ directory (hidden in the root listing). /projects is treated as the root for this view — no directory name or back button shown. The "+" button acts as "New Project" here.
+- **"My Projects" Tab**: Shows the current user's personal projects as a card grid, each card displaying project name, description, and update time. Click a card to enter the project file browser; the "More" menu (on hover) on a card lets you edit the project (description and rename, which also renames the directory) or delete it. The empty state shows a "New Project" button. Personal projects are managed by the database; their physical directories live under the user-space projects/ (hidden in the root listing).
 - **"Team Projects" Tab**: View all team projects.
+
+**Personal project list**:
+- Displays all personal projects as a card grid. Each card shows the project name, description, and update time.
+- Click a card to enter the project file browser.
+- The "More" menu on a card (on hover) lets you rename/edit the description and delete the project.
+- Empty state shows a "New Project" button.
 
 **Team project list**:
 - Displays all team projects as a card grid. Each card shows the project name, creator (avatar + name), description, and update time.
@@ -434,10 +446,10 @@ The Workspace page uses a Segmented Tab at the top to switch between three views
 - Project creators see a "More" menu on their cards (on hover) for editing the description, managing members (access scope: All users / Members only, add/remove members), and deleting the project.
 - Empty state shows a "New Project" button.
 
-**Project file browser**:
-- Inside a team project, the interface is consistent with the Workspace page: selection-driven action bar, right-click menu, bottom status bar.
+**Project file browser (same for personal and team projects)**:
+- Inside a project, the interface is consistent with the Workspace page: selection-driven action bar, right-click menu, bottom status bar.
 - Supports full file operations: upload, create, delete, rename, compress, decompress, preview, and download.
-- The back button at the project root returns to the team project list.
+- The back button at the project root returns to the project list.
 
 ## Skills Page (/skills)
 

@@ -143,6 +143,16 @@ MCP（Model Context Protocol）允许连接外部服务扩展你的工具能力�
 
 支持上传、新建文件夹、删除、压缩/解压、重命名、预览（文本/图片/视频/音频/PDF）。界面操作见 ` + "`goraven-user-ui`" + `。
 
+### 个人项目
+
+个人项目由数据库管理，物理目录位于用户空间 projects/ 下（根目录列表中隐藏），通过工作空间页「我的项目」Tab 管理：
+
+- **创建**：在「我的项目」Tab 点击「新建项目」，输入项目目录名（仅允许字母、数字、连字符和下划线）和简介后创建，项目名在同一用户内唯一。
+- **项目列表**：「我的项目」Tab 以卡片网格展示所有个人项目（项目名、简介、更新时间）。单击卡片进入项目文件浏览。
+- **项目文件浏览**：进入项目后，可像普通工作空间页面一样上传、新建、删除、重命名、压缩、解压、预览和下载文件。交互与工作空间页一致（选择驱动操作条 + 右键菜单）。
+- **编辑与删除**：卡片右上角「更多」菜单可重命名/编辑简介（改名会同步项目目录与相关会话引用）和删除项目。
+- **会话关联**：对话项目选择器可选择个人项目目录（projects/{项目名}）或团队项目作为工作空间。
+
 ### 团队项目
 
 用户可独立创建团队项目，所有团队成员均可访问。
@@ -365,6 +375,16 @@ Each user has an independent file space with a fixed directory structure:
 | skills/ | Installed skills |
 
 Supports upload, new folder, delete, compress/decompress, rename, and preview (text/images/video/audio/PDF). UI details in ` + "`goraven-user-ui`" + `.
+
+### Personal Projects
+
+Personal projects are managed by the database; their physical directories live under the user-space projects/ (hidden in the root listing). Managed via the "My Projects" Tab on the workspace page:
+
+- **Create**: Click "New Project" on the "My Projects" Tab, enter a project directory name (only letters, digits, hyphens and underscores allowed) and description. Project names are unique per user.
+- **Project list**: The "My Projects" Tab shows all personal projects as a card grid (name, description, update time). Click a card to enter the project file browser.
+- **Project file browser**: Inside a project, upload, create, delete, rename, compress/decompress, preview, and download work like the workspace page (selection-driven action bar + right-click menu).
+- **Edit & delete**: The "More" menu on a card (on hover) renames/edits the description (rename also updates the directory and related session references) and deletes the project.
+- **Chat association**: The chat project picker can select a personal project directory (projects/{name}) or a team project as the workspace.
 
 ### Team Projects
 

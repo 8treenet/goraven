@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"html"
 	"goraven/backend/infra"
 	"goraven/backend/po"
 	"goraven/backend/repository"
@@ -10,6 +9,7 @@ import (
 	"goraven/backend/vo/errs"
 	"goraven/config"
 	"goraven/util"
+	"html"
 	"strings"
 	"time"
 
@@ -257,6 +257,7 @@ func (service *ShareLinkService) buildShareMessages(shareLink *po.ShareLink) ([]
 			Content:          m.Content,
 			ReasoningContent: reasoningContent,
 			RoleType:         m.RoleType,
+			Duration:         m.Duration,
 			Created:          m.Created.Format("2006-01-02 15:04:05"),
 		})
 	}

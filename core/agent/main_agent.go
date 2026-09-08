@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/8treenet/freedom"
 	"github.com/cloudwego/eino/adk"
 	"github.com/cloudwego/eino/adk/middlewares/plantask"
 	einotool "github.com/cloudwego/eino/components/tool"
@@ -42,6 +43,7 @@ func NewMainAgent(param AgentParam) (*MainAgent, error) {
 		box.SetExtraWorkspace(filepath.Join(param.ProjectWorkspace, param.Project))
 	}
 
+	freedom.Logger().Debugf("Instruction: \n%s\n", getMainInstructionPrompt(param))
 	//fmt.Println(getMainInstructionPrompt(param))
 	baseAgent := NewBaseAgent(mainAgentName, getMainInstructionPrompt(param), getMainAgentDescription(), param.ChatModel, param.SysCfg, box)
 
