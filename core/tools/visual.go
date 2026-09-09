@@ -10,7 +10,6 @@ import (
 
 	"goraven/config"
 	"goraven/core/iface"
-	"goraven/core/sandbox"
 	"goraven/util"
 
 	"github.com/cloudwego/eino/components/tool"
@@ -20,7 +19,7 @@ import (
 
 // VisualUnderstandRequest 多模态识别工具的请求参数
 type VisualUnderstandRequest struct {
-	FilePath string `json:"file_path" jsonschema:"description=The workspace-relative file path, e.g. /temp/screenshot.jpg or /images/photo.jpg or /temp/recording.mp3"`
+	FilePath string `json:"file_path" jsonschema:"description=Absolute path of the media file, e.g. /path/to/photo.jpg (for chat attachments use the path given in the goraven-upload tag)"`
 	Question string `json:"question" jsonschema:"description=The question or instruction about the file content, e.g. Describe what you see in this image"`
 }
 
@@ -35,7 +34,6 @@ type VisualUnderstand struct {
 	Desc           string
 	userID         string
 	model          iface.BaseChatModel
-	box            sandbox.Sandbox
 	dailyStatsRepo iface.DailyStatsRepo
 }
 
@@ -108,6 +106,27 @@ func detectFileType(ext string) fileType {
 	return fileTypeUnknown
 }
 
+// 媒体类型常量（附件直发模式与视觉工具共用同一判定来源）
+const (
+	MediaTypeImage = "image"
+	MediaTypeVideo = "video"
+	MediaTypeAudio = "audio"
+)
+
+// ClassifyMediaType 根据扩展名判断媒体类型（image/video/audio），非媒体返回空字符串。
+// 供 backend 附件直发判定复用，与 detectFileType 保持单一事实来源。
+func ClassifyMediaType(ext string) string {
+	switch detectFileType(ext) {
+	case fileTypeImage:
+		return MediaTypeImage
+	case fileTypeVideo:
+		return MediaTypeVideo
+	case fileTypeAudio:
+		return MediaTypeAudio
+	}
+	return ""
+}
+
 // getMimeType 根据扩展名获取MIME类型
 func getMimeType(ext string) string {
 	if mt, ok := mimeTypes[strings.ToLower(ext)]; ok {
@@ -126,7 +145,7 @@ func formatUnsupportedError(mediaType string, format iface.APIFormat) error {
 }
 
 // NewVisualUnderstand 创建多模态识别工具
-func NewVisualUnderstand(userID string, model iface.BaseChatModel, box sandbox.Sandbox, dailyStatsRepo iface.DailyStatsRepo) (tool.InvokableTool, error) {
+func NewVisualUnderstand(userID string, model iface.BaseChatModel, dailyStatsRepo iface.DailyStatsRepo) (tool.InvokableTool, error) {
 	desc := VisualUnderstandToolDesc
 	if config.Get().GetLanguage() == "zh" {
 		desc = VisualUnderstandToolDescChinese
@@ -137,7 +156,6 @@ func NewVisualUnderstand(userID string, model iface.BaseChatModel, box sandbox.S
 		Desc:           desc,
 		userID:         userID,
 		model:          model,
-		box:            box,
 		dailyStatsRepo: dailyStatsRepo,
 	}
 
@@ -156,12 +174,8 @@ func (v *VisualUnderstand) Invoke(ctx context.Context, req *VisualUnderstandRequ
 		return nil, fmt.Errorf("unsupported file type: %s (supported: image, video, audio)", ext)
 	}
 
-	// 通过沙盒下载文件到本地路径（本地沙盒直接返回原路径，远程沙盒会先下载）
-	absPath := filepath.Join(v.box.GetWorkspace(), strings.TrimPrefix(req.FilePath, "/"))
-	localPath, err := v.box.Download(absPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to download file from sandbox: %w", err)
-	}
+	// 直接读取本地文件（goraven-upload 标签给出的绝对路径）
+	localPath := filepath.Clean(req.FilePath)
 
 	switch ft {
 	case fileTypeImage:
@@ -175,7 +189,7 @@ func (v *VisualUnderstand) Invoke(ctx context.Context, req *VisualUnderstandRequ
 	}
 }
 
-// invokeImage 处理图片：base64 编码后通过 UserInputMultiContent 传递
+// invokeImage 处理图片：压缩缩略后 base64 编码，通过 UserInputMultiContent 传递
 // 所有提供商都支持 base64 图片
 func (v *VisualUnderstand) invokeImage(ctx context.Context, absPath, ext, question string) (*VisualUnderstandResponse, error) {
 	data, err := os.ReadFile(absPath)
@@ -183,8 +197,15 @@ func (v *VisualUnderstand) invokeImage(ctx context.Context, absPath, ext, questi
 		return nil, fmt.Errorf("failed to read image file: %w", err)
 	}
 
-	b64 := base64.StdEncoding.EncodeToString(data)
+	// 先压缩缩略再编码，减少多模态像素 token 与 base64 传输体积；
+	// 解码失败或无需缩放时保持原字节与原 MIME
 	mimeType := getMimeType(ext)
+	if out, changed, cerr := util.CompressImageBytes(data, util.ImageMaxEdge); cerr == nil && changed {
+		data = out
+		mimeType = "image/jpeg"
+	}
+
+	b64 := base64.StdEncoding.EncodeToString(data)
 
 	msg := &schema.Message{
 		Role: schema.User,

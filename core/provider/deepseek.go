@@ -93,6 +93,7 @@ func (provider *DeepSeekProvider) SetProxy(addr string) error {
 type DeepseekModel struct {
 	openai.ChatModel
 	iface.ConversationHeaderKeyHolder
+	iface.VisualSupportHolder
 	modelName  string
 	contextLen int
 }

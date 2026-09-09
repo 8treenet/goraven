@@ -99,6 +99,7 @@ func (provider *OllamaProvider) Models() ([]ModelInfo, error) {
 type OllamaModel struct {
 	ollama.ChatModel
 	iface.ConversationHeaderKeyHolder
+	iface.VisualSupportHolder
 	modelName  string
 	contextLen int
 }

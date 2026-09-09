@@ -606,13 +606,16 @@ export async function setFlashModel(id: number): Promise<void> {
   }))
 }
 
-/** Set a model as the visual model */
+/** Toggle a model in/out of the multimodal pool */
 export async function setVisualModel(id: number): Promise<void> {
   await mutationDelay()
 
+  const target = models.find((m) => m.aiModelId === id)
+  if (!target) return
+  const next = target.isVisual === 1 ? 0 : 1
   models = models.map((m) => ({
     ...m,
-    isVisual: m.aiModelId === id ? 1 : 0,
+    isVisual: m.aiModelId === id ? next : m.isVisual,
   }))
 }
 

@@ -83,6 +83,7 @@ func (service *ChatService) StartChat(
 	userId string,
 	req *vo.ChatReq,
 	skillService *SkillService,
+	hfsService *HFSService,
 ) (rsp *vo.ChatRsp, err error) {
 	if req.Content == "" {
 		return nil, errs.ErrChatContentRequired
@@ -187,9 +188,14 @@ func (service *ChatService) StartChat(
 		TaskSkillIds:        skillIds,
 	}
 
-	// 处理附件（查库、文档转 markdown、上传到沙盒临时目录）
+	// 处理附件（查库、上传原文件到沙盒临时目录）
 	// 必须在 SaveSession 之前，避免处理失败产生孤儿会话
-	attachmentTags, err := service.processAttachments(userId, req.Attachments)
+	// 直接模式：模型支持多模态 且 general.domain 已配置为公网域名 且附件为媒体类型
+	directEnabled := false
+	if d := strings.TrimSuffix(strings.TrimSpace(sysCfg.GeneralDomain), "/"); d != "" && !util.IsLocalOrIPURL(d) && chatModel.VisualSupport() {
+		directEnabled = true
+	}
+	attachmentTags, mediaItems, err := service.processAttachments(userId, req.Attachments, directEnabled, hfsService)
 	if err != nil {
 		return nil, err
 	}
@@ -236,11 +242,13 @@ func (service *ChatService) StartChat(
 		}
 		mainAgent.SetFlashModel(flashModel)
 
-		if sysCfg.VisualEnabled {
-			// 设置多模态识别模型（仅 isVisual=1 的模型，不降级）
+		if !chatModel.VisualSupport() {
+			// 如果当前模型不支持多模态，才使用SetVisualModel，core 内会设置多模态识别的工具。 如果当前模型支持多模态，直接使用消息
 			if visualModel, verr := service.ModelRepo.GetVisualChatModel(); verr == nil && visualModel != nil {
 				mainAgent.SetVisualModel(visualModel)
 			}
+		} else {
+			mainAgent.SetVisualModel(chatModel)
 		}
 
 		// 9. 创建 Runner 并启动
@@ -268,7 +276,7 @@ func (service *ChatService) StartChat(
 
 		// 构建实际发送内容（附件标签 + 用户消息）
 		effectiveContent := req.Content + attachmentTags
-		if err = runner.Query(ctx, effectiveContent); err != nil {
+		if err = runner.Query(ctx, effectiveContent, mediaItems); err != nil {
 			service.Worker.Logger().Error(err)
 			agent.ClearRunnerHold(session.SessionId)
 			if spLocked {
@@ -600,40 +608,48 @@ func formatFileSize(size int64) string {
 	}
 }
 
-// processAttachments 处理所有附件：查库验证、上传原文件到沙盒临时目录
+// processAttachments 处理所有附件：查库验证、上传原文件到沙盒临时目录、按直接模式分类
+// 返回 goraven-upload 标签与直接模式媒体条目（数组，与上传顺序无关，两种可混合共存）
 // 必须在 SaveSession 之前调用，避免处理失败产生孤儿会话
-func (service *ChatService) processAttachments(userId string, uploadIds []string) (string, error) {
+func (service *ChatService) processAttachments(userId string, uploadIds []string, directEnabled bool, hfsService *HFSService) (string, []agent.MediaItem, error) {
 	if len(uploadIds) == 0 {
-		return "", nil
+		return "", nil, nil
 	}
 
 	var tags []string
+	var media []agent.MediaItem
 	for _, uploadId := range uploadIds {
-		tag, err := service.processOneAttachment(userId, uploadId)
+		tag, m, err := service.processOneAttachment(userId, uploadId, directEnabled, hfsService)
 		if err != nil {
-			return "", errs.NewFormatError(
+			return "", nil, errs.NewFormatError(
 				"process attachment %s failed: %v",
 				"处理附件 %s 失败: %v",
 				uploadId, err,
 			)
 		}
-		tags = append(tags, tag)
+		if m != nil {
+			media = append(media, *m)
+		}
+		if tag != "" {
+			tags = append(tags, tag)
+		}
 	}
-	return strings.Join(tags, ""), nil
+	return strings.Join(tags, ""), media, nil
 }
 
-// processOneAttachment 处理单个附件：查库、上传原文件、返回 goraven-upload 标签
-func (service *ChatService) processOneAttachment(userId string, uploadId string) (string, error) {
+// processOneAttachment 处理单个附件：查库、上传原文件、返回 goraven-upload 标签或媒体条目
+// 直接模式命中（媒体类型 + directEnabled）时签发 FileLink URL，不生成标签；否则维持标签
+func (service *ChatService) processOneAttachment(userId string, uploadId string, directEnabled bool, hfsService *HFSService) (string, *agent.MediaItem, error) {
 	upload, err := service.HFSRepo.GetUploadByUploadId(uploadId)
 	if err != nil {
-		return "", errs.NewFormatError(
+		return "", nil, errs.NewFormatError(
 			"upload not found: %s",
 			"上传任务不存在: %s",
 			uploadId,
 		)
 	}
 	if upload.Status == po.UploadStatusPending || upload.Status == po.UploadStatusCancelled {
-		return "", errs.NewFormatError(
+		return "", nil, errs.NewFormatError(
 			"upload not completed: %s (status=%d)",
 			"上传尚未完成: %s (status=%d)",
 			uploadId, upload.Status,
@@ -642,7 +658,7 @@ func (service *ChatService) processOneAttachment(userId string, uploadId string)
 
 	srcPath := filepath.Join(upload.TempDir, upload.FileName)
 	if _, err := os.Stat(srcPath); os.IsNotExist(err) {
-		return "", errs.NewFormatError(
+		return "", nil, errs.NewFormatError(
 			"attachment file not found: %s",
 			"附件文件不存在: %s",
 			srcPath,
@@ -651,7 +667,7 @@ func (service *ChatService) processOneAttachment(userId string, uploadId string)
 
 	sb, err := sandbox.NewSandbox(infra.GetUserName(service.Worker))
 	if err != nil {
-		return "", errs.NewFormatError(
+		return "", nil, errs.NewFormatError(
 			"create sandbox failed: %v",
 			"创建沙盒失败: %v",
 			err,
@@ -662,7 +678,7 @@ func (service *ChatService) processOneAttachment(userId string, uploadId string)
 
 	dstAbsPath := filepath.Join(sb.GetWorkspace(), dstRelPath)
 	if err := sb.Upload(srcPath, dstAbsPath); err != nil {
-		return "", errs.NewFormatError(
+		return "", nil, errs.NewFormatError(
 			"upload to sandbox failed: %v",
 			"上传文件到沙盒失败: %v",
 			err,
@@ -670,14 +686,36 @@ func (service *ChatService) processOneAttachment(userId string, uploadId string)
 	}
 
 	if err := service.HFSRepo.MarkUploadUsed(uploadId); err != nil {
-		freedom.Logger().Warnf("MarkUploadUsed failed for %s: %v", uploadId, err)
+		freedom.Logger().Debugf("MarkUploadUsed failed for %s: %v", uploadId, err)
+	}
+
+	// 直接模式：媒体类型 + 模型/域名条件成立时签发外链，该附件不进标签
+	mediaType := tools.ClassifyMediaType(filepath.Ext(upload.FileName))
+	if directEnabled && mediaType != "" {
+		// 图片先压缩缩略：在同目录生成缩略文件，URL 指向缩略文件，减少多模态像素 token
+		relPath := dstRelPath
+		if mediaType == tools.MediaTypeImage {
+			thumbRel := strings.TrimSuffix(dstRelPath, filepath.Ext(dstRelPath)) + "_thumb" + filepath.Ext(dstRelPath)
+			if _, cerr := util.CompressImage(dstAbsPath, filepath.Join(sb.GetWorkspace(), thumbRel), util.ImageMaxEdge); cerr == nil {
+				if _, serr := os.Stat(filepath.Join(sb.GetWorkspace(), thumbRel)); serr == nil {
+					relPath = thumbRel
+				}
+			} else {
+				freedom.Logger().Debugf("CompressImage for attachment %s failed: %v, use original", uploadId, cerr)
+			}
+		}
+		url, uerr := hfsService.GenerateURL(userId, relPath)
+		if uerr == nil {
+			return "", &agent.MediaItem{Type: mediaType, Path: relPath, URL: url}, nil
+		}
+		freedom.Logger().Debugf("GenerateURL for attachment %s failed: %v, fallback to tag", uploadId, uerr)
 	}
 
 	return fmt.Sprintf(
 		"\n<goraven-upload size=\"%s\">\n  %s\n</goraven-upload>",
 		formatFileSize(upload.FileSize),
 		dstAbsPath,
-	), nil
+	), nil, nil
 }
 
 func (service *ChatService) ChatComplete() {
@@ -1037,10 +1075,13 @@ func (service *ChatService) AutomationTask(task *po.AutomationTask, startedAt ti
 		}
 		mainAgent.SetFlashModel(flashModel)
 
-		if sysCfg.VisualEnabled {
-			if visualModel, visualVerr := service.ModelRepo.GetVisualChatModel(); visualVerr == nil && visualModel != nil {
+		if !chatModel.VisualSupport() {
+			// 如果当前模型不支持多模态，才使用SetVisualModel。 如果当前模型支持多模态，直接使用当前
+			if visualModel, verr := service.ModelRepo.GetVisualChatModel(); verr == nil && visualModel != nil {
 				mainAgent.SetVisualModel(visualModel)
 			}
+		} else {
+			mainAgent.SetVisualModel(chatModel)
 		}
 
 		ctx := context.Background()
@@ -1083,7 +1124,7 @@ func (service *ChatService) AutomationTask(task *po.AutomationTask, startedAt ti
 		})
 
 		// 以任务需求作为首条消息，后台静默执行
-		if queryErr := runner.Query(ctx, task.Requirement); queryErr != nil {
+		if queryErr := runner.Query(ctx, task.Requirement, nil); queryErr != nil {
 			freedom.Logger().Errorf("AutomationTask %d query err: %v", task.Id, queryErr)
 			agent.ClearRunnerHold(session.SessionId)
 			if spLocked {

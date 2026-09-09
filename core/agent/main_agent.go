@@ -149,7 +149,7 @@ func (main *MainAgent) onModelRetry(maxRetries, attempt int, err error) {
 
 func (main *MainAgent) NewRunner(ctx context.Context) (runner *MainRunner, e error) {
 	if main.visualModel != nil {
-		visualTool, err := tools.NewVisualUnderstand(main.param.UserId(), main.visualModel, main.box, main.param.DailyStatsRepo)
+		visualTool, err := tools.NewVisualUnderstand(main.param.UserId(), main.visualModel, main.param.DailyStatsRepo)
 		if err != nil {
 			return nil, err
 		}

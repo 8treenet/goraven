@@ -100,6 +100,7 @@ func (provider *GeminiProvider) SetProxy(addr string) error {
 type GeminiModel struct {
 	gemini.ChatModel
 	iface.ConversationHeaderKeyHolder
+	iface.VisualSupportHolder
 	modelName  string
 	contextLen int
 }

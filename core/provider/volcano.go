@@ -93,6 +93,7 @@ func (provider *VolcanoProvider) Models() ([]ModelInfo, error) {
 type VolcanoModel struct {
 	openai.ChatModel
 	iface.ConversationHeaderKeyHolder
+	iface.VisualSupportHolder
 	modelName  string
 	contextLen int
 }

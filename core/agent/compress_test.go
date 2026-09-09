@@ -13,6 +13,7 @@ import (
 
 type mockChatModel struct {
 	iface.ConversationHeaderKeyHolder
+	iface.VisualSupportHolder
 	response string
 }
 

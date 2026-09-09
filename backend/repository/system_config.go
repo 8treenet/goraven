@@ -22,7 +22,6 @@ type SystemConfig struct {
 	KnowledgeEnableOCR bool // 是否启用 OCR 解析，默认 false
 
 	WebFetchEnabled bool // 工具组：是否启用网页抓取，默认 true
-	VisualEnabled   bool // 工具组：是否启用多模态识别，默认 false
 
 	ShellTimeoutMinutes int // 工具组：Shell 命令执行超时（分钟），默认 5
 
@@ -46,7 +45,6 @@ func NewDefaultSystemConfig() *SystemConfig {
 		FileLinkExpiresHours:       72,
 		KnowledgeEnableOCR:         false,
 		WebFetchEnabled:            true,
-		VisualEnabled:              false,
 		ShellTimeoutMinutes:        5,
 		ModelMaxRetries:            3,
 		ModelRateLimitWaitSec:      8,

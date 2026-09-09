@@ -2,7 +2,7 @@ package seed
 
 const SystemSkillGoRavenDocParse = `---
 name: goraven-doc-parse
-description: "读取或转换文档（PDF/DOCX/PPTX/XLSX/HTML/CSV/LaTeX/ASCIIDOC）为文本。不支持图片和扫描件。聊天附件中的文档是原始文件，需通过本技能读取。"
+description: "读取或转换二进制文档（PDF/DOCX/PPTX/XLSX）为文本。不支持图片和扫描件。聊天附件中的二进制文档是原始文件，需通过本技能读取。"
 ---
 
 # 文档读取与转换
@@ -23,7 +23,9 @@ description: "读取或转换文档（PDF/DOCX/PPTX/XLSX/HTML/CSV/LaTeX/ASCIIDOC
 - 图片（PNG/JPEG/TIFF 等）
 - 扫描件 PDF（无文字层）
 
-纯文本文件（.txt、.json、.yaml、.xml、.md 等）无需本技能，直接用文件读取工具即可。
+### 使用原则
+
+- 本技能仅用于 LLM 无法直接读取的二进制文档（PDF、DOCX、PPTX、XLSX）
 
 ## read 模式：读取内容
 
@@ -70,7 +72,7 @@ description: "读取或转换文档（PDF/DOCX/PPTX/XLSX/HTML/CSV/LaTeX/ASCIIDOC
 
 const SystemSkillGoRavenDocParseEn = `---
 name: goraven-doc-parse
-description: "Read or convert documents (PDF/DOCX/PPTX/XLSX/HTML/CSV/LaTeX/ASCIIDOC) to text. Images and scanned files not supported. Chat attachments are stored as original files — use this skill to read them."
+description: "Read or convert binary documents (PDF/DOCX/PPTX/XLSX) to text. Images and scanned files not supported. Chat attachments are stored as original files — use this skill to read them."
 ---
 
 # Document Reading & Conversion
@@ -91,7 +93,9 @@ Use the goraven_doc_parse tool to process documents. Two modes:
 - Images (PNG/JPEG/TIFF, etc.)
 - Scanned PDFs (no text layer)
 
-Plain text files (.txt, .json, .yaml, .xml, .md, etc.) do not need this skill — use the file read tool directly.
+### When to Use
+
+- This skill is only for binary documents the LLM cannot read directly: PDF, DOCX, PPTX, XLSX
 
 ## Mode 1: read
 

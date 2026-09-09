@@ -63,14 +63,14 @@ description: GoRaven 管理端前端界面指南。详细介绍管理员后台�
 - 上下文窗口长度（KB 单位）
 - 三个开关：设为默认模型、压缩专用模型、多模态模型
 - 压缩模型说明：用于上下文压缩和会话标题生成
-- 多模态模型说明：用于 goraven_visual_understand 工具
+- 多模态模型说明：可配置多个组成多模态模型池，识别时随机选取；对话模型支持多模态且配置公网域名时媒体附件直发模型，否则由 goraven_visual_understand 工具调用池内模型
 - openai_compatible 和 claude_compatible 提供商：额外显示 extra_body 文本框（JSON 格式，如 thinking 配置）
 - 「保存并测试」按钮：保存后自动测试连接
 - 必填：提供商名称、模型名；按提供商要求可能需要 API Key 和 Base URL
 
 **编辑模型**：侧边滑出面板。提供商 ID 只读。API Key、BaseURL、代理 URL 被修改时标记「连接信息已变更」，保存时自动触发连接测试。API Key 和 extra_body 等敏感字段需异步加载详情后显示。
 
-**行操作菜单**：每行右侧三点按钮弹出下拉菜单，含编辑、权限和成员、复制、设为默认、设为压缩、设为多模态、删除。设默认/压缩/多模态仅在该标记未设置时显示对应选项。
+**行操作菜单**：每行右侧三点按钮弹出下拉菜单，含编辑、权限和成员、复制、设为默认、设为压缩、设为多模态、删除。设为默认/设为压缩仅在该标记未设置时显示；设为多模态始终显示，为开/关切换（已设时显示「取消多模态」）。
 
 **权限和成员**：弹窗设置模型访问权限（全员开放/仅成员可见）并管理可见成员列表（选择器分页搜索用户，可添加/移除）。仅成员可见时，只有指定成员在对话中可选该模型。
 
@@ -208,14 +208,14 @@ Table listing configured models (provider display name, model display name, mode
 - Context window length (in KB)
 - Three toggles: set as default model, flash model, multimodal model
 - Compression model note: used for context compression and session title generation
-- Multimodal model note: used by goraven_visual_understand tool
+- Multimodal model note: multiple models can be marked, forming a multimodal pool picked at random for recognition; when the chat model supports multimodal and a public domain is configured, media attachments are sent directly to the model — otherwise the goraven_visual_understand tool calls a pool model
 - For openai_compatible and claude_compatible providers: extra_body textarea appears (JSON format, e.g. thinking configuration)
 - "Save & Test" button: saves then auto-tests connectivity
 - Required fields: provider display name, model name; API Key and Base URL may be required depending on provider
 
 **Edit model**: Slide-in drawer. Provider ID is read-only. When API Key, BaseURL, or proxy URL are modified, "connection info changed" state is set, triggering an automatic connectivity test on save. Sensitive fields (apiKey, extraFields) are loaded asynchronously from the detail API.
 
-**Row action menu**: Three-dot button per row opens a dropdown with: edit, permissions & members, duplicate, set as default, set as compression, set as multimodal, delete. Set default/compression/multimodal options only appear when that badge is not currently active.
+**Row action menu**: Three-dot button per row opens a dropdown with: edit, permissions & members, duplicate, set as default, set as compression, set as multimodal, delete. Set default/compression options only appear when that badge is not currently active; "set as multimodal" is always shown and acts as a toggle (labeled "unset multimodal" when active).
 
 **Permissions & Members**: Dialog to set the model's access scope (All users / Members only) and manage the visible member list (paged user selector with search; add/remove members). When set to "Members only", only the listed members can select the model in chat.
 

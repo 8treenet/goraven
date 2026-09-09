@@ -300,7 +300,7 @@ func (runner *MainRunner) startHeartbeat() {
 	}()
 }
 
-func (runner *MainRunner) Query(runctx context.Context, content string) (err error) {
+func (runner *MainRunner) Query(runctx context.Context, content string, media []MediaItem) (err error) {
 	if runner.IsStopped() {
 		return errors.New("runner status not empty")
 	}
@@ -318,7 +318,7 @@ func (runner *MainRunner) Query(runctx context.Context, content string) (err err
 		return
 	}
 
-	err = runner.saveQuery(content)
+	err = runner.saveQuery(content, media)
 	if err != nil {
 		return
 	}
@@ -381,7 +381,7 @@ func (runner *MainRunner) Query(runctx context.Context, content string) (err err
 		}
 
 		if !beforeRoundFailed {
-			collectedMsgs, promptTokens, completionTokens, promptCachedTokens, lastPromptTokens, terminated, replyErrContent = runner.loop(ctx, content)
+			collectedMsgs, promptTokens, completionTokens, promptCachedTokens, lastPromptTokens, terminated, replyErrContent = runner.loop(ctx, content, media)
 		}
 
 		duration := int(time.Since(startTime).Milliseconds())
@@ -420,9 +420,9 @@ func (runner *MainRunner) Query(runctx context.Context, content string) (err err
 	return
 }
 
-func (runner *MainRunner) loop(ctx context.Context, content string) (msgs []collectedMsg, promptTokens, completionTokens, promptCachedTokens int, lastPromptTokens int, terminated bool, replyErrContent string) {
+func (runner *MainRunner) loop(ctx context.Context, content string, media []MediaItem) (msgs []collectedMsg, promptTokens, completionTokens, promptCachedTokens int, lastPromptTokens int, terminated bool, replyErrContent string) {
 	var toolNames []string
-	iter := runner.runner.Run(ctx, append(runner.history, schema.UserMessage(content)))
+	iter := runner.runner.Run(ctx, append(runner.history, BuildUserMessage(content, media)))
 
 	for {
 		if runner.IsStopped() {
@@ -803,7 +803,7 @@ func (runner *MainRunner) nonStreamLoop(agentName string, mv *adk.MessageVariant
 	return result, promptTokens, completionTokens, promptCachedTokens
 }
 
-func (runner *MainRunner) saveQuery(content string) error {
+func (runner *MainRunner) saveQuery(content string, media []MediaItem) error {
 	userMsg := &po.Message{
 		SessionId: runner.mainAgent.param.SessionId(),
 		Timestamp: util.Millisecond() + 2,
@@ -812,6 +812,13 @@ func (runner *MainRunner) saveQuery(content string) error {
 		Created:   time.Now(),
 		Updated:   time.Now(),
 		RoundId:   runner.RoundId,
+	}
+	if len(media) > 0 {
+		if b, merr := json.Marshal(media); merr == nil {
+			userMsg.Media = string(b)
+		} else {
+			freedom.Logger().Errorf("SaveChatMessage marshal media: %v", merr)
+		}
 	}
 	err := runner.mainAgent.msgRepo.SaveChatMessage(runner.mainAgent.param.SessionId(), userMsg)
 	if err != nil {

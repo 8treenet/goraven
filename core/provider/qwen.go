@@ -91,6 +91,7 @@ func (provider *QwenProvider) Models() ([]ModelInfo, error) {
 type QwenModel struct {
 	qwen.ChatModel
 	iface.ConversationHeaderKeyHolder
+	iface.VisualSupportHolder
 	modelName  string
 	contextLen int
 }

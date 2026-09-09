@@ -364,10 +364,6 @@ var (
 		enMessage: "session not found",
 		zhMessage: "会话不存在",
 	}
-	ErrVisualModelNotSet = &Error{
-		enMessage: "cannot enable Visual Understanding: no multimodal model is configured. Please set a multimodal model in model management first",
-		zhMessage: "无法开启多模态识别：未设置多模态识别模型，请先在模型管理中设置多模态识别模型",
-	}
 	ErrSettingMustBeInteger = &Error{
 		enMessage: "must be an integer",
 		zhMessage: "必须为整数",

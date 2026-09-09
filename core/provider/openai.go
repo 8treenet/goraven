@@ -77,6 +77,7 @@ func (provider *OpenAIProvider) SetProxy(addr string) error {
 type OpenAIModel struct {
 	openai.ChatModel
 	iface.ConversationHeaderKeyHolder
+	iface.VisualSupportHolder
 	modelName  string
 	contextLen int
 }

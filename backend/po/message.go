@@ -47,6 +47,7 @@ type Message struct {
 	Duration                int       `gorm:"column:duration"`                                                             //耗时 毫秒
 	AsstError               string    `gorm:"column:asst_error;type:text"`                                                 //助理的回复如果失败,记录原因
 	Ext                     string    `gorm:"column:ext;type:text"`                                                        //扩展数据, assistant消息存AssistantExt, tool消息存ToolExt
+	Media                   string    `gorm:"column:media;type:text"`                                                      //多模态媒体部件JSON（直接模式），仅user消息写入，格式为 agent.MediaItem 数组
 	ToolCallsInfo           string    `gorm:"column:tool_calls_info;type:text"`
 	Created                 time.Time `gorm:"not null;column:created"`
 	Updated                 time.Time `gorm:"not null;column:updated"`

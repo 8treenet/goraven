@@ -49,7 +49,7 @@ type AdminCreateModelReq struct {
 	ContextLen            int    `json:"contextLen"`                              // 上下文长度KB，默认200
 	IsDefault             uint8  `json:"isDefault"`                               // 是否默认模型: 0否 1是，设置1时自动取消其他默认
 	IsFlash               int    `json:"isFlash"`                                 // 是否 Flash 模型: 0否 1是，设置1时自动取消其他 Flash
-	IsVisual              int    `json:"isVisual"`                                // 是否多模态识别模型: 0否 1是，设置1时自动取消其他多模态
+	IsVisual              int    `json:"isVisual"`                                // 是否多模态识别模型: 0否 1是（可多个组成多模态模型池）
 	Remark                string `json:"remark"`                                  // 备注
 }
 

@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"math"
 	"goraven/backend/po"
 	"goraven/backend/repository"
@@ -32,7 +31,6 @@ func init() {
 type SystemSettingService struct {
 	Worker    freedom.Worker
 	Repo      *repository.SystemSettingRepository
-	ModelRepo *repository.ProviderRepository
 }
 
 // settingMeta 设置项 UI 元数据，用于前端动态渲染
@@ -66,7 +64,8 @@ var settingRegistry = []settingMeta{
 	// ---- general ----
 	{key: "general.domain", valueType: po.ValueTypeString, defaultValue: "",
 		displayNameZh: "系统域名", displayNameEn: "System Domain",
-		descriptionZh: "系统对外服务域名，用于生成文件外链和分享链接", descriptionEn: "Public domain for generating file share links",
+		descriptionZh: "系统对外服务域名，用于生成文件外链和分享链接；多模态（图片/音视频）传给模型需使用文件外链，请配置公网域名",
+		descriptionEn: "Public domain for generating file share links; multimodal (image/audio/video) inputs are passed to models via file external links, so a public domain must be configured",
 		inputType: "text", placeholder: "https://goraven.dev", displayOrder: 1, groupName: "general"},
 
 	// ---- clawhub ----
@@ -152,11 +151,6 @@ var settingRegistry = []settingMeta{
 		descriptionZh: "启用后 Agent 可通过 HTTP GET 读取指定网页内容。注意：仅能获取服务端返回的原始 HTML，无法读取前端渲染的动态页面。",
 		descriptionEn: "Allow agents to fetch web page content via HTTP GET. Note: only raw server-returned HTML is available; client-side rendered pages cannot be read.",
 		inputType:     "switch", displayOrder: 1, groupName: "tools"},
-	{key: "tools.visual_enabled", valueType: po.ValueTypeBool, defaultValue: "false",
-		displayNameZh: "多模态识别", displayNameEn: "Visual Understanding",
-		descriptionZh: "启用图像、视频、音频识别能力。需在模型管理中设置多模态模型，且该模型需支持多模态。",
-		descriptionEn: "Enable image, video, and audio recognition. Requires setting a multimodal model (must support multimodal input) in model management.",
-		inputType:     "switch", displayOrder: 2, groupName: "tools"},
 	{key: "tools.shell_timeout_minutes", valueType: po.ValueTypeInt, defaultValue: "5",
 		displayNameZh: "命令执行超时", displayNameEn: "Command Timeout",
 		descriptionZh: "执行终端命令允许的最长耗时（分钟），超时将自动终止", descriptionEn: "Maximum duration allowed for a single terminal command (minutes). Exceeding this will terminate the command.",
@@ -273,19 +267,6 @@ func (service *SystemSettingService) UpdateSettings(req *vo.AdminUpdateSettingsR
 		}
 
 		updates[item.Key] = item.Value
-	}
-
-	if v, ok := updates["tools.visual_enabled"]; ok {
-		enabled, _ := strconv.ParseBool(v)
-		if enabled {
-			hasVisual, err := service.ModelRepo.HasVisualModel()
-			if err != nil {
-				return nil, fmt.Errorf("failed to check visual model: %w", err)
-			}
-			if !hasVisual {
-				return nil, errs.ErrVisualModelNotSet
-			}
-		}
 	}
 
 	pruningKeys := [3]string{

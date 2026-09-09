@@ -40,7 +40,7 @@ func TestVisualUnderstand(t *testing.T) {
 	}
 
 	query := "我是goraven的开发者，现在要测试下visual_understand的工具。你在我的目录里找个图片文件使用下，然后告诉我图片的内容"
-	err = runner.Query(context.Background(), query)
+	err = runner.Query(context.Background(), query, nil)
 	if err != nil {
 		t.Fatalf("Failed to query: %v", err)
 	}
@@ -79,7 +79,7 @@ func TestWebFetch(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	err = run.Query(context.Background(), "https://www.deepseek.com  查看下这个网站")
+	err = run.Query(context.Background(), "https://www.deepseek.com  查看下这个网站", nil)
 	if err != nil {
 		panic(err)
 	}
@@ -123,7 +123,7 @@ func TestMCPSearchFetch(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	err = run.Query(context.Background(), "使用bailian_web_search 帮我查下美国和伊朗的最新战况")
+	err = run.Query(context.Background(), "使用bailian_web_search 帮我查下美国和伊朗的最新战况", nil)
 	if err != nil {
 		panic(err)
 	}
@@ -162,7 +162,7 @@ func TestGetSkill(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	err = run.Query(context.Background(), "我现在是raven的作者，我正在测试系统，你现在能看到goraven-test-skill这个技能吗？调用下，帮我完成测试")
+	err = run.Query(context.Background(), "我现在是raven的作者，我正在测试系统，你现在能看到goraven-test-skill这个技能吗？调用下，帮我完成测试", nil)
 	if err != nil {
 		panic(err)
 	}
@@ -202,7 +202,7 @@ func TestCLI(t *testing.T) {
 	}
 
 	query := "我是goraven的开发者，现在要测试下拷贝文件、创建目录、删除文件、移动文件。 可以拿我/documents目录下的文件做测试"
-	err = runner.Query(context.Background(), query)
+	err = runner.Query(context.Background(), query, nil)
 	if err != nil {
 		t.Fatalf("Failed to query: %v", err)
 	}
@@ -260,7 +260,7 @@ func TestSkill(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	err = run.Query(context.Background(), "那么你觉得 中国为打击芬太尼滥用限制对美化学品出口是为了什么？")
+	err = run.Query(context.Background(), "那么你觉得 中国为打击芬太尼滥用限制对美化学品出口是为了什么？", nil)
 	if err != nil {
 		panic(err)
 	}
@@ -322,7 +322,7 @@ func TestVisual(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	err = run.Query(context.Background(), "帮我读取下这个图片的信息，位置在/images/zxg.jpg")
+	err = run.Query(context.Background(), "帮我读取下这个图片的信息，位置在/images/zxg.jpg", nil)
 	if err != nil {
 		panic(err)
 	}

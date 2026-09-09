@@ -389,11 +389,18 @@ func (svc *AIModelService) SetFlashModel(id int) error {
 	return nil
 }
 
+// SetVisualModel 切换多模态模型开关（加入/移出多模态模型池）
+// 多模态模型允许多个，识别时从池中随机选取
 func (svc *AIModelService) SetVisualModel(id int) error {
-	if _, err := svc.ModelRepo.GetModelByID(id); err != nil {
+	existing, err := svc.ModelRepo.GetModelByID(id)
+	if err != nil {
 		return errs.ErrModelNotFound
 	}
-	if err := svc.ModelRepo.UpdateModel(id, map[string]interface{}{"is_visual": 1}); err != nil {
+	isVisual := 1
+	if existing.IsVisual == 1 {
+		isVisual = 0
+	}
+	if err := svc.ModelRepo.UpdateModel(id, map[string]interface{}{"is_visual": isVisual}); err != nil {
 		return err
 	}
 	svc.invalidateDashboardCache()

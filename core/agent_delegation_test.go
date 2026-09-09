@@ -36,7 +36,7 @@ func TestSubAgentContextLoss(t *testing.T) {
 	}
 	err = run.Query(context.Background(),
 		`我是开发者，正在设计这个agent，我想测试下sub_agent调用工具的能力，你现在使用sub_agent调用获取天气的工具， 位置传太原即可。
-	`)
+	`, nil)
 	if err != nil {
 		panic(err)
 	}

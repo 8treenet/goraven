@@ -146,15 +146,15 @@ export function Component() {
   )
 
   const handleSetVisual = useCallback(
-    (modelId: number) => {
+    (modelId: number, currentlyVisual: boolean) => {
       adminModelsApi.setVisualModel(modelId).then(() => {
         setModels((prev) =>
           prev.map((m) => ({
             ...m,
-            isVisual: (m.aiModelId === modelId ? 1 : 0) as number,
+            isVisual: (m.aiModelId === modelId ? (currentlyVisual ? 0 : 1) : m.isVisual) as number,
           })),
         )
-        toast.success(translate('adminModels.setMultimodal'))
+        toast.success(translate(currentlyVisual ? 'adminModels.unsetMultimodalToast' : 'adminModels.setMultimodal'))
       }).catch((err: Error) => { toast.error(err.message || translate('common.failed')) })
     },
     [],
@@ -278,7 +278,7 @@ export function Component() {
                     }}
                     onSetDefault={() => handleSetDefault(model.aiModelId, model.isDefault === 1)}
                     onSetFlash={() => handleSetFlash(model.aiModelId)}
-                    onSetVisual={() => handleSetVisual(model.aiModelId)}
+                    onSetVisual={() => handleSetVisual(model.aiModelId, model.isVisual === 1)}
                   />
                 ))}
               </tbody>

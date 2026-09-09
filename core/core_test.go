@@ -61,7 +61,7 @@ func TestMsgSessionRepository_SaveSession(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	err = run.Query(context.Background(), "太原现在的天气如何")
+	err = run.Query(context.Background(), "太原现在的天气如何", nil)
 	if err != nil {
 		panic(err)
 	}
@@ -189,7 +189,7 @@ func TestEnablePlanTask(t *testing.T) {
 	}
 
 	query := "我在做task的工具测试，你要覆盖TaskCreate，TaskGet、TaskUpdate、TaskList这4个工具，请帮我制定一个学习 Go 语言并发编程的计划，包括学习 goroutine、channel、sync 包等内容，并跟踪进度，我要markdown格式，写到我的文档目录里"
-	err = runner.Query(context.Background(), query)
+	err = runner.Query(context.Background(), query, nil)
 	if err != nil {
 		t.Fatalf("Failed to query: %v", err)
 	}
@@ -277,7 +277,7 @@ func TestCoder(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	err = run.Query(context.Background(), "但是这个网站打开没有样式？我浏览器直接打开index.html。 是什么原因？")
+	err = run.Query(context.Background(), "但是这个网站打开没有样式？我浏览器直接打开index.html。 是什么原因？", nil)
 	if err != nil {
 		panic(err)
 	}

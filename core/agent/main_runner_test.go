@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -60,6 +61,7 @@ func TestNonStreamLoopDoesNotEmitSubAgentToolEvent(t *testing.T) {
 
 type nonStreamRunnerModel struct {
 	iface.ConversationHeaderKeyHolder
+	iface.VisualSupportHolder
 }
 
 func (m *nonStreamRunnerModel) Generate(context.Context, []*schema.Message, ...model.Option) (*schema.Message, error) {
@@ -134,7 +136,7 @@ func TestNonStreamRunnerPersistsCachedPromptTokens(t *testing.T) {
 	runner := newMainRunner(main, chatAgent, false)
 	runner.OnComplete(func(*RunnerCompleteEvent) { close(repo.done) })
 
-	if err := runner.Query(context.Background(), "query"); err != nil {
+	if err := runner.Query(context.Background(), "query", nil); err != nil {
 		t.Fatalf("query: %v", err)
 	}
 	select {
@@ -151,5 +153,68 @@ func TestNonStreamRunnerPersistsCachedPromptTokens(t *testing.T) {
 	}
 	if repo.savedMsg.PromptCachedTokensCount != 7 {
 		t.Fatalf("saved PromptCachedTokensCount = %d, want 7", repo.savedMsg.PromptCachedTokensCount)
+	}
+}
+
+type mediaSaveRepo struct {
+	saved *po.Message
+}
+
+func (r *mediaSaveRepo) SaveChatMessage(_ string, m *po.Message) error { r.saved = m; return nil }
+func (r *mediaSaveRepo) GetChatMessages(string) ([]*po.Message, error) { return nil, nil }
+func (r *mediaSaveRepo) AddSessionTokens(string, int, int, int) error { return nil }
+func (r *mediaSaveRepo) SetContextTokens(string, int) error           { return nil }
+func (r *mediaSaveRepo) UpdateSessionStatus(string, int) error        { return nil }
+func (r *mediaSaveRepo) MarkSessionCompressed(string, []string) error { return nil }
+
+func TestSaveQueryPersistsMedia(t *testing.T) {
+	repo := &mediaSaveRepo{}
+	runner := &MainRunner{
+		mainAgent: &MainAgent{
+			msgRepo: repo,
+			param: AgentParam{
+				Session: &po.Session{SessionId: "s1", UserId: "u1"},
+				MsgRepo: repo,
+			},
+		},
+		RoundId: "r1",
+	}
+	if err := runner.saveQuery("hello", []MediaItem{
+		{Type: "image", Path: "/temp/a.jpg", URL: "https://x/api/hfs/public/a.jpg"},
+	}); err != nil {
+		t.Fatalf("saveQuery: %v", err)
+	}
+	if repo.saved == nil {
+		t.Fatal("message not saved")
+	}
+	if repo.saved.Content != "hello" {
+		t.Fatalf("content = %q, want hello", repo.saved.Content)
+	}
+	if repo.saved.Media == "" {
+		t.Fatal("media not persisted")
+	}
+	var items []MediaItem
+	if err := json.Unmarshal([]byte(repo.saved.Media), &items); err != nil || len(items) != 1 || items[0].Type != "image" {
+		t.Fatalf("media json mismatch: %s err=%v", repo.saved.Media, err)
+	}
+}
+
+func TestSaveQueryWithoutMedia(t *testing.T) {
+	repo := &mediaSaveRepo{}
+	runner := &MainRunner{
+		mainAgent: &MainAgent{
+			msgRepo: repo,
+			param: AgentParam{
+				Session: &po.Session{SessionId: "s1", UserId: "u1"},
+				MsgRepo: repo,
+			},
+		},
+		RoundId: "r1",
+	}
+	if err := runner.saveQuery("hello", nil); err != nil {
+		t.Fatalf("saveQuery: %v", err)
+	}
+	if repo.saved == nil || repo.saved.Media != "" {
+		t.Fatalf("media should be empty: %+v", repo.saved)
 	}
 }

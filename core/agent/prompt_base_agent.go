@@ -120,29 +120,21 @@ func buildBaseInstructionPromptZh(param AgentParam, isSubAgent bool) string {
 `)
 
 	if !isSubAgent {
-		b.WriteString(`## 消息附件
-用户在对话中发送的图片、文档等附件会以 <goraven-upload> 标签形式出现在消息中。
+		b.WriteString(`## 消息附件与文件引用
+用户发送的附件会以 <goraven-upload> 标签形式出现在消息中，通过 @ 选择的文件或目录会以 <goraven-ref> 标签形式出现。
 <goraven-upload size="245KB">
   /goraven/data/users/admin/temp/607ae7ba.pdf
 </goraven-upload>
-
-规则:
-- 附件均以原始文件形式存放在 temp/ 目录
-- 文档类附件（PDF/Word/PPT/Excel/HTML等）是二进制原始文件，必须通过 goraven-doc-parse 技能读取内容，禁止用文件读取工具直接读取
-- 附件是用户任务的重要上下文，优先理解附件内容再执行任务
-
-`)
-
-		b.WriteString(`## 用户文件引用
-用户在对话中可以通过 @ 选择文件或目录进行引用，系统会以 <goraven-ref> 标签形式出现在消息中。
 <goraven-ref type="file" name="607ae7ba.md">
   /goraven/data/users/admin/documents/607ae7ba.md
 </goraven-ref>
 
 规则:
-- type="file" 表示文件，type="dir" 表示目录
+- <goraven-ref> 中 type="file" 表示文件，type="dir" 表示目录
 - 标签内的路径是文件系统的绝对路径
-- 引用文件和目录是用户任务的重要上下文，优先理解引用内容再执行任务
+- 文档类文件（PDF/Word/PPT/Excel等）是二进制原始文件，必须通过 goraven-doc-parse 技能读取内容，禁止用文件读取工具直接读取
+- 文本类文件（txt/md/代码/HTML/CSV等）可以直接用文件读取工具读取内容
+- 附件和引用文件是用户任务的重要上下文，优先理解内容再执行任务
 
 `)
 	}
@@ -297,29 +289,21 @@ Project Knowledge Index (LLMWiki):
 `)
 
 	if !isSubAgent {
-		b.WriteString(`## Message Attachments
-Images, documents, and other attachments sent by users in conversation appear as <goraven-upload> tags.
+		b.WriteString(`## Message Attachments & File References
+Attachments sent by users in conversation appear as <goraven-upload> tags; files or directories referenced via @ appear as <goraven-ref> tags.
 <goraven-upload size="245KB">
   /goraven/data/users/admin/temp/607ae7ba.pdf
 </goraven-upload>
-
-Rules:
-- All attachments are stored as original files under temp/
-- Document attachments (PDF/Word/PPT/Excel/HTML etc.) are binary original files — use the goraven-doc-parse skill to read their content; never read them directly with file tools
-- Attachments are important context for the user's task; understand attachment content before executing the task
-
-`)
-
-		b.WriteString(`## File References
-Users can reference files or directories in the conversation via @, and the system will include them as <goraven-ref> tags in the message.
 <goraven-ref type="file" name="607ae7ba.md">
   /goraven/data/users/admin/documents/607ae7ba.md
 </goraven-ref>
 
 Rules:
-- type="file" indicates a file, type="dir" indicates a directory
+- In <goraven-ref>, type="file" indicates a file, type="dir" indicates a directory
 - The path inside the tag is a filesystem absolute path
-- Referenced files and directories are important context for the user's task; understand them before executing the task
+- Document files (PDF/Word/PPT/Excel etc.) are binary original files — use the goraven-doc-parse skill to read their content; never read them directly with file tools
+- Text files (txt/md/code/HTML/CSV etc.) can be read directly with file reading tools
+- Attachments and referenced files are important context for the user's task; understand them before executing the task
 
 `)
 	}

@@ -93,6 +93,7 @@ func (provider *GLMProvider) Models() ([]ModelInfo, error) {
 type GLMModel struct {
 	openai.ChatModel
 	iface.ConversationHeaderKeyHolder
+	iface.VisualSupportHolder
 	modelName  string
 	contextLen int
 }

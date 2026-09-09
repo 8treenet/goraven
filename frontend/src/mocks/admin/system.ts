@@ -51,17 +51,6 @@ export const MOCK_SETTINGS: SettingGroupData[] = [
         inputType: 'switch',
         displayOrder: 1,
       },
-      {
-        key: 'tools.visual_enabled',
-        value: 'false',
-        valueType: 'bool',
-        defaultValue: 'false',
-        displayName: '多模态识别',
-        description:
-          '启用图像、视频、音频识别能力。需在模型管理中设置多模态模型，且该模型需支持多模态。',
-        inputType: 'switch',
-        displayOrder: 2,
-      },
     ],
   },
   {

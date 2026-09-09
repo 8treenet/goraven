@@ -51,6 +51,7 @@ description: GoRaven 平台功能概述。涵盖对话模式、附件处理、�
 
 - **文档**（PDF、Word、PPT、Excel、HTML 等）：二进制原始文件，必须通过 ` + "`goraven-doc-parse`" + ` 技能读取内容，禁止用文件读取工具直接读取。
 - **纯文本文件**（txt、log、json、xml、yaml、md 等）：直接用文件读取工具读取。
+- **图片/视频/音频**：当当前模型支持多模态且已配置公网域名时，以媒体形式直接发送给你，可原生理解；否则以附件标签形式出现，需通过 goraven_visual_understand 工具识别。
 
 消息中的附件是用户任务的重要上下文，理解附件内容后再执行任务。
 
@@ -113,7 +114,9 @@ MCP（Model Context Protocol）允许连接外部服务扩展你的工具能力�
 
 - **默认模型** —— 用户对话的默认选择
 - **压缩模型** —— 用于上下文压缩和会话标题生成
-- **多模态模型** —— 用于 goraven_visual_understand 工具
+- **多模态模型** —— 可配置多个组成多模态模型池，用于图片/视频/音频识别
+
+多模态识别有两种途径：当对话模型本身支持多模态且已配置公网访问域名（general.domain）时，用户上传的图片/视频/音频会作为媒体直接发送给模型识别（无需调用工具）；否则由 agent 通过 goraven_visual_understand 工具调用多模态模型池中随机选取的模型进行识别。
 
 每个模型可设置访问权限：**全员开放**（所有用户可选）或**仅成员可见**（仅指定成员可选），由管理员通过「权限和成员」弹窗配置。
 
@@ -227,7 +230,7 @@ MCP（Model Context Protocol）允许连接外部服务扩展你的工具能力�
 - **迭代与超时**：最大迭代步数、单次查询超时。
 - **上下文管理**：压缩触发阈值与保留轮数、裁剪 token 阈值与工具结果截断长度。
 - **请求策略**：LLM 请求间隔、失败重试次数、限流等待与退避基数。
-- **能力开关**：Web 抓取、视觉理解、OCR 是否启用；Shell 单命令超时；文件分享链接有效期。
+- **能力开关**：Web 抓取、OCR 是否启用；Shell 单命令超时；文件分享链接有效期。
 
 某项能力不可用（如 web_fetch 被禁用）通常是管理员配置所致，可提示用户联系管理员。界面操作见 ` + "`goraven-admin-ui`" + `。
 
@@ -287,6 +290,7 @@ When users upload attachments in a conversation, the system stores them as-is un
 
 - **Documents** (PDF, Word, PPT, Excel, HTML, etc.): binary original files — use the ` + "`goraven-doc-parse`" + ` skill to read their content. Never read them directly with file tools.
 - **Plain text files** (txt, log, json, xml, yaml, md, etc.): read directly with file tools.
+- **Images/videos/audio**: when the active model supports multimodal and a public domain is configured, they are sent directly to you as media parts and natively understandable; otherwise they appear as attachment tags and must be recognized via the goraven_visual_understand tool.
 
 Attachments provide important context — understand them before executing the task.
 
@@ -346,7 +350,9 @@ Admins can configure multiple LLM models, each specifying a provider, API key, B
 
 - **Default model** — the default choice for user chats
 - **Compress model** — used for context compression and session title generation
-- **Visual model** — used by the goraven_visual_understand tool
+- **Visual model** — multiple models can be marked, forming a multimodal pool used for image/video/audio recognition
+
+Multimodal recognition works in two ways: when the active chat model itself supports multimodal and a public general.domain is configured, user-uploaded images/videos/audio are sent directly to the model as media parts (no tool call); otherwise the agent recognizes them via the goraven_visual_understand tool, which calls a randomly picked model from the multimodal pool.
 
 Each model can set an access scope: **All users** (everyone can select it) or **Members only** (only listed members can select it), configured by admins via the "Permissions & Members" dialog.
 
@@ -455,7 +461,7 @@ The following tags have special rendering behavior. Detailed rules are in the sy
 
 ## System Settings
 
-Admins can tune key settings at /admin/settings that affect your runtime behavior: max iteration steps, per-query timeout, compression/pruning thresholds, LLM request retry policy, and capability toggles (web fetch, visual understanding, OCR, shell timeout, file share-link expiry). If a capability is unavailable, it is usually an admin setting — suggest the user contact their admin. UI details in ` + "`goraven-admin-ui`" + `.
+Admins can tune key settings at /admin/settings that affect your runtime behavior: max iteration steps, per-query timeout, compression/pruning thresholds, LLM request retry policy, and capability toggles (web fetch, OCR, shell timeout, file share-link expiry). If a capability is unavailable, it is usually an admin setting — suggest the user contact their admin. UI details in ` + "`goraven-admin-ui`" + `.
 
 ## Frontend UI
 

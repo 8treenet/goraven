@@ -72,14 +72,9 @@ func (repo *ProviderRepository) PaginateModels(req *vo.AdminModelListReq) ([]vo.
 
 func (repo *ProviderRepository) CreateModel(model *po.AIModel) error {
 	return repo.db().Transaction(func(tx *gorm.DB) error {
-		// 默认模型允许多个（组成默认池，解析时随机选取），不做互斥清理；Flash/多模态保持全局唯一
+		// 默认/多模态模型允许多个（组成模型池，解析时随机选取），不做互斥清理；Flash 保持全局唯一
 		if model.IsFlash == 1 {
 			if err := tx.Model(&po.AIModel{}).Where("is_flash = 1 AND deleted = 0").Update("is_flash", 0).Error; err != nil {
-				return err
-			}
-		}
-		if model.IsVisual == 1 {
-			if err := tx.Model(&po.AIModel{}).Where("is_visual = 1 AND deleted = 0").Update("is_visual", 0).Error; err != nil {
 				return err
 			}
 		}
@@ -114,14 +109,9 @@ func (repo *ProviderRepository) GetModelsByIDs(ids []int) ([]po.AIModel, error) 
 
 func (repo *ProviderRepository) UpdateModel(id int, updates map[string]interface{}) error {
 	return repo.db().Transaction(func(tx *gorm.DB) error {
-		// is_default 允许多个并存（默认池），不做互斥清理；Flash/多模态保持全局唯一
+		// is_default/is_visual 允许多个并存（模型池），不做互斥清理；Flash 保持全局唯一
 		if v, ok := updates["is_flash"]; ok && util.IntFromIFace(v) == 1 {
 			if err := tx.Model(&po.AIModel{}).Where("is_flash = 1 AND deleted = 0").Update("is_flash", 0).Error; err != nil {
-				return err
-			}
-		}
-		if v, ok := updates["is_visual"]; ok && util.IntFromIFace(v) == 1 {
-			if err := tx.Model(&po.AIModel{}).Where("is_visual = 1 AND deleted = 0").Update("is_visual", 0).Error; err != nil {
 				return err
 			}
 		}
@@ -221,23 +211,17 @@ func (repo *ProviderRepository) GetFlashChatModel(fallbackModelId int) (iface.Ba
 	return repo.GetDefaultChatModel()
 }
 
-// HasVisualModel 检查是否存在多模态识别模型（isVisual=1 且启用）
-func (repo *ProviderRepository) HasVisualModel() (bool, error) {
-	var count int64
-	if err := repo.db().Model(&po.AIModel{}).Where("is_visual = 1 AND status = 1 AND deleted = 0").Count(&count).Error; err != nil {
-		return false, err
-	}
-	return count > 0, nil
-}
-
 // GetVisualChatModel 获取多模态识别模型
-// 仅查询 isVisual=1 的模型，不降级，找不到返回 nil
+// 多模态模型允许多个（isVisual=1 组成模型池），随机选取一个；池为空返回 nil，不降级
 func (repo *ProviderRepository) GetVisualChatModel() (iface.BaseChatModel, error) {
-	var model po.AIModel
-	if err := repo.db().Where("is_visual = 1 AND status = 1 AND deleted = 0").First(&model).Error; err != nil {
+	var models []po.AIModel
+	if err := repo.db().Where("is_visual = 1 AND status = 1 AND deleted = 0").Find(&models).Error; err != nil {
 		return nil, nil
 	}
-	return repo.createChatModelFromPO(&model, false)
+	if len(models) == 0 {
+		return nil, nil
+	}
+	return repo.createChatModelFromPO(&models[rand.Intn(len(models))], false)
 }
 
 // createChatModelFromPO 根据 po.AIModel 创建聊天模型
@@ -261,6 +245,8 @@ func (repo *ProviderRepository) createChatModelFromPO(model *po.AIModel, reasoni
 
 	// 会话归并 header 名，按模型行配置，空则不注入
 	result.SetConversationHeaderKey(model.ConversationHeaderKey)
+	// 是否支持多模态，按模型行的 is_visual 标志统一设置
+	result.SetVisualSupport(model.IsVisual == 1)
 	return result, nil
 }
 

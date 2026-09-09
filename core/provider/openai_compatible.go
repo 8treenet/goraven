@@ -97,6 +97,7 @@ func (provider *OpenAICompatibleProvider) Models() ([]ModelInfo, error) {
 type OpenAICompatibleModel struct {
 	openai.ChatModel
 	iface.ConversationHeaderKeyHolder
+	iface.VisualSupportHolder
 	modelName    string
 	providerName string
 	contextLen   int

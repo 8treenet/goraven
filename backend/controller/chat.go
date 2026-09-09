@@ -65,6 +65,7 @@ func (controller *ChatController) Chat() freedom.Result {
 		userId,
 		req,
 		controller.SkillSev,
+		controller.HfsSev,
 	)
 	if err != nil {
 		return &infra.JSONResponse{Error: err}

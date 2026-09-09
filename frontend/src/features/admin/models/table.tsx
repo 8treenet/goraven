@@ -109,16 +109,14 @@ function RowActionsMenu({
               {t('adminModels.setAsFlash')}
             </button>
           )}
-          {!isVisual && (
-            <button
-              onClick={() => { onSetVisual(); setOpen(false) }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text-1 transition-colors hover:bg-bg-hover"
-            >
-              <Image className="size-3.5 text-text-3" />
+          <button
+            onClick={() => { onSetVisual(); setOpen(false) }}
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text-1 transition-colors hover:bg-bg-hover"
+          >
+            <Image className={cn('size-3.5', isVisual ? 'text-highlight' : 'text-text-3')} />
 
-              {t('adminModels.setAsMultimodal')}
-            </button>
-          )}
+            {isVisual ? t('adminModels.unsetMultimodal') : t('adminModels.setAsMultimodal')}
+          </button>
           <div className="border-t border-border" />
           <button
             onClick={() => { onDelete(); setOpen(false) }}

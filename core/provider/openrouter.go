@@ -80,6 +80,7 @@ func (provider *OpenrouterProvider) SetProxy(addr string) error {
 type OpenrouterModel struct {
 	openrouter.ChatModel
 	iface.ConversationHeaderKeyHolder
+	iface.VisualSupportHolder
 	modelName  string
 	contextLen int
 }
