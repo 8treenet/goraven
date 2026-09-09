@@ -22,7 +22,7 @@ var SystemSettings = []po.SystemSetting{
 	{Key: "agent.max_iterations", Value: "120", ValueType: po.ValueTypeInt, GroupName: "agent"},
 
 	// 剪枝
-	{Key: "agent.pruning_token_threshold", Value: "96", ValueType: po.ValueTypeInt, GroupName: "agent"},
+	{Key: "agent.pruning_token_threshold", Value: "128", ValueType: po.ValueTypeInt, GroupName: "agent"},
 
 	{Key: "agent.pruning_max_tool_result_length", Value: "2000", ValueType: po.ValueTypeInt, GroupName: "agent"},
 	{Key: "agent.pruning_head_truncate_length", Value: "1000", ValueType: po.ValueTypeInt, GroupName: "agent"},

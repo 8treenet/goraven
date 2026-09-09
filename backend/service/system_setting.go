@@ -98,7 +98,7 @@ var settingRegistry = []settingMeta{
 		inputType: "number", min: util.PtrFloat64(1), max: util.PtrFloat64(20), displayOrder: 2, groupName: "agent"},
 
 	// ---- agent: 剪枝 ----
-	{key: "agent.pruning_token_threshold", valueType: po.ValueTypeInt, defaultValue: "96",
+	{key: "agent.pruning_token_threshold", valueType: po.ValueTypeInt, defaultValue: "128",
 		displayNameZh: "剪枝 Token 阈值/K", displayNameEn: "Pruning Token Threshold/K",
 		descriptionZh: "总 token 超过此阈值（单位 K）时触发剪枝", descriptionEn: "Trigger pruning when total tokens exceed this threshold (K)",
 		inputType: "number", min: util.PtrFloat64(64), max: util.PtrFloat64(1000), displayOrder: 4, groupName: "agent"},

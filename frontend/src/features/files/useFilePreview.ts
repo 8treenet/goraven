@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import { t as translate } from '@/i18n'
 import { useUserStore } from '@/stores/user-store'
 import { getAkDownloadUrl } from '@/api/files'
-import { getCachedBlobUrl, peekCachedBlobUrl } from '@/lib/file-blob-cache'
+import { evictCachedBlob, getCachedBlobUrl, peekCachedBlobUrl } from '@/lib/file-blob-cache'
 import type { FileItem } from '@/api/types'
 import {
   getPreviewType,
@@ -58,7 +58,7 @@ export function useFilePreview(options: UseFilePreviewOptions) {
   )
 
   const handlePreview = useCallback(
-    (item: FileItem, currentDir: string) => {
+    (item: FileItem, currentDir: string, forceRefresh = false) => {
       const filePath = `${currentDir === '/' ? '' : currentDir}/${item.name}`
       const ptype = getPreviewType(item)
       const url = buildDownloadUrl(filePath)
@@ -71,7 +71,7 @@ export function useFilePreview(options: UseFilePreviewOptions) {
 
       if (ptype === 'image' || ptype === 'video' || ptype === 'audio' || ptype === 'pdf') {
         const cachedUrl = peekCachedBlobUrl(url)
-        if (cachedUrl) {
+        if (cachedUrl && !forceRefresh) {
           setPreviewItem(item)
           setPreviewType(ptype)
           setPreviewText(null)
@@ -99,7 +99,7 @@ export function useFilePreview(options: UseFilePreviewOptions) {
       const bearerHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
 
       if (ptype === 'text' || ptype === 'markdown') {
-        fetch(url, { headers: bearerHeaders })
+        fetch(url, { headers: bearerHeaders, cache: forceRefresh ? 'no-store' : 'default' })
           .then((res) => {
             if (!res.ok) throw new Error('preview failed')
             return res.text()
@@ -110,7 +110,7 @@ export function useFilePreview(options: UseFilePreviewOptions) {
           .catch(() => setPreviewError(true))
           .finally(() => setPreviewLoading(false))
       } else if (ptype === 'xlsx') {
-        fetch(url, { headers: bearerHeaders })
+        fetch(url, { headers: bearerHeaders, cache: forceRefresh ? 'no-store' : 'default' })
           .then((res) => {
             if (!res.ok) throw new Error('preview failed')
             return res.arrayBuffer()
@@ -146,6 +146,7 @@ export function useFilePreview(options: UseFilePreviewOptions) {
           .catch(() => setPreviewError(true))
           .finally(() => setPreviewLoading(false))
       } else {
+        if (forceRefresh) evictCachedBlob(url)
         getCachedBlobUrl(url)
           .then(({ blobUrl }) => {
             setPreviewUrl(blobUrl)

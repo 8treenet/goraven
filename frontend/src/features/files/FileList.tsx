@@ -434,6 +434,10 @@ export const FileList = forwardRef<FileListHandle, FileListProps>(function FileL
     rawHandlePreview(item, currentDir)
   }, [currentDir, rawHandlePreview])
 
+  const handleRefreshPreview = useCallback(() => {
+    if (previewItem) rawHandlePreview(previewItem, currentDir, true)
+  }, [previewItem, currentDir, rawHandlePreview])
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (dialogMode || renamingItem) return
@@ -849,6 +853,7 @@ export const FileList = forwardRef<FileListHandle, FileListProps>(function FileL
         error={previewError}
         onClose={closePreview}
         onDownload={previewItem ? () => handleDownload(previewItem) : undefined}
+        onRefresh={handleRefreshPreview}
       />
     </div>
   )

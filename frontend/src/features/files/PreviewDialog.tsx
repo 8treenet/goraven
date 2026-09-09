@@ -24,9 +24,10 @@ interface PreviewDialogProps {
   error: boolean
   onClose: () => void
   onDownload?: () => void
+  onRefresh?: () => void
 }
 
-export function PreviewDialog({ item, type, url, text, sheets, loading, error, onClose, onDownload }: PreviewDialogProps) {
+export function PreviewDialog({ item, type, url, text, sheets, loading, error, onClose, onDownload, onRefresh }: PreviewDialogProps) {
   const t = useT()
   const [maximized, setMaximized] = useState(false)
   const [activeSheet, setActiveSheet] = useState(0)
@@ -65,6 +66,16 @@ export function PreviewDialog({ item, type, url, text, sheets, loading, error, o
             {item ? `${formatSize(item.size)} · ${formatTime(item.modTime)}` : ''}
           </DialogDescription>
         </DialogHeader>
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={loading}
+          className="absolute right-20 top-4 rounded text-text-3 transition-colors hover:text-text-1 disabled:opacity-50 focus:outline-none"
+          title={t('common.refresh')}
+        >
+          <RefreshCw className={cn('size-4', loading && 'animate-spin')} />
+          <span className="sr-only">{t('common.refresh')}</span>
+        </button>
         <button
           type="button"
           onClick={toggleMaximized}

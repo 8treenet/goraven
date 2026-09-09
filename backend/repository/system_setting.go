@@ -54,7 +54,7 @@ func (repo *SystemSettingRepository) LoadConfig() (*SystemConfig, error) {
 		CompressThresholdPercent:   getInt(m, "agent.compress_threshold_percent", 80),
 		CompressKeepRounds:         getInt(m, "agent.compress_keep_rounds", 4),
 		MaxIterations:              getInt(m, "agent.max_iterations", 150),
-		PruningTokenThreshold:      getInt(m, "agent.pruning_token_threshold", 96),
+		PruningTokenThreshold:      getInt(m, "agent.pruning_token_threshold", 128),
 		PruningMaxToolResultLength: getInt(m, "agent.pruning_max_tool_result_length", 2000),
 		PruningHeadTruncateLength:  getInt(m, "agent.pruning_head_truncate_length", 1000),
 		PruningTailTruncateLength:  getInt(m, "agent.pruning_tail_truncate_length", 1000),

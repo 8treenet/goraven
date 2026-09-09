@@ -123,9 +123,9 @@ export const MOCK_SETTINGS: SettingGroupData[] = [
       },
       {
         key: 'agent.pruning_token_threshold',
-        value: '96',
+        value: '128',
         valueType: 'int',
-        defaultValue: '96',
+        defaultValue: '128',
         displayName: '剪枝 Token 阈值/K',
         description: '总 token 超过此阈值（单位 K）时触发剪枝',
         inputType: 'number',
