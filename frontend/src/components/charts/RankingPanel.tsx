@@ -38,16 +38,16 @@ export function RankingPanel({
   return (
     <div className="flex flex-1 flex-col px-6 py-4">
       <h3 className="shrink-0 text-xs font-semibold text-text-2">{title}</h3>
-      <div className="mt-3 flex flex-1 flex-col justify-evenly overflow-hidden">
+      <div className="mt-3 flex flex-1 flex-col gap-2.5 overflow-y-auto pr-0.5">
         {data.map((item, i) => (
-          <div key={item.name} className="flex items-center gap-2">
+          <div key={item.name} className="flex shrink-0 items-center gap-2">
             <span className="w-4 shrink-0 text-right text-xs text-text-3 tabular-nums">
               {i + 1}
             </span>
             <span className="w-24 shrink-0 truncate text-xs text-text-2">
               {item.name}
             </span>
-            <div className="flex h-5 flex-1 overflow-hidden rounded-sm bg-bg-layer-2">
+            <div className="mr-8 flex h-5 flex-1 overflow-hidden rounded-sm bg-bg-layer-2">
               <div
                 className="h-full transition-all duration-300"
                 style={{
@@ -56,9 +56,6 @@ export function RankingPanel({
                 }}
               />
             </div>
-            <span className="w-8 shrink-0 text-right text-xs text-text-1 tabular-nums">
-              {item.count}
-            </span>
           </div>
         ))}
       </div>

@@ -75,11 +75,12 @@ type TokenTrendItem struct {
 // ModelUsageItem 模型使用分布项
 // 按模型聚合 Token 消耗，支撑水平条形图
 type ModelUsageItem struct {
-	ModelName        string  `json:"modelName"`        // 模型名称（providerDisplayName - modelName）
-	TokenCount       int64   `json:"tokenCount"`       // Token 消耗数
-	Percentage       float64 `json:"percentage"`       // 占比百分比（0-100）
-	PromptTokens     int64   `json:"promptTokens"`     // Prompt token 消耗数
-	CompletionTokens int64   `json:"completionTokens"` // Completion token 消耗数
+	ModelName          string  `json:"modelName"`          // 模型名称（providerDisplayName - modelName）
+	TokenCount         int64   `json:"tokenCount"`         // Token 消耗数（总数）
+	Percentage         float64 `json:"percentage"`         // 占比百分比（0-100）
+	PromptTokens       int64   `json:"promptTokens"`       // Prompt token 消耗数（含缓存命中）
+	PromptCachedTokens int64   `json:"promptCachedTokens"` // 缓存命中的 prompt token（prompt 子集）
+	CompletionTokens   int64   `json:"completionTokens"`   // Completion token 消耗数
 }
 
 // UserTokenRankItem 用户 Token 消耗排行项

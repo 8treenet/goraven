@@ -518,10 +518,16 @@ function ModelUsagePanel({
                     <div className="rounded-lg border border-border bg-bg-layer-2 px-3 py-2 shadow-pop">
                       <p className="text-xs text-text-3">{data.modelName}</p>
                       <p className="text-xs" style={{ color: 'var(--color-interactive)' }}>
-                        Prompt: {formatNumber(data.promptTokens)}
+                        Prompt: {formatNumber(Math.max(0, data.promptTokens - data.promptCachedTokens))}
+                      </p>
+                      <p className="text-xs" style={{ color: 'var(--chart-4)' }}>
+                        Cached: {formatNumber(data.promptCachedTokens)}
                       </p>
                       <p className="text-xs" style={{ color: 'var(--highlight)' }}>
                         Completion: {formatNumber(data.completionTokens)}
+                      </p>
+                      <p className="mt-1 border-t border-border pt-1 text-xs font-medium text-text-1">
+                        Total: {formatNumber(data.tokenCount)}
                       </p>
                     </div>
                   )

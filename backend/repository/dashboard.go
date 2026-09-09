@@ -208,15 +208,16 @@ func (repo *DashboardRepository) GetModelUsage(dateRange []string) ([]vo.ModelUs
 	}
 
 	type row struct {
-		ModelName        string
-		Tokens           int64
-		PromptTokens     int64
-		CompletionTokens int64
+		ModelName          string
+		Tokens             int64
+		PromptTokens       int64
+		PromptCachedTokens int64
+		CompletionTokens   int64
 	}
 
 	query := repo.db().
 		Table("session").
-		Select(fmt.Sprintf("CASE WHEN ai_model.ai_model_id IS NULL OR ai_model.deleted = 1 THEN '%s' ELSE ai_model.display_name END AS model_name, SUM(session.prompt_tokens_count + session.completion_tokens_count) AS tokens, SUM(session.prompt_tokens_count) AS prompt_tokens, SUM(session.completion_tokens_count) AS completion_tokens", deletedLabel)).
+		Select(fmt.Sprintf("CASE WHEN ai_model.ai_model_id IS NULL OR ai_model.deleted = 1 THEN '%s' ELSE ai_model.display_name END AS model_name, SUM(session.prompt_tokens_count + session.completion_tokens_count) AS tokens, SUM(session.prompt_tokens_count) AS prompt_tokens, SUM(session.prompt_cached_tokens) AS prompt_cached_tokens, SUM(session.completion_tokens_count) AS completion_tokens", deletedLabel)).
 		Joins("LEFT JOIN ai_model ON session.ai_model_id = ai_model.ai_model_id").
 		Where("session.deleted = 0").
 		Group(fmt.Sprintf("CASE WHEN ai_model.ai_model_id IS NULL OR ai_model.deleted = 1 THEN '%s' ELSE ai_model.display_name END", deletedLabel))
@@ -250,21 +251,24 @@ func (repo *DashboardRepository) GetModelUsage(dateRange []string) ([]vo.ModelUs
 			pct = float64(rows[i].Tokens) / float64(totalTokens) * 100
 		}
 		result = append(result, vo.ModelUsageItem{
-			ModelName:        rows[i].ModelName,
-			TokenCount:       rows[i].Tokens,
-			Percentage:       pct,
-			PromptTokens:     rows[i].PromptTokens,
-			CompletionTokens: rows[i].CompletionTokens,
+			ModelName:          rows[i].ModelName,
+			TokenCount:         rows[i].Tokens,
+			Percentage:         pct,
+			PromptTokens:       rows[i].PromptTokens,
+			PromptCachedTokens: rows[i].PromptCachedTokens,
+			CompletionTokens:   rows[i].CompletionTokens,
 		})
 	}
 
 	if len(rows) > limit {
 		var otherTokens int64
 		var otherPromptTokens int64
+		var otherPromptCachedTokens int64
 		var otherCompletionTokens int64
 		for i := limit; i < len(rows); i++ {
 			otherTokens += rows[i].Tokens
 			otherPromptTokens += rows[i].PromptTokens
+			otherPromptCachedTokens += rows[i].PromptCachedTokens
 			otherCompletionTokens += rows[i].CompletionTokens
 		}
 		var pct float64
@@ -276,11 +280,12 @@ func (repo *DashboardRepository) GetModelUsage(dateRange []string) ([]vo.ModelUs
 			otherLabel = "Others"
 		}
 		result = append(result, vo.ModelUsageItem{
-			ModelName:        otherLabel,
-			TokenCount:       otherTokens,
-			Percentage:       pct,
-			PromptTokens:     otherPromptTokens,
-			CompletionTokens: otherCompletionTokens,
+			ModelName:          otherLabel,
+			TokenCount:         otherTokens,
+			Percentage:         pct,
+			PromptTokens:       otherPromptTokens,
+			PromptCachedTokens: otherPromptCachedTokens,
+			CompletionTokens:   otherCompletionTokens,
 		})
 	}
 
@@ -545,15 +550,16 @@ func (repo *DashboardRepository) GetUserModelUsage(userId string, dateRange []st
 	}
 
 	type row struct {
-		ModelName        string
-		Tokens           int64
-		PromptTokens     int64
-		CompletionTokens int64
+		ModelName          string
+		Tokens             int64
+		PromptTokens       int64
+		PromptCachedTokens int64
+		CompletionTokens   int64
 	}
 
 	query := repo.db().
 		Table("session").
-		Select(fmt.Sprintf("CASE WHEN ai_model.ai_model_id IS NULL OR ai_model.deleted = 1 THEN '%s' ELSE ai_model.display_name END AS model_name, SUM(session.prompt_tokens_count + session.completion_tokens_count) AS tokens, SUM(session.prompt_tokens_count) AS prompt_tokens, SUM(session.completion_tokens_count) AS completion_tokens", deletedLabel)).
+		Select(fmt.Sprintf("CASE WHEN ai_model.ai_model_id IS NULL OR ai_model.deleted = 1 THEN '%s' ELSE ai_model.display_name END AS model_name, SUM(session.prompt_tokens_count + session.completion_tokens_count) AS tokens, SUM(session.prompt_tokens_count) AS prompt_tokens, SUM(session.prompt_cached_tokens) AS prompt_cached_tokens, SUM(session.completion_tokens_count) AS completion_tokens", deletedLabel)).
 		Joins("LEFT JOIN ai_model ON session.ai_model_id = ai_model.ai_model_id").
 		Where("session.deleted = 0 AND session.user_id = ?", userId).
 		Group(fmt.Sprintf("CASE WHEN ai_model.ai_model_id IS NULL OR ai_model.deleted = 1 THEN '%s' ELSE ai_model.display_name END", deletedLabel))
@@ -586,21 +592,24 @@ func (repo *DashboardRepository) GetUserModelUsage(userId string, dateRange []st
 			pct = float64(rows[i].Tokens) / float64(totalTokens) * 100
 		}
 		result = append(result, vo.ModelUsageItem{
-			ModelName:        rows[i].ModelName,
-			TokenCount:       rows[i].Tokens,
-			Percentage:       pct,
-			PromptTokens:     rows[i].PromptTokens,
-			CompletionTokens: rows[i].CompletionTokens,
+			ModelName:          rows[i].ModelName,
+			TokenCount:         rows[i].Tokens,
+			Percentage:         pct,
+			PromptTokens:       rows[i].PromptTokens,
+			PromptCachedTokens: rows[i].PromptCachedTokens,
+			CompletionTokens:   rows[i].CompletionTokens,
 		})
 	}
 
 	if len(rows) > limit {
 		var otherTokens int64
 		var otherPromptTokens int64
+		var otherPromptCachedTokens int64
 		var otherCompletionTokens int64
 		for i := limit; i < len(rows); i++ {
 			otherTokens += rows[i].Tokens
 			otherPromptTokens += rows[i].PromptTokens
+			otherPromptCachedTokens += rows[i].PromptCachedTokens
 			otherCompletionTokens += rows[i].CompletionTokens
 		}
 		var pct float64
@@ -612,11 +621,12 @@ func (repo *DashboardRepository) GetUserModelUsage(userId string, dateRange []st
 			otherLabel = "Others"
 		}
 		result = append(result, vo.ModelUsageItem{
-			ModelName:        otherLabel,
-			TokenCount:       otherTokens,
-			Percentage:       pct,
-			PromptTokens:     otherPromptTokens,
-			CompletionTokens: otherCompletionTokens,
+			ModelName:          otherLabel,
+			TokenCount:         otherTokens,
+			Percentage:         pct,
+			PromptTokens:       otherPromptTokens,
+			PromptCachedTokens: otherPromptCachedTokens,
+			CompletionTokens:   otherCompletionTokens,
 		})
 	}
 

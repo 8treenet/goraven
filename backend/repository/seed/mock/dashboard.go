@@ -498,11 +498,11 @@ func BuildUserTokenTrend(days int) *vo.TokenTrendRsp {
 // days 参数仅影响返回的 items 数量（以模拟时间切片效果），数据内容与日期无关
 func BuildAdminModelUsage(days int) *vo.ModelUsageRsp {
 	items := []vo.ModelUsageItem{
-		{ModelName: "deepseek-v4-flash", TokenCount: 385000, Percentage: 39.9, PromptTokens: 220000, CompletionTokens: 165000},
-		{ModelName: "MiniMax-M2.7", TokenCount: 248000, Percentage: 25.7, PromptTokens: 140000, CompletionTokens: 108000},
-		{ModelName: "deepseek-v4-pro", TokenCount: 172000, Percentage: 17.8, PromptTokens: 100000, CompletionTokens: 72000},
-		{ModelName: "GPT-5.5", TokenCount: 96000, Percentage: 9.9, PromptTokens: 55000, CompletionTokens: 41000},
-		{ModelName: "Others", TokenCount: 64000, Percentage: 6.7, PromptTokens: 38000, CompletionTokens: 26000},
+		{ModelName: "deepseek-v4-flash", TokenCount: 385000, Percentage: 39.9, PromptTokens: 220000, PromptCachedTokens: 88000, CompletionTokens: 165000},
+		{ModelName: "MiniMax-M2.7", TokenCount: 248000, Percentage: 25.7, PromptTokens: 140000, PromptCachedTokens: 42000, CompletionTokens: 108000},
+		{ModelName: "deepseek-v4-pro", TokenCount: 172000, Percentage: 17.8, PromptTokens: 100000, PromptCachedTokens: 30000, CompletionTokens: 72000},
+		{ModelName: "GPT-5.5", TokenCount: 96000, Percentage: 9.9, PromptTokens: 55000, PromptCachedTokens: 11000, CompletionTokens: 41000},
+		{ModelName: "Others", TokenCount: 64000, Percentage: 6.7, PromptTokens: 38000, PromptCachedTokens: 7600, CompletionTokens: 26000},
 	}
 	if days <= 7 {
 		items = items[:min(len(items), 3)]
@@ -514,13 +514,13 @@ func BuildAdminModelUsage(days int) *vo.ModelUsageRsp {
 // days 参数仅影响返回的 items 数量（以模拟时间切片效果），数据内容与日期无关
 func BuildUserModelUsage(days int) *vo.ModelUsageRsp {
 	items := []vo.ModelUsageItem{
-		{ModelName: "deepseek-v4-flash", TokenCount: 1250000, Percentage: 32.1, PromptTokens: 700000, CompletionTokens: 550000},
-		{ModelName: "MiniMax-M2.7", TokenCount: 820000, Percentage: 21.0, PromptTokens: 450000, CompletionTokens: 370000},
-		{ModelName: "deepseek-v4-pro", TokenCount: 610000, Percentage: 15.7, PromptTokens: 350000, CompletionTokens: 260000},
-		{ModelName: "GPT-5.5", TokenCount: 480000, Percentage: 12.3, PromptTokens: 280000, CompletionTokens: 200000},
-		{ModelName: "Claude-Sonnet-4.6", TokenCount: 350000, Percentage: 9.0, PromptTokens: 200000, CompletionTokens: 150000},
-		{ModelName: "Qwen-Max", TokenCount: 220000, Percentage: 5.6, PromptTokens: 130000, CompletionTokens: 90000},
-		{ModelName: "Others", TokenCount: 170000, Percentage: 4.3, PromptTokens: 100000, CompletionTokens: 70000},
+		{ModelName: "deepseek-v4-flash", TokenCount: 1250000, Percentage: 32.1, PromptTokens: 700000, PromptCachedTokens: 280000, CompletionTokens: 550000},
+		{ModelName: "MiniMax-M2.7", TokenCount: 820000, Percentage: 21.0, PromptTokens: 450000, PromptCachedTokens: 135000, CompletionTokens: 370000},
+		{ModelName: "deepseek-v4-pro", TokenCount: 610000, Percentage: 15.7, PromptTokens: 350000, PromptCachedTokens: 105000, CompletionTokens: 260000},
+		{ModelName: "GPT-5.5", TokenCount: 480000, Percentage: 12.3, PromptTokens: 280000, PromptCachedTokens: 84000, CompletionTokens: 200000},
+		{ModelName: "Claude-Sonnet-4.6", TokenCount: 350000, Percentage: 9.0, PromptTokens: 200000, PromptCachedTokens: 60000, CompletionTokens: 150000},
+		{ModelName: "Qwen-Max", TokenCount: 220000, Percentage: 5.6, PromptTokens: 130000, PromptCachedTokens: 39000, CompletionTokens: 90000},
+		{ModelName: "Others", TokenCount: 170000, Percentage: 4.3, PromptTokens: 100000, PromptCachedTokens: 30000, CompletionTokens: 70000},
 	}
 	if days <= 7 {
 		items = items[:min(len(items), 4)]

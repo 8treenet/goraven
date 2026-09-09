@@ -372,6 +372,7 @@ export interface ModelUsageItem {
   tokenCount: number
   percentage: number
   promptTokens: number
+  promptCachedTokens: number
   completionTokens: number
 }
 
