@@ -3,7 +3,7 @@ package vo
 import "time"
 
 // UserLoginReq 用户登录请求
-// 前端传明文密码，后端统一做 MD5 哈希
+// 前端传明文密码，后端统一做 bcrypt 哈希
 type UserLoginReq struct {
 	Username      string `json:"username" validate:"required"` // 用户名
 	Password      string `json:"password" validate:"required"` // 明文密码
@@ -66,7 +66,7 @@ type AdminUserItem struct {
 // AdminCreateUserReq 管理员创建用户请求
 type AdminCreateUserReq struct {
 	Username string `json:"username" validate:"required,min=8,max=16"` // 用户名 8-16 字符
-	Password string `json:"password" validate:"required"`              // 明文密码（后端做 MD5 哈希）
+	Password string `json:"password" validate:"required"`              // 明文密码（后端做 bcrypt 哈希）
 	Nickname string `json:"nickname"`                                   // 昵称
 	Role     uint8  `json:"role"`                                       // 角色 0普通用户 1管理员
 }
@@ -103,7 +103,7 @@ type AdminUserDetailRsp struct {
 
 // AdminResetPasswordReq 管理员重置密码请求
 type AdminResetPasswordReq struct {
-	Password string `json:"password" validate:"required"` // 明文新密码（后端做 MD5 哈希）
+	Password string `json:"password" validate:"required"` // 明文新密码（后端做 bcrypt 哈希）
 }
 
 // UserProfileReq 个人资料修改请求
@@ -115,7 +115,7 @@ type UserProfileReq struct {
 }
 
 // UserPasswordReq 用户修改密码请求
-// 前端传明文密码，后端统一做 MD5 哈希
+// 前端传明文密码，后端统一做 bcrypt 哈希
 type UserPasswordReq struct {
 	CurrentPassword string `json:"currentPassword" validate:"required"` // 当前明文密码
 	NewPassword     string `json:"newPassword" validate:"required"`     // 新明文密码

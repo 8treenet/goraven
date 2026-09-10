@@ -49,9 +49,16 @@ func (service *UserService) Login(req *vo.UserLoginReq) (*vo.UserLoginRsp, error
 		return nil, errs.ErrInvalidCredentials
 	}
 
-	if user.Password != util.MD5(req.Password) {
+	ok, legacy := util.VerifyPassword(user.Password, req.Password)
+	if !ok {
 		service.UserRepo.RecordLoginFailure()
 		return nil, errs.ErrInvalidCredentials
+	}
+	if legacy {
+		// 旧版无盐 MD5 哈希，登录成功后透明升级为 bcrypt
+		if hashed, err := util.HashPassword(req.Password); err == nil {
+			_ = service.UserRepo.UpdatePassword(user.UserId, hashed)
+		}
 	}
 
 	if user.Status != po.UserStatusEnabled {
@@ -204,10 +211,14 @@ func (service *UserService) AdminCreateUser(req *vo.AdminCreateUserReq) error {
 		return errs.ErrUsernameAlreadyExists
 	}
 
+	hashedPassword, err := util.HashPassword(req.Password)
+	if err != nil {
+		return err
+	}
 	user := &po.User{
 		UserId:   util.UUID(),
 		Username: req.Username,
-		Password: util.MD5(req.Password),
+		Password: hashedPassword,
 		Nickname: req.Nickname,
 		Role:     req.Role,
 		Status:   po.UserStatusEnabled,
@@ -269,7 +280,11 @@ func (service *UserService) AdminResetPassword(userId string, req *vo.AdminReset
 		return errs.ErrCannotResetSuperAdminPassword
 	}
 
-	if err := service.UserRepo.UpdatePassword(userId, util.MD5(req.Password)); err != nil {
+	hashedPassword, err := util.HashPassword(req.Password)
+	if err != nil {
+		return err
+	}
+	if err := service.UserRepo.UpdatePassword(userId, hashedPassword); err != nil {
 		return err
 	}
 	service.UserRepo.Auth.DeleteUserTokens(userId, "")
@@ -339,7 +354,8 @@ func (service *UserService) ChangePassword(req *vo.UserPasswordReq) error {
 		return errs.ErrInvalidCredentials
 	}
 
-	if user.Password != util.MD5(req.CurrentPassword) {
+	ok, _ := util.VerifyPassword(user.Password, req.CurrentPassword)
+	if !ok {
 		return errs.ErrPasswordIncorrect
 	}
 
@@ -347,7 +363,11 @@ func (service *UserService) ChangePassword(req *vo.UserPasswordReq) error {
 		return errs.ErrPasswordSameAsCurrent
 	}
 
-	if err := service.UserRepo.UpdatePassword(userId, util.MD5(req.NewPassword)); err != nil {
+	hashedPassword, err := util.HashPassword(req.NewPassword)
+	if err != nil {
+		return err
+	}
+	if err := service.UserRepo.UpdatePassword(userId, hashedPassword); err != nil {
 		return err
 	}
 

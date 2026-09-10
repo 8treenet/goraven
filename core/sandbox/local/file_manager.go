@@ -33,7 +33,8 @@ func (m *LocalFileManager) resolvePath(relPath string) (string, error) {
 	absPath := filepath.Join(cleanWorkspace, relPath)
 	cleanPath := filepath.Clean(absPath)
 
-	if !strings.HasPrefix(cleanPath, cleanWorkspace+string(filepath.Separator)) && cleanPath != cleanWorkspace {
+	// 字符串前缀 + 符号链接解析双重校验，防止通过符号链接逃逸工作区
+	if err := checkContainment(cleanPath, []string{cleanWorkspace}); err != nil {
 		return "", fmt.Errorf("path escapes workspace: %s", relPath)
 	}
 	return cleanPath, nil

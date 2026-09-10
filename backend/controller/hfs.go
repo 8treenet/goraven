@@ -134,8 +134,33 @@ func (controller *HFSController) AbsoluteDownload(p string) {
 		return
 	}
 	cleanAbs := filepath.Clean(absPath)
+	// 兼容相对路径配置：统一转为绝对路径后再比较
 	userSpaceRoot := filepath.Clean(config.Get().Paths.UserSpace)
+	if absRoot, absErr := filepath.Abs(userSpaceRoot); absErr == nil {
+		userSpaceRoot = absRoot
+	}
 	if !strings.HasPrefix(cleanAbs, userSpaceRoot+string(filepath.Separator)) {
+		controller.Worker.IrisContext().StatusCode(403)
+		controller.Worker.IrisContext().WriteString("path is outside user space")
+		return
+	}
+	// 符号链接逃逸防护：解析后的真实路径必须仍位于用户空间内
+	resolvedAbs, resolveErr := filepath.EvalSymlinks(cleanAbs)
+	if resolveErr != nil {
+		if os.IsNotExist(resolveErr) {
+			controller.Worker.IrisContext().StatusCode(404)
+			controller.Worker.IrisContext().WriteString("File not found")
+			return
+		}
+		controller.Worker.IrisContext().StatusCode(500)
+		controller.Worker.IrisContext().WriteString(resolveErr.Error())
+		return
+	}
+	resolvedRoot, rootErr := filepath.EvalSymlinks(userSpaceRoot)
+	if rootErr != nil {
+		resolvedRoot = userSpaceRoot
+	}
+	if !strings.HasPrefix(resolvedAbs, resolvedRoot+string(filepath.Separator)) && resolvedAbs != resolvedRoot {
 		controller.Worker.IrisContext().StatusCode(403)
 		controller.Worker.IrisContext().WriteString("path is outside user space")
 		return

@@ -34,9 +34,13 @@ func NewLocalSandbox(userName string) *LocalSandbox {
 	}
 }
 
-// NewBackend 创建本地文件系统后端
+// NewBackend 创建本地文件系统后端，包装为带工作区路径校验的受保护后端
 func (s *LocalSandbox) NewBackend() (types.Backend, error) {
-	return local.NewBackend(context.Background(), &local.Config{})
+	inner, err := local.NewBackend(context.Background(), &local.Config{})
+	if err != nil {
+		return nil, err
+	}
+	return newGuardedBackend(inner, s.Workspace), nil
 }
 
 // StreamingShell 创建本地Shell
@@ -307,17 +311,15 @@ func (s *LocalSandbox) validateFilePath(filePath string) (string, error) {
 	}
 
 	cleanPath := filepath.Clean(filePath)
-	cleanWorkspace := filepath.Clean(s.GetWorkspace())
-	if strings.HasPrefix(cleanPath, cleanWorkspace+string(filepath.Separator)) || cleanPath == cleanWorkspace {
-		return cleanPath, nil
-	}
+	roots := []string{s.GetWorkspace()}
 	if s.extraWorkspace != "" {
-		cleanShared := filepath.Clean(s.extraWorkspace)
-		if strings.HasPrefix(cleanPath, cleanShared+string(filepath.Separator)) || cleanPath == cleanShared {
-			return cleanPath, nil
-		}
+		roots = append(roots, s.extraWorkspace)
 	}
-	return "", fmt.Errorf("path is outside user workspace: %s", filePath)
+	// 字符串前缀 + 符号链接解析双重校验，防止通过符号链接逃逸工作区
+	if err := checkContainment(cleanPath, roots); err != nil {
+		return "", err
+	}
+	return cleanPath, nil
 }
 
 func (s *LocalSandbox) NewStdioMCPClient(command string, env []string, args ...string) (*mcpclient.Client, error) {
