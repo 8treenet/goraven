@@ -86,4 +86,15 @@ var RecommendMCPEndpoints = []po.MCPEndpoint{
 		Status:      po.MCPEndpointStatusEnabled,
 		Remark:      "Please register an API key at Aliyun Bailian (https://bailian.console.aliyun.com/) and set it as DASHSCOPE_API_KEY.",
 	},
+	{
+		Name:        "youcom-search",
+		DisplayName: "You.com Search",
+		Icon:        "globe",
+		Description: "You.com hosted MCP server for current web search, URL content extraction, and cited web research. Exposes the you-search, you-contents, and you-research tools, so agents can pull live web information with sources instead of relying on stale training data.",
+		Transport:   "StreamableHttp",
+		HttpUrl:     "https://api.you.com/mcp",
+		HttpHeader:  `{"Authorization":"Bearer ${YDC_API_KEY}"}`,
+		Status:      po.MCPEndpointStatusEnabled,
+		Remark:      "Get an API key at https://you.com/platform/api-keys and set it as YDC_API_KEY. A keyless entry point with basic search only is also available at https://api.you.com/mcp?profile=free.",
+	},
 }
