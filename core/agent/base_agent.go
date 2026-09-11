@@ -275,6 +275,13 @@ func (base *BaseAgent) addDefaultTools() (err error) {
 		}
 		base.addTools(wftool)
 	}
+	if base.sysCfg.WebSearchEnabled {
+		searchTool, err := tools.NewWebSearch()
+		if err != nil {
+			return err
+		}
+		base.addTools(searchTool)
+	}
 
 	checkFileTool, err := tools.NewCheckFileExists()
 	if err != nil {
