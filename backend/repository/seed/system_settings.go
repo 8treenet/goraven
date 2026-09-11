@@ -9,6 +9,7 @@ var SystemSettings = []po.SystemSetting{
 
 	// ---- tools ----
 	{Key: "tools.webfetch_enabled", Value: "true", ValueType: po.ValueTypeBool, GroupName: "tools"},
+	{Key: "tools.websearch_enabled", Value: "true", ValueType: po.ValueTypeBool, GroupName: "tools"},
 	{Key: "tools.shell_timeout_minutes", Value: "8", ValueType: po.ValueTypeInt, GroupName: "tools"},
 
 	// ---- clawhub ----
