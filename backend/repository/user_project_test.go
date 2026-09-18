@@ -306,7 +306,6 @@ func TestUserProjectRepositoryCRUDAndUsernameLookup(t *testing.T) {
 		UserId:      "user-1",
 		ProjectName: "crud-project",
 		Description: "before",
-		GitUrl:      "https://example.com/repository.git",
 	}
 	if err := repo.Create(project); err != nil {
 		t.Fatalf("create project: %v", err)
@@ -316,8 +315,8 @@ func TestUserProjectRepositoryCRUDAndUsernameLookup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get project by ID: %v", err)
 	}
-	if byID.GitUrl != project.GitUrl {
-		t.Fatalf("GitUrl = %q, want %q", byID.GitUrl, project.GitUrl)
+	if byID.Description != project.Description {
+		t.Fatalf("Description = %q, want %q", byID.Description, project.Description)
 	}
 	byName, err := repo.GetByName(project.UserId, project.ProjectName)
 	if err != nil {

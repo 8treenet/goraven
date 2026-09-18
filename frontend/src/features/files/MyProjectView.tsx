@@ -3,11 +3,14 @@ import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 import { RefreshCw, MoreHorizontal, Pencil, FolderOpen, AlertCircle, Trash2, Plus } from 'lucide-react'
 import { useT, t as translate } from '@/i18n'
-import { listMyProjects, createMyProject, updateMyProject, deleteMyProject } from '@/api/my-projects'
-import type { MyProjectItem } from '@/api/types'
+import { listMyProjects, createMyProject, updateMyProject, deleteMyProject, myProjectGitApi } from '@/api/my-projects'
+import type { MyProjectItem, GitClonePayload } from '@/api/types'
 import { useUserStore } from '@/stores/user-store'
 import { formatTime } from './file-helpers'
 import { ShareDialog, type ShareDialogMode } from './ShareDialog'
+import { GIT_CLONE_STATE } from './git/git-helpers'
+import { GitCardChip } from './git/GitCardChip'
+import { GitDialog } from './git/GitDialog'
 
 export interface MyProjectViewHandle {
   createProject: () => void
@@ -25,6 +28,7 @@ export const MyProjectView = forwardRef<MyProjectViewHandle, MyProjectViewProps>
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [menuFor, setMenuFor] = useState<{ id: number; x: number; y: number } | null>(null)
+  const [gitProject, setGitProject] = useState<MyProjectItem | null>(null)
   const [dialogMode, setDialogMode] = useState<ShareDialogMode>(null)
   const [dialogProject, setDialogProject] = useState<MyProjectItem | null>(null)
   const [dialogDesc, setDialogDesc] = useState('')
@@ -49,6 +53,18 @@ export const MyProjectView = forwardRef<MyProjectViewHandle, MyProjectViewProps>
   useEffect(() => {
     load()
   }, [load])
+
+  // 静默刷新：仅更新数据，不显示骨架屏、不清除菜单（克隆轮询用）
+  const silentRefresh = useCallback(() => {
+    listMyProjects().then((data) => setProjects(data.items || [])).catch(() => {})
+  }, [])
+
+  // 有克隆进行中的项目时每 3 秒静默刷新列表
+  useEffect(() => {
+    if (!projects.some((p) => p.cloneState === GIT_CLONE_STATE.RUNNING)) return
+    const timer = setInterval(silentRefresh, 3000)
+    return () => clearInterval(timer)
+  }, [projects, silentRefresh])
 
   useEffect(() => {
     if (!menuFor) return
@@ -97,10 +113,10 @@ export const MyProjectView = forwardRef<MyProjectViewHandle, MyProjectViewProps>
     setDialogProjectName('')
   }, [])
 
-  const handleConfirmDialog = useCallback(() => {
+  const handleConfirmDialog = useCallback((git?: GitClonePayload) => {
     if (dialogMode === 'create') {
       if (!dialogProjectName.trim()) return
-      createMyProject(dialogProjectName.trim(), dialogDesc)
+      createMyProject(dialogProjectName.trim(), dialogDesc, git)
         .then(() => {
           toast.success(translate('files.createProjectSuccess'))
           closeDialog()
@@ -228,9 +244,17 @@ export const MyProjectView = forwardRef<MyProjectViewHandle, MyProjectViewProps>
                   <p className="text-xs text-text-2 line-clamp-2">{project.description}</p>
                 )}
 
-                <span className="mt-auto text-xs text-text-muted tabular-nums">
-                  {formatTime(project.updatedAt)}
-                </span>
+                <div className="mt-auto flex min-h-6 items-center justify-between gap-2">
+                  <span className="text-xs text-text-muted tabular-nums">
+                    {formatTime(project.updatedAt)}
+                  </span>
+                  <GitCardChip
+                    gitEnabled={project.gitEnabled}
+                    gitHasRemote={project.gitHasRemote}
+                    cloneState={project.cloneState}
+                    onClick={() => setGitProject(project)}
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -281,8 +305,18 @@ export const MyProjectView = forwardRef<MyProjectViewHandle, MyProjectViewProps>
         createDesc={t('files.createMyProjectDesc')}
         editTitle={t('files.editMyProject')}
         deleteDesc={t('files.confirmDeleteMyProjectDesc')}
+        gitTestApi={myProjectGitApi.testRemoteDirect}
         onClose={closeDialog}
         onConfirm={handleConfirmDialog}
+      />
+
+      <GitDialog
+        open={gitProject !== null}
+        onOpenChange={(v) => { if (!v) setGitProject(null) }}
+        projectName={gitProject?.projectName ?? ''}
+        projectId={gitProject?.id ?? 0}
+        gitApi={myProjectGitApi}
+        canConfig
       />
     </div>
   )

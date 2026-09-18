@@ -38,12 +38,11 @@ func init() {
 
 // MyProjectService 个人项目服务
 // 物理目录位于用户空间 projects/{ProjectName}，元数据由 user_project 表管理。
-// 文件操作复用 FileManagerService 的 root 作用域方法（嵌入继承）。
+// 文件操作与项目 Git 复用 FileManagerService 基类方法（嵌入继承）。
 type MyProjectService struct {
 	FileManagerService
-	Worker   freedom.Worker
-	Repo     *repository.UserProjectRepository
-	UserRepo *repository.UserRepository
+	Worker freedom.Worker
+	Repo   *repository.UserProjectRepository
 }
 
 // validateProjectName 校验项目名是否符合 Linux 目录命名规则（项目名即物理目录名）。
@@ -183,16 +182,29 @@ func (service *MyProjectService) List(userId string) (*vo.MyProjectListRsp, erro
 	if err != nil {
 		return nil, err
 	}
+	ids := make([]int, 0, len(projects))
+	for _, p := range projects {
+		ids = append(ids, p.Id)
+	}
+	settings, err := service.GitSettingRepo.ListByOwners(po.GitOwnerUserProject, ids)
+	if err != nil {
+		return nil, err
+	}
 	items := make([]vo.MyProjectItem, 0, len(projects))
 	for _, p := range projects {
-		items = append(items, vo.MyProjectItem{
+		item := vo.MyProjectItem{
 			Id:          p.Id,
 			ProjectName: p.ProjectName,
 			Description: p.Description,
-			GitUrl:      p.GitUrl,
 			UpdatedAt:   projectDirUpdatedAt(service.projectDir(userSpace, p.ProjectName), p.Updated),
 			Created:     p.Created,
-		})
+		}
+		if setting, ok := settings[p.Id]; ok && setting != nil {
+			item.GitEnabled = true
+			item.GitHasRemote = strings.TrimSpace(setting.RemoteUrl) != ""
+			item.CloneState = setting.CloneState
+		}
+		items = append(items, item)
 	}
 	return &vo.MyProjectListRsp{Items: items}, nil
 }
@@ -203,18 +215,29 @@ func (service *MyProjectService) Get(userId string, id int) (*vo.MyProjectItem, 
 	if err != nil {
 		return nil, err
 	}
-	return &vo.MyProjectItem{
+	item := &vo.MyProjectItem{
 		Id:          project.Id,
 		ProjectName: project.ProjectName,
 		Description: project.Description,
-		GitUrl:      project.GitUrl,
 		UpdatedAt:   projectDirUpdatedAt(projectDir, project.Updated),
 		Created:     project.Created,
-	}, nil
+	}
+	if setting, err := service.GitSettingRepo.GetByOwner(po.GitOwnerUserProject, id); err == nil && setting != nil {
+		item.GitEnabled = true
+		item.GitHasRemote = strings.TrimSpace(setting.RemoteUrl) != ""
+		item.CloneState = setting.CloneState
+	}
+	return item, nil
 }
 
-// Create 创建个人项目（建目录 + 写表）
-func (service *MyProjectService) Create(userId, projectName, description string) (*vo.MyProjectCreateRsp, error) {
+// Create 创建个人项目（建目录 + 写表），gitReq 非空时校验并初始化/克隆 Git。
+// 校验失败不落任何数据；Git 初始化/克隆失败由本方法回滚删除项目。
+func (service *MyProjectService) Create(userId, projectName, description string, gitReq *vo.GitCloneReq) (*vo.MyProjectCreateRsp, error) {
+	if gitReq != nil {
+		if err := service.gitValidateCloneRequest(gitReq); err != nil {
+			return nil, err
+		}
+	}
 	projectName = strings.TrimSpace(projectName)
 	if err := validateProjectName(projectName); err != nil {
 		return nil, errs.ErrUserProjectInvalidName
@@ -240,6 +263,17 @@ func (service *MyProjectService) Create(userId, projectName, description string)
 	if err := service.Repo.Create(record); err != nil {
 		os.RemoveAll(projectDir)
 		return nil, err
+	}
+	if gitReq != nil {
+		gctx, err := service.gitContext(userId, record.Id)
+		if err != nil {
+			_ = service.DeleteProject(userId, record.Id)
+			return nil, err
+		}
+		if err := service.gitInitOrClone(gctx, gitReq); err != nil {
+			_ = service.DeleteProject(userId, record.Id)
+			return nil, err
+		}
 	}
 	return &vo.MyProjectCreateRsp{Id: record.Id}, nil
 }
@@ -287,10 +321,13 @@ func (service *MyProjectService) Update(userId string, id int, req *vo.MyProject
 	return nil
 }
 
-// DeleteProject 删除个人项目（删目录 + 清引用 + 删表）
+// DeleteProject 删除个人项目（级联 Git 清理 + 删目录 + 清引用 + 删表）
 func (service *MyProjectService) DeleteProject(userId string, id int) error {
 	project, projectDir, err := service.validateProject(userId, id)
 	if err != nil {
+		return err
+	}
+	if err := service.gitCleanupCascade(po.GitOwnerUserProject, id); err != nil {
 		return err
 	}
 	os.RemoveAll(projectDir)
@@ -429,4 +466,106 @@ func (service *MyProjectService) CreateTempAccess(userId, userName string, id in
 		return nil, err
 	}
 	return &vo.TempAccessRsp{Ak: ak, ExpiresAt: time.Now().Add(repository.TempAkTTL).Unix()}, nil
+}
+
+// --- 项目 Git（构建上下文后调用 FileManagerService 基类方法） ---
+
+// gitContext 解析个人项目 Git 上下文：校验项目归属并定位物理目录。
+func (service *MyProjectService) gitContext(userId string, id int) (*GitContext, error) {
+	project, err := service.Repo.GetByID(id)
+	if err != nil {
+		return nil, errs.ErrUserProjectNotFound
+	}
+	if project.UserId != userId {
+		return nil, errs.ErrGitPermission
+	}
+	username, err := service.Repo.GetUsernameByUserID(project.UserId)
+	if err != nil {
+		return nil, err
+	}
+	return &GitContext{
+		UserId:      userId,
+		OwnerType:   po.GitOwnerUserProject,
+		OwnerId:     id,
+		ProjectName: project.ProjectName,
+		Dir:         service.projectDir(config.Get().GetUserSpace(username), project.ProjectName),
+		IsOwner:     true,
+	}, nil
+}
+
+// GitStatus 状态聚合 GET /api/myProject/:id/git
+func (service *MyProjectService) GitStatus(userId string, id int) (*vo.GitStatusRsp, error) {
+	gctx, err := service.gitContext(userId, id)
+	if err != nil {
+		return nil, err
+	}
+	return service.gitStatus(gctx)
+}
+
+// TestGitRemoteDirect 新建项目前的测试连接 POST /api/myProject/git/test
+func (service *MyProjectService) TestGitRemoteDirect(req *vo.GitTestReq) (*vo.GitTestRsp, error) {
+	return service.gitTestRemoteDirect(req)
+}
+
+// RetryGitClone 克隆失败后重试 POST /api/myProject/:id/git/clone-retry
+func (service *MyProjectService) RetryGitClone(userId string, id int) error {
+	gctx, err := service.gitContext(userId, id)
+	if err != nil {
+		return err
+	}
+	return service.gitRetryClone(gctx)
+}
+
+// ResolveGitUnrelated 历史无关处理 POST /api/myProject/:id/git/resolve-unrelated
+func (service *MyProjectService) ResolveGitUnrelated(userId string, id int, req *vo.GitUnrelatedReq) error {
+	gctx, err := service.gitContext(userId, id)
+	if err != nil {
+		return err
+	}
+	return service.gitResolveUnrelated(gctx, req)
+}
+
+// GitCommit 手动提交 POST /api/myProject/:id/git/commit
+func (service *MyProjectService) GitCommit(userId string, id int, req *vo.GitCommitReq) (*vo.GitCommitRsp, error) {
+	gctx, err := service.gitContext(userId, id)
+	if err != nil {
+		return nil, err
+	}
+	return service.gitCommit(gctx, req)
+}
+
+// GitPush 推送 POST /api/myProject/:id/git/push
+func (service *MyProjectService) GitPush(userId string, id int) error {
+	gctx, err := service.gitContext(userId, id)
+	if err != nil {
+		return err
+	}
+	return service.gitPush(gctx)
+}
+
+// GitPull 拉取 POST /api/myProject/:id/git/pull
+func (service *MyProjectService) GitPull(userId string, id int) error {
+	gctx, err := service.gitContext(userId, id)
+	if err != nil {
+		return err
+	}
+	return service.gitPull(gctx)
+}
+
+// GitLog 提交历史 GET /api/myProject/:id/git/log
+func (service *MyProjectService) GitLog(userId string, id int, req *vo.GitLogReq) (*vo.GitLogRsp, error) {
+	gctx, err := service.gitContext(userId, id)
+	if err != nil {
+		return nil, err
+	}
+	return service.gitLog(gctx, req)
+}
+
+// GitDiff diff GET /api/myProject/:id/git/diff
+func (service *MyProjectService) GitDiff(userId string, id int, req *vo.GitDiffReq) (*vo.GitDiffRsp, error) {
+	gctx, err := service.gitContext(userId, id)
+	if err != nil {
+		return nil, err
+	}
+	return service.gitDiff(gctx, req)
 }

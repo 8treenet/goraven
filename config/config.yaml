@@ -17,6 +17,8 @@ paths:
   upload_dir: "./data/upload"
   # Skill dependency install records directory
   skill_installed_dir: "./data/skill_installed"
+  # Git credentials private dir (askpass script, per-project known_hosts, temp keys)
+  git_secret_dir: "./data/git_secrets"
 
 other:
   listen_addr: ":8000"

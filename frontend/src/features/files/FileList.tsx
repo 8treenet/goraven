@@ -42,6 +42,7 @@ import {
   type SortField,
   type SortOrder,
 } from './file-helpers'
+import { changeBadgeClass, changeBadgeLabel } from './git/git-helpers'
 
 /** 文件操作适配器：由「我的文件」与「团队项目」各自实现 */
 export interface FileListApi {
@@ -82,11 +83,16 @@ export interface FileListProps {
   errorActionLabel?: string
   /** 错误视图按钮动作（团队项目：返回列表）；不传则默认重试 */
   errorAction?: () => void
+  /** 额外工具栏内容（项目视图：Git 入口按钮），渲染在返回行右侧 */
+  toolbarExtra?: React.ReactNode
+  /** Git 变更角标：传入完整路径（形如 "/src/a.go"）返回状态字母（M/A/D/U/R/C），无变更返回 null */
+  gitStatusOf?: (path: string) => string | null
 }
 
 export interface FileListHandle {
   upload: () => void
   newFolder: () => void
+  refresh: () => void
 }
 
 export const FileList = forwardRef<FileListHandle, FileListProps>(function FileList(props, ref) {
@@ -107,6 +113,8 @@ export const FileList = forwardRef<FileListHandle, FileListProps>(function FileL
     errorHint,
     errorActionLabel,
     errorAction,
+    toolbarExtra,
+    gitStatusOf,
   } = props
 
   const [pageState, setPageState] = useState<PageState>('loading')
@@ -319,7 +327,8 @@ export const FileList = forwardRef<FileListHandle, FileListProps>(function FileL
   useImperativeHandle(ref, () => ({
     upload: () => fileInputRef.current?.click(),
     newFolder: () => openNewFolderDialog(),
-  }), [openNewFolderDialog])
+    refresh: () => loadDir(currentDir),
+  }), [openNewFolderDialog, loadDir, currentDir])
 
   const openDeleteDialog = useCallback(() => {
     setDialogMode('delete')
@@ -465,12 +474,18 @@ export const FileList = forwardRef<FileListHandle, FileListProps>(function FileL
   return (
     <div className="flex h-full flex-col">
       {/* Back / directory indicator */}
-      {(hasRootBack || !isRoot) && !hasSelection && (
+      {(hasRootBack || !isRoot || !!toolbarExtra) && !hasSelection && (
         <div className="flex h-8 shrink-0 items-center gap-1 px-3">
-          <Button variant="ghost" size="icon" onClick={goBack} title={t('files.backTooltip')} className="size-6 text-text-3 hover:text-text-1">
-            <ArrowLeft className="size-3.5" />
-          </Button>
-          <span className="text-xs font-medium text-folder">{currentDirName}</span>
+          {(hasRootBack || !isRoot) && (
+            <Button variant="ghost" size="icon" onClick={goBack} title={t('files.backTooltip')} className="size-6 text-text-3 hover:text-text-1">
+              <ArrowLeft className="size-3.5" />
+            </Button>
+          )}
+          {(hasRootBack || !isRoot) && (
+            <span className="text-xs font-medium text-folder">{currentDirName}</span>
+          )}
+          <div className="flex-1" />
+          {toolbarExtra}
         </div>
       )}
 
@@ -715,6 +730,20 @@ export const FileList = forwardRef<FileListHandle, FileListProps>(function FileL
                       {isProtected?.(item) && (
                         <Lock className="size-3.5 shrink-0 text-interactive" />
                       )}
+                      {(() => {
+                        if (item.isDir) return null
+                        const gitPath = `${currentDir === '/' ? '' : currentDir}/${item.name}`
+                        const st = gitStatusOf?.(gitPath)
+                        if (!st) return null
+                        return (
+                          <span
+                            title={changeBadgeLabel(st)}
+                            className={cn('shrink-0 font-mono text-[10px] font-semibold', changeBadgeClass(st))}
+                          >
+                            {st}
+                          </span>
+                        )
+                      })()}
                     </div>
                     {!isRenaming && (
                       <div className="mt-0.5 flex items-center gap-1.5 text-xs text-text-3 md:hidden">

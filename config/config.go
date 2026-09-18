@@ -12,7 +12,7 @@ import (
 )
 
 // Version GoRaven 版本号，通过 ldflags 注入: go build -ldflags "-X goraven/config.Version=1.0.0"
-var Version = "v0.5.4"
+var Version = "v0.5.5"
 
 // StartTime 进程启动时间
 var StartTime = time.Now()
@@ -71,6 +71,7 @@ type PathsConf struct {
 	SkillShareDir     string `toml:"skill_share_dir" yaml:"skill_share_dir"`         // 团队技能共享目录
 	UploadDir         string `toml:"upload_dir" yaml:"upload_dir"`                   // 上传文件目录
 	SkillInstalledDir string `toml:"skill_installed_dir" yaml:"skill_installed_dir"` // 技能依赖安装记录目录
+	GitSecretDir      string `toml:"git_secret_dir" yaml:"git_secret_dir"`           // Git 凭据私有目录（askpass 脚本、known_hosts、临时密钥）
 }
 
 // ToolsConf 工具配置（init 阶段使用，不适合放 DB）
@@ -156,6 +157,7 @@ func newConfig() *Configuration {
 	os.MkdirAll(result.GetClawHUBCacheDir(), 0755)
 	os.MkdirAll(result.GetSkillInstalledDir(), 0755)
 	os.MkdirAll(result.GetTeamProjectDir(), 0755)
+	os.MkdirAll(result.GetGitSecretDir(), 0700)
 	return result
 }
 
@@ -348,6 +350,14 @@ func (conf *Configuration) GetTeamProjectDir() string {
 		return conf.Paths.TeamProjectDir
 	}
 	return "/goraven/data/team_projects"
+}
+
+// GetGitSecretDir Git 凭据私有目录：仅存放 askpass 脚本、按项目持久化的 known_hosts 与操作期临时密钥（用完即删），不含主密钥
+func (conf *Configuration) GetGitSecretDir() string {
+	if conf.Paths.GitSecretDir != "" {
+		return conf.Paths.GitSecretDir
+	}
+	return "./data/git_secrets"
 }
 
 // GetScriptsDir Python 脚本目录

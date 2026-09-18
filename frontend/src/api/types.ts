@@ -767,6 +767,9 @@ export interface TeamProjectItem {
   projectName: string
   description: string
   access: number // 0全员开放 1仅成员可见
+  gitEnabled: boolean
+  gitHasRemote: boolean // 已配置 origin 远程仓库
+  cloneState: number // 0非克隆 1克隆中 2成功 3失败
   updatedAt: string
   isCreator: boolean
 }
@@ -785,7 +788,9 @@ export interface MyProjectItem {
   id: number
   projectName: string
   description: string
-  gitUrl: string
+  gitEnabled: boolean
+  gitHasRemote: boolean // 已配置 origin 远程仓库
+  cloneState: number // 0非克隆 1克隆中 2成功 3失败
   updatedAt: string
   created: string
 }
@@ -962,4 +967,84 @@ export interface AutomationExecutionItem {
 
 export interface AutomationAnswerRsp {
   answer: string
+}
+
+/* ---------- Project Git ---------- */
+
+export interface GitChange {
+  path: string
+  status: string // M/A/D/U/R/C
+  size?: number
+}
+
+export interface GitRemoteInfo {
+  url: string
+  authType: number // 0=公开 1=SSH 2=HTTPS
+  httpsUsername: string
+  hasCredential: boolean
+}
+
+/** GET /:id/git 状态聚合 */
+export interface GitStatus {
+  /** 是否 Git 项目（创建时决定，不可变） */
+  enabled: boolean
+  initialized: boolean
+  cloneState: number // 0非克隆 1克隆中 2成功 3失败
+  cloneMessage: string
+  remote: GitRemoteInfo
+  branch: string
+  ahead: number
+  behind: number
+  changes: GitChange[]
+  skipped: GitChange[]
+}
+
+/** POST /git/test — 新建项目前测试连接，不落库 */
+export interface GitTestPayload {
+  remoteUrl: string
+  authType?: number
+  sshPrivateKey?: string
+  httpsUsername?: string
+  httpsSecret?: string
+}
+
+export interface GitTestRsp {
+  head: string
+}
+
+export interface GitCommitRsp {
+  hash: string
+  pushed: boolean
+  skipped: GitChange[]
+}
+
+export interface GitCommitInfo {
+  hash: string
+  shortHash: string
+  author: string
+  email: string
+  message: string
+  time: string
+}
+
+export interface GitLogRsp {
+  items: GitCommitInfo[]
+}
+
+export interface GitDiffRsp {
+  path: string
+  commit: string
+  diff: string
+}
+
+/** 创建项目时可选的 Git 来源参数 */
+export interface GitClonePayload {
+  /** clone=克隆远程（缺省）；local=本地仓库（无远程） */
+  mode?: 'clone' | 'local'
+  remoteUrl?: string
+  authType?: number
+  sshPrivateKey?: string
+  httpsUsername?: string
+  httpsSecret?: string
+  shallow?: boolean
 }

@@ -250,6 +250,7 @@ export function Component() {
 interface MineFilesHandle {
   upload: () => void
   newFolder: () => void
+  refresh: () => void
 }
 
 const MineFiles = forwardRef<MineFilesHandle>(function MineFiles(_, ref) {

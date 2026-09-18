@@ -36,6 +36,7 @@ func Merge(db *gorm.DB) error {
 		&po.UserProject{},
 		&po.AutomationTask{},
 		&po.AutomationExecution{},
+		&po.ProjectGitSetting{},
 	); err != nil {
 		return err
 	}

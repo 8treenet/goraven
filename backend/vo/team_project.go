@@ -6,8 +6,9 @@ import "time"
 
 // TeamProjectCreateReq 创建团队项目请求 POST /api/teamProject
 type TeamProjectCreateReq struct {
-	ProjectName string `json:"projectName" validate:"required"` // 项目目录名
-	Description string `json:"description"`                     // 项目简介，可空
+	ProjectName string       `json:"projectName" validate:"required"` // 项目目录名
+	Description string       `json:"description"`                     // 项目简介，可空
+	Git         *GitCloneReq `json:"git"`                             // 可选：新建即从远程仓库克隆
 }
 
 // TeamProjectCreateRsp 创建团队项目响应
@@ -29,6 +30,9 @@ type TeamProjectItem struct {
 	ProjectName   string    `json:"projectName"`
 	Description   string    `json:"description"`
 	Access        uint8     `json:"access"`
+	GitEnabled    bool      `json:"gitEnabled"`   // Git 开关
+	GitHasRemote  bool      `json:"gitHasRemote"` // 已配置 origin 远程仓库
+	CloneState    uint8     `json:"cloneState"`   // 克隆状态：0非克隆 1克隆中 2成功 3失败
 	UpdatedAt     time.Time `json:"updatedAt"`
 	IsCreator     bool      `json:"isCreator"`
 }

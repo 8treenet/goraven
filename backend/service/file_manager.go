@@ -27,17 +27,32 @@ func init() {
 			initiator.FetchService(ctx, &service)
 			return
 		})
+		initiator.BindBooting(func(bootManager freedom.BootManager) {
+			freedom.ServiceLocator().Call(func(service *FileManagerService) error {
+				service.Worker.DeferRecycle()
+				service.gitVerifierTimer()
+				return nil
+			})
+		})
 	})
 }
 
-// FileManagerService 文件管理业务服务。
+// FileManagerService 文件管理与项目 Git 业务基类。
 // 所有文件操作均直接读写文件系统，不再经由 sandbox（sandbox 仅用于 agent shell）。
-// 个人项目与团队项目通过嵌入本服务，复用 root 作用域的 root 方法（ListRoot/UploadRoot 等），
+// 个人项目与团队项目通过嵌入本服务，复用 root 作用域的文件方法（ListRoot/UploadRoot 等）
+// 与项目 Git 方法（gitStatus/gitCommit 等，见 git.go），
 // 把项目物理目录作为独立的根目录进行受限操作。
-// 文件系统原语（os.Root 句柄、路径安全校验、zip 等）封装在 core/fs 包中。
+// 文件系统原语（os.Root 句柄、路径安全校验、zip 等）封装在 core/fs 包中；
+// git 命令执行与环境隔离封装在 util/git 包中。
 type FileManagerService struct {
 	Worker  freedom.Worker
 	HFSRepo *repository.HFSRepository
+	// 项目 Git 集成依赖：GitSettingRepo 持久化配置，UserRepo 解析提交身份，
+	// 两类项目仓库供定时同步解析物理目录。
+	GitSettingRepo  *repository.ProjectGitSettingRepository
+	UserRepo        *repository.UserRepository
+	UserProjectRepo *repository.UserProjectRepository
+	TeamProjectRepo *repository.TeamProjectRepository
 }
 
 // userWorkspace 返回当前登录用户的用户空间根目录。

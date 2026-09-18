@@ -1,4 +1,5 @@
 import http from './http'
+import { createGitApi } from './project-git'
 import type {
   TeamProjectItem,
   TeamProjectListRsp,
@@ -8,6 +9,7 @@ import type {
   PaginatedResponse,
   FileItem,
   StorageUsage,
+  GitClonePayload,
 } from './types'
 
 export interface TeamFileListResponse {
@@ -26,9 +28,9 @@ export function getTeamProject(id: number) {
   return http.get<TeamProjectItem>(`/teamProject/${id}`)
 }
 
-/** POST /api/teamProject/create */
-export function createTeamProject(projectName: string, description: string) {
-  return http.post<TeamProjectCreateRsp>('/teamProject/create', { projectName, description })
+/** POST /api/teamProject/create — git 传入时走「新建即克隆」 */
+export function createTeamProject(projectName: string, description: string, git?: GitClonePayload) {
+  return http.post<TeamProjectCreateRsp>('/teamProject/create', git ? { projectName, description, git } : { projectName, description })
 }
 
 /** DELETE /api/teamProject/:id */
@@ -117,3 +119,7 @@ export function getTeamDownloadUrl(id: number, path: string): string {
 export function createTeamTempAccess(id: number, path: string, type: 'file' | 'dir') {
   return http.post<{ ak: string; expiresAt: number }>(`/teamProject/${id}/access`, { path, type })
 }
+
+/* ---------- 项目 Git ---------- */
+
+export const teamProjectGitApi = createGitApi('/teamProject')

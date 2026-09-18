@@ -32,7 +32,7 @@ func init() {
 }
 
 // TeamProjectService 团队项目服务
-// 文件操作复用 FileManagerService 的 root 作用域方法（嵌入继承），
+// 文件操作与项目 Git 复用 FileManagerService 基类方法（嵌入继承），
 // 不再内联重复实现文件管理器。
 type TeamProjectService struct {
 	FileManagerService
@@ -66,6 +66,15 @@ func (service *TeamProjectService) List(userId string) (*vo.TeamProjectListRsp, 
 		return nil, err
 	}
 
+	ids := make([]int, 0, len(projects))
+	for _, p := range projects {
+		ids = append(ids, p.Id)
+	}
+	settings, err := service.GitSettingRepo.ListByOwners(po.GitOwnerTeamProject, ids)
+	if err != nil {
+		return nil, err
+	}
+
 	items := make([]vo.TeamProjectItem, 0, len(projects))
 	for _, p := range projects {
 		item := vo.TeamProjectItem{
@@ -76,6 +85,11 @@ func (service *TeamProjectService) List(userId string) (*vo.TeamProjectListRsp, 
 			Access:      p.Access,
 			UpdatedAt:   p.Updated,
 			IsCreator:   p.CreatorId == userId,
+		}
+		if setting, ok := settings[p.Id]; ok && setting != nil {
+			item.GitEnabled = true
+			item.GitHasRemote = strings.TrimSpace(setting.RemoteUrl) != ""
+			item.CloneState = setting.CloneState
 		}
 		if u, ok := userMap[p.CreatorId]; ok {
 			item.CreatorName = u.Nickname
@@ -104,6 +118,11 @@ func (service *TeamProjectService) Get(userId string, id int) (*vo.TeamProjectIt
 		UpdatedAt:   project.Updated,
 		IsCreator:   project.CreatorId == userId,
 	}
+	if setting, err := service.GitSettingRepo.GetByOwner(po.GitOwnerTeamProject, id); err == nil && setting != nil {
+		item.GitEnabled = true
+		item.GitHasRemote = strings.TrimSpace(setting.RemoteUrl) != ""
+		item.CloneState = setting.CloneState
+	}
 	if u, err := service.TPRepo.GetUserByID(project.CreatorId); err == nil {
 		item.CreatorName = u.Nickname
 		if item.CreatorName == "" {
@@ -114,8 +133,14 @@ func (service *TeamProjectService) Get(userId string, id int) (*vo.TeamProjectIt
 	return &item, nil
 }
 
-// Create 创建团队项目（建目录 + 写DB）
-func (service *TeamProjectService) Create(userId, projectName, description string) (*vo.TeamProjectCreateRsp, error) {
+// Create 创建团队项目（建目录 + 写DB），gitReq 非空时校验并初始化/克隆 Git。
+// 校验失败不落任何数据；Git 初始化/克隆失败由本方法回滚删除项目。
+func (service *TeamProjectService) Create(userId, projectName, description string, gitReq *vo.GitCloneReq) (*vo.TeamProjectCreateRsp, error) {
+	if gitReq != nil {
+		if err := service.gitValidateCloneRequest(gitReq); err != nil {
+			return nil, err
+		}
+	}
 	projectName = strings.TrimSpace(projectName)
 	if err := validateTeamProjectName(projectName); err != nil {
 		return nil, errs.ErrTeamProjectInvalidName
@@ -140,10 +165,21 @@ func (service *TeamProjectService) Create(userId, projectName, description strin
 		os.RemoveAll(projectDir)
 		return nil, err
 	}
+	if gitReq != nil {
+		gctx, err := service.gitContext(userId, record.Id)
+		if err != nil {
+			_ = service.DeleteProject(userId, record.Id)
+			return nil, err
+		}
+		if err := service.gitInitOrClone(gctx, gitReq); err != nil {
+			_ = service.DeleteProject(userId, record.Id)
+			return nil, err
+		}
+	}
 	return &vo.TeamProjectCreateRsp{Id: record.Id}, nil
 }
 
-// DeleteProject 删除团队项目（仅创建者，删目录 + 删DB + 删成员）
+// DeleteProject 删除团队项目（仅创建者，级联 Git 清理 + 删目录 + 删DB + 删成员）
 func (service *TeamProjectService) DeleteProject(userId string, id int) error {
 	project, err := service.TPRepo.GetByID(id)
 	if err != nil {
@@ -152,8 +188,10 @@ func (service *TeamProjectService) DeleteProject(userId string, id int) error {
 	if project.CreatorId != userId {
 		return errs.ErrTeamProjectPermission
 	}
-	projectDir := filepath.Join(config.Get().GetTeamProjectDir(), project.ProjectName)
-	os.RemoveAll(projectDir)
+	if err := service.gitCleanupCascade(po.GitOwnerTeamProject, id); err != nil {
+		return err
+	}
+	os.RemoveAll(getProjectDir(project.ProjectName))
 	service.TPRepo.RemoveMembersByProjectId(id)
 	return service.TPRepo.Delete(id)
 }
@@ -245,8 +283,10 @@ func (service *TeamProjectService) AdminDeleteProject(id int) error {
 	if err != nil {
 		return errs.ErrTeamProjectNotFound
 	}
-	projectDir := filepath.Join(config.Get().GetTeamProjectDir(), project.ProjectName)
-	os.RemoveAll(projectDir)
+	if err := service.gitCleanupCascade(po.GitOwnerTeamProject, id); err != nil {
+		return err
+	}
+	os.RemoveAll(getProjectDir(project.ProjectName))
 	service.TPRepo.RemoveMembersByProjectId(id)
 	return service.TPRepo.Delete(id)
 }
@@ -522,4 +562,105 @@ func (service *TeamProjectService) UpdateMembers(userId string, projectId int, r
 		}
 	}
 	return nil
+}
+
+// --- 项目 Git（构建上下文后调用 FileManagerService 基类方法） ---
+
+// gitContext 解析团队项目 Git 上下文：携带创建者/成员角色供权限矩阵判定。
+func (service *TeamProjectService) gitContext(userId string, id int) (*GitContext, error) {
+	project, err := service.TPRepo.GetByID(id)
+	if err != nil {
+		return nil, errs.ErrTeamProjectNotFound
+	}
+	isCreator := project.CreatorId == userId
+	isMember := false
+	if !isCreator {
+		isMember, _ = service.TPRepo.IsMember(id, userId)
+	}
+	return &GitContext{
+		UserId:      userId,
+		OwnerType:   po.GitOwnerTeamProject,
+		OwnerId:     id,
+		ProjectName: project.ProjectName,
+		Dir:         getProjectDir(project.ProjectName),
+		IsCreator:   isCreator,
+		IsMember:    isMember,
+	}, nil
+}
+
+// GitStatus 状态聚合 GET /api/teamProject/:id/git
+func (service *TeamProjectService) GitStatus(userId string, id int) (*vo.GitStatusRsp, error) {
+	gctx, err := service.gitContext(userId, id)
+	if err != nil {
+		return nil, err
+	}
+	return service.gitStatus(gctx)
+}
+
+// TestGitRemoteDirect 新建项目前的测试连接 POST /api/teamProject/git/test
+func (service *TeamProjectService) TestGitRemoteDirect(req *vo.GitTestReq) (*vo.GitTestRsp, error) {
+	return service.gitTestRemoteDirect(req)
+}
+
+// RetryGitClone 克隆失败后重试（仅创建者） POST /api/teamProject/:id/git/clone-retry
+func (service *TeamProjectService) RetryGitClone(userId string, id int) error {
+	gctx, err := service.gitContext(userId, id)
+	if err != nil {
+		return err
+	}
+	return service.gitRetryClone(gctx)
+}
+
+// ResolveGitUnrelated 历史无关处理 POST /api/teamProject/:id/git/resolve-unrelated
+func (service *TeamProjectService) ResolveGitUnrelated(userId string, id int, req *vo.GitUnrelatedReq) error {
+	gctx, err := service.gitContext(userId, id)
+	if err != nil {
+		return err
+	}
+	return service.gitResolveUnrelated(gctx, req)
+}
+
+// GitCommit 手动提交 POST /api/teamProject/:id/git/commit
+func (service *TeamProjectService) GitCommit(userId string, id int, req *vo.GitCommitReq) (*vo.GitCommitRsp, error) {
+	gctx, err := service.gitContext(userId, id)
+	if err != nil {
+		return nil, err
+	}
+	return service.gitCommit(gctx, req)
+}
+
+// GitPush 推送 POST /api/teamProject/:id/git/push
+func (service *TeamProjectService) GitPush(userId string, id int) error {
+	gctx, err := service.gitContext(userId, id)
+	if err != nil {
+		return err
+	}
+	return service.gitPush(gctx)
+}
+
+// GitPull 拉取 POST /api/teamProject/:id/git/pull
+func (service *TeamProjectService) GitPull(userId string, id int) error {
+	gctx, err := service.gitContext(userId, id)
+	if err != nil {
+		return err
+	}
+	return service.gitPull(gctx)
+}
+
+// GitLog 提交历史 GET /api/teamProject/:id/git/log
+func (service *TeamProjectService) GitLog(userId string, id int, req *vo.GitLogReq) (*vo.GitLogRsp, error) {
+	gctx, err := service.gitContext(userId, id)
+	if err != nil {
+		return nil, err
+	}
+	return service.gitLog(gctx, req)
+}
+
+// GitDiff diff GET /api/teamProject/:id/git/diff
+func (service *TeamProjectService) GitDiff(userId string, id int, req *vo.GitDiffReq) (*vo.GitDiffRsp, error) {
+	gctx, err := service.gitContext(userId, id)
+	if err != nil {
+		return nil, err
+	}
+	return service.gitDiff(gctx, req)
 }

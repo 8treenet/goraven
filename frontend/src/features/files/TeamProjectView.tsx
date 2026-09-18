@@ -3,12 +3,15 @@ import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 import { RefreshCw, MoreHorizontal, Pencil, FolderOpen, AlertCircle, Trash2, Plus, Users } from 'lucide-react'
 import { useT, t as translate } from '@/i18n'
-import { listTeamProjects, deleteTeamProject, updateProjectDescription, createTeamProject } from '@/api/team-projects'
-import type { TeamProjectItem } from '@/api/types'
+import { listTeamProjects, deleteTeamProject, updateProjectDescription, createTeamProject, teamProjectGitApi } from '@/api/team-projects'
+import type { TeamProjectItem, GitClonePayload } from '@/api/types'
 import { useUserStore } from '@/stores/user-store'
 import { formatTime } from './file-helpers'
 import { ShareDialog, type ShareDialogMode } from './ShareDialog'
 import { MembersDialog } from './MembersDialog'
+import { GIT_CLONE_STATE } from './git/git-helpers'
+import { GitCardChip } from './git/GitCardChip'
+import { GitDialog } from './git/GitDialog'
 
 export interface TeamProjectViewHandle {
   createProject: () => void
@@ -29,6 +32,7 @@ export const TeamProjectView = forwardRef<TeamProjectViewHandle, TeamProjectView
   const [dialogDesc, setDialogDesc] = useState('')
   const [dialogProjectName, setDialogProjectName] = useState('')
   const [membersProject, setMembersProject] = useState<TeamProjectItem | null>(null)
+  const [gitProject, setGitProject] = useState<TeamProjectItem | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
   const load = useCallback(() => {
@@ -49,6 +53,18 @@ export const TeamProjectView = forwardRef<TeamProjectViewHandle, TeamProjectView
   useEffect(() => {
     load()
   }, [load])
+
+  // 静默刷新：仅更新数据，不显示骨架屏、不清除菜单（克隆轮询用）
+  const silentRefresh = useCallback(() => {
+    listTeamProjects().then((data) => setProjects(data.items || [])).catch(() => {})
+  }, [])
+
+  // 有克隆进行中的项目时每 3 秒静默刷新列表
+  useEffect(() => {
+    if (!projects.some((p) => p.cloneState === GIT_CLONE_STATE.RUNNING)) return
+    const timer = setInterval(silentRefresh, 3000)
+    return () => clearInterval(timer)
+  }, [projects, silentRefresh])
 
   useEffect(() => {
     if (!menuFor) return
@@ -100,10 +116,10 @@ export const TeamProjectView = forwardRef<TeamProjectViewHandle, TeamProjectView
     setDialogProjectName('')
   }, [])
 
-  const handleConfirmDialog = useCallback(() => {
+  const handleConfirmDialog = useCallback((git?: GitClonePayload) => {
     if (dialogMode === 'create') {
       if (!dialogProjectName.trim()) return
-      createTeamProject(dialogProjectName.trim(), dialogDesc)
+      createTeamProject(dialogProjectName.trim(), dialogDesc, git)
         .then((rsp) => {
           toast.success(translate('files.createProjectSuccess'))
           const user = useUserStore.getState().currentUser
@@ -115,6 +131,9 @@ export const TeamProjectView = forwardRef<TeamProjectViewHandle, TeamProjectView
             projectName: dialogProjectName.trim(),
             description: dialogDesc,
             access: 0,
+            gitEnabled: false,
+            gitHasRemote: false,
+            cloneState: 0,
             updatedAt: new Date().toISOString(),
             isCreator: true,
           }
@@ -243,9 +262,17 @@ export const TeamProjectView = forwardRef<TeamProjectViewHandle, TeamProjectView
                   <p className="text-xs text-text-2 line-clamp-2">{project.description}</p>
                 )}
 
-                <span className="mt-auto text-xs text-text-muted tabular-nums">
-                  {formatTime(project.updatedAt)}
-                </span>
+                <div className="mt-auto flex min-h-6 items-center justify-between gap-2">
+                  <span className="text-xs text-text-muted tabular-nums">
+                    {formatTime(project.updatedAt)}
+                  </span>
+                  <GitCardChip
+                    gitEnabled={project.gitEnabled}
+                    gitHasRemote={project.gitHasRemote}
+                    cloneState={project.cloneState}
+                    onClick={() => setGitProject(project)}
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -301,6 +328,7 @@ export const TeamProjectView = forwardRef<TeamProjectViewHandle, TeamProjectView
         description={dialogDesc}
         onDescriptionChange={setDialogDesc}
         onProjectNameChange={setDialogProjectName}
+        gitTestApi={teamProjectGitApi.testRemoteDirect}
         onClose={closeDialog}
         onConfirm={handleConfirmDialog}
       />
@@ -309,6 +337,15 @@ export const TeamProjectView = forwardRef<TeamProjectViewHandle, TeamProjectView
         project={membersProject}
         onClose={() => setMembersProject(null)}
         onSaved={load}
+      />
+
+      <GitDialog
+        open={gitProject !== null}
+        onOpenChange={(v) => { if (!v) setGitProject(null) }}
+        projectName={gitProject?.projectName ?? ''}
+        projectId={gitProject?.id ?? 0}
+        gitApi={teamProjectGitApi}
+        canConfig={gitProject?.isCreator ?? false}
       />
     </div>
   )

@@ -1,10 +1,11 @@
 package controller
 
 import (
+	"strings"
+
 	"goraven/backend/infra"
 	"goraven/backend/service"
 	"goraven/backend/vo"
-	"strings"
 
 	"github.com/8treenet/freedom"
 )
@@ -47,6 +48,16 @@ func (controller *TeamProjectController) BeforeActivation(b freedom.BeforeActiva
 	b.Handle("GET", "/{id:int}/members", "ListMembers")
 	b.Handle("PUT", "/{id:int}/members", "UpdateMembers")
 	b.Handle("PUT", "/{id:int}/access", "UpdateAccess")
+	// 项目 Git
+	b.Handle("POST", "/git/test", "TestGitRemoteDirect")
+	b.Handle("GET", "/{id:int}/git", "GetGitStatus")
+	b.Handle("POST", "/{id:int}/git/clone-retry", "RetryGitClone")
+	b.Handle("POST", "/{id:int}/git/resolve-unrelated", "ResolveGitUnrelated")
+	b.Handle("POST", "/{id:int}/git/commit", "GitCommit")
+	b.Handle("POST", "/{id:int}/git/push", "GitPush")
+	b.Handle("POST", "/{id:int}/git/pull", "GitPull")
+	b.Handle("GET", "/{id:int}/git/log", "GitLog")
+	b.Handle("GET", "/{id:int}/git/diff", "GitDiff")
 }
 
 // List 列出所有团队项目 GET /api/teamProject/list
@@ -68,16 +79,13 @@ func (controller *TeamProjectController) Get(id int) freedom.Result {
 }
 
 // Create 创建团队项目 POST /api/teamProject
+// Git 来源校验、项目创建与 Git 初始化/克隆均由服务层编排，失败自动回滚。
 func (controller *TeamProjectController) Create() freedom.Result {
 	var req vo.TeamProjectCreateReq
 	if err := controller.Request.ReadJSON(&req, true); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
-	rsp, err := controller.TPSev.Create(
-		controller.Request.GetUserId(),
-		req.ProjectName,
-		req.Description,
-	)
+	rsp, err := controller.TPSev.Create(controller.Request.GetUserId(), req.ProjectName, req.Description, req.Git)
 	if err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
@@ -272,6 +280,105 @@ func (controller *TeamProjectController) ListUsers() freedom.Result {
 		return &infra.JSONResponse{Error: err}
 	}
 	rsp, err := controller.TPSev.ListUsers(&req)
+	if err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	return &infra.JSONResponse{Object: rsp}
+}
+
+// --- 项目 Git ---
+
+// GetGitStatus 状态聚合 GET /api/teamProject/:id/git
+func (controller *TeamProjectController) GetGitStatus(id int) freedom.Result {
+	rsp, err := controller.TPSev.GitStatus(controller.Request.GetUserId(), id)
+	if err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	return &infra.JSONResponse{Object: rsp}
+}
+
+// RetryGitClone 克隆失败后重试（仅创建者） POST /api/teamProject/:id/git/clone-retry
+func (controller *TeamProjectController) RetryGitClone(id int) freedom.Result {
+	if err := controller.TPSev.RetryGitClone(controller.Request.GetUserId(), id); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
+}
+
+// ResolveGitUnrelated 历史无关处理 POST /api/teamProject/:id/git/resolve-unrelated
+func (controller *TeamProjectController) ResolveGitUnrelated(id int) freedom.Result {
+	var req vo.GitUnrelatedReq
+	if err := controller.Request.ReadJSON(&req, false); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	if err := controller.TPSev.ResolveGitUnrelated(controller.Request.GetUserId(), id, &req); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
+}
+
+// GitCommit 手动提交 POST /api/teamProject/:id/git/commit
+func (controller *TeamProjectController) GitCommit(id int) freedom.Result {
+	var req vo.GitCommitReq
+	if err := controller.Request.ReadJSON(&req, false); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	rsp, err := controller.TPSev.GitCommit(controller.Request.GetUserId(), id, &req)
+	if err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	return &infra.JSONResponse{Object: rsp}
+}
+
+// GitPush 推送 POST /api/teamProject/:id/git/push
+func (controller *TeamProjectController) GitPush(id int) freedom.Result {
+	if err := controller.TPSev.GitPush(controller.Request.GetUserId(), id); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
+}
+
+// GitPull 拉取 POST /api/teamProject/:id/git/pull
+func (controller *TeamProjectController) GitPull(id int) freedom.Result {
+	if err := controller.TPSev.GitPull(controller.Request.GetUserId(), id); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
+}
+
+// GitLog 提交历史 GET /api/teamProject/:id/git/log
+func (controller *TeamProjectController) GitLog(id int) freedom.Result {
+	var req vo.GitLogReq
+	if err := controller.Request.ReadQuery(&req, false); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	rsp, err := controller.TPSev.GitLog(controller.Request.GetUserId(), id, &req)
+	if err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	return &infra.JSONResponse{Object: rsp}
+}
+
+// GitDiff diff GET /api/teamProject/:id/git/diff
+func (controller *TeamProjectController) GitDiff(id int) freedom.Result {
+	var req vo.GitDiffReq
+	if err := controller.Request.ReadQuery(&req, false); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	rsp, err := controller.TPSev.GitDiff(controller.Request.GetUserId(), id, &req)
+	if err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	return &infra.JSONResponse{Object: rsp}
+}
+
+// TestGitRemoteDirect 新建项目前的测试连接 POST /api/teamProject/git/test
+func (controller *TeamProjectController) TestGitRemoteDirect() freedom.Result {
+	var req vo.GitTestReq
+	if err := controller.Request.ReadJSON(&req, false); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	rsp, err := controller.TPSev.TestGitRemoteDirect(&req)
 	if err != nil {
 		return &infra.JSONResponse{Error: err}
 	}

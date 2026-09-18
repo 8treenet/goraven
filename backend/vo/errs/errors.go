@@ -500,4 +500,64 @@ var (
 		enMessage: "daily token limit exceeded, please try again tomorrow or contact your administrator",
 		zhMessage: "今日 Token 用量已达上限，请明日再试或联系管理员调整额度",
 	}
+	ErrGitDisabled = &Error{
+		enMessage: "git is not enabled for this project",
+		zhMessage: "该项目未开启 Git",
+	}
+	ErrGitPermission = &Error{
+		enMessage: "permission denied for git operation on this project",
+		zhMessage: "无权对该项目执行 Git 操作",
+	}
+	ErrGitNotConfigured = &Error{
+		enMessage: "git remote is not configured or credentials are missing",
+		zhMessage: "未配置 Git 远程仓库或缺少凭据",
+	}
+	ErrGitAuthFailed = &Error{
+		enMessage: "git authentication failed, please check the credentials",
+		zhMessage: "Git 鉴权失败，请检查凭据配置",
+	}
+	ErrGitPushRejected = &Error{
+		enMessage: "push was rejected and automatic recovery failed, manual intervention is required",
+		zhMessage: "推送被拒绝且自动恢复失败，需人工处理",
+	}
+	ErrGitUnrelatedHistory = &Error{
+		enMessage: "remote and local histories are unrelated, please choose how to proceed",
+		zhMessage: "远程与本地历史无关，请选择处理方式",
+	}
+	ErrGitDirtyTree = &Error{
+		enMessage: "working tree has uncommitted changes",
+		zhMessage: "工作区存在未提交的变更",
+	}
+	ErrGitNeedsAttention = &Error{
+		enMessage: "repository needs manual attention (diverged or conflicted)",
+		zhMessage: "仓库处于需人工处理状态（已分叉或存在冲突）",
+	}
+	ErrGitBinaryMissing = &Error{
+		enMessage: "git binary is not available on the server",
+		zhMessage: "服务器缺少 git 可执行文件",
+	}
+	ErrGitInvalidRemoteUrl = &Error{
+		enMessage: "invalid git remote url or embedded credentials are not allowed",
+		zhMessage: "Git 远程地址非法或不允许内嵌凭据",
+	}
+	ErrGitBusy = &Error{
+		enMessage: "another git operation is in progress for this project, please try again later",
+		zhMessage: "该项目正在进行 Git 操作，请稍后重试",
+	}
+	ErrGitCloning = &Error{
+		enMessage: "repository is cloning, please wait for it to finish",
+		zhMessage: "仓库正在克隆中，请等待克隆完成",
+	}
+	ErrGitNoChanges = &Error{
+		enMessage: "no changes to commit",
+		zhMessage: "没有可提交的变更",
+	}
+	ErrGitMessageRequired = &Error{
+		enMessage: "commit message is required and must not exceed 500 characters",
+		zhMessage: "提交信息必填且不超过 500 字符",
+	}
+	ErrGitPreviewReadOnly = &Error{
+		enMessage: "git operations are read-only in preview mode",
+		zhMessage: "预览模式下 Git 操作只读",
+	}
 )

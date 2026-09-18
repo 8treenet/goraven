@@ -1,10 +1,12 @@
 import http from './http'
+import { createGitApi } from './project-git'
 import type {
   MyProjectItem,
   MyProjectListRsp,
   MyProjectCreateRsp,
   FileItem,
   StorageUsage,
+  GitClonePayload,
 } from './types'
 
 export interface MyFileListResponse {
@@ -23,9 +25,9 @@ export function getMyProject(id: number) {
   return http.get<MyProjectItem>(`/myProject/${id}`)
 }
 
-/** POST /api/myProject/create */
-export function createMyProject(projectName: string, description: string) {
-  return http.post<MyProjectCreateRsp>('/myProject/create', { projectName, description })
+/** POST /api/myProject/create — git 传入时走「新建即克隆」 */
+export function createMyProject(projectName: string, description: string, git?: GitClonePayload) {
+  return http.post<MyProjectCreateRsp>('/myProject/create', git ? { projectName, description, git } : { projectName, description })
 }
 
 /** PUT /api/myProject/:id — 更新简介和/或改名（projectName 为空表示不改名） */
@@ -92,3 +94,7 @@ export function getMyDownloadUrl(id: number, path: string): string {
 export function createMyTempAccess(id: number, path: string, type: 'file' | 'dir') {
   return http.post<{ ak: string; expiresAt: number }>(`/myProject/${id}/access`, { path, type })
 }
+
+/* ---------- 项目 Git ---------- */
+
+export const myProjectGitApi = createGitApi('/myProject')
