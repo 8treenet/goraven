@@ -3,6 +3,7 @@ package tools
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -44,6 +45,102 @@ func TestDocParseResolveSourcePath(t *testing.T) {
 		}
 		if got != extraFile {
 			t.Fatalf("got %q, want %q", got, extraFile)
+		}
+	})
+}
+
+// requireInside 断言 path 位于 root 之内（防止输出写出工作空间）。
+func requireInside(t *testing.T, root, path string) {
+	t.Helper()
+	rel, err := filepath.Rel(root, path)
+	if err != nil {
+		t.Fatalf("path %q is not relative to %q: %v", path, root, err)
+	}
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		t.Fatalf("path escaped the workspace: %q is outside %q", path, root)
+	}
+}
+
+func TestDocParseResolveOutputPath(t *testing.T) {
+	workspace := t.TempDir()
+	extra := t.TempDir()
+
+	d := &DocParse{workspace: workspace, extraWorkspace: extra}
+
+	t.Run("工作空间内绝对路径原样采用", func(t *testing.T) {
+		want := filepath.Join(workspace, "temp", "b.md")
+		got, err := d.resolveOutputPath(want)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got != want {
+			t.Fatalf("got %q, want %q", got, want)
+		}
+	})
+
+	t.Run("团队项目目录内绝对路径原样采用", func(t *testing.T) {
+		want := filepath.Join(extra, "proj", "b.md")
+		got, err := d.resolveOutputPath(want)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got != want {
+			t.Fatalf("got %q, want %q", got, want)
+		}
+	})
+
+	t.Run("沙箱内绝对路径拼接到工作空间", func(t *testing.T) {
+		got, err := d.resolveOutputPath("/temp/b.md")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		want := filepath.Join(workspace, "temp", "b.md")
+		if got != want {
+			t.Fatalf("got %q, want %q", got, want)
+		}
+	})
+
+	t.Run("宿主机绝对路径被收敛到工作空间内", func(t *testing.T) {
+		got, err := d.resolveOutputPath("/etc/cron.d/malicious.md")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		requireInside(t, workspace, got)
+	})
+}
+
+func TestDocParseSaveOutputStaysInWorkspace(t *testing.T) {
+	workspace := t.TempDir()
+
+	d := &DocParse{workspace: workspace}
+	src := filepath.Join(workspace, "temp", "src.md")
+	if err := os.MkdirAll(filepath.Dir(src), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(src, []byte("converted"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("写入工作空间内目标路径", func(t *testing.T) {
+		dst := filepath.Join(workspace, "out", "b.md")
+		if err := d.saveOutput(src, dst); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		got, err := os.ReadFile(dst)
+		if err != nil {
+			t.Fatalf("output not written: %v", err)
+		}
+		if string(got) != "converted" {
+			t.Fatalf("content = %q, want %q", string(got), "converted")
+		}
+	})
+
+	t.Run("沙箱外目标路径不会落到根目录之外", func(t *testing.T) {
+		outside := filepath.Join(t.TempDir(), "cron.d", "malicious.md")
+		// 要么返回错误，要么被收敛到工作空间内；两种结果都不允许在根目录之外落盘
+		_ = d.saveOutput(src, outside)
+		if _, statErr := os.Stat(outside); statErr == nil {
+			t.Fatalf("sandbox escape: %s was created outside the workspace", outside)
 		}
 	})
 }

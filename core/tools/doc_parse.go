@@ -180,12 +180,62 @@ func (d *DocParse) resolveSourcePath(path string) (string, error) {
 	return "", fmt.Errorf("file not found: %s", path)
 }
 
-// saveOutput 将本地转换产物写入目标路径。优先按原路径写入；失败时回退为工作空间拼接路径。
-func (d *DocParse) saveOutput(localSrc, outputPath string) error {
-	if err := copyFileDirect(localSrc, outputPath); err == nil {
-		return nil
+// withinRootAbs 与 withinRoot 判定逻辑一致，但先将 root 规范化为绝对路径。
+// user_space 配置可能是相对路径（如 ./data/users），此时 withinRoot 无法与绝对路径比较。
+func withinRootAbs(path, root string) (string, bool) {
+	if !filepath.IsAbs(path) {
+		return "", false
 	}
-	return copyFileDirect(localSrc, filepath.Join(d.workspace, strings.TrimPrefix(outputPath, "/")))
+	cleanPath := filepath.Clean(path)
+	absRoot, err := filepath.Abs(root)
+	if err != nil {
+		return "", false
+	}
+	absPath, err := filepath.Abs(cleanPath)
+	if err != nil {
+		return "", false
+	}
+	if absPath == absRoot || strings.HasPrefix(absPath, absRoot+string(filepath.Separator)) {
+		return cleanPath, true
+	}
+	return "", false
+}
+
+// sandboxRel 将沙箱内绝对路径转为相对路径，用于拼接根目录（兼容 Windows 分隔符）。
+func sandboxRel(path string) string {
+	return strings.TrimPrefix(filepath.ToSlash(path), "/")
+}
+
+// resolveOutputPath 将 agent 提供的输出路径解析为本地路径，语义与 resolveSourcePath 对齐：
+// 第一轮采用已位于某个根目录内的宿主机绝对路径，第二轮才按沙箱内绝对路径拼接到根目录。
+// 两轮都要求结果落在根目录内，避免本工具被用于向沙箱外的任意路径写入文件。
+func (d *DocParse) resolveOutputPath(path string) (string, error) {
+	cleanPath := filepath.Clean(path)
+	// 第一轮：宿主机绝对路径且已位于工作空间或团队项目目录内，直接采用
+	for _, root := range d.roots() {
+		if local, ok := withinRootAbs(cleanPath, root); ok {
+			return local, nil
+		}
+	}
+	// 第二轮：按沙箱内绝对路径拼接到根目录（如 /temp/report.md）
+	for _, root := range d.roots() {
+		joined := filepath.Join(root, filepath.FromSlash(sandboxRel(cleanPath)))
+		if local, ok := withinRootAbs(joined, root); ok {
+			return local, nil
+		}
+	}
+	return "", fmt.Errorf(docParseErrMsg(
+		"output_path 无法解析到用户工作空间内: %s",
+		"output_path cannot be resolved inside the user workspace: %s"), path)
+}
+
+// saveOutput 将本地转换产物写入目标路径。目标路径先收敛到工作空间内，再落盘。
+func (d *DocParse) saveOutput(localSrc, outputPath string) error {
+	dst, err := d.resolveOutputPath(outputPath)
+	if err != nil {
+		return err
+	}
+	return copyFileDirect(localSrc, dst)
 }
 
 // copyFileDirect 直接复制单个文件到目标路径（自动创建父目录）
