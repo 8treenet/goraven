@@ -17,3 +17,6 @@ AGENTS.md
 frontend/node_modules
 frontend/dist
 /data
+__pycache__/
+*.py[cod]
+*.tsbuildinfo
