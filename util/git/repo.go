@@ -365,8 +365,11 @@ func (r *Repo) LsRemoteHead(ctx context.Context, url string) (string, error) {
 	return "", nil
 }
 
-// Log 提交历史，limit 上限 100。
+// Log 提交历史，limit 上限 100；仓库尚无提交（unborn HEAD）时返回空历史。
 func (r *Repo) Log(ctx context.Context, limit, offset int) ([]CommitInfo, error) {
+	if !r.HasHead(ctx) {
+		return []CommitInfo{}, nil
+	}
 	stdout, stderr, err := r.run(ctx,
 		"log", "--pretty=format:"+LogFormat,
 		"-n", strconv.Itoa(limit), "--skip", strconv.Itoa(offset))

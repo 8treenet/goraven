@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -438,6 +439,30 @@ func TestStderrClassification(t *testing.T) {
 				t.Errorf("classification = %v, want %v for %q", got, c.want, c.stderr)
 			}
 		})
+	}
+}
+
+func TestRepoLogEmptyHistory(t *testing.T) {
+	if !BinaryAvailable() {
+		t.Skip("git binary not available")
+	}
+	dir := t.TempDir()
+	if out, err := exec.Command("git", "init", "-b", "main", dir).CombinedOutput(); err != nil {
+		t.Fatalf("git init: %v: %s", err, out)
+	}
+	env, err := BuildBaseEnv()
+	if err != nil {
+		t.Fatalf("BuildBaseEnv() error = %v", err)
+	}
+	defer env.Cleanup()
+
+	repo := &Repo{Dir: dir, Env: env.Env}
+	items, err := repo.Log(context.Background(), 20, 0)
+	if err != nil {
+		t.Fatalf("Log() on unborn branch error = %v, want nil", err)
+	}
+	if len(items) != 0 {
+		t.Fatalf("Log() = %#v, want empty history", items)
 	}
 }
 
