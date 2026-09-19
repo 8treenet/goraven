@@ -1,7 +1,7 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ChevronLeft, ChevronDown, Play, AlertCircle, RefreshCw, Pencil, Power, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronDown, Play, AlertCircle, RefreshCw, Pencil, Power, Trash2, Lock, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -10,16 +10,20 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import { Icon } from '@/components/common/Icon'
+import { providersApi } from '@/api'
 import { useT, t as translate } from '@/i18n'
 import { cn } from '@/lib/utils'
 import { AutomationStatus } from '@/api/types'
-import type { AutomationTaskDetail, AutomationExecutionItem, AutomationAnswerRsp } from '@/api/types'
+import type { AutomationTaskDetail, AutomationExecutionItem, AutomationAnswerRsp, ModelInfo } from '@/api/types'
 import {
   getAutomationTask,
   getTaskExecutions,
   getExecutionAnswer,
   updateTaskStatus,
   updateTaskRequirement,
+  updateTaskModel,
   deleteTask,
   executeTask,
 } from '@/api/automation'
@@ -341,9 +345,11 @@ export function Component() {
                 {t('automation.runConfig')}
               </div>
               <div className="space-y-1 px-3.5 py-3">
-                <KV
-                  k={t('automation.model')}
-                  v={detail.aiModelName || t('automation.defaultModel')}
+                <ModelRow
+                  detail={detail}
+                  onChanged={(aiModelId, aiModelName) =>
+                    setDetail((prev) => (prev ? { ...prev, aiModelId, aiModelName } : prev))
+                  }
                 />
                 <KV
                   k={t('automation.persona')}
@@ -432,6 +438,136 @@ function KV({ k, v }: { k: string; v: string }) {
     <div className="flex items-start justify-between gap-3 py-0.5">
       <span className="shrink-0 text-xs text-text-3">{k}</span>
       <span className="text-right text-xs text-text-1">{v}</span>
+    </div>
+  )
+}
+
+function ModelIcon({ icon }: { icon?: string }) {
+  const [err, setErr] = useState(false)
+  if (!icon || err) return <Icon name="brain" className="size-3.5 shrink-0 text-text-2" />
+  return <img src={icon} alt="" className="size-3.5 shrink-0 rounded object-cover" onError={() => setErr(true)} />
+}
+
+/** 模型行：未选角色且未完成时可下拉修改，否则展示模型名并锁定（模型由角色/状态决定） */
+function ModelRow({
+  detail,
+  onChanged,
+}: {
+  detail: AutomationTaskDetail
+  onChanged: (aiModelId: number, aiModelName: string) => void
+}) {
+  const t = useT()
+  const lockedByPersona = detail.personaId > 0
+  const lockedDone = detail.status === AutomationStatus.Done
+  const locked = lockedByPersona || lockedDone
+  const [models, setModels] = useState<ModelInfo[]>([])
+  const [open, setOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (locked || models.length > 0) return
+    providersApi.getAvailableModels().then(setModels).catch(() => {})
+  }, [locked, models.length])
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const displayName = detail.aiModelName || t('automation.defaultModel')
+  const lockHint = lockedByPersona ? t('automation.modelLockedByPersona') : t('automation.modelLockedDone')
+
+  if (locked) {
+    return (
+      <div className="flex items-start justify-between gap-3 py-0.5">
+        <span className="shrink-0 text-xs text-text-3">{t('automation.model')}</span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="flex min-w-0 items-center gap-1 text-right text-xs text-text-1">
+              <span className="truncate">{displayName}</span>
+              <Lock className="size-3 shrink-0 text-text-muted" />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-56">{lockHint}</TooltipContent>
+        </Tooltip>
+      </div>
+    )
+  }
+
+  const handleSelect = async (aiModelId: number) => {
+    setOpen(false)
+    if (aiModelId === detail.aiModelId) return
+    setSaving(true)
+    try {
+      await updateTaskModel(detail.id, aiModelId)
+      const model = models.find((m) => m.aiModelId === aiModelId)
+      onChanged(aiModelId, model ? model.displayName : '')
+      toast.success(t('automation.modelUpdated'))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('common.failed'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="flex items-start justify-between gap-3 py-0.5">
+      <span className="shrink-0 text-xs text-text-3">{t('automation.model')}</span>
+      <div ref={ref} className="relative min-w-0">
+        <button
+          onClick={() => setOpen(!open)}
+          disabled={saving}
+          title={t('automation.changeModel')}
+          className={cn(
+            'flex max-w-full items-center gap-1 rounded px-1 -mx-1 text-xs text-text-1 transition-colors hover:bg-bg-hover',
+            open && 'bg-bg-hover',
+            saving && 'opacity-60',
+          )}
+        >
+          <span className="truncate">{displayName}</span>
+          {saving ? (
+            <Loader2 className="size-3 shrink-0 animate-spin" />
+          ) : (
+            <ChevronDown className={cn('size-3 shrink-0 transition-transform', open && 'rotate-180')} />
+          )}
+        </button>
+        {open && (
+          <div className="absolute right-0 top-full z-40 mt-1 max-h-72 w-56 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-lg border border-border-custom bg-bg-layer-2 py-1 shadow-pop">
+            <button
+              onClick={() => handleSelect(0)}
+              className={cn(
+                'flex w-full items-center gap-2 px-3 py-1 text-left text-xs transition-colors hover:bg-bg-layer-3',
+                detail.aiModelId === 0 ? 'text-text-1' : 'text-text-2',
+              )}
+            >
+              <span className={cn('shrink-0 text-sm', detail.aiModelId === 0 ? 'text-interactive' : 'text-text-muted opacity-0')}>
+                {'✓'}
+              </span>
+              <span className="truncate">{t('automation.defaultModel')}</span>
+            </button>
+            {models.map((m) => (
+              <button
+                key={m.aiModelId}
+                onClick={() => handleSelect(m.aiModelId)}
+                className={cn(
+                  'flex w-full items-center gap-2 px-3 py-1 text-left text-xs transition-colors hover:bg-bg-layer-3',
+                  detail.aiModelId === m.aiModelId ? 'text-text-1' : 'text-text-2',
+                )}
+              >
+                <span className={cn('shrink-0 text-sm', detail.aiModelId === m.aiModelId ? 'text-interactive' : 'text-text-muted opacity-0')}>
+                  {'✓'}
+                </span>
+                <ModelIcon icon={m.icon} />
+                <span className="truncate">{m.displayName}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -43,6 +43,11 @@ export function updateTaskRequirement(id: number, requirement: string) {
   return http.put<{ status: string }>(`/automationTasks/${id}/requirement`, { requirement })
 }
 
+/** PUT /api/automationTasks/:id/model（仅未选角色且未完成的任务可修改，0 表示默认模型池） */
+export function updateTaskModel(id: number, aiModelId: number) {
+  return http.put<{ status: string }>(`/automationTasks/${id}/model`, { aiModelId })
+}
+
 /** POST /api/automationTasks/:id/execute */
 export function executeTask(id: number) {
   return http.post<{ status: string }>(`/automationTasks/${id}/execute`)

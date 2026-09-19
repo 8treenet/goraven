@@ -496,6 +496,18 @@ var (
 		enMessage: "the persona of this task has been deleted and it cannot be enabled, please create a new automation task",
 		zhMessage: "任务关联的角色已被删除，无法启用，请新建自动化任务",
 	}
+	ErrAutomationTaskModelLocked = &Error{
+		enMessage: "the model is determined by the task's persona and cannot be changed",
+		zhMessage: "任务已选择角色，模型由角色决定，不可修改",
+	}
+	ErrAutomationTaskModelDone = &Error{
+		enMessage: "completed task model cannot be changed",
+		zhMessage: "已完成的任务不可修改模型",
+	}
+	ErrAutomationTaskModelNotAvailable = &Error{
+		enMessage: "model not found or not available",
+		zhMessage: "模型不存在或不可用",
+	}
 	ErrDailyTokenLimitExceeded = &Error{
 		enMessage: "daily token limit exceeded, please try again tomorrow or contact your administrator",
 		zhMessage: "今日 Token 用量已达上限，请明日再试或联系管理员调整额度",

@@ -102,6 +102,24 @@ func (repo *AutomationTaskRepository) UpdateStatus(id int, userId string, status
 		Updates(updates).Error
 }
 
+// UpdateAIModelId 更新任务使用的模型ID，不触碰执行计划与 NextRunAt；
+// 任务不存在或已删除时报错（RowsAffected 为 0）
+func (repo *AutomationTaskRepository) UpdateAIModelId(id int, userId string, aiModelId int) error {
+	result := repo.db().Model(&po.AutomationTask{}).
+		Where("id = ? AND user_id = ? AND deleted = 0", id, userId).
+		Updates(map[string]interface{}{
+			"ai_model_id": aiModelId,
+			"updated":     time.Now(),
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("automation task %d not found", id)
+	}
+	return nil
+}
+
 // UpdateTask 全量更新任务业务字段（标题/需求/执行计划），next_run_at 随任务写入；
 // recomputeNext 为 true 时先依据任务当前计划字段重算 NextRunAt。
 // 任务不存在或已删除时报错（RowsAffected 为 0）。

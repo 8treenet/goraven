@@ -66,6 +66,11 @@ type AutomationTaskRequirementReq struct {
 	Requirement string `json:"requirement"` // 需求描述，不可为空
 }
 
+// AutomationTaskModelReq 修改自动化任务模型请求
+type AutomationTaskModelReq struct {
+	AIModelId int `json:"aiModelId"` // 模型ID，0表示默认模型池
+}
+
 // AutomationAnswerRsp 执行回复响应（助手最终回复内容）
 type AutomationAnswerRsp struct {
 	Answer string `json:"answer"` // 助手回复内容

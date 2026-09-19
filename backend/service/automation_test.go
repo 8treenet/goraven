@@ -5,6 +5,7 @@ import (
 
 	"goraven/backend/po"
 	"goraven/backend/vo"
+	"goraven/backend/vo/errs"
 )
 
 func TestExtractAnswer(t *testing.T) {
@@ -65,6 +66,48 @@ func TestExtractAnswer(t *testing.T) {
 			answer := extractAnswer(c.messages)
 			if answer != c.wantAnswer {
 				t.Errorf("answer = %q, want %q", answer, c.wantAnswer)
+			}
+		})
+	}
+}
+
+func TestValidateTaskModelEditable(t *testing.T) {
+	cases := []struct {
+		name    string
+		task    *po.AutomationTask
+		wantErr error
+	}{
+		{
+			name:    "未选角色且启用中可修改",
+			task:    &po.AutomationTask{PersonaId: 0, Status: po.AutomationStatusEnabled},
+			wantErr: nil,
+		},
+		{
+			name:    "未选角色且停用中可修改",
+			task:    &po.AutomationTask{PersonaId: 0, Status: po.AutomationStatusDisabled},
+			wantErr: nil,
+		},
+		{
+			name:    "已选角色不可修改",
+			task:    &po.AutomationTask{PersonaId: 3, Status: po.AutomationStatusEnabled},
+			wantErr: errs.ErrAutomationTaskModelLocked,
+		},
+		{
+			name:    "已完成不可修改",
+			task:    &po.AutomationTask{PersonaId: 0, Status: po.AutomationStatusDone},
+			wantErr: errs.ErrAutomationTaskModelDone,
+		},
+		{
+			name:    "已选角色且已完成时优先返回角色锁定",
+			task:    &po.AutomationTask{PersonaId: 3, Status: po.AutomationStatusDone},
+			wantErr: errs.ErrAutomationTaskModelLocked,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if err := validateTaskModelEditable(c.task); err != c.wantErr {
+				t.Errorf("err = %v, want %v", err, c.wantErr)
 			}
 		})
 	}

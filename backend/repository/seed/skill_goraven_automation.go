@@ -109,7 +109,7 @@ description: 当用户提出定时任务、自动化或任何周期性、延迟�
 
 - 触发产生的会话不在侧边栏显示；在控制台「自动化任务」的任务详情中可打开对应会话查看过程与结果
 - 执行成功才记录一条执行记录（保留最近若干条）；失败的信息去触发产生的会话里看
-- 任务执行沿用**创建时**的会话配置（模型、角色、项目目录、MCP、技能），之后当前会话更换配置不影响已建任务；任务配置创建后不可修改，需要更换时删除重建
+- 任务执行沿用**创建时**的会话配置（模型、角色、项目目录、MCP、技能），之后当前会话更换配置不影响已建任务；任务配置创建后不可修改（未选角色的任务可在控制台任务详情修改模型），需要更换其他配置时删除重建
 - 间隔型从**上次真正跑完的时刻**起算间隔（跑 5 分钟+间隔 30 分钟 → 约 35 分钟后下次），不会堆积
 - 每天/每周锚定钟表时间；服务重启期间错过的周期不补跑；间隔型最多补跑一次；单次任务会在服务恢复后尽快补执行
 
@@ -230,7 +230,7 @@ A modified requirement follows the same self-contained rule: the triggered sessi
 
 - Sessions spawned by triggers are hidden from the sidebar; open them from the task detail in the console's Automation Tasks section to review process and results
 - An execution record is written only on success (recent entries are kept); failure details live in the triggered session
-- Runs reuse the session configuration captured at creation (model, persona, project directory, MCP, skills); later changes to the current session don't affect existing tasks. A task's configuration cannot be edited after creation — delete and recreate to change it
+- Runs reuse the session configuration captured at creation (model, persona, project directory, MCP, skills); later changes to the current session don't affect existing tasks. A task's configuration cannot be edited after creation (for tasks without a persona, the model can be changed from the task detail in the console) — delete and recreate to change anything else
 - Interval tasks count from the moment the previous run actually finished (5-minute run + 30-minute interval -> next run after ~35 minutes), never piling up
 - Daily/weekly types anchor to clock time; periods missed during downtime are skipped, interval tasks catch up at most once, once-tasks execute as soon as possible after recovery
 

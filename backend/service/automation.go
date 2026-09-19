@@ -306,6 +306,50 @@ func (service *AutomationService) UpdateTaskRequirement(id int, userId string, r
 	return service.AutomationTaskRepo.UpdateTask(task, false)
 }
 
+// validateTaskModelEditable 校验任务当前是否允许修改模型：
+// 已选角色时模型由角色决定；已完成的任务不再修改
+func validateTaskModelEditable(task *po.AutomationTask) error {
+	if task.PersonaId > 0 {
+		return errs.ErrAutomationTaskModelLocked
+	}
+	if task.Status == po.AutomationStatusDone {
+		return errs.ErrAutomationTaskModelDone
+	}
+	return nil
+}
+
+// UpdateTaskModel 修改任务使用的模型，不重算 NextRunAt，仅影响之后的执行；
+// 仅未选角色且未完成的任务可修改，模型需在用户可见的启用模型列表内（0 表示默认模型池）
+func (service *AutomationService) UpdateTaskModel(id int, userId string, req *vo.AutomationTaskModelReq) error {
+	task, err := service.AutomationTaskRepo.GetTask(id, userId)
+	if err != nil {
+		return errs.ErrAutomationTaskNotFound
+	}
+	if err := validateTaskModelEditable(task); err != nil {
+		return err
+	}
+	if req.AIModelId > 0 {
+		models, err := service.ModelRepo.FindEnabledModelsByUser(userId)
+		if err != nil {
+			return err
+		}
+		available := false
+		for i := range models {
+			if models[i].AIModelId == req.AIModelId {
+				available = true
+				break
+			}
+		}
+		if !available {
+			return errs.ErrAutomationTaskModelNotAvailable
+		}
+	}
+	if task.AIModelId == req.AIModelId {
+		return nil
+	}
+	return service.AutomationTaskRepo.UpdateAIModelId(id, userId, req.AIModelId)
+}
+
 // ExecuteTask 立即执行任务：复用调度器同一执行链路（静默后台执行、防重复推演、
 // 成功后写执行记录）。任务执行中拒绝重复触发；单次任务执行后置为已完成。
 func (service *AutomationService) ExecuteTask(id int, userId string, chat dependency.Chat) error {

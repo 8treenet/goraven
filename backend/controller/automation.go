@@ -25,6 +25,7 @@ func init() {
 // DELETE /api/automationTasks/{id}                                删除任务（软删除）
 // PUT /api/automationTasks/{id}/status                            启用/停用任务
 // PUT /api/automationTasks/{id}/requirement                       修改任务需求描述
+// PUT /api/automationTasks/{id}/model                             修改任务模型（未选角色且未完成时）
 // POST /api/automationTasks/{id}/execute                          立即执行任务
 type AutomationController struct {
 	AutomationSev *service.AutomationService
@@ -41,6 +42,7 @@ func (controller *AutomationController) BeforeActivation(b freedom.BeforeActivat
 	b.Handle("DELETE", "/{id:int}", "DeleteTask")
 	b.Handle("PUT", "/{id:int}/status", "UpdateTaskStatus")
 	b.Handle("PUT", "/{id:int}/requirement", "UpdateTaskRequirement")
+	b.Handle("PUT", "/{id:int}/model", "UpdateTaskModel")
 	b.Handle("POST", "/{id:int}/execute", "ExecuteTask")
 }
 
@@ -137,6 +139,20 @@ func (controller *AutomationController) UpdateTaskRequirement(id int) freedom.Re
 	}
 	userId := controller.Request.GetUserId()
 	if err := controller.AutomationSev.UpdateTaskRequirement(id, userId, req); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
+}
+
+// UpdateTaskModel 修改任务模型 PUT /api/automationTasks/:id/model
+// 仅未选角色且未完成的任务可修改；已选角色时模型由角色决定
+func (controller *AutomationController) UpdateTaskModel(id int) freedom.Result {
+	req := &vo.AutomationTaskModelReq{}
+	if err := controller.Request.ReadJSON(req); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	userId := controller.Request.GetUserId()
+	if err := controller.AutomationSev.UpdateTaskModel(id, userId, req); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
 	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
