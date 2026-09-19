@@ -357,7 +357,7 @@ func (conf *Configuration) GetGitSecretDir() string {
 	if conf.Paths.GitSecretDir != "" {
 		return conf.Paths.GitSecretDir
 	}
-	return "./data/git_secrets"
+	return "/goraven/data/git_secrets"
 }
 
 // GetScriptsDir Python 脚本目录
