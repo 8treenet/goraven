@@ -346,6 +346,7 @@ const en = {
   'files.teamProjects': 'Team Projects',
   'files.myProjects': 'My Projects',
   'files.newProject': 'New Project',
+  'files.refreshMyProjectsTip': 'Scan and sync personal projects',
   'files.myFiles': 'My Files',
   'files.newTeamProject': 'New Project',
   'files.createProjectTitle': 'New Team Project',

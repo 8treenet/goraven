@@ -27,6 +27,7 @@ type MyProjectController struct {
 func (controller *MyProjectController) BeforeActivation(b freedom.BeforeActivation) {
 	// 项目管理
 	b.Handle("GET", "/list", "List")
+	b.Handle("POST", "/sync", "Sync")
 	b.Handle("GET", "/{id:int}", "Get")
 	b.Handle("POST", "/create", "Create")
 	b.Handle("PUT", "/{id:int}", "Update")
@@ -62,6 +63,14 @@ func (controller *MyProjectController) List() freedom.Result {
 		return &infra.JSONResponse{Error: err}
 	}
 	return &infra.JSONResponse{Object: rsp}
+}
+
+// Sync 手动同步当前用户个人项目 POST /api/myProject/sync
+func (controller *MyProjectController) Sync() freedom.Result {
+	if err := controller.MPSev.SyncUserProjects(controller.Request.GetUserId()); err != nil {
+		return &infra.JSONResponse{Error: err}
+	}
+	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
 }
 
 // Get 项目详情 GET /api/myProject/:id

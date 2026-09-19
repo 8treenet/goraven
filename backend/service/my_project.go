@@ -172,6 +172,18 @@ func (service *MyProjectService) syncUserProjects(userSpace, username string) {
 
 // --- 项目管理 ---
 
+// SyncUserProjects 手动同步当前用户的个人项目目录到 user_project 表（只补录，不清理）。
+// 供「我的项目」列表刷新按钮调用；LLM 在会话中新建的项目目录由此被发现。
+func (service *MyProjectService) SyncUserProjects(userId string) error {
+	// 用户空间目录名是 username，禁止用 userId 拼路径
+	username, err := service.Repo.GetUsernameByUserID(userId)
+	if err != nil {
+		return err
+	}
+	service.syncUserProjects(config.Get().GetUserSpace(username), username)
+	return nil
+}
+
 // List 列出当前用户的个人项目
 func (service *MyProjectService) List(userId string) (*vo.MyProjectListRsp, error) {
 	projects, err := service.Repo.ListByUser(userId)

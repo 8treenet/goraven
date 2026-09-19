@@ -40,6 +40,11 @@ export function deleteMyProject(id: number) {
   return http.delete(`/myProject/${id}`)
 }
 
+/** POST /api/myProject/sync — 检测并同步当前用户 projects/ 目录到表 */
+export function syncMyProjects() {
+  return http.post('/myProject/sync')
+}
+
 /* ---------- 文件操作 ---------- */
 
 /** GET /api/myProject/:id/list */

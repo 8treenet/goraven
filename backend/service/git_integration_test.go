@@ -707,6 +707,55 @@ func TestGitServiceLogAndDiff(t *testing.T) {
 	}
 }
 
+// TestGitServiceLogOnEmptyRepository 复现从空远程仓库克隆后的读取路径：
+// unborn HEAD 下状态聚合正常、历史返回空列表，不应报 git 命令错误。
+func TestGitServiceLogOnEmptyRepository(t *testing.T) {
+	requireGitBinary(t)
+	svc := newGitServiceTestEnv(t)
+	tpSev := newTeamProjectServiceForTest(svc)
+
+	origTeamDir := config.Get().Paths.TeamProjectDir
+	config.Get().Paths.TeamProjectDir = t.TempDir()
+	t.Cleanup(func() { config.Get().Paths.TeamProjectDir = origTeamDir })
+
+	project := &po.TeamProject{CreatorId: "creator", ProjectName: "empty-proj"}
+	if err := svc.TeamProjectRepo.Create(project); err != nil {
+		t.Fatalf("create team project: %v", err)
+	}
+	projectDir := filepath.Join(config.Get().GetTeamProjectDir(), project.ProjectName)
+	if err := os.MkdirAll(projectDir, 0755); err != nil {
+		t.Fatalf("mkdir project dir: %v", err)
+	}
+	// 克隆空裸仓库：生成 unborn HEAD，仓库无任何提交
+	bare := makeBareRemote(t)
+	hostGit(t, projectDir, "clone", bare, ".")
+	if err := svc.GitSettingRepo.Upsert(&po.ProjectGitSetting{
+		OwnerType:  po.GitOwnerTeamProject,
+		OwnerId:    project.Id,
+		RemoteUrl:  bare,
+		AuthType:   po.GitAuthNone,
+		CloneState: po.GitCloneSuccess,
+	}); err != nil {
+		t.Fatalf("upsert setting: %v", err)
+	}
+
+	statusRsp, err := tpSev.GitStatus("creator", project.Id)
+	if err != nil {
+		t.Fatalf("status on empty repository: %v", err)
+	}
+	if !statusRsp.Initialized || statusRsp.Branch != "main" || len(statusRsp.Changes) != 0 {
+		t.Fatalf("status = %#v, want initialized unborn main without changes", statusRsp)
+	}
+
+	logRsp, err := tpSev.GitLog("creator", project.Id, &vo.GitLogReq{Limit: 10})
+	if err != nil {
+		t.Fatalf("log on empty repository: %v", err)
+	}
+	if len(logRsp.Items) != 0 {
+		t.Fatalf("log items = %#v, want empty history", logRsp.Items)
+	}
+}
+
 func TestMyProjectGitBadgesPermissionAndCascade(t *testing.T) {
 	svc := newGitServiceTestEnv(t)
 	mpSev := newMyProjectServiceForTest(svc)

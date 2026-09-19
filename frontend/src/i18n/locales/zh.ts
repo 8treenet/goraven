@@ -346,6 +346,7 @@ const zh = {
   'files.teamProjects': '团队项目',
   'files.myProjects': '我的项目',
   'files.newProject': '新建项目',
+  'files.refreshMyProjectsTip': '检测并同步个人项目目录',
   'files.myFiles': '我的文件',
   'files.newTeamProject': '新建项目',
   'files.createProjectTitle': '新建团队项目',

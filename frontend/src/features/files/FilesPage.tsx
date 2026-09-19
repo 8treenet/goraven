@@ -4,10 +4,12 @@ import {
   FolderPlus,
   Plus,
   Menu,
+  RefreshCw,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSidebarStore } from '@/stores/sidebar-store'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useT } from '@/i18n'
 import { listFiles, mkdir, rename, deleteFiles, compress, decompress } from '@/api/files'
 import { createTempAccess, getDownloadUrl } from '@/api/files'
@@ -117,7 +119,20 @@ export function Component() {
         )}
 
         {tab === 'projects' && !activeMyProject && (
-          <div className="relative" ref={plusRef}>
+          <div className="relative flex items-center gap-0.5" ref={plusRef}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => myViewRef.current?.syncProjects()}
+                  className="text-highlight hover:text-highlight/80"
+                >
+                  <RefreshCw className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('files.refreshMyProjectsTip')}</TooltipContent>
+            </Tooltip>
             <Button
               variant="ghost"
               size="icon"

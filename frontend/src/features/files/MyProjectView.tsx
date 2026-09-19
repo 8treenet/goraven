@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 import { RefreshCw, MoreHorizontal, Pencil, FolderOpen, AlertCircle, Trash2, Plus } from 'lucide-react'
 import { useT, t as translate } from '@/i18n'
-import { listMyProjects, createMyProject, updateMyProject, deleteMyProject, myProjectGitApi } from '@/api/my-projects'
+import { listMyProjects, createMyProject, updateMyProject, deleteMyProject, syncMyProjects, myProjectGitApi } from '@/api/my-projects'
 import type { MyProjectItem, GitClonePayload } from '@/api/types'
 import { useUserStore } from '@/stores/user-store'
 import { formatTime } from './file-helpers'
@@ -14,6 +14,7 @@ import { GitDialog } from './git/GitDialog'
 
 export interface MyProjectViewHandle {
   createProject: () => void
+  syncProjects: () => void
 }
 
 interface MyProjectViewProps {
@@ -52,6 +53,13 @@ export const MyProjectView = forwardRef<MyProjectViewHandle, MyProjectViewProps>
 
   useEffect(() => {
     load()
+  }, [load])
+
+  // 手动同步：补录会话中新建的项目目录后重载列表
+  const syncProjects = useCallback(() => {
+    syncMyProjects()
+      .then(() => load())
+      .catch((err: Error) => toast.error(err.message))
   }, [load])
 
   // 静默刷新：仅更新数据，不显示骨架屏、不清除菜单（克隆轮询用）
@@ -155,7 +163,8 @@ export const MyProjectView = forwardRef<MyProjectViewHandle, MyProjectViewProps>
 
   useImperativeHandle(ref, () => ({
     createProject: () => openCreateDialog(),
-  }), [openCreateDialog])
+    syncProjects: () => syncProjects(),
+  }), [openCreateDialog, syncProjects])
 
   return (
     <div className="flex h-full flex-col">
