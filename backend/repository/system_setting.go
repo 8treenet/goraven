@@ -62,6 +62,7 @@ func (repo *SystemSettingRepository) LoadConfig() (*SystemConfig, error) {
 		FileLinkExpiresHours:       getInt(m, "sharing.file_expires_hours", 72),
 		KnowledgeEnableOCR:         getBool(m, "knowledge.enable_ocr", false),
 		WebFetchEnabled:            getBool(m, "tools.webfetch_enabled", true),
+		WebSearchEnabled:           getBool(m, "tools.websearch_enabled", true),
 		ShellTimeoutMinutes:        getInt(m, "tools.shell_timeout_minutes", 5),
 		ModelMaxRetries:            getInt(m, "agent.max_retries", 3),
 		ModelRateLimitWaitSec:      getInt(m, "agent.rate_limit_wait_sec", 8),

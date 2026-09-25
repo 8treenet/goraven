@@ -340,6 +340,13 @@ var toolRegistry = map[string]ToolDisplay{
 		ActionEn: "Fetching web page",
 		Icon:     "🌐",
 	},
+	"goraven_web_search": {
+		NameZh:   "免费网页搜索",
+		NameEn:   "Free Web Search",
+		ActionZh: "正在搜索互联网",
+		ActionEn: "Searching the web",
+		Icon:     "🔎",
+	},
 	"goraven_create_automation_task": {
 		NameZh:   "自动化任务",
 		NameEn:   "Automation Task",
