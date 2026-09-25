@@ -17,7 +17,7 @@ type AIModel struct {
 	AIModelId             int       `gorm:"primaryKey;column:ai_model_id;type:int;autoIncrement"` // 主键ID
 	ProviderDisplayName   string    `gorm:"column:provider_display_name;type:varchar(128)"`       // 供应商显示名称，如 "DeepSeek"、"百炼"
 	DisplayName           string    `gorm:"column:display_name;type:varchar(128)"`                // 模型显示名称，如 "DeepSeek V3"、"Qwen Turbo"
-	ProviderID            string    `gorm:"index;column:provider_id;type:varchar(64)"`            // 供应商标识: deepseek, bailian, glm, minimax, open_router, ollama, openai, claude, gemini, openai_compatible, claude_compatible
+	ProviderID            string    `gorm:"index;column:provider_id;type:varchar(64)"`            // 供应商标识: deepseek, bailian, glm, minimax, open_router, requesty, ollama, openai, claude, gemini, openai_compatible, claude_compatible
 	ModelName             string    `gorm:"column:model_name;type:varchar(128)"`                  // 模型名称，如 "deepseek-chat"
 	Icon                  string    `gorm:"column:icon;type:varchar(512)"`                        // 图标URL或Base64，非必填
 	APIKey                string    `gorm:"column:api_key;type:text"`                             // API密钥，ollama可为空
