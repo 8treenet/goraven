@@ -326,6 +326,8 @@ func (runner *MainRunner) Query(runctx context.Context, content string, media []
 	ctx, cancel := context.WithTimeout(runctx, time.Duration(runner.mainAgent.sysCfg.MainAgentTimeoutMinutes)*time.Minute)
 	runner.cancelCtx = cancel
 
+	// Register before launching: a fast query must not finish before registration.
+	RegisterRunner(runner.mainAgent.param.SessionId(), runner)
 	runner.startHeartbeat()
 
 	go func() {
