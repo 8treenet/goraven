@@ -156,7 +156,7 @@ func (r *Repo) CommitWorkingTree(ctx context.Context, identity Identity, message
 			paths = append(paths, change.Source)
 		}
 	}
-	if _, stderr, err := r.run(ctx, append([]string{"add", "--"}, paths...)...); err != nil {
+	if _, stderr, err := r.run(ctx, append([]string{"--literal-pathspecs", "add", "--"}, paths...)...); err != nil {
 		return "", nil, r.cmdError(stderr, err)
 	}
 
@@ -383,12 +383,12 @@ func (r *Repo) Log(ctx context.Context, limit, offset int) ([]CommitInfo, error)
 func (r *Repo) Diff(ctx context.Context, path, commit string, maxChars int) (string, error) {
 	var args []string
 	if commit == "" {
-		args = []string{"diff"}
+		args = []string{"--literal-pathspecs", "diff"}
 		if r.HasHead(ctx) {
 			args = append(args, "HEAD")
 		}
 	} else {
-		args = []string{"show", "--format=", "--patch", commit}
+		args = []string{"--literal-pathspecs", "show", "--format=", "--patch", commit}
 	}
 	args = append(args, "--")
 	if path != "" {
