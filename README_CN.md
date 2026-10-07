@@ -190,6 +190,17 @@ go run main.go
 
 ---
 
+## Parallel Search MCP
+
+管理员可在 **MCP 管理 → 推荐模板** 中选择 **Parallel Search**，然后保存预填的
+Streamable HTTP 端点。它连接到 `https://search.parallel.ai/mcp`，使用
+`User-Agent: GoRaven/ParallelSearchMCP` 请求头，无需 Parallel API 密钥。
+安装后，用户可以在聊天的 MCP 工具中选择它。保持「始终启用」关闭，即可按需选择。
+
+该端点提供 `web_search` 和 `web_fetch`，用于网页搜索和页面内容提取。
+匿名访问可免费用于轻量使用，但速率限制较低；模型推理需单独配置。
+当前工具参数和限制请参阅 [Search MCP 文档](https://docs.parallel.ai/integrations/mcp/search-mcp)。
+
 ## 社区
 
 - 💬 [Discord](https://discord.gg/derR7CBYDW) — 问题反馈、功能讨论、经验分享

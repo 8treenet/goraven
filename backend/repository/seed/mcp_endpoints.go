@@ -97,4 +97,15 @@ var RecommendMCPEndpoints = []po.MCPEndpoint{
 		Status:      po.MCPEndpointStatusEnabled,
 		Remark:      "Get an API key at https://you.com/platform/api-keys and set it as YDC_API_KEY. A keyless entry point with basic search only is also available at https://api.you.com/mcp?profile=free.",
 	},
+	{
+		Name:        "parallel-search",
+		DisplayName: "Parallel Search",
+		Icon:        "globe",
+		Description: "Web search and page content extraction with web_search and web_fetch. Free for light use, with no API key required; anonymous requests have lower rate limits.",
+		Transport:   "StreamableHttp",
+		HttpUrl:     "https://search.parallel.ai/mcp",
+		HttpHeader:  `{"User-Agent":"GoRaven/ParallelSearchMCP"}`,
+		Status:      po.MCPEndpointStatusEnabled,
+		Remark:      "Uses the anonymous Search MCP endpoint. Documentation: https://docs.parallel.ai/integrations/mcp/search-mcp",
+	},
 }

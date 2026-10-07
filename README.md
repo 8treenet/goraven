@@ -163,6 +163,19 @@ For non-development needs, use the Docker image instead — it bundles the full 
 
 ---
 
+## Parallel Search MCP
+
+Admins can add **Parallel Search** from **MCP Management → Recommended Templates**
+and save the prefilled Streamable HTTP endpoint. It connects to
+`https://search.parallel.ai/mcp` with a `User-Agent: GoRaven/ParallelSearchMCP`
+header and requires no Parallel API key. Once installed, users can select it in
+a chat's MCP tools. Leave **Always On** off to keep it opt-in.
+
+The endpoint provides `web_search` and `web_fetch` for web search and page content
+extraction. Anonymous access is free for light use at lower rate limits; model
+inference is configured separately. See the [Search MCP documentation](https://docs.parallel.ai/integrations/mcp/search-mcp)
+for current tool parameters and limits.
+
 ## Community
 
 - 💬 [Discord](https://discord.gg/derR7CBYDW) — feedback, discussions, tips
