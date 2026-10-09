@@ -254,6 +254,10 @@ func (service *HFSService) ResolveAkDownload(ak, reqPath string) (string, error)
 
 // CreateUpload 创建分片上传任务
 func (service *HFSService) CreateUpload(userID string, req *vo.ChunkUploadCreateReq) (*vo.ChunkUploadCreateRsp, error) {
+	if err := validateUploadFileName(req.FileName); err != nil {
+		return nil, err
+	}
+
 	uploadId := util.UUID()
 	tempBase := config.Get().GetUploadTempDir()
 	tempDir := filepath.Join(tempBase, uploadId)
@@ -348,6 +352,9 @@ func (service *HFSService) MergeUpload(userID string, uploadId string) (*vo.Chun
 	if upload.Status != po.UploadStatusPending {
 		return nil, fmt.Errorf("upload already completed or cancelled")
 	}
+	if err := validateUploadFileName(upload.FileName); err != nil {
+		return nil, err
+	}
 
 	for i := 0; i < upload.TotalChunks; i++ {
 		chunkPath := filepath.Join(upload.TempDir, fmt.Sprintf("chunk_%d", i))
@@ -402,6 +409,9 @@ func (service *HFSService) CommitAssets(userID string, uploadId string) (*vo.Ass
 
 	if upload.Status != po.UploadStatusCompleted {
 		return nil, fmt.Errorf("upload not completed")
+	}
+	if err := validateUploadFileName(upload.FileName); err != nil {
+		return nil, err
 	}
 
 	srcPath := filepath.Join(upload.TempDir, upload.FileName)
