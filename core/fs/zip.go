@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -310,7 +311,7 @@ func zipAddRootDir(root *os.Root, zw *zip.Writer, dirPath, zipDirName string) er
 
 	for _, entry := range entries {
 		childPath := filepath.Join(dirPath, entry.Name())
-		childZipName := filepath.Join(zipDirName, entry.Name())
+		childZipName := path.Join(zipDirName, entry.Name())
 		childInfo, err := root.Stat(childPath)
 		if err != nil {
 			return err
