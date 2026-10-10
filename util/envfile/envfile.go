@@ -131,13 +131,13 @@ func Serialize(entries []string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// quoteValueIfNeeded 在值含空格 / # / 单引号时用双引号包裹，保证再次 Parse 时能完整还原。
+// quoteValueIfNeeded 在值含首尾空白 / 空格 / # / 单引号时用双引号包裹，保证再次 Parse 时能完整还原。
 // 由 Serialize 在调用前确保不含双引号和换行。
 func quoteValueIfNeeded(v string) string {
 	if v == "" {
 		return `""`
 	}
-	if strings.ContainsAny(v, " \t#'") {
+	if strings.TrimSpace(v) != v || strings.ContainsAny(v, " \t#'") {
 		return `"` + v + `"`
 	}
 	return v
