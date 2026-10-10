@@ -4,6 +4,7 @@
 package git
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"time"
@@ -87,7 +88,20 @@ type AuthSetting struct {
 // IsRepository 判断目录是否已是 git 仓库（Agent 手动 clone 的场景直接采纳）。
 func IsRepository(dir string) bool {
 	info, err := os.Stat(filepath.Join(dir, ".git"))
-	return err == nil && info.IsDir()
+	if err != nil {
+		return false
+	}
+	if info.IsDir() {
+		return true
+	}
+	if !info.Mode().IsRegular() {
+		return false
+	}
+	// worktree 和 submodule 使用 gitdir 文件，由 Git 校验并解析相对路径。
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, _, err = (CLIExecutor{}).Run(ctx, dir, baseEnv(os.TempDir()), "rev-parse", "--resolve-git-dir", ".git")
+	return err == nil
 }
 
 // DirOrTemp 目录缺失时退化为临时目录，保证只读远程命令可执行。
