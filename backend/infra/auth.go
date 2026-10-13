@@ -64,33 +64,28 @@ func NewAuth(allMethod bool, skipPaths ...string) func(freedom.Context) {
 	}
 }
 
-// matchSkipPath 判断 URL path 是否在某个路径段边界上命中 skip 前缀 v。
-// 仅在 v 作为完整路径段（前后为 "/" 或字符串首尾）时才匹配，避免子串误命中。
-// 例如 v="/public" 命中 "/api/hfs/public/abc"，但不命中 "/api/hfs/private/x/public_y.md"。
+// matchSkipPath 判断 URL path 是否应切换鉴权状态以匹配 skip/require 路径 v。
+//
+// 规则：
+//  1. 前缀匹配：urlPath == cleanV 或以 cleanV+"/" 开头。
+//     公开免鉴权路由应传入完整前缀（如 "/api/hfs/public"、"/api/user/login"），
+//     避免 "/public" 这种短名在 "/api/hfs/private/public/..." 中被误命中。
+//  2. 单段后缀匹配：当 v 去掉斜杠后不含 "/" 时，也匹配以 "/"+segment 结尾的路径
+//     （供 Share 的 /internalMessages 等「默认免鉴权、个别路由要鉴权」场景使用）。
 func matchSkipPath(urlPath, v string) bool {
 	if v == "" {
 		return false
 	}
-	// v 可带前导 '/'，去掉后按段匹配，避免前导斜杠干扰边界判断
-	needle := strings.TrimPrefix(v, "/")
-	if needle == "" {
+	cleanV := "/" + strings.Trim(v, "/")
+	if cleanV == "/" {
 		return false
 	}
-	for from := 0; from <= len(urlPath)-len(needle); {
-		idx := strings.Index(urlPath[from:], needle)
-		if idx < 0 {
-			return false
-		}
-		start := from + idx
-		// 命中位置前必须是路径段边界（字符串开头或前一个字符为 '/'）
-		boundaryBefore := start == 0 || urlPath[start-1] == '/'
-		end := start + len(needle)
-		// 命中位置后必须是路径段边界（字符串结尾或下一个字符为 '/'）
-		boundaryAfter := end == len(urlPath) || urlPath[end] == '/'
-		if boundaryBefore && boundaryAfter {
-			return true
-		}
-		from = start + 1
+	if urlPath == cleanV || strings.HasPrefix(urlPath, cleanV+"/") {
+		return true
+	}
+	segment := strings.Trim(v, "/")
+	if segment != "" && !strings.Contains(segment, "/") {
+		return strings.HasSuffix(urlPath, "/"+segment)
 	}
 	return false
 }

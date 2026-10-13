@@ -17,7 +17,7 @@ import (
 
 func init() {
 	freedom.Prepare(func(initiator freedom.Initiator) {
-		initiator.BindController("/hfs", &HFSController{}, infra.NewAuth(true, "/public", "/ak"))
+		initiator.BindController("/hfs", &HFSController{}, infra.NewAuth(true, "/api/hfs/public", "/api/hfs/ak"))
 	})
 }
 
@@ -35,7 +35,7 @@ func (controller *HFSController) BeforeActivation(b freedom.BeforeActivation) {
 	b.Handle("GET", "/private/{p:path}", "PrivateDownload")
 	// 绝对路径下载接口（团队共享：任意已登录用户可读任意用户空间内文件）
 	b.Handle("GET", "/file/{p:path}", "AbsoluteDownload")
-	// 临时访问凭证下载接口（infra.NewAuth 跳过 /ak 前缀鉴权，由 ak + p:path 校验）
+	// 临时访问凭证下载接口（infra.NewAuth 跳过 /api/hfs/ak 前缀鉴权，由 ak + p:path 校验）
 	// p:path 为绑定的用户空间相对路径，用于校验与 URL 可读性，不支持子路径浏览
 	b.Handle("GET", "/ak/{ak:string}/{p:path}", "AkDownload")
 	// 申请临时访问凭证（需要鉴权，避开 /ak 前缀以免被跳过）
@@ -95,7 +95,14 @@ func (controller *HFSController) PrivateDownload(p string) {
 		controller.Worker.IrisContext().WriteString("path is required")
 		return
 	}
-	sb, sberr := sandbox.NewSandbox(controller.Request.GetUserName())
+	userName := controller.Request.GetUserName()
+	if userName == "" {
+		// 未鉴权时用户名为空，工作区会落到 users/ 根目录，存在跨租户读文件风险
+		controller.Worker.IrisContext().StatusCode(401)
+		controller.Worker.IrisContext().WriteString("authentication required")
+		return
+	}
+	sb, sberr := sandbox.NewSandbox(userName)
 	if sberr != nil {
 		controller.Worker.IrisContext().StatusCode(500)
 		controller.Worker.IrisContext().WriteString(sberr.Error())
