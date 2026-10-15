@@ -99,3 +99,45 @@ func TestResolveAkDownloadMyProjectPath(t *testing.T) {
 		t.Errorf("ResolveAkDownload() file-type = %q, want %q", got, fileAbs)
 	}
 }
+
+func TestHFSService_CreateUpload_Validation(t *testing.T) {
+	unitTest := unit_test.GetUnitTest()
+	unitTest.Run()
+
+	var hfsService *service.HFSService
+	unitTest.FetchService(&hfsService)
+
+	// Zero chunkSize must be rejected to prevent integer divide by zero panic
+	_, err := hfsService.CreateUpload("testuser", &vo.ChunkUploadCreateReq{
+		FileName:    "test.txt",
+		FileSize:    1024,
+		ChunkSize:   0,
+		TotalChunks: 0,
+	})
+	if err == nil {
+		t.Fatal("expected error for zero chunkSize, got nil")
+	}
+
+	// Negative chunkSize must be rejected
+	_, err = hfsService.CreateUpload("testuser", &vo.ChunkUploadCreateReq{
+		FileName:    "test.txt",
+		FileSize:    1024,
+		ChunkSize:   -1,
+		TotalChunks: 0,
+	})
+	if err == nil {
+		t.Fatal("expected error for negative chunkSize, got nil")
+	}
+
+	// Negative fileSize must be rejected
+	_, err = hfsService.CreateUpload("testuser", &vo.ChunkUploadCreateReq{
+		FileName:    "test.txt",
+		FileSize:    -100,
+		ChunkSize:   1024,
+		TotalChunks: 1,
+	})
+	if err == nil {
+		t.Fatal("expected error for negative fileSize, got nil")
+	}
+}
+
