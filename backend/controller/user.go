@@ -11,7 +11,7 @@ import (
 
 func init() {
 	freedom.Prepare(func(initiator freedom.Initiator) {
-		initiator.BindController("/user", &UserController{}, infra.NewAuth(true, "/login", "/captcha"))
+		initiator.BindController("/user", &UserController{}, infra.NewAuth(true, "/api/user/login", "/api/user/captcha"))
 	})
 }
 
