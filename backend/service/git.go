@@ -789,12 +789,13 @@ func (service *FileManagerService) gitStartClone(gctx *GitContext, req *vo.GitCl
 	setting.SshPrivateKey = req.SshPrivateKey
 	setting.HttpsUsername = req.HttpsUsername
 	setting.HttpsSecret = req.HttpsSecret
+	setting.FullHistory = !req.ShallowEnabled()
 	setting.CloneState = po.GitCloneRunning
 	setting.CloneMessage = ""
 	if err := service.GitSettingRepo.Upsert(setting); err != nil {
 		return err
 	}
-	service.launchClone(setting, gctx.Dir, req.ShallowEnabled())
+	service.launchClone(setting, gctx.Dir, !setting.FullHistory)
 	return nil
 }
 
@@ -834,7 +835,7 @@ func (service *FileManagerService) gitRetryClone(gctx *GitContext) error {
 	if err := service.GitSettingRepo.Upsert(setting); err != nil {
 		return err
 	}
-	service.launchClone(setting, gctx.Dir, true)
+	service.launchClone(setting, gctx.Dir, !setting.FullHistory)
 	return nil
 }
 

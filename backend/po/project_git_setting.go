@@ -42,6 +42,7 @@ type ProjectGitSetting struct {
 	HttpsSecret   string    `gorm:"column:https_secret;type:text"`                                             // HTTPS密码/token，auth_type=2时使用
 	CloneState    uint8     `gorm:"column:clone_state;type:tinyint;default:0;not null"`                        // 克隆状态: 0非克隆创建 1克隆中 2克隆完成 3克隆失败
 	CloneMessage  string    `gorm:"column:clone_message;type:text"`                                            // 克隆结果信息，失败时记录错误原因
+	FullHistory   bool      `gorm:"column:full_history;type:tinyint;default:0;not null"`                       // 保留完整历史；默认 false，兼容既有项目的浅克隆重试
 	Created       time.Time `gorm:"not null;column:created"`                                                   // 创建时间
 	Updated       time.Time `gorm:"not null;column:updated"`                                                   // 更新时间
 }
