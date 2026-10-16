@@ -19,7 +19,9 @@ func ParseStatusZ(raw string) []Change {
 		}
 		xy := entry[:2]
 		change := Change{Path: entry[3:], Status: statusLetter(xy)}
-		if change.Status == "R" || change.Status == "C" {
+		// Only raw rename/copy codes carry another NUL-separated path.
+		// The display status "C" also represents unmerged paths.
+		if strings.ContainsAny(xy, "RC") {
 			if i+1 < len(parts) {
 				change.Source = parts[i+1]
 				i++
