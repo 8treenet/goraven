@@ -71,6 +71,13 @@ var ProviderDefs = []ProviderDef{
 		Icon:          "/logos/openrouter.svg",
 		RequireAPIKey: true},
 	{
+		ID:            provider.RequestyProviderName,
+		DisplayNameZh: "Requesty",
+		DisplayNameEn: "Requesty",
+		Icon:          "/logos/requesty.svg",
+		RequireAPIKey: true,
+	},
+	{
 		ID:             provider.OllamaProviderName,
 		DisplayNameZh:  "Ollama",
 		DisplayNameEn:  "Ollama",
