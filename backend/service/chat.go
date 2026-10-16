@@ -285,8 +285,6 @@ func (service *ChatService) StartChat(
 			return
 		}
 
-		// 10. 注册运行器（StartFetch 由 Stream 控制器触发，Runner 结束时自清理）
-		agent.RegisterRunner(session.SessionId, runner)
 	}()
 
 	// 构建会话详情随响应返回，直接使用 resolveSession 和 CreateChatModelFromID 已查到的数据，无需重复查询
@@ -1133,8 +1131,6 @@ func (service *ChatService) AutomationTask(task *po.AutomationTask, startedAt ti
 			return
 		}
 
-		// 注册运行器（静默会话无 SSE 消费方，仅保持与 StartChat 一致的生命周期管理）
-		agent.RegisterRunner(session.SessionId, runner)
 	}()
 }
 
