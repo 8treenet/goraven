@@ -101,18 +101,18 @@ func (r *Repo) AheadBehind(ctx context.Context, upstream string) (int, int) {
 	return ahead, behind
 }
 
-// CheckRemoteHistory fetch 后检查远程分支是否存在、是否与本地历史无关。
-func (r *Repo) CheckRemoteHistory(ctx context.Context, branch string) (remoteExists, unrelated bool) {
-	if _, _, err := r.run(ctx, "fetch", "origin"); err != nil {
-		return false, false
+// CheckRemoteHistory fetch 后检查远程分支是否存在、是否与本地历史无关；fetch 失败时返回错误。
+func (r *Repo) CheckRemoteHistory(ctx context.Context, branch string) (remoteExists, unrelated bool, err error) {
+	if _, stderr, err := r.run(ctx, "fetch", "origin"); err != nil {
+		return false, false, r.cmdError(stderr, err)
 	}
 	if _, _, err := r.run(ctx, "rev-parse", "--verify", "refs/remotes/origin/"+branch); err != nil {
-		return false, false
+		return false, false, nil
 	}
 	if _, _, err := r.run(ctx, "merge-base", "HEAD", "origin/"+branch); err != nil {
-		return true, true
+		return true, true, nil
 	}
-	return true, false
+	return true, false, nil
 }
 
 // HasHead 判断仓库是否已有提交。
@@ -188,7 +188,10 @@ func (r *Repo) Push(ctx context.Context, remoteURL string) error {
 	upstream := r.UpstreamName(ctx)
 	pushArgs := []string{"push"}
 	if upstream == "" {
-		remoteExists, unrelated := r.CheckRemoteHistory(ctx, branch)
+		remoteExists, unrelated, err := r.CheckRemoteHistory(ctx, branch)
+		if err != nil {
+			return err
+		}
 		if remoteExists && unrelated {
 			return ErrUnrelatedHistory
 		}
@@ -258,7 +261,10 @@ func (r *Repo) Pull(ctx context.Context, remoteURL string) error {
 	upstream := r.UpstreamName(ctx)
 	pullArgs := []string{"pull", "--rebase"}
 	if upstream == "" {
-		remoteExists, unrelated := r.CheckRemoteHistory(ctx, branch)
+		remoteExists, unrelated, err := r.CheckRemoteHistory(ctx, branch)
+		if err != nil {
+			return err
+		}
 		if !remoteExists {
 			return nil
 		}
