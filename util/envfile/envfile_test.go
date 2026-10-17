@@ -1,21 +1,43 @@
 package envfile
 
 import (
-	"os"
 	"reflect"
 	"testing"
 )
 
 func TestParse(t *testing.T) {
-	data, err := os.ReadFile("/Users/ysmini/work/config/goraven/user/90a431bee756432492c134f510bad949/.profile")
-	if err != nil {
-		panic(err)
+	tests := []struct {
+		name    string
+		data    string
+		want    []string
+		wantErr bool
+	}{
+		{name: "plain", data: "DB_HOST=localhost\nPORT=8080\n", want: []string{"DB_HOST=localhost", "PORT=8080"}},
+		{name: "blank and comment lines", data: "\n # comment\n\t\n", want: []string{}},
+		{name: "export and unquoted comment", data: "export NAME = raven # comment\n", want: []string{"NAME=raven"}},
+		{name: "quoted values", data: "A=\"hello # world\"\nB='another value'\nEMPTY=\n", want: []string{"A=hello # world", "B=another value", "EMPTY="}},
+		{name: "duplicate keys preserve order", data: "KEY=first\nKEY=second", want: []string{"KEY=first", "KEY=second"}},
+		{name: "invalid assignment", data: "NOT_AN_ASSIGNMENT\n", wantErr: true},
+		{name: "invalid key", data: "1BAD=value\n", wantErr: true},
+		{name: "unterminated quote", data: "KEY=\"value\n", wantErr: true},
 	}
-	list, err := Parse(data)
-	if err != nil {
-		panic(err)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := Parse([]byte(tc.data))
+			if tc.wantErr {
+				if err == nil {
+					t.Fatal("expected parse error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("Parse: %v", err)
+			}
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Fatalf("Parse: got %v, want %v", got, tc.want)
+			}
+		})
 	}
-	t.Log(list)
 }
 
 func TestSerializeRoundTrip(t *testing.T) {

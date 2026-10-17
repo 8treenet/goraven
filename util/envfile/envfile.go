@@ -82,19 +82,20 @@ func unquoteValue(raw string) (string, error) {
 		return "", nil
 	}
 
+	// 使用第一个结束引号，避免行尾注释中的引号被误读为值的一部分。
 	switch raw[0] {
 	case '"':
-		end := strings.LastIndexByte(raw, '"')
-		if end == 0 {
+		end := strings.IndexByte(raw[1:], '"')
+		if end < 0 {
 			return "", fmt.Errorf("unterminated double quote")
 		}
-		return raw[1:end], nil
+		return raw[1 : end+1], nil
 	case '\'':
-		end := strings.LastIndexByte(raw, '\'')
-		if end == 0 {
+		end := strings.IndexByte(raw[1:], '\'')
+		if end < 0 {
 			return "", fmt.Errorf("unterminated single quote")
 		}
-		return raw[1:end], nil
+		return raw[1 : end+1], nil
 	}
 
 	// 非引号情形：行尾 # 视为注释
