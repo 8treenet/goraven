@@ -9,10 +9,12 @@ import (
 	"time"
 
 	"goraven/backend/po"
+	"goraven/backend/repository"
 	"goraven/backend/service"
 	"goraven/backend/vo"
 	"goraven/backend/vo/errs"
 	"goraven/config"
+	"goraven/util"
 	unit_test "goraven/util/unit"
 )
 
@@ -97,5 +99,124 @@ func TestResolveAkDownloadMyProjectPath(t *testing.T) {
 	}
 	if got != fileAbs {
 		t.Errorf("ResolveAkDownload() file-type = %q, want %q", got, fileAbs)
+	}
+}
+
+func TestHFSService_CreateUploadRejectsUnsafeFileNames(t *testing.T) {
+	unitTest := unit_test.GetUnitTest()
+	unitTest.Run()
+
+	var hfsService *service.HFSService
+	unitTest.FetchService(&hfsService)
+
+	tests := []struct {
+		name     string
+		fileName string
+	}{
+		{name: "parent traversal", fileName: "../escape.txt"},
+		{name: "nested traversal", fileName: "../../escape.txt"},
+		{name: "absolute path", fileName: "/tmp/escape.txt"},
+		{name: "forward slash", fileName: "dir/escape.txt"},
+		{name: "backslash", fileName: `dir\escape.txt`},
+		{name: "dot", fileName: "."},
+		{name: "dot dot", fileName: ".."},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := hfsService.CreateUpload("hfs-security-user", &vo.ChunkUploadCreateReq{
+				FileName:    tt.fileName,
+				FileSize:    4,
+				ChunkSize:   4,
+				TotalChunks: 1,
+			})
+			if err == nil {
+				t.Fatalf("CreateUpload(%q) accepted an unsafe file name", tt.fileName)
+			}
+		})
+	}
+}
+
+func TestHFSService_MergeUploadRejectsUnsafeStoredFileName(t *testing.T) {
+	unitTest := unit_test.GetUnitTest()
+	unitTest.Run()
+
+	var hfsService *service.HFSService
+	unitTest.FetchService(&hfsService)
+	var hfsRepo *repository.HFSRepository
+	unitTest.FetchRepository(&hfsRepo)
+
+	tempDir := t.TempDir()
+	uploadID := "hfs-merge-security-" + util.UUID()
+	fileName := "../hfs-merge-escape-" + util.UUID()
+	escapedPath := filepath.Join(filepath.Dir(tempDir), filepath.Base(fileName))
+	if err := os.WriteFile(filepath.Join(tempDir, "chunk_0"), []byte("data"), 0644); err != nil {
+		t.Fatalf("write chunk: %v", err)
+	}
+	if err := hfsRepo.CreateUpload(&po.ChunkUpload{
+		UploadId:    uploadID,
+		UserId:      "hfs-security-user",
+		FileName:    fileName,
+		FileSize:    4,
+		ChunkSize:   4,
+		TotalChunks: 1,
+		TempDir:     tempDir,
+		Status:      po.UploadStatusPending,
+	}); err != nil {
+		t.Fatalf("create upload: %v", err)
+	}
+
+	if _, err := hfsService.MergeUpload("hfs-security-user", uploadID); err == nil {
+		t.Fatal("MergeUpload accepted an unsafe stored file name")
+	}
+	if _, err := os.Stat(escapedPath); !os.IsNotExist(err) {
+		t.Fatalf("merge created escaped file %q: %v", escapedPath, err)
+	}
+}
+
+func TestHFSService_CommitAssetsRejectsUnsafeStoredFileName(t *testing.T) {
+	unitTest := unit_test.GetUnitTest()
+	unitTest.Run()
+
+	var hfsService *service.HFSService
+	unitTest.FetchService(&hfsService)
+	var hfsRepo *repository.HFSRepository
+	unitTest.FetchRepository(&hfsRepo)
+
+	tempDir := t.TempDir()
+	uploadDir := t.TempDir()
+	previousUploadDir := config.Get().Paths.UploadDir
+	config.Get().Paths.UploadDir = uploadDir
+	t.Cleanup(func() { config.Get().Paths.UploadDir = previousUploadDir })
+
+	uploadID := "hfs-assets-security-" + util.UUID()
+	fileName := "../hfs-assets-escape-" + util.UUID()
+	escapedPath := filepath.Join(filepath.Dir(tempDir), filepath.Base(fileName))
+	contents := []byte("keep me")
+	if err := os.WriteFile(escapedPath, contents, 0644); err != nil {
+		t.Fatalf("write escaped source: %v", err)
+	}
+	if err := hfsRepo.CreateUpload(&po.ChunkUpload{
+		UploadId:    uploadID,
+		UserId:      "hfs-security-user",
+		FileName:    fileName,
+		FileSize:    int64(len(contents)),
+		ChunkSize:   len(contents),
+		TotalChunks: 1,
+		TempDir:     tempDir,
+		Status:      po.UploadStatusCompleted,
+	}); err != nil {
+		t.Fatalf("create upload: %v", err)
+	}
+
+	if _, err := hfsService.CommitAssets("hfs-security-user", uploadID); err == nil {
+		t.Fatal("CommitAssets accepted an unsafe stored file name")
+	}
+	got, err := os.ReadFile(escapedPath)
+	if err != nil {
+		t.Fatalf("read escaped source: %v", err)
+	}
+	if string(got) != string(contents) {
+		t.Fatalf("escaped source changed to %q, want %q", got, contents)
 	}
 }
