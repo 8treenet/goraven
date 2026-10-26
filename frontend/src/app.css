@@ -1,0 +1,637 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* streamdown 在运行时生成这些 Tailwind 任意值类，但它们只出现在
+   node_modules/streamdown/dist 里，Tailwind v4 默认不扫描依赖，
+   因此不会生成对应 CSS → shiki token 颜色不生效。显式 safelist。 */
+@source inline("text-[var(--sdm-c,inherit)]");
+@source inline("dark:text-[var(--shiki-dark,var(--sdm-c,inherit))]");
+@source inline("bg-[var(--sdm-tbg)]");
+@source inline("dark:bg-[var(--shiki-dark-bg,var(--sdm-tbg))]");
+
+/* ============================================
+   GoRaven Design Tokens
+   "Precision Tooling"
+   ============================================ */
+
+@theme inline {
+  /* Background layers */
+  --color-bg-base: var(--bg-base);
+  --color-bg-layer-1: var(--bg-layer-1);
+  --color-bg-layer-2: var(--bg-layer-2);
+  --color-bg-layer-3: var(--bg-layer-3);
+  --color-bg-hover: var(--bg-hover);
+  --color-bg-selected: var(--bg-selected);
+
+  /* Text hierarchy */
+  --color-text-1: var(--text-1);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-text-muted: var(--text-muted);
+
+  /* Borders */
+  --color-border-custom: var(--border-custom);
+  --color-border-strong: var(--border-strong);
+
+  /* Accent / Highlight */
+  --color-highlight: var(--highlight);
+  --color-highlight-fg: var(--highlight-fg);
+  --color-highlight-soft: var(--highlight-soft);
+
+  /* Folder icon */
+  --color-folder: var(--folder);
+
+  /* Interactive (links, selected indicators) */
+  --color-interactive: var(--interactive);
+  --color-interactive-hover: var(--interactive-hover);
+  --color-interactive-soft: var(--interactive-soft);
+
+  /* Focus ring */
+  --color-ring: var(--ring);
+
+  /* Semantic */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  /* Font */
+  --font-sans: "system-ui", -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --font-mono: "Cascadia Code", "Consolas", "JetBrains Mono", "Fira Code", "SF Mono", monospace;
+
+  /* Radius */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* Shadow */
+  --shadow-soft: var(--shadow-soft-val);
+  --shadow-pop: var(--shadow-pop-val);
+}
+
+/* ============================================
+   Light mode (primary)
+   All-white surfaces. Depth from borders +
+   shadows only. Gray reserved for micro-areas
+   (hover, badges, code bg) — never large fills.
+   ============================================ */
+
+:root {
+  --bg-base: #ffffff;
+  --bg-layer-1: oklch(0.992 0 0);
+  --bg-layer-2: oklch(0.968 0 0);
+  --bg-layer-3: oklch(0.948 0 0);
+  --bg-hover: oklch(0.958 0 0);
+  --bg-selected: oklch(0.948 0 0);
+
+  --text-1: oklch(0.18 0 0);
+  --text-2: oklch(0.39 0 0);
+  --text-3: oklch(0.535 0 0);
+  --text-muted: oklch(0.635 0 0);
+
+  --border-custom: oklch(0.945 0 0);
+  --border-strong: oklch(0.90 0 0);
+
+  --highlight: oklch(0.62 0.16 72);
+  --highlight-fg: #ffffff;
+  --highlight-soft: oklch(0.94 0.03 80);
+
+  --folder: oklch(0.70 0.15 75);
+
+  --interactive: oklch(0.39 0.13 256);
+  --interactive-hover: oklch(0.32 0.15 256);
+  --interactive-soft: oklch(0.96 0.015 260);
+
+  --success: oklch(0.47 0.12 155);
+  --success-foreground: #ffffff;
+
+  --warning: oklch(0.50 0.14 55);
+  --warning-foreground: #ffffff;
+
+  --info: oklch(0.47 0.08 220);
+  --info-foreground: #ffffff;
+
+  --destructive: oklch(0.52 0.18 25);
+  --destructive-foreground: #ffffff;
+
+  --shadow-soft-val: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-pop-val: 0 4px 8px rgba(0, 0, 0, 0.06), 0 14px 32px rgba(0, 0, 0, 0.09);
+}
+
+/* ============================================
+   System dark (prefers-color-scheme: dark)
+   Cool-tinted deep surfaces
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-base: oklch(0.18 0.008 260);
+    --bg-layer-1: oklch(0.22 0.008 260);
+    --bg-layer-2: oklch(0.25 0.010 255);
+    --bg-layer-3: oklch(0.30 0.012 250);
+    --bg-hover: oklch(0.34 0.014 245);
+    --bg-selected: oklch(0.33 0.013 248);
+
+    --text-1: oklch(0.96 0.004 260);
+    --text-2: oklch(0.82 0.004 255);
+    --text-3: oklch(0.68 0.004 250);
+    --text-muted: oklch(0.62 0.004 248);
+
+  --border-custom: oklch(0.30 0.008 255);
+  --border-strong: oklch(0.38 0.010 250);
+
+  --highlight: oklch(0.72 0.14 80);
+  --highlight-fg: oklch(0.12 0.004 260);
+  --highlight-soft: oklch(0.28 0.02 70);
+
+  --folder: oklch(0.75 0.14 78);
+
+  --interactive: oklch(0.65 0.10 260);
+  --interactive-hover: oklch(0.72 0.12 260);
+  --interactive-soft: oklch(0.25 0.008 260);
+
+  --success: oklch(0.65 0.12 150);
+  --success-foreground: oklch(0.12 0.004 260);
+
+  --warning: oklch(0.70 0.13 50);
+  --warning-foreground: oklch(0.12 0.004 260);
+
+  --info: oklch(0.65 0.07 210);
+  --info-foreground: oklch(0.12 0.004 260);
+
+  --destructive: oklch(0.65 0.18 25);
+  --destructive-foreground: oklch(0.12 0.004 260);
+
+  --shadow-soft-val: inset 0 1px 0 0 rgba(255, 255, 255, 0.04), 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-pop-val: inset 0 1px 0 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.60);
+    }
+}
+
+/* ============================================
+   Forced dark (user selected "dark")
+   ============================================ */
+
+.dark {
+  --bg-base: oklch(0.18 0.008 260);
+  --bg-layer-1: oklch(0.22 0.008 260);
+  --bg-layer-2: oklch(0.25 0.010 255);
+  --bg-layer-3: oklch(0.30 0.012 250);
+  --bg-hover: oklch(0.34 0.014 245);
+  --bg-selected: oklch(0.33 0.013 248);
+
+  --text-1: oklch(0.96 0.004 260);
+  --text-2: oklch(0.82 0.004 255);
+  --text-3: oklch(0.68 0.004 250);
+  --text-muted: oklch(0.62 0.004 248);
+
+  --border-custom: oklch(0.30 0.008 255);
+  --border-strong: oklch(0.38 0.010 250);
+
+  --highlight: oklch(0.72 0.14 80);
+  --highlight-fg: oklch(0.12 0.004 260);
+  --highlight-soft: oklch(0.28 0.02 70);
+
+  --folder: oklch(0.75 0.14 78);
+
+  --interactive: oklch(0.65 0.10 260);
+  --interactive-hover: oklch(0.72 0.12 260);
+  --interactive-soft: oklch(0.25 0.008 260);
+
+  --success: oklch(0.65 0.12 150);
+  --success-foreground: oklch(0.12 0.004 260);
+
+  --warning: oklch(0.70 0.13 50);
+  --warning-foreground: oklch(0.12 0.004 260);
+
+  --info: oklch(0.65 0.07 210);
+  --info-foreground: oklch(0.12 0.004 260);
+
+  --destructive: oklch(0.65 0.18 25);
+  --destructive-foreground: oklch(0.12 0.004 260);
+
+  --shadow-soft-val: inset 0 1px 0 0 rgba(255, 255, 255, 0.04), 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-pop-val: inset 0 1px 0 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.60);
+}
+
+/* ============================================
+   Forced light (user selected "light" while system is dark)
+   ============================================ */
+
+.light {
+  --bg-base: #ffffff;
+  --bg-layer-1: oklch(0.992 0 0);
+  --bg-layer-2: oklch(0.968 0 0);
+  --bg-layer-3: oklch(0.948 0 0);
+  --bg-hover: oklch(0.958 0 0);
+  --bg-selected: oklch(0.948 0 0);
+
+  --text-1: oklch(0.18 0 0);
+  --text-2: oklch(0.39 0 0);
+  --text-3: oklch(0.535 0 0);
+  --text-muted: oklch(0.635 0 0);
+
+  --border-custom: oklch(0.945 0 0);
+  --border-strong: oklch(0.90 0 0);
+
+  --highlight: oklch(0.62 0.16 72);
+  --highlight-fg: #ffffff;
+  --highlight-soft: oklch(0.94 0.03 80);
+
+  --folder: oklch(0.70 0.15 75);
+
+  --interactive: oklch(0.39 0.13 256);
+  --interactive-hover: oklch(0.32 0.15 256);
+  --interactive-soft: oklch(0.96 0.015 260);
+
+  --success: oklch(0.47 0.12 155);
+  --success-foreground: #ffffff;
+
+  --warning: oklch(0.50 0.14 55);
+  --warning-foreground: #ffffff;
+
+  --info: oklch(0.47 0.08 220);
+  --info-foreground: #ffffff;
+
+  --destructive: oklch(0.52 0.18 25);
+  --destructive-foreground: #ffffff;
+
+  --shadow-soft-val: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-pop-val: 0 4px 8px rgba(0, 0, 0, 0.06), 0 14px 32px rgba(0, 0, 0, 0.09);
+}
+
+/* ============================================
+   shadcn/ui CSS variable mapping
+   ============================================ */
+
+:root {
+  --background: var(--color-bg-base);
+  --foreground: var(--color-text-1);
+  --card: var(--color-bg-layer-1);
+  --card-foreground: var(--color-text-1);
+  --popover: var(--color-bg-base);
+  --popover-foreground: var(--color-text-1);
+  --primary: var(--color-text-1);
+  --primary-foreground: var(--color-bg-base);
+  --secondary: var(--color-bg-layer-3);
+  --secondary-foreground: var(--color-text-1);
+  --muted: var(--color-bg-layer-2);
+  --muted-foreground: var(--color-text-3);
+  --accent: var(--highlight);
+  --accent-foreground: var(--highlight-fg);
+  --border: var(--color-border-custom);
+  --input: var(--color-border-strong);
+  --ring: var(--highlight);
+  --radius: 6px;
+
+  --sidebar: var(--color-bg-layer-1);
+  --sidebar-foreground: var(--color-text-1);
+  --sidebar-primary: var(--color-text-1);
+  --sidebar-primary-foreground: var(--color-bg-base);
+  --sidebar-accent: var(--color-bg-hover);
+  --sidebar-accent-foreground: var(--color-text-1);
+  --sidebar-border: var(--color-border-custom);
+  --sidebar-ring: var(--color-interactive);
+
+  --chart-1: var(--highlight);
+  --chart-2: var(--color-interactive);
+  --chart-3: oklch(0.64 0.12 75);
+  --chart-4: oklch(0.58 0.12 200);
+  --chart-5: #6b9e6b;
+}
+
+/* ============================================
+    Streamdown / Markdown overrides
+    Scoped to .goraven-markdown wrapper
+    ============================================ */
+
+.goraven-markdown {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.goraven-markdown .heading-1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--interactive);
+}
+
+.goraven-markdown .heading-2 {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--interactive);
+}
+
+.goraven-markdown .heading-3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 1rem;
+  margin-bottom: 0.375rem;
+  color: currentColor;
+}
+
+.goraven-markdown .heading-4,
+.goraven-markdown .heading-5,
+.goraven-markdown .heading-6 {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+  color: currentColor;
+  opacity: 0.8;
+}
+
+.goraven-markdown p {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  color: inherit;
+}
+
+.goraven-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.goraven-markdown .blockquote {
+  border-left: 3px solid var(--border-custom);
+  background-color: transparent;
+  border-radius: 0;
+  padding: 0.5rem 0.875rem;
+  margin: 0.75rem 0;
+  color: var(--text-2);
+  font-style: normal;
+}
+
+.goraven-markdown .blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.goraven-markdown .inline-code {
+  background-color: var(--bg-layer-2);
+  border-radius: var(--radius-sm);
+  padding: 0.125rem 0.375rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: currentColor;
+}
+
+.goraven-markdown [data-streamdown="code-block"] {
+  border-radius: 0;
+  background-color: transparent;
+  border: none;
+  padding: 0;
+}
+
+.goraven-markdown [data-streamdown="code-block-header"] {
+  display: none;
+}
+
+/* Streamdown 的 table-wrapper 默认自带 border/背景/p-2 内边距(即使 controls 关闭),
+   与内层滚动容器的 border 叠加形成双框,这里去掉外层装饰只保留内层单框 */
+.goraven-markdown [data-streamdown="table-wrapper"] {
+  margin: 0.75rem 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  gap: 0;
+}
+
+.goraven-markdown .table {
+  width: 100%;
+  margin: 0.75rem 0;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.goraven-markdown .table-header-cell {
+  text-align: left;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  color: var(--text-2);
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.goraven-markdown .table-cell {
+  padding: 0.5rem 0.75rem;
+  color: inherit;
+}
+
+.goraven-markdown .table-row:nth-child(even) {
+  background-color: var(--bg-layer-2);
+}
+
+.goraven-markdown .ordered-list,
+.goraven-markdown .unordered-list {
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
+
+.goraven-markdown .list-item {
+  margin: 0.25rem 0;
+  color: inherit;
+}
+
+.goraven-markdown .list-item::marker {
+  color: var(--text-muted);
+}
+
+.goraven-markdown hr {
+  border: none;
+  border-top: 1px solid var(--border-custom);
+  margin: 1rem 0;
+}
+
+.goraven-markdown a {
+  color: var(--interactive);
+  text-decoration: none;
+}
+
+.goraven-markdown a:hover {
+  text-decoration: underline;
+}
+
+.goraven-markdown strong {
+  font-weight: 600;
+  color: currentColor;
+}
+
+/* ============================================
+    XLSX preview (SheetJS) overrides
+    Scoped to .goraven-xlsx wrapper
+    ============================================ */
+
+.goraven-xlsx table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
+}
+
+.goraven-xlsx td,
+.goraven-xlsx th {
+  padding: 0.375rem 0.625rem;
+  border: none;
+  border-bottom: 1px solid var(--border-custom);
+  color: var(--text-1);
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.goraven-xlsx tr:first-child td,
+.goraven-xlsx tr:first-child th {
+  font-weight: 600;
+  color: var(--text-2);
+  border-bottom: 1px solid var(--border-strong);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.goraven-xlsx tr:nth-child(even) {
+  background-color: var(--bg-layer-2);
+}
+
+/* ============================================
+    Sonner toast overrides
+    ============================================ */
+
+[data-sonner-toaster] {
+  --normal-bg: var(--color-bg-layer-2);
+  --normal-border: var(--color-border-custom);
+  --normal-text: var(--color-text-1);
+  --success-bg: color-mix(in oklch, var(--success) 6%, var(--bg-layer-2));
+  --success-border: var(--color-success);
+  --error-bg: color-mix(in oklch, var(--destructive) 6%, var(--bg-layer-2));
+  --error-border: var(--color-destructive);
+  --warning-bg: color-mix(in oklch, var(--warning) 6%, var(--bg-layer-2));
+  --warning-border: var(--color-warning);
+  --info-bg: color-mix(in oklch, var(--info) 6%, var(--bg-layer-2));
+  --info-border: var(--color-info);
+  font-family: var(--font-sans);
+}
+
+[data-sonner-toaster] [data-sonner-toast] {
+  border-radius: var(--radius-lg);
+}
+
+[data-sonner-toaster] [data-close-button] {
+  right: 12px;
+  top: 12px;
+  left: auto;
+  transform: none;
+}
+
+/* ============================================
+   Stop button animated ring
+   ============================================ */
+
+@property --stop-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes stop-spin {
+  to { --stop-angle: 360deg; }
+}
+
+@property --tool-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* Rotating highlight arc painted on the border of the active tool
+   circle in the thinking timeline. Mirrors the stop-button technique
+   so long-running tool calls (e.g. file edits) read as "in flight". */
+@keyframes tool-spin {
+  to { --tool-angle: 360deg; }
+}
+
+/* ============================================
+   Base styles
+   ============================================ */
+
+/* Prevent Recharts SVG overflow from covering UI elements.
+   The !important is needed because Recharts sets overflow:visible
+   on the SVG element programmatically. Tooltip divs are siblings of
+   the SVG so they remain unclipped. */
+  .recharts-surface {
+  overflow: hidden !important;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    background-color: var(--color-bg-base);
+    color: var(--color-text-1);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Unified thin scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-bg-layer-3) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--color-bg-layer-3);
+    border-radius: 9999px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-border-strong);
+  }
+}
+
+/* Hover-reveal scrollbar: hidden by default, shown on container hover.
+   Kept OUT of @layer base so it beats the global `*::-webkit-scrollbar`
+   rule regardless of specificity. */
+/* No-scrollbar region: hide the native scrollbar entirely. Content
+   keeps full width; user scrolls via wheel/trackpad/keyboard. */
+.no-scrollbar {
+  scrollbar-width: none !important;
+}
+.no-scrollbar::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}

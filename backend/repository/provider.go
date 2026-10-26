@@ -1,0 +1,327 @@
+package repository
+
+import (
+	"goraven/backend/po"
+	"goraven/backend/vo"
+	"goraven/backend/vo/errs"
+	"goraven/core/iface"
+	"goraven/core/provider"
+	"goraven/util"
+	"math/rand"
+	"time"
+
+	"github.com/8treenet/freedom"
+	"gorm.io/gorm"
+)
+
+func init() {
+	freedom.Prepare(func(initiator freedom.Initiator) {
+		initiator.BindRepository(func() *ProviderRepository {
+			return &ProviderRepository{}
+		})
+	})
+}
+
+type ProviderRepository struct {
+	freedom.Repository
+}
+
+func (repo *ProviderRepository) PaginateModels(req *vo.AdminModelListReq) ([]vo.AdminModelItem, *PageResult, error) {
+	query := repo.db().Model(&po.AIModel{}).Where("deleted = 0")
+	if req.ProviderID != "" {
+		query = query.Where("provider_id = ?", req.ProviderID)
+	}
+	if req.Search != "" {
+		query = query.Where("model_name LIKE ?", "%"+req.Search+"%")
+	}
+
+	var models []po.AIModel
+	pr, err := Paginate(query.Order("created DESC"), &PageQuery{Page: req.Page, PageSize: req.PageSize}, &models)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	items := make([]vo.AdminModelItem, 0, len(models))
+	for _, m := range models {
+		items = append(items, vo.AdminModelItem{
+			AIModelId:             m.AIModelId,
+			ProviderDisplayName:   m.ProviderDisplayName,
+			DisplayName:           m.DisplayName,
+			ProviderID:            m.ProviderID,
+			ModelName:             m.ModelName,
+			Icon:                  m.Icon,
+			APIKeyMasked:          maskAPIKey(m.APIKey),
+			BaseURL:               m.BaseURL,
+			ProxyURL:              m.ProxyURL,
+			ConversationHeaderKey: m.ConversationHeaderKey,
+			ContextLen:            m.ContextLen,
+			ExtraFields:           m.ExtraFields,
+			IsDefault:             m.IsDefault,
+			IsFlash:               m.IsFlash,
+			IsVisual:              m.IsVisual,
+			Status:                m.Status,
+			Access:                m.Access,
+			Remark:                m.Remark,
+			Created:               m.Created,
+			Updated:               m.Updated,
+		})
+	}
+
+	return items, pr, nil
+}
+
+func (repo *ProviderRepository) CreateModel(model *po.AIModel) error {
+	return repo.db().Transaction(func(tx *gorm.DB) error {
+		// 默认/多模态模型允许多个（组成模型池，解析时随机选取），不做互斥清理；Flash 保持全局唯一
+		if model.IsFlash == 1 {
+			if err := tx.Model(&po.AIModel{}).Where("is_flash = 1 AND deleted = 0").Update("is_flash", 0).Error; err != nil {
+				return err
+			}
+		}
+
+		var defaultCount int64
+		if err := tx.Model(&po.AIModel{}).Where("is_default = 1 AND deleted = 0").Count(&defaultCount).Error; err != nil {
+			return err
+		}
+		if defaultCount == 0 {
+			model.IsDefault = 1
+		}
+
+		return tx.Create(model).Error
+	})
+}
+
+func (repo *ProviderRepository) GetModelByID(id int) (*po.AIModel, error) {
+	var model po.AIModel
+	err := repo.db().First(&model, "ai_model_id = ? AND deleted = 0", id).Error
+	return &model, err
+}
+
+// GetModelsByIDs 根据 ID 列表批量获取未删除的模型
+func (repo *ProviderRepository) GetModelsByIDs(ids []int) ([]po.AIModel, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	var models []po.AIModel
+	err := repo.db().Where("ai_model_id IN ? AND deleted = 0", ids).Find(&models).Error
+	return models, err
+}
+
+func (repo *ProviderRepository) UpdateModel(id int, updates map[string]interface{}) error {
+	return repo.db().Transaction(func(tx *gorm.DB) error {
+		// is_default/is_visual 允许多个并存（模型池），不做互斥清理；Flash 保持全局唯一
+		if v, ok := updates["is_flash"]; ok && util.IntFromIFace(v) == 1 {
+			if err := tx.Model(&po.AIModel{}).Where("is_flash = 1 AND deleted = 0").Update("is_flash", 0).Error; err != nil {
+				return err
+			}
+		}
+
+		updates["updated"] = time.Now()
+		return tx.Model(&po.AIModel{}).Where("ai_model_id = ? AND deleted = 0", id).Updates(updates).Error
+	})
+}
+
+// SoftDeleteModel 软删除模型，同时清空 isDefault/isFlash/isVisual 标志位
+// 防止删除后仍占用「默认/Flash/视觉」角色，导致 SetDefault/SetFlash/SetVisual 链路与
+// 已删除行冲突，以及仪表盘模型使用分布出现重复的「Unknown」聚合。
+func (repo *ProviderRepository) SoftDeleteModel(id int) error {
+	return repo.db().Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&po.AIModel{}).
+			Where("ai_model_id = ? AND deleted = 0", id).
+			Updates(map[string]interface{}{
+				"is_default": 0,
+				"is_flash":   0,
+				"is_visual":  0,
+				"deleted":    1,
+				"updated":    time.Now(),
+			}).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+// FindEnabledModels 查询所有启用且未删除的模型
+func (repo *ProviderRepository) FindEnabledModels() ([]po.AIModel, error) {
+	var models []po.AIModel
+	err := repo.db().Where("status = 1 AND deleted = 0").Order("created DESC").Find(&models).Error
+	return models, err
+}
+
+// FindEnabledModelsByUser 查询用户可见的启用模型（全员开放 OR 成员），按创建时间倒序
+func (repo *ProviderRepository) FindEnabledModelsByUser(userId string) ([]po.AIModel, error) {
+	var models []po.AIModel
+	err := repo.db().
+		Where("status = 1 AND deleted = 0 AND (access = ? OR ai_model_id IN (?))",
+			po.AIModelAccessAll,
+			repo.db().Model(&po.AIModelMember{}).Select("ai_model_id").Where("user_id = ?", userId),
+		).
+		Order("created DESC").
+		Find(&models).Error
+	return models, err
+}
+
+// GetDefaultModels 获取默认模型池（isDefault=1，启用，未删除）
+// 支持配置多个默认模型，对话使用默认模型时从中随机选取一个
+func (repo *ProviderRepository) GetDefaultModels() ([]po.AIModel, error) {
+	var models []po.AIModel
+	err := repo.db().Where("is_default = 1 AND status = 1 AND deleted = 0").Find(&models).Error
+	return models, err
+}
+
+// GetDefaultModel 从默认模型池中随机选取一个，池为空时返回 gorm.ErrRecordNotFound
+func (repo *ProviderRepository) GetDefaultModel() (*po.AIModel, error) {
+	models, err := repo.GetDefaultModels()
+	if err != nil {
+		return nil, err
+	}
+	if len(models) == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return &models[rand.Intn(len(models))], nil
+}
+
+// GetDefaultChatModel 获取默认聊天模型
+// 封装 GetDefaultModel → 创建 provider → 创建 ChatModel 的完整流程
+func (repo *ProviderRepository) GetDefaultChatModel() (iface.BaseChatModel, error) {
+	model, err := repo.GetDefaultModel()
+	if err != nil {
+		return nil, err
+	}
+	return repo.createChatModelFromPO(model, false)
+}
+
+// GetFlashChatModel 获取 Flash 模型
+// 优先级：isFlash=1 的模型 > fallbackModelId 指定的模型 > 默认模型
+func (repo *ProviderRepository) GetFlashChatModel(fallbackModelId int) (iface.BaseChatModel, error) {
+	// 1. 优先使用 Flash 模型
+	var model po.AIModel
+	if err := repo.db().Where("is_flash = 1 AND status = 1 AND deleted = 0").First(&model).Error; err == nil {
+		return repo.createChatModelFromPO(&model, false)
+	}
+
+	// 2. 其次使用 fallbackModelId
+	if fallbackModelId > 0 {
+		if m, err := repo.GetModelByID(fallbackModelId); err == nil {
+			return repo.createChatModelFromPO(m, false)
+		}
+	}
+
+	// 3. 最后降级为默认模型
+	return repo.GetDefaultChatModel()
+}
+
+// GetVisualChatModel 获取多模态识别模型
+// 多模态模型允许多个（isVisual=1 组成模型池），随机选取一个；池为空返回 nil，不降级
+func (repo *ProviderRepository) GetVisualChatModel() (iface.BaseChatModel, error) {
+	var models []po.AIModel
+	if err := repo.db().Where("is_visual = 1 AND status = 1 AND deleted = 0").Find(&models).Error; err != nil {
+		return nil, nil
+	}
+	if len(models) == 0 {
+		return nil, nil
+	}
+	return repo.createChatModelFromPO(&models[rand.Intn(len(models))], false)
+}
+
+// createChatModelFromPO 根据 po.AIModel 创建聊天模型
+func (repo *ProviderRepository) createChatModelFromPO(model *po.AIModel, reasoning bool) (iface.BaseChatModel, error) {
+	pv, err := provider.GetProviderByName(model.ProviderID, provider.ProviderConfig{
+		APIKey:      model.APIKey,
+		BaseURL:     model.BaseURL,
+		ExtraFields: model.ExtraFields,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if model.ProxyURL != "" {
+		pv.SetProxy(model.ProxyURL)
+	}
+
+	result, err := pv.CreateModel(model.ModelName, reasoning, model.ContextLenInTokens())
+	if err != nil {
+		return nil, err
+	}
+
+	// 会话归并 header 名，按模型行配置，空则不注入
+	result.SetConversationHeaderKey(model.ConversationHeaderKey)
+	// 是否支持多模态，按模型行的 is_visual 标志统一设置
+	result.SetVisualSupport(model.IsVisual == 1)
+	return result, nil
+}
+
+// CreateChatModelFromID 根据模型ID创建聊天模型，支持控制推理模式
+// 返回 chatModel（LLM 客户端）、aiModel（模型元数据，含 DisplayName/Icon/ContextLen）、
+// aiModelId（实际使用的模型ID）和 error
+func (repo *ProviderRepository) CreateChatModelFromID(aiModelId int, reasoning bool) (iface.BaseChatModel, *po.AIModel, int, error) {
+	var am *po.AIModel
+	var defaultModel *po.AIModel
+	var defaultModelErr error
+
+	defaultModel, defaultModelErr = repo.GetDefaultModel()
+	if defaultModelErr == nil {
+		am = defaultModel
+	}
+	useModel, useModelErr := repo.GetModelByID(aiModelId)
+	if useModelErr == nil {
+		am = useModel
+	}
+	if am == nil {
+		//返回中英错误类型
+		return nil, nil, 0, errs.ErrModelAndDefaultNotFound
+	}
+
+	resultModel, err := repo.createChatModelFromPO(am, reasoning)
+	return resultModel, am, am.AIModelId, err
+}
+
+func (repo *ProviderRepository) db() *gorm.DB {
+	var db *gorm.DB
+	if err := repo.FetchDB(&db); err != nil {
+		panic(err)
+	}
+	return db
+}
+
+func maskAPIKey(apiKey string) string {
+	if apiKey == "" {
+		return ""
+	}
+	if len(apiKey) <= 8 {
+		return "****"
+	}
+	return apiKey[:4] + "****" + apiKey[len(apiKey)-4:]
+}
+
+// ListModelMembers 查询模型的所有可见成员
+func (repo *ProviderRepository) ListModelMembers(modelId int) ([]po.AIModelMember, error) {
+	var members []po.AIModelMember
+	err := repo.db().Where("ai_model_id = ?", modelId).Order("created ASC").Find(&members).Error
+	return members, err
+}
+
+// AddModelMember 添加模型可见成员
+func (repo *ProviderRepository) AddModelMember(modelId int, userId string) error {
+	member := &po.AIModelMember{
+		AIModelId: modelId,
+		UserId:    userId,
+	}
+	return repo.db().Create(member).Error
+}
+
+// RemoveModelMember 移除模型可见成员
+func (repo *ProviderRepository) RemoveModelMember(modelId int, userId string) error {
+	return repo.db().Where("ai_model_id = ? AND user_id = ?", modelId, userId).
+		Delete(&po.AIModelMember{}).Error
+}
+
+// RemoveModelMembersByModelId 删除模型的所有成员记录（模型删除时调用）
+func (repo *ProviderRepository) RemoveModelMembersByModelId(modelId int) error {
+	return repo.db().Where("ai_model_id = ?", modelId).Delete(&po.AIModelMember{}).Error
+}
+
+// UpdateModelAccess 更新模型访问权限
+func (repo *ProviderRepository) UpdateModelAccess(modelId int, access uint8) error {
+	return repo.db().Model(&po.AIModel{}).Where("ai_model_id = ? AND deleted = 0", modelId).
+		Update("access", access).Error
+}

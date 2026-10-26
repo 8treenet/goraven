@@ -1,0 +1,137 @@
+package service
+
+import (
+	"os"
+	"goraven/backend/repository"
+	"goraven/backend/vo"
+	"goraven/config"
+	"goraven/core/plugin"
+	"goraven/util/disk"
+	"time"
+
+	"github.com/8treenet/freedom"
+)
+
+func init() {
+	freedom.Prepare(func(initiator freedom.Initiator) {
+		initiator.BindService(func() *SystemInfoService {
+			return &SystemInfoService{}
+		})
+		initiator.InjectController(func(ctx freedom.Context) (service *SystemInfoService) {
+			initiator.FetchService(ctx, &service)
+			return
+		})
+	})
+}
+
+// SystemInfoService 系统信息服务
+// 聚合概览、数据库、磁盘、MCP 健康、生态统计、插件等运维关键数据
+type SystemInfoService struct {
+	Worker  freedom.Worker
+	SysRepo *repository.SystemInfoRepository
+}
+
+// GetSystemInfo 获取系统信息完整快照
+func (service *SystemInfoService) GetSystemInfo(forceRefresh bool) (*vo.SystemInfoRsp, error) {
+	if forceRefresh {
+		service.SysRepo.InvalidateCache()
+	} else {
+		if cached, ok := service.SysRepo.GetSystemInfo(); ok {
+			return cached, nil
+		}
+	}
+
+	info := &vo.SystemInfoRsp{
+		CollectedAt: time.Now(),
+	}
+
+	info.Overview = service.collectOverview()
+	info.Database = service.collectDatabase()
+	info.Disks = service.collectDisks()
+	info.Plugins = service.collectPlugins()
+	info.MCPHealth = service.SysRepo.GetMCPHealthList()
+
+	eco, err := service.SysRepo.GetEcosystemCounts()
+	if err != nil {
+		return nil, err
+	}
+	info.Ecosystem = *eco
+
+	service.SysRepo.SetSystemInfo(info)
+	return info, nil
+}
+
+func (service *SystemInfoService) collectOverview() vo.OverviewInfo {
+	cfg := config.Get()
+	cacheType, cacheMemory := service.SysRepo.GetCacheInfo()
+
+	info := vo.OverviewInfo{
+		Version:     cfg.GetBuildInfo().Version,
+		Language:    cfg.GetLanguage(),
+		CacheType:   cacheType,
+		CacheMemory: cacheMemory,
+	}
+
+	info.Timezone = func() string {
+		if tz := os.Getenv("TZ"); tz != "" {
+			return tz
+		}
+		return time.Local.String()
+	}()
+
+	uploadDir := cfg.GetUploadDir()
+	if uploadDir != "" {
+		info.UploadBytes = disk.DirSize(uploadDir)
+	}
+
+	info.TempBytes = disk.DirSize(cfg.GetUploadTempDir()) + disk.DirSize(cfg.GetDownloadTempDir())
+
+	return info
+}
+
+func (service *SystemInfoService) collectDatabase() vo.DatabaseInfo {
+	dbType := config.Get().System.DBType
+
+	info := vo.DatabaseInfo{
+		Type:    dbType,
+		Version: service.SysRepo.GetDBVersion(dbType),
+		Name:    service.SysRepo.GetDBName(dbType),
+	}
+
+	info.DataSizeBytes = service.SysRepo.GetDBDataSize(dbType)
+
+	pool, err := service.SysRepo.GetDBPoolStats()
+	if err == nil {
+		info.Pool = *pool
+	}
+	return info
+}
+
+func (service *SystemInfoService) collectDisks() []vo.DiskInfo {
+	disks := disk.GetMountPoints()
+	result := make([]vo.DiskInfo, 0, len(disks))
+	for _, d := range disks {
+		result = append(result, vo.DiskInfo{
+			MountPoint:  d.MountPoint,
+			FSType:      d.FSType,
+			Device:      d.Device,
+			TotalBytes:  d.TotalBytes,
+			UsedBytes:   d.UsedBytes,
+			FreeBytes:   d.FreeBytes,
+			UsedPercent: d.UsedPercent,
+		})
+	}
+	return result
+}
+
+func (service *SystemInfoService) collectPlugins() []vo.PluginInfo {
+	pis := plugin.GetAllPluginInfo()
+	result := make([]vo.PluginInfo, 0, len(pis))
+	for _, pi := range pis {
+		result = append(result, vo.PluginInfo{
+			Name:    pi.Name,
+			Version: pi.Version,
+		})
+	}
+	return result
+}
