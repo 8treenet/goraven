@@ -30,8 +30,19 @@ type LocalSandbox struct {
 func NewLocalSandbox(userName string) *LocalSandbox {
 	return &LocalSandbox{
 		userName:  userName,
-		Workspace: config.Get().GetUserSpace(userName),
+		Workspace: resolveWorkspace(config.Get().GetUserSpace(userName)),
 	}
+}
+
+// resolveWorkspace 将用户工作空间规范化为绝对路径。
+// user_space 允许配置为相对路径（例如默认配置中的 "./data/users"），
+// 而沙盒的文件接口（validateFilePath 等）要求绝对路径，
+// 否则写入用户空间的任何文件都会以 "path must be absolute" 失败。
+func resolveWorkspace(workspace string) string {
+	if abs, err := filepath.Abs(workspace); err == nil {
+		return abs
+	}
+	return workspace
 }
 
 // NewBackend 创建本地文件系统后端
