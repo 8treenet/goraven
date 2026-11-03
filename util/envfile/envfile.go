@@ -83,18 +83,21 @@ func unquoteValue(raw string) (string, error) {
 	}
 
 	switch raw[0] {
-	case '"':
-		end := strings.LastIndexByte(raw, '"')
-		if end == 0 {
-			return "", fmt.Errorf("unterminated double quote")
-		}
-		return raw[1:end], nil
-	case '\'':
-		end := strings.LastIndexByte(raw, '\'')
-		if end == 0 {
+	case '"', '\'':
+		quote := raw[0]
+		// The closing quote is the first one that matches, so a quote in a trailing
+		// comment cannot pull the value past the one the author actually closed.
+		end := strings.IndexByte(raw[1:], quote)
+		if end < 0 {
+			if quote == '"' {
+				return "", fmt.Errorf("unterminated double quote")
+			}
 			return "", fmt.Errorf("unterminated single quote")
 		}
-		return raw[1:end], nil
+		if rest := strings.TrimSpace(raw[end+2:]); rest != "" && !strings.HasPrefix(rest, "#") {
+			return "", fmt.Errorf("unexpected text after the closing quote: %q", rest)
+		}
+		return raw[1 : end+1], nil
 	}
 
 	// 非引号情形：行尾 # 视为注释
