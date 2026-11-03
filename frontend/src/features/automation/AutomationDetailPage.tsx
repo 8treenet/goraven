@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ChevronLeft, ChevronDown, Play, AlertCircle, RefreshCw, Pencil, Power, Trash2, Lock, Loader2 } from 'lucide-react'
@@ -32,7 +32,12 @@ import { Markdown } from '@/components/common/markdown'
 
 type PageState = 'loading' | 'data' | 'error'
 
+/** 需求与执行记录共用一个展开态：同一时刻最多展开一项 */
+type ExpandedKey = number | 'requirement' | null
+
 const EXEC_PAGE_SIZE = 10
+
+const MARKDOWN_TEXT_CLASS = 'text-[12.5px] leading-relaxed text-text-2 [&_p]:m-0 [&_p]:whitespace-pre-wrap'
 
 /* ============================================
    Page
@@ -50,13 +55,16 @@ export function Component() {
   const [execPage, setExecPage] = useState(1)
   const [execTotalPage, setExecTotalPage] = useState(1)
   const [execTotalCount, setExecTotalCount] = useState(0)
-  const [expandedId, setExpandedId] = useState<number | null>(null)
+  const [expandedKey, setExpandedKey] = useState<ExpandedKey>(null)
+  const [reqOverflow, setReqOverflow] = useState(false)
   const [qaCache, setQaCache] = useState<Record<number, AutomationAnswerRsp>>({})
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [reqEditOpen, setReqEditOpen] = useState(false)
   const [reqValue, setReqValue] = useState('')
   const [reqSaving, setReqSaving] = useState(false)
+  const reqPreviewRef = useRef<HTMLDivElement>(null)
+  const requirementExpanded = expandedKey === 'requirement'
 
   const fetchDetail = useCallback(() => {
     getAutomationTask(taskId)
@@ -81,12 +89,24 @@ export function Component() {
     fetchExecutions(1)
   }, [fetchDetail, fetchExecutions])
 
+  // 收起态下测量需求是否超出预览高度，决定是否显示折叠箭头
+  useLayoutEffect(() => {
+    if (requirementExpanded) return
+    const el = reqPreviewRef.current
+    if (!el) return
+    setReqOverflow(el.scrollHeight > el.clientHeight + 1)
+  }, [detail?.requirement, requirementExpanded, state])
+
+  const handleToggleRequirement = useCallback(() => {
+    setExpandedKey((prev) => (prev === 'requirement' ? null : 'requirement'))
+  }, [])
+
   const handleToggleExpand = useCallback(async (exec: AutomationExecutionItem) => {
-    if (expandedId === exec.id) {
-      setExpandedId(null)
+    if (expandedKey === exec.id) {
+      setExpandedKey(null)
       return
     }
-    setExpandedId(exec.id)
+    setExpandedKey(exec.id)
     if (!qaCache[exec.id]) {
       try {
         const qa = await getExecutionAnswer(taskId, exec.id)
@@ -95,7 +115,7 @@ export function Component() {
         toast.error(translate('common.loadFailed'))
       }
     }
-  }, [expandedId, qaCache, taskId])
+  }, [expandedKey, qaCache, taskId])
 
   const handleToggleStatus = useCallback(async () => {
     if (!detail) return
@@ -126,7 +146,7 @@ export function Component() {
       toast.success(translate('automation.executionStarted'))
       fetchDetail()
       fetchExecutions(1)
-      setExpandedId(null)
+      setExpandedKey(null)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : translate('common.failed'))
     } finally {
@@ -234,7 +254,21 @@ export function Component() {
           <div className="flex min-w-0 flex-1 flex-col gap-4">
             <div className="rounded-lg border border-border-custom bg-bg-base">
               <div className="flex items-center justify-between border-b border-border-custom px-3.5 py-2.5">
-                <span className="text-[13px] font-semibold text-text-1">{t('automation.requirement')}</span>
+                <button
+                  onClick={reqOverflow || requirementExpanded ? handleToggleRequirement : undefined}
+                  aria-expanded={requirementExpanded}
+                  className="flex min-w-0 items-center gap-1.5 rounded-md text-left"
+                >
+                  <span className="text-[13px] font-semibold text-text-1">{t('automation.requirement')}</span>
+                  {(reqOverflow || requirementExpanded) && (
+                    <ChevronDown
+                      className={cn(
+                        'size-3.5 shrink-0 text-text-3 transition-transform',
+                        requirementExpanded && 'rotate-180',
+                      )}
+                    />
+                  )}
+                </button>
                 <button
                   onClick={openReqEdit}
                   title={t('common.edit')}
@@ -245,13 +279,28 @@ export function Component() {
                 </button>
               </div>
               <div className="px-3.5 py-3">
-                <p className="text-[13px] leading-relaxed text-text-2">
-                  {detail.requirement || t('automation.none')}
-                </p>
+                <div
+                  ref={reqPreviewRef}
+                  onClick={!requirementExpanded && reqOverflow ? handleToggleRequirement : undefined}
+                  className={cn(
+                    'relative',
+                    !requirementExpanded && 'max-h-[63px] overflow-hidden',
+                    !requirementExpanded && reqOverflow && 'cursor-pointer',
+                  )}
+                >
+                  <div className={cn(!requirementExpanded && 'pointer-events-none')}>
+                    <Markdown mode="static" className={MARKDOWN_TEXT_CLASS}>
+                      {detail.requirement || t('automation.none')}
+                    </Markdown>
+                  </div>
+                  {!requirementExpanded && reqOverflow && (
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-bg-base to-transparent" />
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border-custom bg-bg-base">
+            <div className="flex min-h-[240px] flex-1 flex-col rounded-lg border border-border-custom bg-bg-base">
               <div className="flex items-center justify-between border-b border-border-custom px-3.5 py-2.5">
                 <span className="text-[13px] font-semibold text-text-1">{t('automation.executions')}</span>
                 <span className="text-xs text-text-3">{t('automation.runs').replace('{n}', String(execTotalCount))}</span>
@@ -261,7 +310,7 @@ export function Component() {
                   <p className="py-10 text-center text-sm text-text-3">{t('automation.emptyExecutions')}</p>
                 )}
                 {executions.map((exec) => {
-                  const expanded = expandedId === exec.id
+                  const expanded = expandedKey === exec.id
                   const qa = qaCache[exec.id]
                   return (
                     <div
@@ -288,7 +337,7 @@ export function Component() {
                           ) : qa.answer ? (
                             <Markdown
                               mode="static"
-                              className="text-[12.5px] leading-relaxed text-text-2 [&_p]:m-0 [&_p]:whitespace-pre-wrap"
+                              className={MARKDOWN_TEXT_CLASS}
                             >
                               {qa.answer}
                             </Markdown>
