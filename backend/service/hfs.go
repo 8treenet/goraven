@@ -254,20 +254,31 @@ func (service *HFSService) ResolveAkDownload(ak, reqPath string) (string, error)
 
 // CreateUpload 创建分片上传任务
 func (service *HFSService) CreateUpload(userID string, req *vo.ChunkUploadCreateReq) (*vo.ChunkUploadCreateRsp, error) {
+	if req.ChunkSize <= 0 {
+		return nil, fmt.Errorf("invalid chunk size: %d", req.ChunkSize)
+	}
+	if req.FileSize < 0 {
+		return nil, fmt.Errorf("invalid file size: %d", req.FileSize)
+	}
+
 	uploadId := util.UUID()
 	tempBase := config.Get().GetUploadTempDir()
 	tempDir := filepath.Join(tempBase, uploadId)
 
-	if err := os.MkdirAll(tempDir, 0755); err != nil {
-		return nil, fmt.Errorf("create temp dir: %w", err)
-	}
-
 	totalChunks := req.TotalChunks
 	if totalChunks <= 0 {
-		totalChunks = int(req.FileSize / int64(req.ChunkSize))
-		if req.FileSize%int64(req.ChunkSize) != 0 {
-			totalChunks++
+		if req.FileSize == 0 {
+			totalChunks = 1
+		} else {
+			totalChunks = int(req.FileSize / int64(req.ChunkSize))
+			if req.FileSize%int64(req.ChunkSize) != 0 {
+				totalChunks++
+			}
 		}
+	}
+
+	if err := os.MkdirAll(tempDir, 0755); err != nil {
+		return nil, fmt.Errorf("create temp dir: %w", err)
 	}
 
 	upload := &po.ChunkUpload{
