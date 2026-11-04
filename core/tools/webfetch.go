@@ -63,6 +63,11 @@ func (w *WebFetch) Invoke(ctx context.Context, req *WebFetchRequest) (*WebFetchR
 		return nil, fmt.Errorf("URL不能为空")
 	}
 
+	// SSRF 防护：仅允许公网 http/https 目标
+	if err := validatePublicHTTPURL(req.URL); err != nil {
+		return nil, fmt.Errorf("URL校验失败: %w", err)
+	}
+
 	html, resp := requests.NewHTTPRequest(req.URL).Get().SetClient(webFetchClient).ToString()
 	if resp != nil && resp.Error != nil {
 		return nil, fmt.Errorf("请求网页失败: %w", resp.Error)
