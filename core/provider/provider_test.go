@@ -3,6 +3,7 @@ package provider_test
 import (
 	"goraven/core/provider"
 	unit_test "goraven/util/unit"
+	"os"
 	"testing"
 
 	"github.com/cloudwego/eino/schema"
@@ -23,6 +24,29 @@ func TestOpenRouterProvider_DisplayName(t *testing.T) {
 func TestOpenRouterProvider_CreateModel(t *testing.T) {
 	provider := provider.NewOpenrouterProvider("sk-or-v1-")
 	chatmodel, err := provider.CreateModel("google/gemma-4-31b-it", true, 250000)
+	if err != nil {
+		panic(err)
+	}
+	data, err := chatmodel.Generate(t.Context(), []*schema.Message{schema.UserMessage("你是谁")})
+	if err != nil {
+		panic(err)
+	}
+	t.Log(unit_test.JsonLog(data))
+}
+
+func TestRequestyProvider_DisplayName(t *testing.T) {
+	provider := provider.NewRequestyProvider(os.Getenv("REQUESTY_API_KEY"))
+	models, _ := provider.Models()
+	t.Log(unit_test.JsonLog(models))
+}
+
+func TestRequestyProvider_CreateModel(t *testing.T) {
+	apiKey := os.Getenv("REQUESTY_API_KEY")
+	if apiKey == "" {
+		t.Skip("REQUESTY_API_KEY not set")
+	}
+	provider := provider.NewRequestyProvider(apiKey)
+	chatmodel, err := provider.CreateModel("openai/gpt-4o-mini", false, 128000)
 	if err != nil {
 		panic(err)
 	}
