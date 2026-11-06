@@ -1,7 +1,12 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
-import { RefreshCw, AlertCircle, Save } from 'lucide-react'
+import { RefreshCw, Save } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Card } from '@/components/ui/card'
+import { ErrorState } from '@/components/patterns/ErrorState'
+import { PageHeader } from '@/components/patterns/PageHeader'
+import { PageContainer } from '@/components/patterns/PageContainer'
 import { useT, t as translate } from '@/i18n'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -113,7 +118,7 @@ function SettingControl({ item, value, onChange, error }: ControlProps) {
               if (v !== undefined) onChange(key, String(v))
             }}
           />
-          <span className="text-sm tabular-nums text-text-1 w-10 text-right">
+          <span className="w-10 text-right text-[13px] tabular-nums text-text-1">
             {numValue}%
           </span>
         </div>
@@ -135,14 +140,14 @@ function SettingControl({ item, value, onChange, error }: ControlProps) {
           <span
             className={cn(
               'relative inline-flex h-3.5 w-8 items-center rounded-full transition-colors',
-              value === 'true' ? 'bg-highlight' : 'bg-bg-hover',
+              value === 'true' ? 'bg-accent' : 'bg-bg-hover',
             )}
           >
             <span
               className={cn(
                 'inline-block h-3 w-3 rounded-full transition-transform',
                 value === 'true'
-                  ? 'bg-highlight-fg translate-x-5'
+                  ? 'bg-accent-foreground translate-x-5'
                   : 'bg-text-muted',
               )}
             />
@@ -174,7 +179,7 @@ function SettingControl({ item, value, onChange, error }: ControlProps) {
           <textarea
             spellCheck={false}
             className={cn(
-              'w-64 h-20 rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
+              'w-64 h-20 rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-[13px] transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
               inputType === 'jsonEditor' && 'font-mono text-xs',
             )}
             value={value}
@@ -221,7 +226,7 @@ function SettingControl({ item, value, onChange, error }: ControlProps) {
       return (
         <div className="flex flex-col items-end gap-1">
           <select
-            className="h-8 w-44 rounded-lg border border-input bg-transparent px-2.5 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="h-9 w-44 rounded-lg border border-input bg-transparent px-2.5 text-[13px] transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             value={value}
             onChange={(e) => onChange(key, e.target.value)}
           >
@@ -250,13 +255,13 @@ function SettingControl({ item, value, onChange, error }: ControlProps) {
    Skeleton
    ============================================ */
 
-function Skeleton() {
+function AdminSettingsSkeleton() {
   return (
-    <div className="flex-1 overflow-auto p-4 flex flex-col gap-3">
+    <PageContainer className="flex flex-1 flex-col gap-4 overflow-auto">
       {[1, 2, 3, 4, 5].map((g) => (
-        <div key={g} className="rounded-lg border border-border bg-bg-layer-1">
+        <Card key={g}>
           <div className="px-5 pt-4 pb-3">
-            <div className="h-3.5 w-20 animate-pulse rounded bg-bg-layer-2" />
+            <Skeleton className="h-3.5 w-20 rounded bg-bg-layer-2" />
           </div>
           {[1, 2, 3].map((r) => (
             <div
@@ -264,42 +269,21 @@ function Skeleton() {
               className="grid grid-cols-[1fr_auto] items-center gap-4 px-5 py-3.5"
             >
               <div className="min-w-0">
-                <div className="h-4 w-28 animate-pulse rounded bg-bg-layer-2" />
-                <div className="mt-1 h-3 w-52 animate-pulse rounded bg-bg-layer-2" />
+                <Skeleton className="h-4 w-28 rounded bg-bg-layer-2" />
+                <Skeleton className="mt-1 h-3 w-52 rounded bg-bg-layer-2" />
               </div>
-              <div className="h-8 w-28 animate-pulse rounded bg-bg-layer-2" />
+              <Skeleton className="h-8 w-28 rounded bg-bg-layer-2" />
             </div>
           ))}
-        </div>
+        </Card>
       ))}
-    </div>
+    </PageContainer>
   )
 }
 
 /* ============================================
    Error
    ============================================ */
-
-function ErrorState({ onRetry }: { onRetry: () => void }) {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4">
-      <AlertCircle className="size-8 text-text-3" />
-      <div className="text-center">
-            <p className="text-sm text-text-2">{translate('common.loadFailed')}</p>
-        <p className="mt-1 text-xs text-text-3">
-          {translate('adminSettings.fetchFailed')}
-        </p>
-      </div>
-      <button
-        onClick={onRetry}
-        className="inline-flex items-center gap-1 rounded-md bg-bg-layer-2 px-3 py-1.5 text-xs text-text-1 transition-colors hover:bg-bg-layer-3"
-      >
-        <RefreshCw className="size-3" />
-        {translate('common.retry')}
-      </button>
-    </div>
-  )
-}
 
 /* ============================================
    Main Component
@@ -374,14 +358,13 @@ export function Component() {
 
   return (
     <div className="flex h-full flex-col bg-bg-base">
-      {/* Toolbar */}
-      <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
-        <h1 className="text-base font-semibold text-text-1">{t('adminSettings.title')}</h1>
-        <Button
+      <PageHeader
+        title={t('adminSettings.title')}
+        actions={
+          <Button
           size="sm"
           disabled={dirtyKeys.length === 0 || saving}
           onClick={handleSave}
-          className={cn(dirtyKeys.length === 0 || saving ? '' : 'text-highlight hover:text-highlight')}
         >
           {saving ? (
             <>
@@ -400,15 +383,16 @@ export function Component() {
             </>
           )}
         </Button>
-      </div>
+        }
+      />
 
       {/* Content */}
-      {state === 'loading' && <Skeleton />}
+      {state === 'loading' && <AdminSettingsSkeleton />}
 
-      {state === 'error' && <ErrorState onRetry={handleRetry} />}
+      {state === 'error' && <ErrorState description={translate('adminSettings.fetchFailed')} onRetry={handleRetry} />}
 
       {state === 'data' && groups.length > 0 && (
-        <div className="flex-1 overflow-auto p-4 flex flex-col gap-3">
+        <PageContainer className="flex flex-1 flex-col gap-3 overflow-auto">
           {groups.map((group) => (
             <SettingGroup key={group.name} title={group.displayName}>
               {group.settings.map((item, i) => (
@@ -428,7 +412,7 @@ export function Component() {
               ))}
             </SettingGroup>
           ))}
-        </div>
+        </PageContainer>
       )}
     </div>
   )

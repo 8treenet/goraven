@@ -8,7 +8,6 @@ import {
   Pencil,
   Trash2,
   AlertCircle,
-  RefreshCw,
   ChevronLeft,
   ChevronRight,
   Copy,
@@ -23,6 +22,19 @@ import {
 import { Icon } from '@/components/common/Icon'
 import { IconPickerTrigger, DEFAULT_ICON, type IconName } from '@/components/common/IconPicker'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { AppDrawer } from '@/components/patterns/AppDrawer'
+import { EmptyState } from '@/components/patterns/EmptyState'
+import { ErrorState } from '@/components/patterns/ErrorState'
+import { PageHeader } from '@/components/patterns/PageHeader'
+import { Badge } from '@/components/ui/badge'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -296,14 +308,14 @@ function StatusToggle({
       <div
         className={cn(
           'h-4 w-8 rounded-full border transition-colors',
-          'peer-checked:border-highlight peer-checked:bg-highlight',
+          'peer-checked:border-accent peer-checked:bg-accent',
           'border-border-strong bg-bg-layer-2',
           !loading && 'peer-hover:border-text-2',
         )}
       />
       <div
         className={cn(
-          'absolute left-0.5 top-0.5 size-3 rounded-full bg-white shadow-sm transition-transform',
+          'absolute left-0.5 top-0.5 size-3 rounded-full bg-bg-base shadow-sm transition-transform',
           'peer-checked:translate-x-4',
         )}
       />
@@ -323,52 +335,6 @@ function McpIcon({ icon }: { icon: string }) {
    Drawer (wider, for left-right split)
    ============================================ */
 
-function Drawer({
-  open,
-  onClose,
-  title,
-  children,
-}: {
-  open: boolean
-  onClose: () => void
-  title: string
-  children: React.ReactNode
-}) {
-  return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <div
-        className={cn('fixed inset-0 z-50', open ? 'visible' : 'invisible')}
-      >
-        <div
-          className={cn(
-            'absolute inset-0 bg-black/60 transition-opacity duration-200',
-            open ? 'opacity-100' : 'opacity-0',
-          )}
-          onClick={onClose}
-        />
-        <div
-          className={cn(
-            'absolute right-0 top-0 z-50 flex h-full w-[680px] flex-col border-l border-border bg-bg-layer-1 shadow-pop transition-transform duration-200 ease-out',
-            open ? 'translate-x-0' : 'translate-x-full',
-          )}
-        >
-          <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
-            <h2 className="text-sm font-semibold text-text-1">{title}</h2>
-            <button
-              onClick={onClose}
-              className="rounded-sm p-0.5 text-text-3 transition-colors hover:bg-bg-hover hover:text-text-1"
-            >
-              <X className="size-4" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-hidden">
-            {children}
-          </div>
-        </div>
-      </div>
-    </Dialog>
-  )
-}
 
 /* ============================================
    MCP Form (shared by add / edit / recommend)
@@ -444,7 +410,7 @@ function McpForm({
         <div className="flex-1 space-y-4 overflow-auto p-4">
           {/* Basic info */}
           <div className="flex flex-col gap-1.5">
-               <Label className="text-xs text-text-2">{t('adminMcp.identifierName')}</Label>
+               <Label className="text-[13px] font-medium text-text-2">{t('adminMcp.identifierName')}</Label>
             <Input
               value={form.name}
               onChange={(e) => {
@@ -452,7 +418,7 @@ function McpForm({
                 updateField('name', v)
               }}
               placeholder={t('adminMcp.identifierHint')}
-              className={cn('h-8 text-sm', nameReadonly && 'opacity-50')}
+              className={cn('h-9 text-[13px]', nameReadonly && 'opacity-50')}
               disabled={nameReadonly}
               maxLength={64}
             />
@@ -462,17 +428,17 @@ function McpForm({
           </div>
 
           <div className="flex flex-col gap-1.5">
-               <Label className="text-xs text-text-2">{t('adminMcp.displayName')}</Label>
+               <Label className="text-[13px] font-medium text-text-2">{t('adminMcp.displayName')}</Label>
             <Input
               value={form.displayName}
               onChange={(e) => updateField('displayName', e.target.value)}
               placeholder={t('adminMcp.displayNamePlaceholder')}
-              className="h-8 text-sm"
+              className="h-9 text-[13px]"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-text-2">{t('common.icon')}</Label>
+            <Label className="text-[13px] font-medium text-text-2">{t('common.icon')}</Label>
             <IconPickerTrigger
               value={form.icon}
               onChange={(name: IconName) => updateField('icon', name)}
@@ -480,25 +446,25 @@ function McpForm({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-text-2">{t('common.description')}</Label>
+            <Label className="text-[13px] font-medium text-text-2">{t('common.description')}</Label>
             <textarea
               value={form.description}
               onChange={(e) => updateField('description', e.target.value)}
               spellCheck={false}
               placeholder={t('adminMcp.descriptionPlaceholder')}
               rows={3}
-              className="w-full resize-none rounded-lg border border-border-strong bg-transparent px-2.5 py-2 text-sm text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-2 focus:ring-ring/30"
+              className="w-full resize-none rounded-lg border border-border-strong bg-transparent px-2.5 py-2 text-[13px] text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-2 focus:ring-ring/30"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-text-2">{t('adminMcp.transportType')}</Label>
+            <Label className="text-[13px] font-medium text-text-2">{t('adminMcp.transportType')}</Label>
             <select
               value={form.transport}
               onChange={(e) => handleTransportChange(e.target.value as TransportType)}
               disabled={mode === 'edit'}
               className={cn(
-                'h-8 rounded-lg border border-border-strong bg-transparent px-2.5 text-sm text-text-1 outline-none focus:border-ring focus:ring-3 focus:ring-ring/50',
+                'h-9 rounded-lg border border-border-strong bg-transparent px-2.5 text-[13px] text-text-1 outline-none focus:border-ring focus:ring-3 focus:ring-ring/50',
                 mode === 'edit' && 'opacity-50',
               )}
             >
@@ -515,11 +481,11 @@ function McpForm({
           {form.transport === 'Stdio' && (
             <>
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-text-2">{t('adminMcp.runnerType')}</Label>
+                <Label className="text-[13px] font-medium text-text-2">{t('adminMcp.runnerType')}</Label>
                 <select
                   value={form.stdioType}
                   onChange={(e) => updateField('stdioType', e.target.value as StdioType)}
-                  className="h-8 rounded-lg border border-border-strong bg-transparent px-2.5 text-sm text-text-1 outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
+                  className="h-9 rounded-lg border border-border-strong bg-transparent px-2.5 text-[13px] text-text-1 outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
                 >
                   <option value="npx">{STDIO_TYPE_LABELS.npx}</option>
                   <option value="uvx">{STDIO_TYPE_LABELS.uvx}</option>
@@ -527,7 +493,7 @@ function McpForm({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-text-2">{t('adminMcp.startupArgs')}</Label>
+                <Label className="text-[13px] font-medium text-text-2">{t('adminMcp.startupArgs')}</Label>
                 <div className="space-y-1.5">
                   {form.stdioArgs.map((arg, i) => (
                     <div key={i} className="flex items-center gap-1">
@@ -539,7 +505,7 @@ function McpForm({
                           updateField('stdioArgs', next)
                         }}
                         placeholder={`arg ${i + 1}`}
-                        className="h-8 flex-1 text-sm"
+                        className="h-9 flex-1 text-[13px]"
                       />
                       <button
                         onClick={() => {
@@ -563,7 +529,7 @@ function McpForm({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                 <Label className="text-xs text-text-2">{t('adminMcp.envVars')}</Label>
+                 <Label className="text-[13px] font-medium text-text-2">{t('adminMcp.envVars')}</Label>
                  <div className="space-y-1.5">
                    {form.stdioEnv.map((env, i) => (
                      <div key={i} className="flex items-center gap-1">
@@ -575,7 +541,7 @@ function McpForm({
                            updateField('stdioEnv', next)
                          }}
                          placeholder="KEY"
-                         className="h-8 w-[45%] text-sm font-mono text-xs"
+                         className="h-9 w-[45%] text-[13px] font-mono"
                        />
                        <Input
                          value={env.value}
@@ -585,7 +551,7 @@ function McpForm({
                            updateField('stdioEnv', next)
                          }}
                          placeholder="VALUE"
-                         className="h-8 flex-1 text-sm"
+                         className="h-9 flex-1 text-[13px]"
                        />
                        <button
                          onClick={() => {
@@ -616,17 +582,17 @@ function McpForm({
           {(form.transport === 'SSE' || form.transport === 'StreamableHttp') && (
             <>
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-text-2">{t('adminMcp.serviceAddr')}</Label>
+                <Label className="text-[13px] font-medium text-text-2">{t('adminMcp.serviceAddr')}</Label>
                 <Input
                   value={form.httpUrl}
                   onChange={(e) => updateField('httpUrl', e.target.value)}
                   placeholder="https://mcp.example.com/sse"
-                  className="h-8 text-sm"
+                  className="h-9 text-[13px]"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
-                 <Label className="text-xs text-text-2">{t('adminMcp.requestHeaders')}</Label>
+                 <Label className="text-[13px] font-medium text-text-2">{t('adminMcp.requestHeaders')}</Label>
                  <div className="space-y-1.5">
                    {form.httpHeaders.map((header, i) => (
                      <div key={i} className="flex items-center gap-1">
@@ -638,7 +604,7 @@ function McpForm({
                            updateField('httpHeaders', next)
                          }}
                          placeholder="Header"
-                         className="h-8 w-[45%] text-sm"
+                         className="h-9 w-[45%] text-[13px]"
                        />
                        <Input
                          value={header.value}
@@ -648,7 +614,7 @@ function McpForm({
                            updateField('httpHeaders', next)
                          }}
                          placeholder="Value"
-                         className="h-8 flex-1 text-sm"
+                         className="h-9 flex-1 text-[13px]"
                        />
                        <button
                          onClick={() => {
@@ -675,12 +641,12 @@ function McpForm({
                </div>
 
                <div className="flex flex-col gap-1.5">
-                 <Label className="text-xs text-text-2">{t('adminModels.networkProxy')}</Label>
+                 <Label className="text-[13px] font-medium text-text-2">{t('adminModels.networkProxy')}</Label>
                  <Input
                    value={form.httpProxyUrl}
                    onChange={(e) => updateField('httpProxyUrl', e.target.value)}
                    placeholder="http://127.0.0.1:7890"
-                   className="h-8 text-sm"
+                   className="h-9 text-[13px]"
                  />
                </div>
             </>
@@ -688,14 +654,14 @@ function McpForm({
 
           {/* Remark */}
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-text-2">{t('adminMcp.adminNotes')}</Label>
+            <Label className="text-[13px] font-medium text-text-2">{t('adminMcp.adminNotes')}</Label>
             <textarea
               value={form.remark}
               onChange={(e) => updateField('remark', e.target.value)}
               spellCheck={false}
               placeholder={t('common.optional')}
               rows={2}
-              className="w-full resize-none rounded-lg border border-border-strong bg-transparent px-2.5 py-2 text-sm text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-2 focus:ring-ring/30"
+              className="w-full resize-none rounded-lg border border-border-strong bg-transparent px-2.5 py-2 text-[13px] text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-2 focus:ring-ring/30"
             />
           </div>
 
@@ -708,7 +674,7 @@ function McpForm({
         </div>
 
         <div className="flex justify-end gap-2 border-t border-border px-4 py-3">
-          <Button variant="ghost" size="default" onClick={onCancel} className="text-highlight hover:text-highlight/80">
+          <Button variant="ghost" size="default" onClick={onCancel} className="text-accent hover:text-accent-hover">
             {t('common.cancel')}
           </Button>
           <Button
@@ -716,7 +682,7 @@ function McpForm({
             size="default"
             disabled={!canSave || saving}
             onClick={onSave}
-            className="text-highlight"
+           
           >
             {saving ? (
               <>
@@ -752,7 +718,7 @@ function McpForm({
           </button>
         </div>
         <div className="flex-1 overflow-auto p-4">
-          <pre className="select-text whitespace-pre font-mono text-xs leading-relaxed text-text-2">
+          <pre className="select-text whitespace-pre font-mono text-[13px] leading-relaxed text-text-2">
             {jsonPreview}
           </pre>
         </div>
@@ -794,7 +760,9 @@ function McpDrawer({
   }, [open, initialForm])
 
   return (
-    <Drawer
+    <AppDrawer
+      width="lg"
+      flush
       open={open}
       onClose={onClose}
       title={mode === 'add' ? t('adminMcp.addMcp') : t('adminMcp.editMcp')}
@@ -809,7 +777,7 @@ function McpDrawer({
         mode={mode}
         nameReadonly={nameReadonly}
       />
-    </Drawer>
+    </AppDrawer>
   )
 }
 
@@ -866,33 +834,26 @@ function RecommendDialog({
                       {t('common.install')}
                     </span>
                   ) : (
-                    <span
-                      className={cn(
-                        'shrink-0 inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 text-xs',
-                        item.mcpStatus === 1
-                          ? 'bg-highlight/10 text-highlight'
-                          : 'bg-bg-layer-3 text-text-3',
-                      )}
-                    >
+                    <Badge variant={item.mcpStatus === 1 ? 'success' : 'neutral'} className="shrink-0">
                       <Circle
                         className={cn(
                           'size-1.5',
-                          item.mcpStatus === 1 ? 'fill-highlight' : 'fill-text-3',
+                          item.mcpStatus === 1 ? 'fill-success' : 'fill-text-3',
                         )}
                       />
                       {item.mcpStatus === 1 ? t('common.installed') : t('common.disabled')}
-                    </span>
+                    </Badge>
                   )}
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <span className="inline-flex w-fit items-center gap-1 rounded px-1.5 py-0.5 text-xs text-text-2 border border-border-custom">
+                  <Badge variant="outline" className="w-fit">
                     {item.transport === 'Stdio' ? (
                       <Terminal className="size-2.5" />
                     ) : (
                       <Globe className="size-2.5" />
                     )}
-          {TRANSPORT_LABELS[item.transport as TransportType]}
-                  </span>
+                    {TRANSPORT_LABELS[item.transport as TransportType]}
+                  </Badge>
                   <p className="line-clamp-2 min-h-[2.5em] text-xs leading-relaxed text-text-3">
                     {item.description}
                   </p>
@@ -975,79 +936,79 @@ function McpRow({
 }) {
   const t = useT()
   return (
-    <tr className="transition-colors hover:bg-bg-hover">
-      <td className="py-2.5 pl-4 pr-4">
+    <TableRow className="group">
+      <TableCell className="h-12 py-0 pr-4">
         <div className="flex items-center gap-3">
           <div className="shrink-0">
             <McpIcon icon={item.icon} />
           </div>
-          <div className="flex flex-col gap-0.5 min-w-0">
-            <span className="text-sm font-medium text-text-1 truncate">{item.displayName}</span>
-            <span className="text-xs text-text-3 truncate">{item.name}</span>
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="truncate text-[13px] font-medium text-text-1">{item.displayName}</span>
+            <span className="truncate text-xs text-text-3">{item.name}</span>
           </div>
         </div>
-      </td>
-      <td className="py-2.5 pr-4">
-        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-text-2 border border-border-custom">
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4">
+        <Badge variant="outline">
           {item.transport === 'Stdio' ? (
             <Terminal className="size-3" />
           ) : (
             <Globe className="size-3" />
           )}
           {TRANSPORT_LABELS[item.transport as TransportType]}
-        </span>
-      </td>
-      <td className="py-2.5 pr-4">
+        </Badge>
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4">
         {item.healthLatency > 0 ? (
-          <span className="text-sm tabular-nums text-highlight">
+          <span className="text-[13px] tabular-nums text-accent">
             {item.healthLatency}ms
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 text-sm text-text-3">
+          <span className="inline-flex items-center gap-1 text-[13px] text-text-3">
             <Circle className="size-1.5 fill-current" />
             {t('common.offline')}
           </span>
         )}
-      </td>
-      <td className="py-2.5 pr-4 text-sm text-text-3">
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4 text-text-3">
         {formatRelative(item.healthCheckedAt)}
-      </td>
-      <td className="py-2.5 pr-4">
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4">
         <StatusToggle
           checked={item.status === 1}
           loading={toggling}
           onChange={onToggleStatus}
         />
-      </td>
-      <td className="py-2.5 pr-4">
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4">
         <StatusToggle
           checked={item.alwaysOn === 1}
           loading={togglingAlwaysOn}
           onChange={onToggleAlwaysOn}
         />
-      </td>
-      <td className="py-2.5 pr-4 text-sm text-text-3">
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4 text-text-3">
         {formatDate(item.updated)}
-      </td>
-      <td className="py-2.5 pr-4">
-        <div className="flex items-center gap-0.5">
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4">
+        <div className="flex items-center justify-end gap-0.5 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
           <button
             onClick={onEdit}
             className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1"
-            title={t('common.edit')}
+            title={t('common.edit')} aria-label={t('common.edit')}
           >
             <Pencil className="size-3.5" />
           </button>
           <button
             onClick={onDelete}
             className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-destructive"
-            title={t('common.delete')}
+            title={t('common.delete')} aria-label={t('common.delete')}
           >
             <Trash2 className="size-3.5" />
           </button>
         </div>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   )
 }
 
@@ -1059,23 +1020,23 @@ function TableSkeleton() {
   const t = useT()
   return (
     <div className="flex-1 overflow-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-border text-left text-xs text-text-3">
-            <th className="pb-2 pl-4 pr-4 font-normal">{t('common.name')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('adminMcp.transport')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('adminMcp.latency')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('adminMcp.checkTime')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('common.status')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('adminMcp.alwaysOn')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('common.updated')}</th>
-            <th className="pb-2 pr-4 font-normal" />
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="pr-4">{t('common.name')}</TableHead>
+            <TableHead className="pr-4">{t('adminMcp.transport')}</TableHead>
+            <TableHead className="pr-4">{t('adminMcp.latency')}</TableHead>
+            <TableHead className="pr-4">{t('adminMcp.checkTime')}</TableHead>
+            <TableHead className="pr-4">{t('common.status')}</TableHead>
+            <TableHead className="pr-4">{t('adminMcp.alwaysOn')}</TableHead>
+            <TableHead className="pr-4">{t('common.updated')}</TableHead>
+            <TableHead className="pr-4" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {Array.from({ length: 8 }).map((_, i) => (
-            <tr key={i}>
-              <td className="py-2.5 pl-4 pr-4">
+            <TableRow key={i} className="hover:bg-transparent">
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="flex items-center gap-3">
                   <div className="size-5 shrink-0 animate-pulse rounded-sm bg-bg-layer-3" />
                   <div>
@@ -1083,84 +1044,32 @@ function TableSkeleton() {
                     <div className="mt-1 h-2.5 w-16 animate-pulse rounded bg-bg-layer-2" />
                   </div>
                 </div>
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-5 w-14 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-3.5 w-12 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-3.5 w-14 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-4 w-8 animate-pulse rounded-full bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-4 w-8 animate-pulse rounded-full bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-3.5 w-20 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
-                <div className="h-3.5 w-12 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-            </tr>
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
+                <div className="ml-auto h-3.5 w-12 animate-pulse rounded bg-bg-layer-2" />
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-/* ============================================
-   Empty State
-   ============================================ */
-
-function EmptyState({ hasFilter, onClearFilter }: { hasFilter: boolean; onClearFilter: () => void }) {
-  const t = useT()
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3">
-      <Plug className="size-10 text-text-muted" />
-      <div className="text-center">
-        <p className="text-sm text-text-2">
-          {hasFilter ? t('adminMcp.noMatch') : t('adminMcp.noEndpoints')}
-        </p>
-      </div>
-      {hasFilter ? (
-        <button
-          onClick={onClearFilter}
-          className="text-xs text-interactive transition-colors hover:text-interactive-hover"
-        >
-          {t('adminUsers.clearFilter')}
-        </button>
-      ) : (
-        <p className="text-xs text-text-3">{t('adminMcp.startHint')}</p>
-      )}
-    </div>
-  )
-}
-
-/* ============================================
-   Error State
-   ============================================ */
-
-function ErrorState({ onRetry }: { onRetry: () => void }) {
-  const t = useT()
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4">
-      <AlertCircle className="size-8 text-text-3" />
-      <div className="text-center">
-        <p className="text-sm text-text-2">{t('common.loadFailed')}</p>
-        <p className="mt-1 text-xs text-text-3">{t('adminMcp.fetchFailed')}</p>
-      </div>
-      <button
-        onClick={onRetry}
-        className="inline-flex items-center gap-1 rounded-md bg-bg-layer-2 px-3 py-1.5 text-xs text-text-1 transition-colors hover:bg-bg-layer-3"
-      >
-        <RefreshCw className="size-3" />
-        {t('common.retry')}
-      </button>
+        </TableBody>
+      </Table>
     </div>
   )
 }
@@ -1206,7 +1115,7 @@ function Pagination({
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}
-          className="inline-flex size-7 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1 disabled:opacity-30 disabled:hover:bg-transparent"
+          className="inline-flex size-8 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1 disabled:opacity-30 disabled:hover:bg-transparent"
         >
           <ChevronLeft className="size-3.5" />
         </button>
@@ -1220,7 +1129,7 @@ function Pagination({
               key={p}
               onClick={() => onPageChange(p)}
               className={cn(
-                'inline-flex size-7 items-center justify-center rounded-md text-xs tabular-nums transition-colors',
+                'inline-flex size-8 items-center justify-center rounded-md text-xs tabular-nums transition-colors',
                 p === page
                   ? 'bg-bg-layer-3 text-text-1 font-medium'
                   : 'text-text-3 hover:bg-bg-layer-2 hover:text-text-1',
@@ -1233,7 +1142,7 @@ function Pagination({
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page === totalPages}
-          className="inline-flex size-7 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1 disabled:opacity-30 disabled:hover:bg-transparent"
+          className="inline-flex size-8 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1 disabled:opacity-30 disabled:hover:bg-transparent"
         >
           <ChevronRight className="size-3.5" />
         </button>
@@ -1497,10 +1406,10 @@ export function Component() {
 
   return (
     <div className="flex h-full flex-col bg-bg-base">
-      {/* Toolbar */}
-      <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
-        <h1 className="text-base font-semibold text-text-1">{t('adminMcp.title')}</h1>
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title={t('adminMcp.title')}
+        actions={
+          <>
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-text-3" />
             <input
@@ -1534,41 +1443,62 @@ export function Component() {
             variant="outline"
             size="sm"
             onClick={handleOpenRecommend}
-            className="text-highlight hover:text-highlight"
+            className="text-accent hover:text-accent-hover"
           >
             <Lightbulb className="size-3.5" />
             {t('adminMcp.recommendedTemplates')}
           </Button>
-          <Button variant="default" size="sm" onClick={handleOpenAdd} className="text-highlight hover:text-highlight">
+          <Button variant="default" size="sm" onClick={handleOpenAdd}>
             <Plus className="size-3.5" />
             {t('adminMcp.addMcp')}
           </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Content */}
       {state === 'loading' && <TableSkeleton />}
 
-      {state === 'error' && <ErrorState onRetry={loadData} />}
+      {state === 'error' && <ErrorState description={t('adminMcp.fetchFailed')} onRetry={loadData} />}
 
-      {state === 'empty' && <EmptyState hasFilter={false} onClearFilter={handleClearFilter} />}
+      {state === 'empty' && (
+        <EmptyState
+          icon={<Plug className="size-10 text-text-muted" />}
+          title={t('adminMcp.noEndpoints')}
+          description={t('adminMcp.startHint')}
+        />
+      )}
 
       {state === 'data' && filteredMcps.length === 0 && (
-        <EmptyState hasFilter={hasFilter} onClearFilter={handleClearFilter} />
+        <EmptyState
+          icon={<Plug className="size-10 text-text-muted" />}
+          title={hasFilter ? t('adminMcp.noMatch') : t('adminMcp.noEndpoints')}
+          description={hasFilter ? undefined : t('adminMcp.startHint')}
+          action={
+            hasFilter ? (
+              <button
+                onClick={handleClearFilter}
+                className="text-xs text-interactive transition-colors hover:text-interactive-hover"
+              >
+                {t('adminUsers.clearFilter')}
+              </button>
+            ) : undefined
+          }
+        />
       )}
 
       {state === 'data' && filteredMcps.length > 0 && (
         <>
           <div className="flex-1 overflow-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="sticky top-0 z-10 border-b border-border bg-bg-base text-left text-xs text-text-3">
-                  <th className="pb-2 pl-4 pr-4 font-normal">{t('common.name')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('adminMcp.transport')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('adminMcp.latency')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('adminMcp.checkTime')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('common.status')}</th>
-                  <th className="pb-2 pr-4 font-normal">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="pr-4">{t('common.name')}</TableHead>
+                  <TableHead className="pr-4">{t('adminMcp.transport')}</TableHead>
+                  <TableHead className="pr-4">{t('adminMcp.latency')}</TableHead>
+                  <TableHead className="pr-4">{t('adminMcp.checkTime')}</TableHead>
+                  <TableHead className="pr-4">{t('common.status')}</TableHead>
+                  <TableHead className="pr-4">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <span className="cursor-help border-b border-dashed border-text-muted">
@@ -1577,12 +1507,12 @@ export function Component() {
                       </TooltipTrigger>
                       <TooltipContent>{t('adminMcp.alwaysOnTip')}</TooltipContent>
                     </Tooltip>
-                  </th>
-                  <th className="pb-2 pr-4 font-normal">{t('common.updated')}</th>
-                  <th className="pb-2 pr-4 font-normal" />
-                </tr>
-              </thead>
-              <tbody>
+                  </TableHead>
+                  <TableHead className="pr-4">{t('common.updated')}</TableHead>
+                  <TableHead className="pr-4" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {pagedMcps.map((item) => (
                   <McpRow
                     key={item.mcpId}
@@ -1598,8 +1528,8 @@ export function Component() {
                     togglingAlwaysOn={togglingAlwaysOnIds.has(item.mcpId)}
                   />
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           <Pagination
             page={safePage}

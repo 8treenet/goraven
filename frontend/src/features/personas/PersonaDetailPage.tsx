@@ -4,10 +4,7 @@ import { useT, t as translate } from '@/i18n'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
-  Pencil,
-  Trash2,
-  AlertCircle,
-  RefreshCw,
+  Menu,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,12 +14,30 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Tag } from '@/components/ui/tag'
+import { TONE_TEXT, toneFromKey } from '@/lib/tone'
+import { cn } from '@/lib/utils'
+import { ErrorState } from '@/components/patterns/ErrorState'
+import { PageHeader } from '@/components/patterns/PageHeader'
+import { PageContainer } from '@/components/patterns/PageContainer'
 import { Icon } from '@/components/common/Icon'
+import { useSidebarStore } from '@/stores/sidebar-store'
 
 import { personasApi, mcpApi, skillsApi } from '@/api'
 import type { PersonaDetail, McpInfo, SkillSimple } from '@/api/types'
 
 type PageState = 'loading' | 'data' | 'error'
+
+function MetaRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-4 py-1">
+      <dt className="w-24 shrink-0 text-meta text-text-3">{label}</dt>
+      <dd className="min-w-0 flex-1 text-[13px] leading-[1.65] text-text-1">{children}</dd>
+    </div>
+  )
+}
 
 /* ============================================
    Page
@@ -32,6 +47,7 @@ export function Component() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const t = useT()
+  const openMobile = useSidebarStore((s) => s.openMobile)
   const [state, setState] = useState<PageState>('loading')
   const [data, setData] = useState<PersonaDetail | null>(null)
   const [mcps, setMcps] = useState<McpInfo[]>([])
@@ -83,124 +99,162 @@ export function Component() {
 
   return (
     <div>
-      {/* Sticky toolbar */}
-      <div className="sticky top-0 z-10 flex h-10 items-center justify-between border-b border-border-custom bg-bg-base px-4">
-        <div className="flex items-center gap-2">
-          <button
-            className="flex items-center justify-center size-6 rounded text-text-3 hover:text-text-1 transition-colors"
-            onClick={handleBack}
-          >
-            <ArrowLeft className="size-4" />
-          </button>
-          {data && (
-            <div className="flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-md bg-interactive/10 text-interactive">
-                <Icon name={data.icon} className="size-3.5" />
-              </span>
-              <h1 className="text-[18px] font-semibold text-text-1">{data.name}</h1>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5">
-          <Button variant="ghost" size="default" onClick={handleEdit} className="text-highlight hover:text-highlight">
-            <Pencil className="size-4" />
-            {t('common.edit')}
-          </Button>
-          <Button variant="ghost" size="default" onClick={() => setDeleteOpen(true)} className="text-highlight hover:text-highlight">
-            <Trash2 className="size-4" />
-            {t('common.delete')}
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title={data?.name || t('personas.title')}
+        className="sticky top-0 z-10"
+        actions={
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={openMobile}
+              aria-label={t('sidebar.menu')}
+              className="md:hidden"
+            >
+              <Menu className="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleBack}
+              title={t('common.back')}
+              aria-label={t('common.back')}
+            >
+              <ArrowLeft className="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleEdit}
+              aria-label={t('common.edit')}
+              className="h-8 bg-transparent px-1.5 text-[13px] font-medium text-accent hover:bg-transparent hover:text-accent-hover hover:underline hover:underline-offset-4"
+            >
+              {t('common.edit')}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteOpen(true)}
+              aria-label={t('common.delete')}
+              className="h-8 bg-transparent px-1.5 text-[13px] font-medium text-destructive hover:bg-transparent hover:underline hover:underline-offset-4"
+            >
+              {t('common.delete')}
+            </Button>
+          </>
+        }
+      />
 
       {/* Content */}
-      {state === 'loading' && <Skeleton />}
-      {state === 'error' && <ErrorView onRetry={fetchDetail} />}
+      {state === 'loading' && (
+        <PageContainer className="mx-auto max-w-[680px]">
+          <PersonaDetailSkeleton />
+        </PageContainer>
+      )}
+      {state === 'error' && (
+        <ErrorState description={translate('personas.checkNetwork')} onRetry={fetchDetail} />
+      )}
       {state === 'data' && data && (
-        <div className="mx-auto max-w-[640px] px-6 py-6 space-y-8">
+        <PageContainer className="mx-auto max-w-[680px] space-y-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle>{t('personas.basicInfo')}</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <dl>
+                <MetaRow label={t('personas.personaName')}>{data.name}</MetaRow>
+                <MetaRow label={t('common.icon')}>
+                  <span className="flex items-center gap-2">
+                    <Icon name={data.icon} className="size-4 text-text-3" />
+                    <span>{data.icon}</span>
+                  </span>
+                </MetaRow>
+                <MetaRow label={t('common.category')}>
+                  <span className="flex items-center gap-2">
+                    <Icon name={data.categoryIcon} className={cn('size-4', TONE_TEXT[toneFromKey(data.categoryId)])} />
+                    <Tag tone={toneFromKey(data.categoryId)}>{data.categoryName}</Tag>
+                  </span>
+                </MetaRow>
+              </dl>
+            </CardContent>
+          </Card>
 
-          <section>
-            <h2 className="mb-3 text-sm font-semibold text-text-1">{t('personas.basicInfo')}</h2>
-            <div className="space-y-2">
-              <Row label={t('personas.personaName')} value={data.name} />
-              <Row label={t('common.icon')}>
-                <span className="flex items-center gap-1.5">
-                  <Icon name={data.icon} className="size-3.5 text-interactive" />
-                  <span className="text-sm text-text-1">{data.icon}</span>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle>{t('personas.personaSettings')}</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="whitespace-pre-wrap text-body leading-[1.7] text-text-2">{data.roleInfo}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle>{t('personas.modelConfig')}</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="flex items-center gap-2.5">
+                <ModelIcon icon={data.aiModelId === 0 ? '/favicon.svg' : data.modelIcon} />
+                <span className="text-[13px] text-text-1">
+                  {data.aiModelId === 0 ? t('chat.autoModel') : data.modelName}
                 </span>
-              </Row>
-              <Row label={t('common.category')}>
-                <span className="flex items-center gap-1.5">
-                  <Icon name={data.categoryIcon} className="size-3.5 text-interactive" />
-                  <span className="text-sm text-text-1">{data.categoryName}</span>
-                </span>
-              </Row>
-            </div>
-          </section>
-
-          <section>
-            <h2 className="mb-3 text-sm font-semibold text-text-1">{t('personas.personaSettings')}</h2>
-            <div className="rounded-lg border border-interactive/20 bg-interactive/10 px-3 py-2.5">
-              <p className="text-sm text-text-1 whitespace-pre-wrap leading-relaxed">{data.roleInfo}</p>
-            </div>
-          </section>
-
-          <section>
-            <h2 className="mb-3 text-sm font-semibold text-text-1">{t('personas.modelConfig')}</h2>
-            <div className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5">
-              <ModelIcon icon={data.aiModelId === 0 ? '/favicon.svg' : data.modelIcon} />
-              <span className="text-xs text-text-1">
-                {data.aiModelId === 0 ? t('chat.autoModel') : data.modelName}
-              </span>
-            </div>
-          </section>
-
-          <section>
-            <h2 className="mb-3 text-sm font-semibold text-text-1">
-              {t('personas.mcpTools')}
-              <span className="ml-1 text-xs text-text-3">({data.mcpIds?.length ?? 0})</span>
-            </h2>
-            {data.mcpIds?.length > 0 ? (
-              <div className="space-y-1">
-                {data.mcpIds.map(id => {
-                  const m = mcps.find(x => x.mcpId === id)
-                  if (!m) return null
-                  return (
-                    <div key={id} className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5">
-                      <Icon name={m.icon} className="size-3.5 text-text-3" />
-                      <span className="text-xs text-text-1">{m.displayName || m.name}</span>
-                    </div>
-                  )
-                })}
               </div>
-            ) : (
-              <p className="text-xs text-text-muted">{t('personas.notConfigured')}</p>
-            )}
-          </section>
+            </CardContent>
+          </Card>
 
-          <section>
-            <h2 className="mb-3 text-sm font-semibold text-text-1">
-              {t('personas.skillSelection')}
-              <span className="ml-1 text-xs text-text-3">({data.skillIds?.length ?? 0})</span>
-            </h2>
-            {data.skillIds?.length > 0 ? (
-              <div className="space-y-1">
-                {data.skillIds.map(id => {
-                  const s = skills.find(x => x.userSkillId === id)
-                  if (!s) return null
-                  return (
-                    <div key={id} className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5">
-                      <Icon name={s.icon} className="size-3.5 text-text-3" />
-                      <span className="text-xs text-text-1">{s.skillName}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <p className="text-xs text-text-muted">{t('personas.notConfigured')}</p>
-            )}
-          </section>
-        </div>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle>
+                {t('personas.mcpTools')}
+                <span className="ml-1 text-meta font-normal text-text-3">({data.mcpIds?.length ?? 0})</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {data.mcpIds?.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {data.mcpIds.map(id => {
+                    const m = mcps.find(x => x.mcpId === id)
+                    if (!m) return null
+                    return (
+                      <Tag key={id} tone={2} className="gap-1.5 px-2.5 py-1 text-meta">
+                        <Icon name={m.icon} className="size-3.5" />
+                        {m.displayName || m.name}
+                      </Tag>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="text-meta text-text-muted">{t('personas.notConfigured')}</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle>
+                {t('personas.skillSelection')}
+                <span className="ml-1 text-meta font-normal text-text-3">({data.skillIds?.length ?? 0})</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {data.skillIds?.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {data.skillIds.map(id => {
+                    const s = skills.find(x => x.userSkillId === id)
+                    if (!s) return null
+                    return (
+                      <Tag key={id} tone={4} className="gap-1.5 px-2.5 py-1 text-meta">
+                        <Icon name={s.icon} className="size-3.5" />
+                        {s.skillName}
+                      </Tag>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="text-meta text-text-muted">{t('personas.notConfigured')}</p>
+              )}
+            </CardContent>
+          </Card>
+        </PageContainer>
       )}
 
       {/* Delete dialog */}
@@ -232,44 +286,20 @@ export function Component() {
 
 function ModelIcon({ icon }: { icon?: string }) {
   const [err, setErr] = useState(false)
-  if (!icon || err) return <Icon name="brain" className="size-3.5 shrink-0 text-text-3" />
-  return <img src={icon} alt="" className="size-3.5 shrink-0 rounded object-cover" onError={() => setErr(true)} />
+  if (!icon || err) return <Icon name="brain" className="size-4 shrink-0 text-text-3" />
+  return <img src={icon} alt="" className="size-4 shrink-0 rounded object-cover" onError={() => setErr(true)} />
 }
 
-function Row({ label, value, children }: { label: string; value?: string; children?: React.ReactNode }) {
+function PersonaDetailSkeleton() {
   return (
-    <div className="flex items-center py-1">
-      <span className="w-24 shrink-0 text-xs text-text-3">{label}</span>
-      <div className="flex-1 min-w-0">
-        {children || <span className="text-sm text-text-1">{value}</span>}
-      </div>
-    </div>
-  )
-}
-
-function Skeleton() {
-  return (
-    <div className="mx-auto max-w-[640px] px-6 py-6 space-y-8">
+    <div className="space-y-4">
       {[1, 2, 3, 4].map(i => (
-        <div key={i}>
-          <span className="mb-3 block h-3 w-16 rounded bg-bg-layer-3 animate-pulse" />
-          <span className="block h-8 w-full rounded bg-bg-layer-3 animate-pulse" />
+        <div key={i} className="rounded-xl border border-border bg-bg-layer-1 px-5 py-4 shadow-soft">
+          <Skeleton className="mb-3 block h-4 w-20 rounded" />
+          <Skeleton className="block h-4 w-full max-w-[420px] rounded" />
+          <Skeleton className="mt-2 block h-4 w-2/3 rounded" />
         </div>
       ))}
-    </div>
-  )
-}
-
-function ErrorView({ onRetry }: { onRetry: () => void }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-24">
-      <AlertCircle className="size-8 text-text-muted" />
-      <p className="mt-3 text-sm text-text-2">{translate('common.loadFailed')}</p>
-       <p className="mt-1 text-xs text-text-3">{translate('personas.checkNetwork')}</p>
-      <Button variant="outline" size="default" className="mt-4" onClick={onRetry}>
-        <RefreshCw className="size-4" />
-        {translate('common.retry')}
-      </Button>
     </div>
   )
 }

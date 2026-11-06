@@ -7,11 +7,11 @@ import {
 } from 'recharts'
 
 const COLORS = [
-  'var(--highlight)',
-  'var(--interactive)',
-  'oklch(0.55 0.03 250)',
-  'oklch(0.60 0.02 200)',
-  'oklch(0.65 0.04 60)',
+  'var(--chart-1)',
+  'var(--chart-2)',
+  'var(--chart-3)',
+  'var(--chart-4)',
+  'var(--chart-5)',
 ]
 
 const CHART_HEIGHT = 280

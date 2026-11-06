@@ -1,8 +1,12 @@
 import { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
-import { RefreshCw, MoreHorizontal, Pencil, FolderOpen, AlertCircle, Trash2, Plus, Users } from 'lucide-react'
+import { MoreHorizontal, Pencil, Trash2, Plus, Users, User, Share2 } from 'lucide-react'
 import { useT, t as translate } from '@/i18n'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { EmptyState } from '@/components/patterns/EmptyState'
+import { ErrorState } from '@/components/patterns/ErrorState'
 import { listTeamProjects, deleteTeamProject, updateProjectDescription, createTeamProject, teamProjectGitApi } from '@/api/team-projects'
 import type { TeamProjectItem, GitClonePayload } from '@/api/types'
 import { useUserStore } from '@/stores/user-store'
@@ -175,97 +179,86 @@ export const TeamProjectView = forwardRef<TeamProjectViewHandle, TeamProjectView
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex-1 overflow-auto p-4">
+      <div className="flex-1 overflow-auto p-6">
         {loading && (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,340px),1fr))] gap-4">
             {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-36 animate-pulse rounded-lg border border-border bg-bg-layer-1"
-              />
+              <Card key={i} className="h-36 animate-pulse" />
             ))}
           </div>
         )}
 
         {error && (
-          <div className="flex h-full flex-col items-center justify-center gap-4">
-            <AlertCircle className="size-8 text-text-3" />
-            <p className="text-sm text-text-2">{t('common.loadFailed')}</p>
-            <button
-              onClick={load}
-              className="inline-flex items-center gap-1.5 rounded-md bg-bg-layer-2 px-3 py-1.5 text-sm text-text-1 transition-colors hover:bg-bg-layer-3"
-            >
-              <RefreshCw className="size-4" />
-              {t('common.retry')}
-            </button>
-          </div>
+          <ErrorState className="h-full" onRetry={load} />
         )}
 
         {!loading && !error && projects.length === 0 && (
-          <div className="flex h-full flex-col items-center justify-center gap-3">
-            <FolderOpen className="size-12 text-text-3" />
-            <div className="text-center">
-              <p className="text-sm text-text-2">{t('files.noTeamProjects')}</p>
-              <p className="mt-1 text-sm text-text-3">{t('files.noTeamProjectsHint')}</p>
-            </div>
-            <button
-              onClick={openCreateDialog}
-              className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-bg-layer-2 px-3 py-1.5 text-sm text-text-1 transition-colors hover:bg-bg-layer-3"
-            >
-              <Plus className="size-4" />
-              {t('files.newTeamProject')}
-            </button>
-          </div>
+          <EmptyState
+            icon={<Share2 className="size-10 text-text-muted" />}
+            title={t('files.noTeamProjects')}
+            description={t('files.noTeamProjectsHint')}
+            action={
+              <Button onClick={openCreateDialog}>
+                <Plus className="size-4" />
+                {t('files.newTeamProject')}
+              </Button>
+            }
+            className="h-full"
+          />
         )}
 
         {!loading && !error && projects.length > 0 && (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,340px),1fr))] gap-4">
             {projects.map((project) => (
-              <div
+              <Card
                 key={project.id}
                 onClick={() => onEnterProject(project)}
-                className="group relative flex cursor-pointer flex-col gap-2 rounded-lg border border-border bg-bg-layer-1 p-4 transition-colors hover:border-highlight/40 hover:bg-bg-hover"
+                className="group relative flex cursor-pointer flex-col gap-2 p-4 transition-colors hover:border-border-strong hover:bg-bg-layer-2"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <span className="text-sm font-semibold text-text-1 truncate">
-                    {project.projectName}
+                  <span className="flex min-w-0 items-center gap-1.5 text-section font-semibold text-text-1">
+                    <Share2 className="size-4 shrink-0 text-cat-1" />
+                    <span className="truncate">{project.projectName}</span>
                   </span>
                   {project.isCreator && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={t('sidebar.menu')}
                       onClick={(e) => {
                         e.stopPropagation()
                         setMenuFor({ id: project.id, x: e.clientX, y: e.clientY })
                       }}
-                      className="shrink-0 rounded-sm p-0.5 text-text-3 opacity-100 transition-opacity hover:bg-bg-layer-3 hover:text-text-1 md:opacity-0 md:group-hover:opacity-100"
+                      className="shrink-0 text-text-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
                     >
                       <MoreHorizontal className="size-4" />
-                    </button>
+                    </Button>
                   )}
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                {project.description && (
+                  <p className="text-meta text-text-2 line-clamp-2">{project.description}</p>
+                )}
+
+                <div className="mt-auto flex min-h-6 items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-1.5 text-micro text-text-muted">
                     {project.creatorAvatar ? (
                       <img
                         src={project.creatorAvatar}
                         alt={project.creatorName}
-                        className="size-6 shrink-0 rounded-sm object-cover"
+                        className="size-4 shrink-0 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="inline-flex size-6 shrink-0 items-center justify-center rounded-sm bg-interactive text-[11px] font-medium text-white">
-                        {project.creatorName.charAt(0).toUpperCase()}
-                      </div>
+                      <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-accent text-bg-base">
+                        <User className="size-2.5" />
+                      </span>
                     )}
-<span className="text-base text-text-3 truncate">{project.creatorName}</span>
-                </div>
-
-                {project.description && (
-                  <p className="text-xs text-text-2 line-clamp-2">{project.description}</p>
-                )}
-
-                <div className="mt-auto flex min-h-6 items-center justify-between gap-2">
-                  <span className="text-xs text-text-muted tabular-nums">
-                    {formatTime(project.updatedAt)}
-                  </span>
+                    <span className="truncate">{project.creatorName}</span>
+                    <span className="shrink-0">·</span>
+                    <span className="shrink-0 tabular-nums">
+                      {formatTime(project.updatedAt)}
+                    </span>
+                  </div>
                   <GitCardChip
                     gitEnabled={project.gitEnabled}
                     gitHasRemote={project.gitHasRemote}
@@ -273,7 +266,7 @@ export const TeamProjectView = forwardRef<TeamProjectViewHandle, TeamProjectView
                     onClick={() => setGitProject(project)}
                   />
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}

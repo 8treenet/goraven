@@ -19,21 +19,19 @@ import {
   Folder,
   Users,
   LoaderCircle,
+  LayoutGrid,
+  Zap,
+  Wrench,
+  Bot,
+  Info,
+  Share2,
+  Cpu,
+  Plug,
 } from 'lucide-react'
-import {
-  IconGrid,
-  IconFolderFilled,
-  IconWrench,
-  IconBot,
-  IconInfo,
-  IconUsers,
-  IconSettings,
-  IconShare,
-  IconCpu,
-  IconPlug,
-  IconAutomation,
-} from '@/components/icons'
 import { cn } from '@/lib/utils'
+import { TONE_TEXT, type Tone } from '@/lib/tone'
+import { Logo } from '@/components/brand/Logo'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useSidebarStore, type ProjectFilter } from '@/stores/sidebar-store'
 import { useUserStore } from '@/stores/user-store'
 import type { CurrentUser } from '@/stores/user-store'
@@ -86,6 +84,7 @@ const TIME_GROUP_I18N: Record<TimeGroup, TranslationKey> = {
    ============================================ */
 
 export function Sidebar({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile' }) {
+  const t = useT()
   const location = useLocation()
   const collapsed = useSidebarStore((s) => s.collapsed)
   const mobileOpen = useSidebarStore((s) => s.mobileOpen)
@@ -100,19 +99,17 @@ export function Sidebar({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
 
   if (variant === 'mobile') {
     return (
-      <aside
-        className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-bg-layer-1 transition-transform duration-200 ease-out md:hidden',
-          mobileOpen ? 'translate-x-0' : '-translate-x-full',
-        )}
-      >
-        <SidebarBrand variant="mobile" />
-        {!adminMode && <SidebarNewChat variant="mobile" />}
-        <div className="no-scrollbar flex-1 overflow-y-auto px-2">
-          {adminMode ? <AdminMenu collapsed={false} /> : <MobileUserMenu />}
-        </div>
-        <SidebarUserArea user={user} collapsed={false} variant={variant} />
-      </aside>
+      <Sheet open={mobileOpen} onOpenChange={(v) => !v && closeMobile()}>
+        <SheetContent side="left" hideClose className="w-[248px] sm:max-w-none">
+          <SheetTitle className="sr-only">{t('sidebar.menu')}</SheetTitle>
+          <SidebarBrand variant="mobile" />
+          {!adminMode && <SidebarNewChat variant="mobile" />}
+          <div className="no-scrollbar flex-1 overflow-y-auto px-2">
+            {adminMode ? <AdminMenu collapsed={false} /> : <MobileUserMenu />}
+          </div>
+          <SidebarUserArea user={user} collapsed={false} variant={variant} />
+        </SheetContent>
+      </Sheet>
     )
   }
 
@@ -120,7 +117,7 @@ export function Sidebar({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
     <aside
       className={cn(
         'flex h-dvh flex-col border-r border-border bg-bg-layer-1 transition-all duration-200 ease-out',
-        collapsed ? 'w-16' : 'w-64',
+        collapsed ? 'w-16' : 'w-[248px]',
       )}
     >
       <SidebarBrand variant="desktop" />
@@ -144,20 +141,17 @@ function SidebarBrand({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile' 
   const t = useT()
 
   return (
-    <div className="flex h-12 items-center justify-between px-2 mb-1">
+    <div className="flex h-16 items-center justify-between px-2 mb-1">
       <a
         href="https://goraven.dev"
         target="_blank"
         rel="noopener noreferrer"
+        aria-label="GoRaven"
         className="flex items-center gap-2 min-w-0 transition-opacity hover:opacity-70"
       >
-        <img
-          src="/favicon.svg"
-          alt="GoRaven"
-          className="h-7 w-7 shrink-0"
-        />
+        <Logo size={28} />
         {!(variant === 'desktop' && collapsed) && (
-          <span className="truncate text-base font-semibold text-text-1">
+          <span className="truncate text-section font-semibold text-text-1">
             GoRaven
           </span>
         )}
@@ -206,11 +200,11 @@ function SidebarNewChat({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
       <button
         onClick={handleClick}
         className={cn(
-          'flex w-full items-center gap-2 rounded-md py-1.5 text-sm text-text-1 transition-colors hover:bg-bg-hover',
+          'flex h-9 w-full items-center gap-2 rounded-md text-body font-medium text-text-strong transition-colors hover:bg-bg-hover',
           (variant === 'desktop' && collapsed) ? 'justify-center px-0' : 'px-3',
         )}
       >
-        <MessageSquarePlus className="size-4 shrink-0 text-amber-500" />
+        <MessageSquarePlus className="size-4 shrink-0 text-interactive" />
         {!(variant === 'desktop' && collapsed) && <span>{t('sidebar.newChat')}</span>}
       </button>
     </div>
@@ -304,38 +298,43 @@ function UserMenu() {
       >
         <NavItem
           to="/dashboard"
-          icon={IconGrid}
+          icon={LayoutGrid}
           label={t('sidebar.dashboard')}
           collapsed={collapsed}
           accent
+          tone={1}
         />
         <NavItem
           to="/automation"
-          icon={IconAutomation}
+          icon={Zap}
           label={t('sidebar.automation')}
           collapsed={collapsed}
           accent
+          tone={3}
         />
         <NavItem
           to="/files"
-          icon={IconFolderFilled}
+          icon={Folder}
           label={t('sidebar.workspace')}
           collapsed={collapsed}
           accent
+          tone={2}
         />
         <NavItem
           to="/skills"
-          icon={IconWrench}
+          icon={Wrench}
           label={t('sidebar.skills')}
           collapsed={collapsed}
           accent
+          tone={4}
         />
         <NavItem
           to="/personas"
-          icon={IconBot}
+          icon={Bot}
           label={t('sidebar.personas')}
           collapsed={collapsed}
           accent
+          tone={5}
         />
       </SidebarGroup>
 
@@ -457,18 +456,20 @@ function MobileUserMenu() {
       >
         <NavItem
           to="/automation"
-          icon={IconAutomation}
+          icon={Zap}
           label={t('sidebar.automation')}
           collapsed={false}
           accent
+          tone={3}
           onNavigate={closeMobile}
         />
         <NavItem
           to="/files"
-          icon={IconFolderFilled}
+          icon={Folder}
           label={t('sidebar.workspace')}
           collapsed={false}
           accent
+          tone={2}
           onNavigate={closeMobile}
         />
       </SidebarGroup>
@@ -583,19 +584,18 @@ function ProjectFilterRow() {
             className="flex min-w-0 flex-1 items-center gap-1.5 px-2 py-1 text-xs"
             title={projectFilter?.name ?? t('sidebar.filterAll')}
           >
-            <Filter className="size-3 shrink-0 text-interactive" />
+            {projectFilter?.type === 'personal' ? (
+              <Folder className="size-3 shrink-0 text-folder" />
+            ) : projectFilter?.type === 'team' ? (
+              <Share2 className="size-3 shrink-0 text-cat-1" />
+            ) : (
+              <Filter className="size-3 shrink-0 text-interactive" />
+            )}
             <span className="min-w-0 flex-1 truncate text-left">
               {projectFilter ? projectFilter.name : t('sidebar.filterAll')}
             </span>
             {projectFilter && (
-              <span
-                className={cn(
-                  'shrink-0 rounded px-1 py-px text-[10px] font-medium leading-none',
-                  projectFilter.type === 'team'
-                    ? 'bg-highlight-soft text-highlight'
-                    : 'bg-interactive-soft text-interactive',
-                )}
-              >
+              <span className="shrink-0 rounded bg-interactive-soft px-1 py-px text-micro font-medium leading-none text-interactive">
                 {projectFilter.type === 'team' ? t('sidebar.filterTeamBadge') : t('sidebar.filterPersonalBadge')}
               </span>
             )}
@@ -631,6 +631,7 @@ function ProjectFilterRow() {
             <>
               <ProjectFilterItem
                 icon={Filter}
+                iconClassName="text-interactive"
                 selected={!filtered}
                 onClick={() => handleSelect(null)}
                 label={t('sidebar.filterAll')}
@@ -644,6 +645,7 @@ function ProjectFilterRow() {
                     <ProjectFilterItem
                       key={name}
                       icon={Folder}
+                      iconClassName="text-folder"
                       selected={projectFilter?.type === 'personal' && projectFilter.name === name}
                       onClick={() => handleSelect({ type: 'personal', name })}
                       label={name}
@@ -659,7 +661,8 @@ function ProjectFilterRow() {
                   {teamProjects.map((p) => (
                     <ProjectFilterItem
                       key={p.id}
-                      icon={Users}
+                      icon={Share2}
+                      iconClassName="text-cat-1"
                       selected={projectFilter?.type === 'team' && projectFilter.id === p.id}
                       onClick={() => handleSelect({ type: 'team', id: p.id, name: p.projectName })}
                       label={p.projectName}
@@ -680,11 +683,13 @@ function ProjectFilterRow() {
 
 function ProjectFilterItem({
   icon: Icon,
+  iconClassName,
   label,
   selected,
   onClick,
 }: {
   icon: React.ComponentType<{ className?: string }>
+  iconClassName?: string
   label: string
   selected: boolean
   onClick: () => void
@@ -694,10 +699,10 @@ function ProjectFilterItem({
       onClick={onClick}
       className={cn(
         'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-        selected ? 'bg-highlight-soft font-medium text-highlight' : 'text-text-1 hover:bg-bg-layer-3',
+        selected ? 'bg-interactive-soft font-medium text-interactive' : 'text-text-1 hover:bg-bg-layer-3',
       )}
     >
-      <Icon className={cn('size-3.5 shrink-0', selected ? 'text-highlight' : 'text-text-3')} />
+      <Icon className={cn('size-3.5 shrink-0', iconClassName ?? 'text-text-3')} />
       <span className="min-w-0 flex-1 truncate text-left">{label}</span>
     </button>
   )
@@ -719,8 +724,8 @@ function AdminMenu({ collapsed: collapsedProp }: { collapsed?: boolean }) {
         groupKey="admin-overview"
         collapsed={collapsed}
       >
-        <NavItem to="/admin" icon={IconGrid} label={t('sidebar.dashboard')} collapsed={collapsed} accent />
-        <NavItem to="/admin/systemInfo" icon={IconInfo} label={t('sidebar.systemInfo')} collapsed={collapsed} accent />
+        <NavItem to="/admin" icon={LayoutGrid} label={t('sidebar.dashboard')} collapsed={collapsed} accent tone={1} />
+        <NavItem to="/admin/systemInfo" icon={Info} label={t('sidebar.systemInfo')} collapsed={collapsed} accent tone={2} />
       </SidebarGroup>
 
       <SidebarGroup
@@ -728,9 +733,9 @@ function AdminMenu({ collapsed: collapsedProp }: { collapsed?: boolean }) {
         groupKey="admin-system"
         collapsed={collapsed}
       >
-        <NavItem to="/admin/users" icon={IconUsers} label={t('sidebar.users')} collapsed={collapsed} accent />
-        <NavItem to="/admin/settings" icon={IconSettings} label={t('sidebar.settings')} collapsed={collapsed} accent />
-        <NavItem to="/admin/shared-projects" icon={IconShare} label={t('sidebar.sharedProjects')} collapsed={collapsed} accent />
+        <NavItem to="/admin/users" icon={Users} label={t('sidebar.users')} collapsed={collapsed} accent tone={5} />
+        <NavItem to="/admin/settings" icon={Settings} label={t('sidebar.settings')} collapsed={collapsed} accent tone={3} />
+        <NavItem to="/admin/shared-projects" icon={Share2} label={t('sidebar.sharedProjects')} collapsed={collapsed} accent tone={4} />
       </SidebarGroup>
 
       <SidebarGroup
@@ -738,10 +743,10 @@ function AdminMenu({ collapsed: collapsedProp }: { collapsed?: boolean }) {
         groupKey="admin-config"
         collapsed={collapsed}
       >
-        <NavItem to="/admin/models" icon={IconCpu} label={t('sidebar.models')} collapsed={collapsed} accent />
-        <NavItem to="/admin/mcp" icon={IconPlug} label={t('sidebar.mcp')} collapsed={collapsed} accent />
-        <NavItem to="/admin/skills" icon={IconWrench} label={t('sidebar.skillAdmin')} collapsed={collapsed} accent />
-        <NavItem to="/admin/persona-templates" icon={IconBot} label={t('sidebar.personaTemplates')} collapsed={collapsed} accent />
+        <NavItem to="/admin/models" icon={Cpu} label={t('sidebar.models')} collapsed={collapsed} accent tone={1} />
+        <NavItem to="/admin/mcp" icon={Plug} label={t('sidebar.mcp')} collapsed={collapsed} accent tone={2} />
+        <NavItem to="/admin/skills" icon={Wrench} label={t('sidebar.skillAdmin')} collapsed={collapsed} accent tone={4} />
+        <NavItem to="/admin/persona-templates" icon={Bot} label={t('sidebar.personaTemplates')} collapsed={collapsed} accent tone={5} />
       </SidebarGroup>
     </>
   )
@@ -798,7 +803,7 @@ function NavItem({
   label,
   collapsed,
   indent,
-  accent = false,
+  tone,
   onNavigate,
 }: {
   to: string
@@ -807,6 +812,7 @@ function NavItem({
   collapsed: boolean
   indent?: boolean
   accent?: boolean
+  tone?: Tone
   onNavigate?: () => void
 }) {
   const navigate = useNavigate()
@@ -821,26 +827,19 @@ function NavItem({
   return (
     <button
       onClick={handleClick}
+      aria-current={isActive ? 'page' : undefined}
       className={cn(
-        'flex w-full items-center gap-2 rounded-md py-1.5 text-sm transition-colors',
+        'relative flex h-9 w-full items-center gap-2 rounded-md text-body font-medium text-text-strong transition-colors',
         collapsed ? 'justify-center px-0' : indent ? 'pl-7 pr-2' : 'px-2',
         isActive
-          ? accent
-            ? 'bg-highlight-soft font-medium text-highlight'
-            : 'bg-interactive-soft font-medium text-interactive'
+          ? 'bg-interactive-soft font-medium text-interactive before:absolute before:-left-2 before:top-2 before:bottom-2 before:w-0.5 before:rounded-r before:bg-interactive'
           : 'hover:bg-bg-hover',
       )}
     >
       <Icon
         className={cn(
           'size-4 shrink-0',
-          isActive
-            ? accent
-              ? 'text-highlight'
-              : 'text-interactive'
-            : accent
-              ? 'text-interactive'
-              : 'text-text-3',
+          isActive ? 'text-interactive' : tone ? TONE_TEXT[tone] : 'text-text-3',
         )}
       />
       {!collapsed && <span className="truncate">{label}</span>}
@@ -913,14 +912,14 @@ function SessionItem({
       <button
         onClick={onNavigateOverride ?? (() => navigate(`/chat/${session.sessionId}`))}
         title={session.title}
-        className="group/session flex w-full items-center justify-center py-1.5 transition-colors"
+        className="group/session flex h-8 w-full items-center justify-center transition-colors"
       >
         <span
           className={cn(
-            'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white transition-all',
+            'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-accent-foreground transition-all',
             isActive
-              ? 'bg-highlight ring-2 ring-highlight/30'
-              : 'bg-interactive group-hover/session:scale-110 group-hover/session:ring-2 group-hover/session:ring-border',
+              ? 'bg-interactive ring-2 ring-cat-1/30'
+              : 'bg-cat-1 group-hover/session:scale-110 group-hover/session:ring-2 group-hover/session:ring-border',
           )}
         >
           {initial}
@@ -939,7 +938,7 @@ function SessionItem({
           spellCheck={false}
           onKeyDown={handleKeyDown}
           onBlur={handleCancelRename}
-          className="min-w-0 flex-1 bg-transparent text-sm text-text-1 outline-none"
+          className="min-w-0 flex-1 bg-transparent text-[13px] text-text-1 outline-none"
         />
         <button
           onClick={handleConfirmRename}
@@ -960,17 +959,18 @@ function SessionItem({
   return (
     <div
       className={cn(
-        'group flex items-center rounded-md transition-colors',
+        'group relative flex h-8 items-center rounded-md transition-colors',
         isActive
-          ? 'bg-highlight-soft font-medium text-highlight'
-          : 'text-text-1 hover:bg-bg-hover',
+          ? 'relative bg-accent-soft font-medium text-text-strong before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-0.5 before:rounded-r before:bg-accent'
+          : 'relative text-text-strong hover:bg-bg-hover',
       )}
     >
       <button
         onClick={onNavigateOverride ?? (() => navigate(`/chat/${session.sessionId}`))}
+        aria-current={isActive ? 'page' : undefined}
         className="flex min-w-0 flex-1 py-1.5 pl-3 pr-2"
       >
-        <span className="overflow-hidden text-nowrap text-sm">{session.title}</span>
+        <span className="overflow-hidden text-nowrap text-[13px]">{session.title}</span>
       </button>
 
       <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
@@ -1062,14 +1062,14 @@ function SidebarUserArea({
         <Popover.Trigger asChild>
           <button
             className={cn(
-              'flex w-full items-center gap-2 rounded-md py-1.5 text-sm text-text-2 transition-colors hover:bg-bg-layer-2 hover:text-text-1',
+              'flex w-full items-center gap-2 rounded-md py-1.5 text-[13px] text-text-2 transition-colors hover:bg-bg-layer-2 hover:text-text-1',
               collapsed ? 'justify-center px-0' : 'px-2',
             )}
           >
             {user.avatar ? (
-              <img src={user.avatar} alt={displayName} className="h-6 w-6 shrink-0 rounded-full object-cover" />
+              <img src={user.avatar} alt={displayName} className="h-6 w-6 shrink-0 rounded-full object-cover ring-1 ring-cat-1/30" />
             ) : (
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-interactive text-xs font-semibold text-white">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cat-1 text-xs font-semibold text-bg-base ring-1 ring-cat-1/30">
                 {initial}
               </span>
             )}
@@ -1091,18 +1091,18 @@ function SidebarUserArea({
           >
             <div className="flex items-center gap-2 px-2 py-2">
               {user.avatar ? (
-                <img src={user.avatar} alt={displayName} className="h-8 w-8 shrink-0 rounded-full object-cover" />
+                <img src={user.avatar} alt={displayName} className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-cat-1/30" />
               ) : (
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-interactive text-sm font-semibold text-white">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cat-1 text-sm font-semibold text-bg-base ring-1 ring-cat-1/30">
                   {initial}
                 </span>
               )}
               <div className="min-w-0">
-                <p className="truncate text-sm text-text-1">{displayName}</p>
+                <p className="truncate text-[13px] text-text-1">{displayName}</p>
                 <p className="truncate text-xs text-text-3">@{user.username}</p>
               </div>
               {isAdmin && (
-                <span className="ml-auto shrink-0 rounded bg-highlight px-1.5 py-0.5 text-xs text-highlight-fg">
+                <span className="ml-auto shrink-0 rounded border border-amber-border bg-amber-soft px-1.5 py-0.5 text-xs text-amber-strong">
                   {t('sidebar.admin')}
                 </span>
               )}

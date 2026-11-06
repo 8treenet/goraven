@@ -104,7 +104,7 @@ export function FileDialogs({
                 <Button variant="ghost" size="default" onClick={onClose}>
                   {t('common.cancel')}
                 </Button>
-                <Button variant="default" size="default" onClick={onDelete}>
+                <Button variant="destructive" size="default" onClick={onDelete}>
                   {t('common.delete')}
                 </Button>
               </div>

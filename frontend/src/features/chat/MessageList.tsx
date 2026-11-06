@@ -14,8 +14,8 @@ function MessageList({ messages, isGenerating, isBackground, startTime }: { mess
   const streamingRetry = useChatStore((s) => s.streamingRetry)
 
   return (
-    <div className="px-4 py-6">
-      <div className="mx-auto max-w-3xl space-y-8">
+    <div className="px-6 py-8">
+      <div className="mx-auto max-w-[780px] space-y-7">
         {messages.map((msg) => (
           <MessageBlock key={msg.id} message={msg} />
         ))}
@@ -60,8 +60,8 @@ function MessageBlock({ message }: { message: Message }) {
 function UserMessage({ content }: { content: string }) {
   return (
     <div className="flex justify-end">
-      <div className="max-w-[75%] rounded-lg bg-interactive-soft px-4 py-2.5">
-        <Markdown mode="static" className="text-base leading-relaxed text-text-1 [&_p]:m-0 [&_p]:whitespace-pre-wrap">
+      <div className="max-w-[75%] rounded-xl border border-accent-border/50 bg-accent-soft px-4 py-2.5">
+        <Markdown mode="static" className="text-[15px] leading-7 text-text-1 [&_p]:m-0 [&_p]:whitespace-pre-wrap">
           {content}
         </Markdown>
       </div>
@@ -124,7 +124,7 @@ function AssistantMessage({
           <div key={i} className="flex gap-3 pb-2.5">
             <div className="shrink-0 w-2.5" />
             <div className="flex-1 min-w-0">
-              <Markdown mode="static" className="text-sm leading-relaxed text-text-3">
+              <Markdown mode="static" className="text-[13px] leading-relaxed text-text-3">
                 {seg.content}
               </Markdown>
             </div>
@@ -140,7 +140,7 @@ function AssistantMessage({
                   style={{
                     '--tool-angle': '0deg',
                     backgroundImage:
-                      'linear-gradient(var(--bg-base), var(--bg-base)), conic-gradient(from var(--tool-angle), var(--highlight), transparent 45%, transparent)',
+                      'linear-gradient(var(--bg-base), var(--bg-base)), conic-gradient(from var(--tool-angle), var(--cat-4), transparent 45%, transparent)',
                     backgroundOrigin: 'border-box',
                     backgroundClip: 'padding-box, border-box',
                     animation: 'tool-spin 1.4s linear infinite',
@@ -162,7 +162,7 @@ function AssistantMessage({
               <div className="size-2.5 rounded-full border-2 border-border-custom bg-bg-base" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 text-xs text-text-muted">
+              <div className="flex items-center gap-1.5 text-xs text-warning">
                 <Loader2 className="size-3 shrink-0 animate-spin" />
                 <span>{t('chat.retrying')}</span>
                 <span className="text-text-muted">
@@ -185,12 +185,12 @@ function AssistantMessage({
         <div className="mb-4">
           <button
             onClick={() => setThinkingOpen(!thinkingOpen)}
-            className="flex items-center gap-2 text-sm text-text-muted transition-colors hover:text-text-3 group mb-2"
+            className="flex items-center gap-2 text-[13px] text-text-muted transition-colors hover:text-text-3 group mb-2"
           >
             {isStreaming ? (
-              <Loader2 className="size-[15px] shrink-0 animate-spin" />
+              <Loader2 className="size-[15px] shrink-0 animate-spin text-amber-strong" />
             ) : (
-              <Brain className="size-[15px] shrink-0" />
+              <Brain className="size-[15px] shrink-0 text-amber-strong" />
             )}
             <span className={cn(isStreaming && 'animate-pulse')}>
               {isStreaming ? t('chat.thinkingInProgress') : t('chat.thinkingCompleted')}
@@ -207,7 +207,7 @@ function AssistantMessage({
                     <div className="size-2.5 rounded-full border-2 border-border-custom bg-bg-base" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 text-xs text-text-muted">
+                    <div className="flex items-center gap-1.5 text-xs text-warning">
                       <Loader2 className="size-3 shrink-0 animate-spin" />
                       <span>{t('chat.retrying')}</span>
                       <span className="text-text-muted">
@@ -225,7 +225,7 @@ function AssistantMessage({
       {content && (
         <Markdown
           mode="static"
-          className="text-base leading-relaxed text-text-1"
+          className="text-[15px] leading-7 text-text-1"
         >
           {content}
         </Markdown>
@@ -273,7 +273,7 @@ function AssistantMessage({
             <TooltipContent>{t('chat.dislikeTooltip')}</TooltipContent>
           </Tooltip>
           {showMeta && (
-            <span className="ml-auto flex shrink-0 items-center gap-2 text-xs text-text-muted tabular-nums">
+            <span className="ml-auto flex shrink-0 items-center gap-2 text-meta text-text-muted tabular-nums">
               {metaTime && (
                 <span className="flex items-center gap-1" title={created}>
                   <Clock className="size-3" />
@@ -297,15 +297,15 @@ function AssistantMessage({
 function ToolCallItem({ toolCall }: { toolCall: { icon: string, displayName: string, action: string, duration?: number, success?: boolean } }) {
   const { icon, displayName, action, duration, success } = toolCall
   return (
-    <div className="flex items-center gap-1.5 text-sm text-text-3">
+    <div className="flex items-center gap-1.5 text-[13px] text-text-3">
       <span className="shrink-0">{icon}</span>
       <span className="font-medium text-text-2">{displayName}</span>
       <span className="truncate">{action}</span>
       {duration !== undefined && (
-        <span className="ml-auto shrink-0 text-xs text-text-muted tabular-nums">{duration}ms</span>
+        <span className="ml-auto shrink-0 text-meta text-text-muted tabular-nums">{duration}ms</span>
       )}
       {success !== undefined && (
-        <span className={cn('shrink-0 text-xs', success ? 'text-text-3' : 'text-text-muted')}>
+        <span className={cn('shrink-0 text-xs', success ? 'text-success' : 'text-destructive')}>
           {success ? '✓' : '✗'}
         </span>
       )}

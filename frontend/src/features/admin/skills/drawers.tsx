@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  Check, AlertCircle, Loader2, Search, FileArchive, Trash2,
+  Check, AlertCircle, Loader2, Search, FileArchive, Trash2, Archive,
 } from 'lucide-react'
 import { IconPickerTrigger } from '@/components/common/IconPicker'
 import { Button } from '@/components/ui/button'
@@ -11,9 +11,11 @@ import { cn } from '@/lib/utils'
 import { useT, t as translate } from '@/i18n'
 import { useAdminSkills } from './context'
 import {
-  Drawer, SelectField, SkillIcon, StatusText, EmptyState,
+  SelectField, SkillIcon, StatusText,
   getSourceLabel, getInstallStatusLabel, formatDate,
 } from './shared'
+import { AppDrawer } from '@/components/patterns/AppDrawer'
+import { EmptyState } from '@/components/patterns/EmptyState'
 
 /* ============================================
    System Skill Editor Drawer
@@ -27,12 +29,13 @@ export function SystemEditorDrawer() {
   } = useAdminSkills()
 
   return (
-    <Drawer
+    <AppDrawer
+      width="xl"
+      flush
       open={drawer === 'system-editor'}
       onClose={() => setDrawer(null)}
       title={systemForm.skillId ? t('adminSkills.editGlobalSkill') : t('adminSkills.newGlobalSkill')}
       description={t('adminSkills.editSkillMdHint')}
-      width="w-[720px]"
     >
       <div className="flex h-full">
         <div className="flex w-[260px] shrink-0 flex-col gap-3 border-r border-border p-4">
@@ -60,14 +63,14 @@ export function SystemEditorDrawer() {
           <textarea
             value={systemForm.content}
             onChange={(event) => setSystemForm((form) => ({ ...form, content: event.target.value }))}
-            className="min-h-0 flex-1 resize-none break-all bg-transparent p-4 font-mono text-sm leading-6 text-text-1 outline-none placeholder:text-text-muted"
+            className="min-h-0 flex-1 resize-none break-all bg-transparent p-4 font-mono text-[13px] leading-6 text-text-1 outline-none placeholder:text-text-muted"
             spellCheck={false}
           />
           <div className="flex items-center justify-between border-t border-border px-4 py-3">
             <span className="text-xs text-text-3">{t('adminSkills.effectiveInNew')}</span>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setDrawer(null)} className="text-highlight hover:text-highlight/80">{t('common.cancel')}</Button>
-              <Button onClick={saveSystemSkill} disabled={saving} className="text-highlight">
+              <Button variant="outline" onClick={() => setDrawer(null)} className="text-accent hover:text-accent-hover">{t('common.cancel')}</Button>
+              <Button onClick={saveSystemSkill} disabled={saving}>
                 {saving && <Loader2 className="size-4 animate-spin" />}
                 {t('common.save')}
               </Button>
@@ -75,7 +78,7 @@ export function SystemEditorDrawer() {
           </div>
         </div>
       </div>
-    </Drawer>
+    </AppDrawer>
   )
 }
 
@@ -91,7 +94,9 @@ export function MarketEditorDrawer() {
   } = useAdminSkills()
 
   return (
-    <Drawer
+    <AppDrawer
+      width="lg"
+      flush
       open={drawer === 'market-editor'}
       onClose={() => setDrawer(null)}
       title={t('adminSkills.editMarketSkill')}
@@ -112,29 +117,29 @@ export function MarketEditorDrawer() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs text-text-2">{t('common.icon')}</Label>
+                <Label className="text-[13px] font-medium text-text-2">{t('common.icon')}</Label>
                 <IconPickerTrigger value={marketForm.icon} onChange={(icon) => setMarketForm({ ...marketForm, icon })} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-text-2">{t('adminPersonaTemplates.sortOrder')}</Label>
+                <Label className="text-[13px] font-medium text-text-2">{t('adminPersonaTemplates.sortOrder')}</Label>
                 <Input type="number" value={marketForm.sortOrder} onChange={(event) => setMarketForm({ ...marketForm, sortOrder: Number(event.target.value) })} />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs text-text-2">{t('common.category')}</Label>
+              <Label className="text-[13px] font-medium text-text-2">{t('common.category')}</Label>
               <SelectField value={String(marketForm.categoryId)} onChange={(value) => setMarketForm({ ...marketForm, categoryId: Number(value) })} className="w-full">
                 {categories.map((category) => <option key={category.categoryId} value={category.categoryId}>{category.name}</option>)}
               </SelectField>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs text-text-2">{t('adminSkills.adminNotes')}</Label>
+              <Label className="text-[13px] font-medium text-text-2">{t('adminSkills.adminNotes')}</Label>
               <textarea
                 value={marketForm.remark}
                 onChange={(event) => setMarketForm({ ...marketForm, remark: event.target.value })}
                 spellCheck={false}
-                className="min-h-24 w-full resize-none rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm text-text-1 outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+                className="min-h-24 w-full resize-none rounded-lg border border-input bg-transparent px-2.5 py-2 text-[13px] text-text-1 outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
                 placeholder={t('adminSkills.adminOnly')}
               />
             </div>
@@ -145,18 +150,18 @@ export function MarketEditorDrawer() {
 
             {selectedMarketSkill.content && (
               <div className="space-y-1.5">
-                <Label className="text-xs text-text-2">SKILL.md</Label>
+                <Label className="text-[13px] font-medium text-text-2">SKILL.md</Label>
                 <pre className="overflow-auto rounded-lg bg-bg-layer-2 p-3 text-xs leading-5 text-text-2 whitespace-pre-wrap break-words">{selectedMarketSkill.content}</pre>
               </div>
             )}
           </div>
           <div className="flex justify-end gap-2 border-t border-border p-4">
-            <Button variant="outline" onClick={() => setDrawer(null)} className="text-highlight hover:text-highlight/80">{t('common.cancel')}</Button>
-            <Button onClick={saveMarketSkill} disabled={saving} className="text-highlight">{saving && <Loader2 className="size-4 animate-spin" />}{t('common.save')}</Button>
+            <Button variant="outline" onClick={() => setDrawer(null)} className="text-accent hover:text-accent-hover">{t('common.cancel')}</Button>
+            <Button onClick={saveMarketSkill} disabled={saving}>{saving && <Loader2 className="size-4 animate-spin" />}{t('common.save')}</Button>
           </div>
         </div>
       )}
-    </Drawer>
+    </AppDrawer>
   )
 }
 
@@ -179,12 +184,13 @@ export function ClawHubDrawer() {
   const [clawHubTokenConfigured] = useState(true)
 
   return (
-    <Drawer
+    <AppDrawer
+      width="2xl"
+      flush
       open={drawer === 'clawhub'}
       onClose={() => setDrawer(null)}
       title={t('adminSkills.importTitle')}
       description={t('adminSkills.importDesc')}
-      width="w-[760px]"
     >
       {!clawHubTokenConfigured ? (
         <div className="flex h-full items-center justify-center p-6">
@@ -307,13 +313,13 @@ export function ClawHubDrawer() {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label className="text-xs text-text-2">{t('common.category')}</Label>
+                      <Label className="text-[13px] font-medium text-text-2">{t('common.category')}</Label>
                       <SelectField value={String(clawHubCategoryId)} onChange={(value) => setClawHubCategoryId(Number(value))} className="w-full">
                         {categories.map((category) => <option key={category.categoryId} value={category.categoryId}>{category.name}</option>)}
                       </SelectField>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs text-text-2">{translate('common.icon')}</Label>
+                      <Label className="text-[13px] font-medium text-text-2">{translate('common.icon')}</Label>
                       <IconPickerTrigger value={clawHubIcon} onChange={setClawHubIcon} />
                     </div>
                   </div>
@@ -322,8 +328,8 @@ export function ClawHubDrawer() {
                 <div className="border-t border-border p-4">
                   {importing && <div className="mb-3 flex items-center gap-2 text-xs text-text-3"><Loader2 className="size-4 animate-spin" /> {t('adminSkills.downloadingMd')}</div>}
                   <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setClawHubSelected(null)} disabled={importing} className="text-highlight hover:text-highlight/80">{t('common.back')}</Button>
-                    <Button onClick={importClawHubSkill} disabled={importing} className="text-highlight">{importing && <Loader2 className="size-4 animate-spin" />}{t('adminSkills.confirmImport')}</Button>
+                    <Button variant="outline" onClick={() => setClawHubSelected(null)} disabled={importing} className="text-accent hover:text-accent-hover">{t('common.back')}</Button>
+                    <Button onClick={importClawHubSkill} disabled={importing}>{importing && <Loader2 className="size-4 animate-spin" />}{t('adminSkills.confirmImport')}</Button>
                   </div>
                 </div>
               </>
@@ -335,7 +341,7 @@ export function ClawHubDrawer() {
           </div>
         </div>
       )}
-    </Drawer>
+    </AppDrawer>
   )
 }
 
@@ -354,7 +360,7 @@ export function PublishDrawer() {
   } = useAdminSkills()
 
   return (
-    <Drawer open={drawer === 'publish'} onClose={() => setDrawer(null)} title={t('adminSkills.publishTitle')} description={t('adminSkills.publishDesc')}>
+    <AppDrawer width="lg" flush open={drawer === 'publish'} onClose={() => setDrawer(null)} title={t('adminSkills.publishTitle')} description={t('adminSkills.publishDesc')}>
       <div className="flex h-full flex-col">
         <div className="flex-1 space-y-4 overflow-auto p-4">
           <input
@@ -430,23 +436,23 @@ export function PublishDrawer() {
           )}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs text-text-2">{translate('common.category')}</Label>
+              <Label className="text-[13px] font-medium text-text-2">{translate('common.category')}</Label>
               <SelectField value={String(publishCategoryId)} onChange={(value) => setPublishCategoryId(Number(value))} className="w-full">
                 {categories.map((category) => <option key={category.categoryId} value={category.categoryId}>{category.name}</option>)}
               </SelectField>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs text-text-2">{translate('common.icon')}</Label>
+              <Label className="text-[13px] font-medium text-text-2">{translate('common.icon')}</Label>
               <IconPickerTrigger value={publishIcon} onChange={setPublishIcon} />
             </div>
           </div>
         </div>
         <div className="flex justify-end gap-2 border-t border-border p-4">
-          <Button variant="outline" onClick={() => setDrawer(null)} className="text-highlight hover:text-highlight/80">{translate('common.cancel')}</Button>
-          <Button onClick={publishSkill} disabled={publishing || isUploadingZip} className="text-highlight">{publishing && <Loader2 className="size-4 animate-spin" />}{translate('adminSkills.publishSkill')}</Button>
+          <Button variant="outline" onClick={() => setDrawer(null)} className="text-accent hover:text-accent-hover">{translate('common.cancel')}</Button>
+          <Button onClick={publishSkill} disabled={publishing || isUploadingZip}>{publishing && <Loader2 className="size-4 animate-spin" />}{translate('adminSkills.publishSkill')}</Button>
         </div>
       </div>
-    </Drawer>
+    </AppDrawer>
   )
 }
 
@@ -462,7 +468,7 @@ export function CategoriesDrawer() {
   } = useAdminSkills()
 
   return (
-    <Drawer open={drawer === 'categories'} onClose={() => setDrawer(null)} title={t('adminSkills.categoryManagement')} description={t('adminSkills.catManageHint')}>
+    <AppDrawer width="lg" flush open={drawer === 'categories'} onClose={() => setDrawer(null)} title={t('adminSkills.categoryManagement')} description={t('adminSkills.catManageHint')}>
       <div className="flex h-full flex-col">
         <div className="border-b border-border p-4">
           <div className="grid grid-cols-[1fr_180px_auto] gap-2">
@@ -504,7 +510,7 @@ export function CategoriesDrawer() {
           ))}
         </div>
       </div>
-    </Drawer>
+    </AppDrawer>
   )
 }
 
@@ -519,14 +525,21 @@ export function UsersDrawer() {
   } = useAdminSkills()
 
   return (
-    <Drawer
+    <AppDrawer
+      width="lg"
+      flush
       open={drawer === 'users'}
       onClose={() => setDrawer(null)}
       title={t('adminSkills.installedUsers')}
       description={selectedMarketSkill ? selectedMarketSkill.name : undefined}
     >
       {selectedSkillUsers.length === 0 ? (
-        <EmptyState title={t('adminSkills.noInstalledUsers')} description={t('adminSkills.installedUsersHint')} />
+        <EmptyState
+          variant="card"
+          icon={<Archive className="size-8 text-text-muted" />}
+          title={t('adminSkills.noInstalledUsers')}
+          description={t('adminSkills.installedUsersHint')}
+        />
       ) : (
         <div className="p-4">
           <div className="overflow-hidden rounded-lg bg-bg-layer-2">
@@ -551,7 +564,7 @@ export function UsersDrawer() {
           </div>
         </div>
       )}
-    </Drawer>
+    </AppDrawer>
   )
 }
 

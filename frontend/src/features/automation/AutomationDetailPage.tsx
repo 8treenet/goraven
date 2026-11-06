@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ChevronLeft, ChevronDown, Play, AlertCircle, RefreshCw, Pencil, Power, Trash2, Lock, Loader2 } from 'lucide-react'
+import { ChevronLeft, ChevronDown, Clock, FileText, History, Menu, Play, Pencil, Power, SlidersHorizontal, Trash2, Lock, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -11,10 +11,18 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Tag } from '@/components/ui/tag'
+import { Skeleton } from '@/components/ui/skeleton'
+import { PageHeader } from '@/components/patterns/PageHeader'
+import { PageContainer } from '@/components/patterns/PageContainer'
+import { ErrorState } from '@/components/patterns/ErrorState'
 import { Icon } from '@/components/common/Icon'
+import { useSidebarStore } from '@/stores/sidebar-store'
 import { providersApi } from '@/api'
 import { useT, t as translate } from '@/i18n'
 import { cn } from '@/lib/utils'
+import { TONE_SOFT, TONE_TEXT } from '@/lib/tone'
 import { AutomationStatus } from '@/api/types'
 import type { AutomationTaskDetail, AutomationExecutionItem, AutomationAnswerRsp, ModelInfo } from '@/api/types'
 import {
@@ -27,7 +35,7 @@ import {
   deleteTask,
   executeTask,
 } from '@/api/automation'
-import { StatusBadge, execTypeLabel, scheduleTimeValue, formatDateTime, formatDate, formatDuration } from './shared'
+import { StatusBadge, execTypeLabel, scheduleTimeValue, formatDateTime, formatDate, formatDuration, ExecTypeIcon, execTypeTone } from './shared'
 import { Markdown } from '@/components/common/markdown'
 
 type PageState = 'loading' | 'data' | 'error'
@@ -37,7 +45,7 @@ type ExpandedKey = number | 'requirement' | null
 
 const EXEC_PAGE_SIZE = 10
 
-const MARKDOWN_TEXT_CLASS = 'text-[12.5px] leading-relaxed text-text-2 [&_p]:m-0 [&_p]:whitespace-pre-wrap'
+const MARKDOWN_TEXT_CLASS = 'text-body leading-[1.7] text-text-1 [&_p]:m-0 [&_p]:whitespace-pre-wrap'
 
 /* ============================================
    Page
@@ -48,6 +56,7 @@ export function Component() {
   const taskId = Number(id)
   const navigate = useNavigate()
   const t = useT()
+  const openMobile = useSidebarStore((s) => s.openMobile)
 
   const [state, setState] = useState<PageState>('loading')
   const [detail, setDetail] = useState<AutomationTaskDetail | null>(null)
@@ -193,246 +202,289 @@ export function Component() {
   const done = detail?.status === AutomationStatus.Done
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      {/* Toolbar */}
-      <div className="flex h-11 shrink-0 items-center gap-3 border-b border-border-custom bg-bg-base px-3">
-        <button
-          onClick={() => navigate('/automation')}
-          aria-label={t('common.back')}
-          className="flex shrink-0 items-center gap-0.5 rounded-md px-1.5 py-1 text-[13px] text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
-        >
-          <ChevronLeft className="size-4" />
-          <span className="hidden md:inline">{t('common.back')}</span>
-        </button>
-        {detail && (
+    <div className="flex h-full min-h-0 flex-col bg-bg-base">
+      <PageHeader
+        title={
+          <span className="flex min-w-0 items-center gap-2">
+            {detail && (
+              <span className={cn('flex size-8 shrink-0 items-center justify-center rounded-lg', TONE_SOFT[execTypeTone(detail.execType)], TONE_TEXT[execTypeTone(detail.execType)])}>
+                <ExecTypeIcon execType={detail.execType} className="size-4" />
+              </span>
+            )}
+            <span className="truncate">{detail?.title || t('automation.title')}</span>
+          </span>
+        }
+        className="sticky top-0 z-10"
+        actions={
           <>
-            <span className="min-w-0 truncate text-[15px] font-semibold text-text-1">{detail.title}</span>
-            <StatusBadge status={detail.status} t={t} />
-            <div className="ml-auto flex shrink-0 items-center gap-2">
-              <Button size="sm" disabled={done || busy} onClick={handleExecute} title={t('automation.executeNow')}>
-                <Play className="size-3.5" />
-                <span className="hidden md:inline">{t('automation.executeNow')}</span>
-              </Button>
-              {!done && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={busy}
-                  onClick={handleToggleStatus}
-                  title={detail.status === AutomationStatus.Enabled ? t('automation.disable') : t('automation.enable')}
-                >
-                  <Power className="size-3.5" />
-                  <span className="hidden md:inline">
-                    {detail.status === AutomationStatus.Enabled ? t('automation.disable') : t('automation.enable')}
-                  </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={openMobile}
+              aria-label={t('sidebar.menu')}
+              className="md:hidden"
+            >
+              <Menu className="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/automation')}
+              title={t('common.back')}
+              aria-label={t('common.back')}
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            {detail && (
+              <>
+                <Button size="sm" disabled={done || busy} onClick={handleExecute} title={t('automation.executeNow')}>
+                  <Play className="size-3.5" />
+                  <span className="hidden md:inline">{t('automation.executeNow')}</span>
                 </Button>
-              )}
-              <Button size="sm" variant="destructive" onClick={() => setDeleteOpen(true)} title={t('automation.delete')}>
-                <Trash2 className="size-3.5" />
-                <span className="hidden md:inline">{t('automation.delete')}</span>
-              </Button>
-            </div>
+                {!done && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={busy}
+                    onClick={handleToggleStatus}
+                    title={detail.status === AutomationStatus.Enabled ? t('automation.disable') : t('automation.enable')}
+                    className={
+                      detail.status === AutomationStatus.Enabled
+                        ? undefined
+                        : 'border-success/30 bg-success-soft text-success hover:border-success/40 hover:bg-success/20 hover:text-success'
+                    }
+                  >
+                    <Power className="size-3.5" />
+                    <span className="hidden md:inline">
+                      {detail.status === AutomationStatus.Enabled ? t('automation.disable') : t('automation.enable')}
+                    </span>
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" onClick={openReqEdit} title={t('common.edit')}>
+                  <Pencil className="size-3.5" />
+                  <span className="hidden md:inline">{t('common.edit')}</span>
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => setDeleteOpen(true)} title={t('automation.delete')}>
+                  <Trash2 className="size-3.5" />
+                  <span className="hidden md:inline">{t('automation.delete')}</span>
+                </Button>
+              </>
+            )}
           </>
-        )}
-      </div>
+        }
+      />
 
       {/* Body */}
-      {state === 'loading' && <DetailSkeleton />}
-      {state === 'error' && (
-        <div className="flex flex-1 flex-col items-center justify-center py-24">
-          <AlertCircle className="size-8 text-text-muted" />
-          <p className="mt-3 text-sm text-text-2">{t('automation.loadDetailFailed')}</p>
-          <Button variant="outline" size="default" className="mt-4" onClick={fetchDetail}>
-            <RefreshCw className="size-4" />
-            {t('common.retry')}
-          </Button>
-        </div>
-      )}
-      {state === 'data' && detail && (
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 md:flex-row">
-          {/* Left main */}
-          <div className="flex min-w-0 flex-1 flex-col gap-4">
-            <div className="rounded-lg border border-border-custom bg-bg-base">
-              <div className="flex items-center justify-between border-b border-border-custom px-3.5 py-2.5">
-                <button
-                  onClick={reqOverflow || requirementExpanded ? handleToggleRequirement : undefined}
-                  aria-expanded={requirementExpanded}
-                  className="flex min-w-0 items-center gap-1.5 rounded-md text-left"
-                >
-                  <span className="text-[13px] font-semibold text-text-1">{t('automation.requirement')}</span>
-                  {(reqOverflow || requirementExpanded) && (
-                    <ChevronDown
-                      className={cn(
-                        'size-3.5 shrink-0 text-text-3 transition-transform',
-                        requirementExpanded && 'rotate-180',
-                      )}
-                    />
-                  )}
-                </button>
-                <button
-                  onClick={openReqEdit}
-                  title={t('common.edit')}
-                  className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-text-3 transition-colors hover:bg-bg-hover hover:text-text-1"
-                >
-                  <Pencil className="size-3.5" />
-                  {t('common.edit')}
-                </button>
-              </div>
-              <div className="px-3.5 py-3">
-                <div
-                  ref={reqPreviewRef}
-                  onClick={!requirementExpanded && reqOverflow ? handleToggleRequirement : undefined}
-                  className={cn(
-                    'relative',
-                    !requirementExpanded && 'max-h-[63px] overflow-hidden',
-                    !requirementExpanded && reqOverflow && 'cursor-pointer',
-                  )}
-                >
-                  <div className={cn(!requirementExpanded && 'pointer-events-none')}>
-                    <Markdown mode="static" className={MARKDOWN_TEXT_CLASS}>
-                      {detail.requirement || t('automation.none')}
-                    </Markdown>
-                  </div>
-                  {!requirementExpanded && reqOverflow && (
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-bg-base to-transparent" />
-                  )}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {state === 'loading' && (
+          <PageContainer>
+            <DetailSkeleton />
+          </PageContainer>
+        )}
+        {state === 'error' && (
+          <ErrorState description={t('automation.loadDetailFailed')} onRetry={fetchDetail} />
+        )}
+        {state === 'data' && detail && (
+          <PageContainer className="flex flex-col gap-4 md:flex-row">
+            {/* Left main */}
+            <div className="flex min-w-0 flex-1 flex-col gap-4">
+              <Card>
+                <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3">
+                  <button
+                    onClick={reqOverflow || requirementExpanded ? handleToggleRequirement : undefined}
+                    aria-expanded={requirementExpanded}
+                    className="flex min-w-0 items-center gap-1.5 rounded-md text-left"
+                  >
+                    <span className={cn('flex size-7 shrink-0 items-center justify-center rounded-md', TONE_SOFT[3], TONE_TEXT[3])}>
+                      <FileText className="size-4" />
+                    </span>
+                    <span className="text-section font-semibold text-text-1">{t('automation.requirement')}</span>
+                    {(reqOverflow || requirementExpanded) && (
+                      <ChevronDown
+                        className={cn(
+                          'size-3.5 shrink-0 text-text-3 transition-transform',
+                          requirementExpanded && 'rotate-180',
+                        )}
+                      />
+                    )}
+                  </button>
+                  <button
+                    onClick={openReqEdit}
+                    title={t('common.edit')}
+                    className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-meta text-accent transition-colors hover:bg-accent-soft hover:text-accent"
+                  >
+                    <Pencil className="size-3.5" />
+                    {t('common.edit')}
+                  </button>
                 </div>
-              </div>
-            </div>
-
-            <div className="flex min-h-[240px] flex-1 flex-col rounded-lg border border-border-custom bg-bg-base">
-              <div className="flex items-center justify-between border-b border-border-custom px-3.5 py-2.5">
-                <span className="text-[13px] font-semibold text-text-1">{t('automation.executions')}</span>
-                <span className="text-xs text-text-3">{t('automation.runs').replace('{n}', String(execTotalCount))}</span>
-              </div>
-              <div className="flex-1 overflow-y-auto p-3">
-                {executions.length === 0 && (
-                  <p className="py-10 text-center text-sm text-text-3">{t('automation.emptyExecutions')}</p>
-                )}
-                {executions.map((exec) => {
-                  const expanded = expandedKey === exec.id
-                  const qa = qaCache[exec.id]
-                  return (
-                    <div
-                      key={exec.id}
-                      className={cn(
-                        'mb-2 rounded-lg border px-3 py-2.5 transition-colors',
-                        expanded ? 'border-interactive/40 bg-interactive-soft/40' : 'border-border-custom',
-                      )}
-                    >
-                      <button
-                        className="flex w-full items-center justify-between gap-2 text-left"
-                        onClick={() => handleToggleExpand(exec)}
-                      >
-                        <span className="text-[12.5px] font-medium text-text-1">{formatDateTime(exec.startedAt)}</span>
-                        <span className="flex items-center gap-3 text-xs text-text-3">
-                          {t('automation.duration')} {formatDuration(exec.startedAt, exec.finishedAt, t)}
-                          <ChevronDown className={cn('size-3.5 transition-transform', expanded && 'rotate-180')} />
-                        </span>
-                      </button>
-                      {expanded && (
-                        <div className="mt-2.5 border-t border-dashed border-border-custom pt-2.5">
-                          {!qa ? (
-                            <span className="block py-2 text-center text-xs text-text-3">{t('common.loading')}</span>
-                          ) : qa.answer ? (
-                            <Markdown
-                              mode="static"
-                              className={MARKDOWN_TEXT_CLASS}
-                            >
-                              {qa.answer}
-                            </Markdown>
-                          ) : (
-                            <p className="py-2 text-center text-xs text-text-3">{t('automation.emptyAnswer')}</p>
-                          )}
-                        </div>
-                      )}
+                <div className="px-5 py-4">
+                  <div
+                    ref={reqPreviewRef}
+                    onClick={!requirementExpanded && reqOverflow ? handleToggleRequirement : undefined}
+                    className={cn(
+                      'relative',
+                      !requirementExpanded && 'max-h-[72px] overflow-hidden',
+                      !requirementExpanded && reqOverflow && 'cursor-pointer',
+                    )}
+                  >
+                    <div className={cn(!requirementExpanded && 'pointer-events-none')}>
+                      <Markdown mode="static" className={MARKDOWN_TEXT_CLASS}>
+                        {detail.requirement || t('automation.none')}
+                      </Markdown>
                     </div>
-                  )
-                })}
-              </div>
-              <div className="flex items-center justify-end gap-3 border-t border-border-custom px-3 py-2">
-                <span className="text-xs text-text-3">
-                  {t('automation.page').replace('{page}', String(execPage)).replace('{total}', String(execTotalPage))}
-                </span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={execPage <= 1}
-                  onClick={() => fetchExecutions(execPage - 1)}
-                >
-                  {t('automation.prevPage')}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={execPage >= execTotalPage}
-                  onClick={() => fetchExecutions(execPage + 1)}
-                >
-                  {t('automation.nextPage')}
-                </Button>
-              </div>
-            </div>
-          </div>
+                    {!requirementExpanded && reqOverflow && (
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-bg-layer-1 to-transparent" />
+                    )}
+                  </div>
+                </div>
+              </Card>
 
-          {/* Right sidebar */}
-          <div className="flex w-full flex-col gap-4 md:w-64 md:shrink-0">
-            <div className="rounded-lg border border-border-custom bg-bg-base">
-              <div className="border-b border-border-custom px-3.5 py-2.5 text-[13px] font-semibold text-text-1">
-                {t('automation.schedule')}
-              </div>
-              <div className="space-y-1 px-3.5 py-3">
-                <KV k="TaskID" v={String(detail.id)} />
-                <KV k={t('automation.execType')} v={execTypeLabel(detail.execType, t)} />
-                <KV k={t('automation.execTime')} v={scheduleTimeValue(detail, t)} />
-                <KV k={t('automation.nextRunAt')} v={formatDateTime(detail.nextRunAt)} />
-                <KV k={t('automation.createdAt')} v={formatDate(detail.created)} />
-              </div>
+              <Card className="flex min-h-[280px] flex-1 flex-col">
+                <div className="flex items-center justify-between border-b border-border px-5 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className={cn('flex size-7 shrink-0 items-center justify-center rounded-md', TONE_SOFT[1], TONE_TEXT[1])}>
+                      <History className="size-4" />
+                    </span>
+                    <span className="text-section font-semibold text-text-1">{t('automation.executions')}</span>
+                  </div>
+                  <span className="text-meta text-text-2">{t('automation.runs').replace('{n}', String(execTotalCount))}</span>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  {executions.length === 0 && (
+                    <p className="py-10 text-center text-meta text-text-3">{t('automation.emptyExecutions')}</p>
+                  )}
+                  {executions.map((exec) => {
+                    const expanded = expandedKey === exec.id
+                    const qa = qaCache[exec.id]
+                    return (
+                      <div
+                        key={exec.id}
+                        className="border-b border-border last:border-b-0"
+                      >
+                        <button
+                          className="flex min-h-[44px] w-full items-center justify-between gap-2 px-5 py-2.5 text-left"
+                          onClick={() => handleToggleExpand(exec)}
+                        >
+                          <span className="flex items-center gap-1.5 text-meta font-medium tabular-nums text-text-1">
+                            <Clock className="size-3.5 shrink-0 text-cat-1" />
+                            {formatDateTime(exec.startedAt)}
+                          </span>
+                          <span className="flex items-center gap-3 text-meta text-text-2">
+                            {t('automation.duration')} {formatDuration(exec.startedAt, exec.finishedAt, t)}
+                            <ChevronDown className={cn('size-3.5 transition-transform', expanded && 'rotate-180')} />
+                          </span>
+                        </button>
+                        {expanded && (
+                          <div className="border-t border-dashed border-border px-5 py-3">
+                            {!qa ? (
+                              <span className="block py-2 text-center text-meta text-text-3">{t('common.loading')}</span>
+                            ) : qa.answer ? (
+                              <Markdown
+                                mode="static"
+                                className={MARKDOWN_TEXT_CLASS}
+                              >
+                                {qa.answer}
+                              </Markdown>
+                            ) : (
+                              <p className="py-2 text-center text-meta text-text-3">{t('automation.emptyAnswer')}</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="flex items-center justify-end gap-3 border-t border-border px-5 py-2.5">
+                  <span className="text-meta text-text-3">
+                    {t('automation.page').replace('{page}', String(execPage)).replace('{total}', String(execTotalPage))}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={execPage <= 1}
+                    onClick={() => fetchExecutions(execPage - 1)}
+                  >
+                    {t('automation.prevPage')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={execPage >= execTotalPage}
+                    onClick={() => fetchExecutions(execPage + 1)}
+                  >
+                    {t('automation.nextPage')}
+                  </Button>
+                </div>
+              </Card>
             </div>
 
-            <div className="rounded-lg border border-border-custom bg-bg-base">
-              <div className="border-b border-border-custom px-3.5 py-2.5 text-[13px] font-semibold text-text-1">
-                {t('automation.runConfig')}
-              </div>
-              <div className="space-y-1 px-3.5 py-3">
-                <ModelRow
-                  detail={detail}
-                  onChanged={(aiModelId, aiModelName) =>
-                    setDetail((prev) => (prev ? { ...prev, aiModelId, aiModelName } : prev))
-                  }
-                />
-                <KV
-                  k={t('automation.persona')}
-                  v={detail.personaName || t('automation.none')}
-                />
-                {(detail.sharedProjectId > 0 || detail.project) && (
-                  <KV
-                    k={detail.sharedProjectId > 0 ? t('automation.teamProject') : t('automation.project')}
-                    v={
-                      detail.sharedProjectId > 0
-                        ? detail.sharedProjectName || t('automation.none')
-                        : detail.project
+            {/* Right sidebar */}
+            <div className="flex w-full flex-col gap-4 md:w-80 md:shrink-0">
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className={cn('flex size-7 shrink-0 items-center justify-center rounded-md', TONE_SOFT[execTypeTone(detail.execType)], TONE_TEXT[execTypeTone(detail.execType)])}>
+                      <ExecTypeIcon execType={detail.execType} className="size-4" />
+                    </span>
+                    <CardTitle>{t('automation.schedule')}</CardTitle>
+                    <StatusBadge status={detail.status} t={t} />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2 pt-0">
+                  <KV k="TaskID" v={String(detail.id)} />
+                  <KV k={t('automation.execType')} v={execTypeLabel(detail.execType, t)} />
+                  <KV k={t('automation.execTime')} v={scheduleTimeValue(detail, t)} />
+                  <KV k={t('automation.nextRunAt')} v={formatDateTime(detail.nextRunAt)} />
+                  <KV k={t('automation.createdAt')} v={formatDate(detail.created)} />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className={cn('flex size-7 shrink-0 items-center justify-center rounded-md', TONE_SOFT[2], TONE_TEXT[2])}>
+                      <SlidersHorizontal className="size-4" />
+                    </span>
+                    <CardTitle>{t('automation.runConfig')}</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2 pt-0">
+                  <ModelRow
+                    detail={detail}
+                    onChanged={(aiModelId, aiModelName) =>
+                      setDetail((prev) => (prev ? { ...prev, aiModelId, aiModelName } : prev))
                     }
                   />
-                )}
-                {(detail.mcpNames.length > 0 || detail.skillNames.length > 0) && (
-                  <div className="flex flex-wrap gap-1 pt-1.5">
-                    {detail.mcpNames.map((n) => (
-                      <span key={`mcp-${n}`} className="rounded-sm bg-interactive/10 px-1.5 py-0.5 text-[11px] text-interactive">
-                        @{n}
-                      </span>
-                    ))}
-                    {detail.skillNames.map((n) => (
-                      <span key={`skill-${n}`} className="rounded-sm bg-highlight-soft px-1.5 py-0.5 text-[11px] text-highlight">
-                        {n}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
+                  <KV
+                    k={t('automation.persona')}
+                    v={detail.personaName || t('automation.none')}
+                  />
+                  {(detail.sharedProjectId > 0 || detail.project) && (
+                    <KV
+                      k={detail.sharedProjectId > 0 ? t('automation.teamProject') : t('automation.project')}
+                      v={
+                        detail.sharedProjectId > 0
+                          ? detail.sharedProjectName || t('automation.none')
+                          : detail.project
+                      }
+                    />
+                  )}
+                  {(detail.mcpNames.length > 0 || detail.skillNames.length > 0) && (
+                    <div className="flex flex-wrap gap-1.5 pt-1.5">
+                      {detail.mcpNames.map((n) => (
+                        <Tag key={`mcp-${n}`} tone={2} className="text-meta">@{n}</Tag>
+                      ))}
+                      {detail.skillNames.map((n) => (
+                        <Tag key={`skill-${n}`} tone={4} className="text-meta">{n}</Tag>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
-          </div>
-        </div>
-      )}
+          </PageContainer>
+        )}
+      </div>
 
       {/* Requirement edit dialog */}
       <Dialog open={reqEditOpen} onOpenChange={setReqEditOpen}>
@@ -446,7 +498,7 @@ export function Component() {
             onChange={(e) => setReqValue(e.target.value)}
             rows={8}
             spellCheck={false}
-            className="w-full resize-none rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="w-full resize-none rounded-lg border border-border bg-transparent px-3 py-2 text-[13px] leading-[1.65] transition-colors outline-none placeholder:text-text-muted focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
           />
           <div className="mt-4 flex justify-end gap-2">
             <Button variant="outline" size="default" onClick={() => setReqEditOpen(false)} disabled={reqSaving}>
@@ -485,8 +537,8 @@ export function Component() {
 function KV({ k, v }: { k: string; v: string }) {
   return (
     <div className="flex items-start justify-between gap-3 py-0.5">
-      <span className="shrink-0 text-xs text-text-3">{k}</span>
-      <span className="text-right text-xs text-text-1">{v}</span>
+      <span className="shrink-0 text-meta text-text-3">{k}</span>
+      <span className="text-right text-meta text-text-1">{v}</span>
     </div>
   )
 }
@@ -515,9 +567,9 @@ function ModelRow({
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (locked || models.length > 0) return
+    if (models.length > 0) return
     providersApi.getAvailableModels().then(setModels).catch(() => {})
-  }, [locked, models.length])
+  }, [models.length])
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -528,16 +580,21 @@ function ModelRow({
   }, [])
 
   const displayName = detail.aiModelName || t('automation.defaultModel')
+  const modelIcon =
+    models.find((m) => m.aiModelId === detail.aiModelId)?.icon ??
+    models.find((m) => m.displayName === detail.aiModelName)?.icon ??
+    (detail.aiModelId === 0 ? '/favicon.svg' : undefined)
   const lockHint = lockedByPersona ? t('automation.modelLockedByPersona') : t('automation.modelLockedDone')
 
   if (locked) {
     return (
       <div className="flex items-start justify-between gap-3 py-0.5">
-        <span className="shrink-0 text-xs text-text-3">{t('automation.model')}</span>
+        <span className="shrink-0 text-meta text-text-3">{t('automation.model')}</span>
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="flex min-w-0 items-center gap-1 text-right text-xs text-text-1">
-              <span className="truncate">{displayName}</span>
+            <span className="flex min-w-0 flex-1 items-center justify-end gap-1 text-meta text-text-1">
+              <ModelIcon icon={modelIcon} />
+              <span className="min-w-0 truncate" title={displayName}>{displayName}</span>
               <Lock className="size-3 shrink-0 text-text-muted" />
             </span>
           </TooltipTrigger>
@@ -565,19 +622,20 @@ function ModelRow({
 
   return (
     <div className="flex items-start justify-between gap-3 py-0.5">
-      <span className="shrink-0 text-xs text-text-3">{t('automation.model')}</span>
-      <div ref={ref} className="relative min-w-0">
+      <span className="shrink-0 text-meta text-text-3">{t('automation.model')}</span>
+      <div ref={ref} className="relative min-w-0 flex-1">
         <button
           onClick={() => setOpen(!open)}
           disabled={saving}
           title={t('automation.changeModel')}
           className={cn(
-            'flex max-w-full items-center gap-1 rounded px-1 -mx-1 text-xs text-text-1 transition-colors hover:bg-bg-hover',
-            open && 'bg-bg-hover',
+            'flex w-full min-w-0 items-center justify-end gap-1 rounded px-1 -mx-1 text-meta text-text-1 transition-colors hover:bg-bg-layer-2',
+            open && 'bg-bg-layer-2',
             saving && 'opacity-60',
           )}
         >
-          <span className="truncate">{displayName}</span>
+          <ModelIcon icon={modelIcon} />
+          <span className="min-w-0 truncate" title={displayName}>{displayName}</span>
           {saving ? (
             <Loader2 className="size-3 shrink-0 animate-spin" />
           ) : (
@@ -585,15 +643,15 @@ function ModelRow({
           )}
         </button>
         {open && (
-          <div className="absolute right-0 top-full z-40 mt-1 max-h-72 w-56 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-lg border border-border-custom bg-bg-layer-2 py-1 shadow-pop">
+          <div className="absolute right-0 top-full z-40 mt-1 max-h-72 w-64 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-lg border border-border bg-bg-layer-1 py-1 shadow-pop">
             <button
               onClick={() => handleSelect(0)}
               className={cn(
-                'flex w-full items-center gap-2 px-3 py-1 text-left text-xs transition-colors hover:bg-bg-layer-3',
+                'flex w-full items-center gap-2 px-3 py-1.5 text-left text-meta transition-colors hover:bg-bg-layer-2',
                 detail.aiModelId === 0 ? 'text-text-1' : 'text-text-2',
               )}
             >
-              <span className={cn('shrink-0 text-sm', detail.aiModelId === 0 ? 'text-interactive' : 'text-text-muted opacity-0')}>
+              <span className={cn('shrink-0 text-sm', detail.aiModelId === 0 ? 'text-accent' : 'text-text-muted opacity-0')}>
                 {'✓'}
               </span>
               <span className="truncate">{t('automation.defaultModel')}</span>
@@ -603,11 +661,11 @@ function ModelRow({
                 key={m.aiModelId}
                 onClick={() => handleSelect(m.aiModelId)}
                 className={cn(
-                  'flex w-full items-center gap-2 px-3 py-1 text-left text-xs transition-colors hover:bg-bg-layer-3',
+                  'flex w-full items-center gap-2 px-3 py-1.5 text-left text-meta transition-colors hover:bg-bg-layer-2',
                   detail.aiModelId === m.aiModelId ? 'text-text-1' : 'text-text-2',
                 )}
               >
-                <span className={cn('shrink-0 text-sm', detail.aiModelId === m.aiModelId ? 'text-interactive' : 'text-text-muted opacity-0')}>
+                <span className={cn('shrink-0 text-sm', detail.aiModelId === m.aiModelId ? 'text-accent' : 'text-text-muted opacity-0')}>
                   {'✓'}
                 </span>
                 <ModelIcon icon={m.icon} />
@@ -623,14 +681,14 @@ function ModelRow({
 
 function DetailSkeleton() {
   return (
-    <div className="flex flex-1 flex-col gap-4 overflow-hidden p-4 md:flex-row">
-      <div className="flex-1 space-y-4">
-        <div className="h-28 rounded-lg bg-bg-layer-3 animate-pulse" />
-        <div className="h-72 rounded-lg bg-bg-layer-3 animate-pulse" />
+    <div className="flex flex-col gap-4 md:flex-row">
+      <div className="flex flex-1 flex-col gap-4">
+        <Skeleton className="h-32 rounded-xl" />
+        <Skeleton className="h-80 rounded-xl" />
       </div>
-      <div className="w-full space-y-4 md:w-64">
-        <div className="h-40 rounded-lg bg-bg-layer-3 animate-pulse" />
-        <div className="h-44 rounded-lg bg-bg-layer-3 animate-pulse" />
+      <div className="flex w-full flex-col gap-4 md:w-72">
+        <Skeleton className="h-44 rounded-xl" />
+        <Skeleton className="h-48 rounded-xl" />
       </div>
     </div>
   )

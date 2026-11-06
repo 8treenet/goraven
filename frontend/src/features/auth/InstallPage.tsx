@@ -1,9 +1,13 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Check, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app-store'
+import { Logo } from '@/components/brand/Logo'
 import { useT, t as translate } from '@/i18n'
 import type { TranslationKey } from '@/i18n'
 import { authApi } from '@/api'
@@ -227,107 +231,108 @@ export function Component() {
   /* ---- render ---- */
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-bg-base px-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-bg-base px-4 py-12">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-24 -top-24 size-80 rounded-full bg-accent-soft/60 blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-32 -right-24 size-96 rounded-full bg-amber-soft/70 blur-3xl"
+      />
       <div className="absolute left-6 top-6 flex items-center gap-2">
-        <img src="/favicon.svg" alt="GoRaven" className="h-7 w-7" />
+        <Logo size={28} />
         <span className="text-sm font-semibold text-text-2">GoRaven</span>
       </div>
       <div className="w-full max-w-md">
 
         {/* Logo */}
-        <div className="mb-10 flex justify-center">
-          <h1 className="text-xl font-semibold text-text-1 tracking-tight">GoRaven</h1>
+        <div className="mb-8 flex justify-center">
+          <h1 className="text-title font-semibold text-text-1 tracking-tight">GoRaven</h1>
         </div>
 
         {/* Step indicator */}
-        <div className="mb-12 text-center">
-          <p className="mb-2 text-sm text-text-3">
-            {String(step + 1).padStart(2, '0')} / {String(stepLabels.length).padStart(2, '0')}
+        <div className="mb-8 text-center">
+          <p className="mb-2 text-meta text-text-3 tabular-nums">
+            <span className="font-medium text-accent">{String(step + 1).padStart(2, '0')}</span>
+            <span> / {String(stepLabels.length).padStart(2, '0')}</span>
           </p>
-          <h1 className="text-2xl font-semibold text-text-1">
+          <h1 className="text-title font-semibold text-text-1">
             {t(stepLabels[step])}
           </h1>
         </div>
 
         {/* Form area */}
         {succeeded ? (
-          <div className="space-y-6 text-center">
-            <div className="mx-auto h-3 w-3 rounded-full bg-highlight animate-pulse" />
-            <p className="text-lg text-text-1">{t('install.systemInitializing')}</p>
-            <p className="text-sm text-text-3">{t('install.autoRedirect')}</p>
-          </div>
+          <Card className="border-t-2 border-t-amber">
+            <CardContent className="space-y-6 p-6 py-10 text-center">
+              <div className="mx-auto size-3 animate-pulse rounded-full bg-success ring-4 ring-success-soft" />
+              <p className="text-lg text-text-1">{t('install.systemInitializing')}</p>
+              <p className="text-sm text-text-3">{t('install.autoRedirect')}</p>
+            </CardContent>
+          </Card>
         ) : (
-          <div className="space-y-6">
-            {step === 0 && <LanguageStep value={data.language} onChange={(v) => { update({ language: v }); useAppStore.getState().setLanguage(v) }} />}
-            {step === 1 && <DomainStep value={data.domain} onChange={setField('domain')} error={errors.domain} />}
-            {step === 2 && <AdminStep data={data} onField={setField} errors={errors} />}
-            {step === 3 && (
-              <DbStep
-                data={data}
-                onField={setField}
-                onFieldNumber={setFieldNumber}
-                onType={(v) => update({ dbType: v as DbType })}
-                errors={errors}
-                testing={dbTesting}
-                testResult={dbTestResult}
-                onTest={testDb}
-              />
-            )}
-            {step === 4 && (
-              <CacheStep
-                data={data}
-                onField={setField}
-                onFieldNumber={setFieldNumber}
-                onType={(v) => update({ cacheType: v as CacheType })}
-                errors={errors}
-                testing={redisTesting}
-                testResult={redisTestResult}
-                onTest={testRedis}
-              />
-            )}
-
-            {/* Submit error */}
-            {submitError && (
-              <p className="text-center text-sm text-text-3">{submitError}</p>
-            )}
-
-            {/* Navigation */}
-            <div className="flex items-center justify-between pt-4">
-              <button
-                type="button"
-                onClick={handleBack}
-                disabled={step === 0 || submitting}
-                className={cn(
-                  'text-sm text-text-3 transition-colors hover:text-text-2',
-                  (step === 0 || submitting) && 'pointer-events-none opacity-30',
-                )}
-              >
-                {t('common.previous')}
-              </button>
-
-              {step < 4 ? (
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  className="rounded-md bg-highlight px-6 py-2 text-sm text-highlight-fg transition-colors hover:opacity-90"
-                >
-                  {t('common.next')}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  className={cn(
-                    'rounded-md bg-highlight px-6 py-2 text-sm text-highlight-fg transition-colors hover:opacity-90',
-                    submitting && 'pointer-events-none opacity-50',
-                  )}
-                >
-                  {submitting ? t('common.submitting') : t('common.submit')}
-                </button>
+          <Card className="border-t-2 border-t-amber">
+            <CardContent className="space-y-6 p-6">
+              {step === 0 && <LanguageStep value={data.language} onChange={(v) => { update({ language: v }); useAppStore.getState().setLanguage(v) }} />}
+              {step === 1 && <DomainStep value={data.domain} onChange={setField('domain')} error={errors.domain} />}
+              {step === 2 && <AdminStep data={data} onField={setField} errors={errors} />}
+              {step === 3 && (
+                <DbStep
+                  data={data}
+                  onField={setField}
+                  onFieldNumber={setFieldNumber}
+                  onType={(v) => update({ dbType: v as DbType })}
+                  errors={errors}
+                  testing={dbTesting}
+                  testResult={dbTestResult}
+                  onTest={testDb}
+                />
               )}
-            </div>
-          </div>
+              {step === 4 && (
+                <CacheStep
+                  data={data}
+                  onField={setField}
+                  onFieldNumber={setFieldNumber}
+                  onType={(v) => update({ cacheType: v as CacheType })}
+                  errors={errors}
+                  testing={redisTesting}
+                  testResult={redisTestResult}
+                  onTest={testRedis}
+                />
+              )}
+
+              {/* Submit error */}
+              {submitError && (
+                <p aria-live="polite" className="text-center text-sm text-destructive">
+                  {submitError}
+                </p>
+              )}
+
+              {/* Navigation */}
+              <div className="flex items-center justify-between pt-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleBack}
+                  disabled={step === 0 || submitting}
+                >
+                  {t('common.previous')}
+                </Button>
+
+                {step < 4 ? (
+                  <Button type="button" onClick={handleNext}>
+                    {t('common.next')}
+                  </Button>
+                ) : (
+                  <Button type="button" onClick={handleSubmit} disabled={submitting}>
+                    {submitting ? t('common.submitting') : t('common.submit')}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
@@ -351,13 +356,15 @@ function LanguageStep({ value, onChange }: { value: string; onChange: (v: 'zh' |
           type="button"
           onClick={() => onChange(opt.value)}
           className={cn(
-            'w-full rounded-md px-5 py-4 text-left transition-colors',
+            'w-full rounded-lg border px-5 py-4 text-left transition-colors',
             value === opt.value
-              ? 'bg-bg-layer-3 ring-1 ring-bg-hover'
-              : 'bg-bg-layer-2 hover:bg-bg-layer-3',
+              ? 'border-accent-border bg-accent-soft'
+              : 'border-border bg-bg-layer-2 hover:border-accent-border hover:bg-bg-layer-3',
           )}
         >
-          <span className="text-sm text-text-1">{opt.label}</span>
+          <span className={cn('text-sm', value === opt.value ? 'font-medium text-accent' : 'text-text-1')}>
+            {opt.label}
+          </span>
           <span className="ml-3 text-xs text-text-3">{opt.sub}</span>
         </button>
       ))}
@@ -369,15 +376,14 @@ function DomainStep({ value, onChange, error }: { value: string; onChange: (e: R
   const t = useT()
   return (
     <div className="space-y-2">
-      <Label className="text-xs text-text-2">{t('install.domainLabel')}</Label>
+      <Label className="text-text-2">{t('install.domainLabel')}</Label>
       <Input
         value={value}
         onChange={onChange}
         placeholder="https://goraven.dev"
-        className="border-0 bg-bg-layer-2 text-sm text-text-1 placeholder:text-text-muted"
       />
-      {error && <p className="text-xs text-text-3">{error}</p>}
-      <p className="text-xs text-text-muted">{t('install.domainHint')}</p>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+      <p className="text-xs text-text-3">{t('install.domainHint')}</p>
     </div>
   )
 }
@@ -424,7 +430,7 @@ function DbStep({ data, onField, onFieldNumber, onType, errors, testing, testRes
           <Field label={t('common.password')} value={data.dbPass} onChange={onField('dbPass')} placeholder={t('install.dbPassPlaceholder')} type="password" error={errors.dbPass} />
           <Field label={t('install.dbName')} value={data.dbName} onChange={onField('dbName')} placeholder="goraven" error={errors.dbName} />
           <TestButton label={t('common.testConnection')} testing={testing} result={testResult} onTest={onTest} />
-          {errors.dbTest && <p className="text-xs text-text-3">{errors.dbTest}</p>}
+          {errors.dbTest && <p className="text-xs text-destructive">{errors.dbTest}</p>}
         </>
       )}
     </div>
@@ -459,7 +465,7 @@ function CacheStep({ data, onField, onFieldNumber, onType, errors, testing, test
           <Field label={t('common.password')} value={data.redisPass} onChange={onField('redisPass')} placeholder={t('install.redisPassPlaceholder')} type="password" error={errors.redisPass} />
           <Field label={t('install.dbIndex')} value={String(data.redisDB)} onChange={onFieldNumber('redisDB')} placeholder={t('install.dbIndexPlaceholder')} />
           <TestButton label={t('common.testConnection')} testing={testing} result={testResult} onTest={onTest} />
-          {errors.redisTest && <p className="text-xs text-text-3">{errors.redisTest}</p>}
+          {errors.redisTest && <p className="text-xs text-destructive">{errors.redisTest}</p>}
         </>
       )}
     </div>
@@ -488,18 +494,15 @@ function Field({ label, value, onChange, placeholder, error, type, filter }: {
 
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs text-text-2">{label}</Label>
+      <Label className="text-text-2">{label}</Label>
       <Input
         value={value}
         onChange={handleChange}
         placeholder={placeholder}
         type={type || 'text'}
-        className={cn(
-          'border-0 bg-bg-layer-2 text-sm text-text-1 placeholder:text-text-muted',
-          error && 'ring-1 ring-text-3',
-        )}
+        aria-invalid={!!error}
       />
-      {error && <p className="text-xs text-text-3">{error}</p>}
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   )
 }
@@ -512,18 +515,18 @@ function TypeSelect({ label, value, onChange, options }: {
 }) {
   return (
     <div className="space-y-2">
-      <Label className="text-xs text-text-2">{label}</Label>
-      <div className="grid rounded-md bg-bg-layer-2 p-0.5" style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
+      <Label className="text-text-2">{label}</Label>
+      <div className="grid rounded-lg border border-border bg-bg-layer-2 p-0.5" style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
         {options.map((opt) => (
           <button
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
             className={cn(
-              'rounded-sm py-2 text-sm text-center transition-colors',
+              'rounded-md py-2 text-center text-[13px] transition-colors',
               value === opt.value
-                ? 'bg-bg-layer-3 text-text-1'
-                : 'text-text-3 hover:text-text-2',
+                ? 'bg-accent-soft font-medium text-accent ring-1 ring-accent-border'
+                : 'text-text-3 hover:bg-bg-layer-3 hover:text-text-2',
             )}
           >
             {opt.label}
@@ -543,19 +546,21 @@ function TestButton({ label, testing, result, onTest }: {
   const t = useT()
   return (
     <div className="flex items-center gap-3">
-      <button
-        type="button"
-        onClick={onTest}
-        disabled={testing}
-        className={cn(
-          'rounded-md bg-highlight px-4 py-1.5 text-xs text-highlight-fg transition-colors hover:opacity-90',
-          testing && 'pointer-events-none opacity-50',
-        )}
-      >
+      <Button type="button" variant="outline" size="sm" onClick={onTest} disabled={testing}>
         {testing ? t('common.testing') : label}
-      </button>
-      {result === 'ok' && <span className="text-xs text-text-2">{t('common.connectionSuccess')}</span>}
-      {result === 'fail' && <span className="text-xs text-text-3">{t('common.connectionFailed')}</span>}
+      </Button>
+      {result === 'ok' && (
+        <span className="flex items-center gap-1 text-xs text-success">
+          <Check className="size-3.5 shrink-0" />
+          {t('common.connectionSuccess')}
+        </span>
+      )}
+      {result === 'fail' && (
+        <span className="flex items-center gap-1 text-xs text-destructive">
+          <X className="size-3.5 shrink-0" />
+          {t('common.connectionFailed')}
+        </span>
+      )}
     </div>
   )
 }

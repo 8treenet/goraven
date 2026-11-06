@@ -2,13 +2,15 @@ import { useState, useCallback, useEffect, useRef, useMemo, forwardRef } from 'r
 import {
   Upload,
   FolderPlus,
-  Plus,
+  ChevronDown,
   Menu,
   RefreshCw,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSidebarStore } from '@/stores/sidebar-store'
 import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/patterns/PageHeader'
+import { PageTabs } from '@/components/patterns/PageTabs'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useT } from '@/i18n'
 import { listFiles, mkdir, rename, deleteFiles, compress, decompress } from '@/api/files'
@@ -54,175 +56,175 @@ export function Component() {
 
   return (
     <div className="flex h-full flex-col bg-bg-base">
-      {/* Tab navigation bar */}
-      <div className="flex h-10 shrink-0 items-center gap-1 border-b border-border px-2 md:px-3">
-        <button
-          onClick={openMobile}
-          aria-label={t('sidebar.menu')}
-          className="shrink-0 text-text-1 transition-colors md:hidden"
-        >
-          <Menu className="size-4" />
-        </button>
-        <div className="flex items-center gap-0">
-          {([
-            ['files', t('files.myFiles')],
-            ['projects', t('files.myProjects')],
-            ['team', t('files.teamProjects')],
-          ] as const).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => switchTab(key)}
-              className={cn(
-                'relative px-2 py-1 text-[13px] transition-colors md:px-3 md:text-sm',
-                tab === key
-                  ? 'text-text-1 font-medium after:absolute after:bottom-[-9px] after:left-0 after:right-0 after:h-[2px] after:bg-highlight after:rounded-full'
-                  : 'text-text-3 hover:text-text-2',
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex-1" />
-
-        {tab === 'files' && (
-          <div className="relative" ref={plusRef}>
+      <PageHeader
+        title={t('sidebar.workspace')}
+        actions={
+          <>
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setPlusOpen((v) => !v)}
-              title={t('files.newFolderTitle')}
-              className="text-highlight hover:text-highlight/80"
+              onClick={openMobile}
+              aria-label={t('sidebar.menu')}
+              className="md:hidden"
             >
-              <Plus className="size-4" />
+              <Menu className="size-4" />
             </Button>
-            {plusOpen && (
-              <div className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-md border border-border bg-bg-layer-2 py-1 shadow-pop">
-                <button
-                  onClick={() => { setPlusOpen(false); mineRef.current?.upload() }}
-                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
-                >
-                  <Upload className="size-3.5" />
-                  {t('files.upload')}
-                </button>
-                <button
-                  onClick={() => { setPlusOpen(false); mineRef.current?.newFolder() }}
-                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
-                >
-                  <FolderPlus className="size-3.5" />
-                  {t('files.newFolderTitle')}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
 
-        {tab === 'projects' && !activeMyProject && (
-          <div className="relative flex items-center gap-0.5" ref={plusRef}>
-            <Tooltip>
-              <TooltipTrigger asChild>
+            {tab === 'files' && (
+              <div className="relative" ref={plusRef}>
                 <Button
                   variant="ghost"
-                  size="icon"
-                  onClick={() => myViewRef.current?.syncProjects()}
-                  className="text-highlight hover:text-highlight/80"
+                  size="sm"
+                  onClick={() => setPlusOpen((v) => !v)}
+                  title={t('files.new')}
+                  aria-expanded={plusOpen}
+                  className="h-8 gap-1 bg-transparent px-1.5 text-[13px] font-medium text-accent hover:bg-transparent hover:text-accent-hover hover:underline hover:underline-offset-4"
                 >
-                  <RefreshCw className="size-4" />
+                  {t('files.new')}
+                  <ChevronDown className={cn('size-3 transition-transform', plusOpen && 'rotate-180')} />
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t('files.refreshMyProjectsTip')}</TooltipContent>
-            </Tooltip>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => myViewRef.current?.createProject()}
-              title={t('files.newProject')}
-              className="text-highlight hover:text-highlight/80"
-            >
-              <Plus className="size-4" />
-            </Button>
-          </div>
-        )}
-
-        {tab === 'projects' && activeMyProject && (
-          <div className="relative" ref={plusRef}>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setPlusOpen((v) => !v)}
-              title={t('files.newFolderTitle')}
-              className="text-highlight hover:text-highlight/80"
-            >
-              <Plus className="size-4" />
-            </Button>
-            {plusOpen && (
-              <div className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-md border border-border bg-bg-layer-2 py-1 shadow-pop">
-                <button
-                  onClick={() => { setPlusOpen(false); myFilesRef.current?.upload() }}
-                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
-                >
-                  <Upload className="size-3.5" />
-                  {t('files.upload')}
-                </button>
-                <button
-                  onClick={() => { setPlusOpen(false); myFilesRef.current?.newFolder() }}
-                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
-                >
-                  <FolderPlus className="size-3.5" />
-                  {t('files.newFolderTitle')}
-                </button>
+                {plusOpen && (
+                  <div className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-md border border-border bg-bg-layer-2 py-1 shadow-pop">
+                    <button
+                      onClick={() => { setPlusOpen(false); mineRef.current?.upload() }}
+                      className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
+                    >
+                      <Upload className="size-3.5 text-cat-1" />
+                      {t('files.upload')}
+                    </button>
+                    <button
+                      onClick={() => { setPlusOpen(false); mineRef.current?.newFolder() }}
+                      className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
+                    >
+                      <FolderPlus className="size-3.5 text-folder" />
+                      {t('files.newFolderTitle')}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
 
-        {tab === 'team' && !activeTeamProject && (
-          <div className="relative" ref={plusRef}>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => teamViewRef.current?.createProject()}
-              title={t('files.newTeamProject')}
-              className="text-highlight hover:text-highlight/80"
-            >
-              <Plus className="size-4" />
-            </Button>
-          </div>
-        )}
-
-        {tab === 'team' && activeTeamProject && (
-          <div className="relative" ref={plusRef}>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setPlusOpen((v) => !v)}
-              title={t('files.newFolderTitle')}
-              className="text-highlight hover:text-highlight/80"
-            >
-              <Plus className="size-4" />
-            </Button>
-            {plusOpen && (
-              <div className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-md border border-border bg-bg-layer-2 py-1 shadow-pop">
-                <button
-                  onClick={() => { setPlusOpen(false); teamFilesRef.current?.upload() }}
-                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
+            {tab === 'projects' && !activeMyProject && (
+              <div className="relative flex items-center gap-0.5" ref={plusRef}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => myViewRef.current?.syncProjects()}
+                    >
+                      <RefreshCw className="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('files.refreshMyProjectsTip')}</TooltipContent>
+                </Tooltip>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => myViewRef.current?.createProject()}
+                  title={t('files.newProject')}
+                  className="h-8 bg-transparent px-1.5 text-[13px] font-medium text-accent hover:bg-transparent hover:text-accent-hover hover:underline hover:underline-offset-4"
                 >
-                  <Upload className="size-3.5" />
-                  {t('files.upload')}
-                </button>
-                <button
-                  onClick={() => { setPlusOpen(false); teamFilesRef.current?.newFolder() }}
-                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
-                >
-                  <FolderPlus className="size-3.5" />
-                  {t('files.newFolderTitle')}
-                </button>
+                  {t('files.new')}
+                </Button>
               </div>
             )}
-          </div>
-        )}
-      </div>
+
+            {tab === 'projects' && activeMyProject && (
+              <div className="relative" ref={plusRef}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPlusOpen((v) => !v)}
+                  title={t('files.new')}
+                  aria-expanded={plusOpen}
+                  className="h-8 gap-1 bg-transparent px-1.5 text-[13px] font-medium text-accent hover:bg-transparent hover:text-accent-hover hover:underline hover:underline-offset-4"
+                >
+                  {t('files.new')}
+                  <ChevronDown className={cn('size-3 transition-transform', plusOpen && 'rotate-180')} />
+                </Button>
+                {plusOpen && (
+                  <div className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-md border border-border bg-bg-layer-2 py-1 shadow-pop">
+                    <button
+                      onClick={() => { setPlusOpen(false); myFilesRef.current?.upload() }}
+                      className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
+                    >
+                      <Upload className="size-3.5 text-cat-1" />
+                      {t('files.upload')}
+                    </button>
+                    <button
+                      onClick={() => { setPlusOpen(false); myFilesRef.current?.newFolder() }}
+                      className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
+                    >
+                      <FolderPlus className="size-3.5 text-folder" />
+                      {t('files.newFolderTitle')}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {tab === 'team' && !activeTeamProject && (
+              <div className="relative" ref={plusRef}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => teamViewRef.current?.createProject()}
+                  title={t('files.newTeamProject')}
+                  className="h-8 bg-transparent px-1.5 text-[13px] font-medium text-accent hover:bg-transparent hover:text-accent-hover hover:underline hover:underline-offset-4"
+                >
+                  {t('files.new')}
+                </Button>
+              </div>
+            )}
+
+            {tab === 'team' && activeTeamProject && (
+              <div className="relative" ref={plusRef}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPlusOpen((v) => !v)}
+                  title={t('files.new')}
+                  aria-expanded={plusOpen}
+                  className="h-8 gap-1 bg-transparent px-1.5 text-[13px] font-medium text-accent hover:bg-transparent hover:text-accent-hover hover:underline hover:underline-offset-4"
+                >
+                  {t('files.new')}
+                  <ChevronDown className={cn('size-3 transition-transform', plusOpen && 'rotate-180')} />
+                </Button>
+                {plusOpen && (
+                  <div className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-md border border-border bg-bg-layer-2 py-1 shadow-pop">
+                    <button
+                      onClick={() => { setPlusOpen(false); teamFilesRef.current?.upload() }}
+                      className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
+                    >
+                      <Upload className="size-3.5 text-cat-1" />
+                      {t('files.upload')}
+                    </button>
+                    <button
+                      onClick={() => { setPlusOpen(false); teamFilesRef.current?.newFolder() }}
+                      className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
+                    >
+                      <FolderPlus className="size-3.5 text-folder" />
+                      {t('files.newFolderTitle')}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        }
+      />
+
+      <PageTabs
+        value={tab}
+        onChange={switchTab}
+        items={[
+          { value: 'files', label: t('files.myFiles') },
+          { value: 'projects', label: t('files.myProjects') },
+          { value: 'team', label: t('files.teamProjects') },
+        ]}
+        className="px-6"
+      />
 
       {/* Content area */}
       <div className="flex-1 min-h-0">

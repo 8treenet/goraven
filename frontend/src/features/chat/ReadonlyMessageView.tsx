@@ -30,8 +30,8 @@ export interface ReadonlyMessage {
 export function ReadonlyUserMessage({ content }: { content: string }) {
   return (
     <div className="flex justify-end">
-      <div className="max-w-[75%] rounded-lg bg-interactive-soft px-4 py-2.5">
-        <Markdown mode="static" className="text-base leading-relaxed text-text-1 [&_p]:m-0 [&_p]:whitespace-pre-wrap">
+      <div className="max-w-[75%] rounded-xl border border-accent-border/50 bg-accent-soft px-4 py-2.5">
+        <Markdown mode="static" compactFiles className="goraven-markdown-compact text-text-1 [&_p]:m-0 [&_p]:whitespace-pre-wrap">
           {content}
         </Markdown>
       </div>
@@ -75,7 +75,7 @@ export function ReadonlyAssistantMessage({
             onClick={() => setThinkingOpen(!thinkingOpen)}
             className="flex items-center gap-2 text-sm text-text-muted transition-colors hover:text-text-3 group mb-2"
           >
-            <Brain className="size-[15px] shrink-0" />
+            <Brain className="size-[15px] shrink-0 text-amber-strong" />
             <span>{t('chat.thinkingCompleted')}</span>
             {thinkingOpen ? <ChevronDown className="size-3 shrink-0" /> : <ChevronRight className="size-3 shrink-0" />}
           </button>
@@ -91,7 +91,7 @@ export function ReadonlyAssistantMessage({
       )}
 
       {content && (
-        <Markdown mode="static" className="text-base leading-relaxed text-text-1">
+        <Markdown mode="static" compactFiles className="goraven-markdown-compact text-text-1">
           {content}
         </Markdown>
       )}
@@ -103,6 +103,7 @@ export function ReadonlyAssistantMessage({
               <button
                 className="rounded p-1 text-text-muted transition-colors hover:bg-bg-layer-2 hover:text-text-2"
                 onClick={handleCopy}
+                aria-label={t('chat.copyTooltip')}
               >
                 {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
               </button>
@@ -117,6 +118,7 @@ export function ReadonlyAssistantMessage({
                   liked === 'up' ? 'text-text-1' : 'text-text-muted hover:text-text-2',
                 )}
                 onClick={() => setLiked(liked === 'up' ? null : 'up')}
+                aria-label={t('chat.likeTooltip')}
               >
                 <ThumbsUp className="size-3.5" fill={liked === 'up' ? 'currentColor' : 'none'} />
               </button>
@@ -131,6 +133,7 @@ export function ReadonlyAssistantMessage({
                   liked === 'down' ? 'text-text-1' : 'text-text-muted hover:text-text-2',
                 )}
                 onClick={() => setLiked(liked === 'down' ? null : 'down')}
+                aria-label={t('chat.dislikeTooltip')}
               >
                 <ThumbsDown className="size-3.5" fill={liked === 'down' ? 'currentColor' : 'none'} />
               </button>
@@ -165,7 +168,7 @@ function ReadonlyThinkingSegmentItem({ segment }: { segment: ReadonlyThinkingSeg
       <div className="flex gap-3 pb-2.5">
         <div className="shrink-0 w-2.5" />
         <div className="flex-1 min-w-0">
-          <Markdown mode="static" className="text-sm leading-relaxed text-text-3">
+          <Markdown mode="static" compactFiles className="goraven-markdown-compact text-text-3">
             {segment.content ?? ''}
           </Markdown>
         </div>

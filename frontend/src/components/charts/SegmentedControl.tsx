@@ -16,7 +16,7 @@ export function SegmentedControl<T extends string | number>({
           key={String(opt.value)}
           onClick={() => onChange(opt.value)}
           className={cn(
-            'rounded-sm px-2 py-0.5 text-xs transition-colors',
+            'h-6 rounded-sm px-2.5 text-micro transition-colors',
             value === opt.value
               ? 'bg-bg-layer-3 text-text-1'
               : 'text-text-3 hover:text-text-2',

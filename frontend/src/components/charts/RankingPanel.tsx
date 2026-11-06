@@ -1,5 +1,7 @@
-import { useMemo } from 'react'
 import { useT } from '@/i18n'
+import { formatNumber } from '@/lib/format'
+import { TONE_BG, type Tone } from '@/lib/tone'
+import { cn } from '@/lib/utils'
 
 export interface RankItem {
   name: string
@@ -9,53 +11,53 @@ export interface RankItem {
 export function RankingPanel({
   title,
   data,
+  tone = 1,
 }: {
   title: string
   data: RankItem[]
+  tone?: Tone
 }) {
   const t = useT()
-  const rankColors = useMemo(
-    () => [
-      'var(--highlight)',
-      'var(--color-interactive)',
-      'var(--chart-4)',
-    ],
-    [],
-  )
-  const maxCount = data.length > 0 ? data[0].count : 1
+  const maxCount = Math.max(data[0]?.count ?? 0, 1)
 
   if (data.length === 0) {
     return (
-      <div className="flex flex-1 flex-col px-6 py-4">
-        <h3 className="shrink-0 text-xs font-semibold text-text-2">{title}</h3>
+      <div className="flex flex-1 flex-col px-5 py-5">
+        <h3 className="flex shrink-0 items-center gap-1.5 text-[13px] font-semibold text-text-2">
+          <span aria-hidden="true" className={cn('size-1.5 rounded-full', TONE_BG[tone])} />
+          {title}
+        </h3>
         <div className="flex flex-1 items-center justify-center">
-          <p className="text-xs text-text-3">{t('common.noData')}</p>
+          <p className="text-meta text-text-3">{t('common.noData')}</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-1 flex-col px-6 py-4">
-      <h3 className="shrink-0 text-xs font-semibold text-text-2">{title}</h3>
-      <div className="mt-3 flex flex-1 flex-col gap-2.5 overflow-y-auto pr-0.5">
+    <div className="flex flex-1 flex-col px-5 py-5">
+      <h3 className="flex shrink-0 items-center gap-1.5 text-[13px] font-semibold text-text-2">
+        <span aria-hidden="true" className={cn('size-1.5 rounded-full', TONE_BG[tone])} />
+        {title}
+      </h3>
+      <div className="mt-3 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pr-0.5">
         {data.map((item, i) => (
-          <div key={item.name} className="flex shrink-0 items-center gap-2">
-            <span className="w-4 shrink-0 text-right text-xs text-text-3 tabular-nums">
+          <div key={item.name} className="flex h-8 shrink-0 items-center gap-2.5">
+            <span className="w-4 shrink-0 text-right text-micro text-text-muted tabular-nums">
               {i + 1}
             </span>
-            <span className="w-24 shrink-0 truncate text-xs text-text-2">
+            <span className="w-24 shrink-0 truncate text-meta text-text-2">
               {item.name}
             </span>
-            <div className="mr-8 flex h-5 flex-1 overflow-hidden rounded-sm bg-bg-layer-2">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-bg-layer-3">
               <div
-                className="h-full transition-all duration-300"
-                style={{
-                  width: `${Math.max((item.count / maxCount) * 100, 2)}%`,
-                  backgroundColor: rankColors[i % rankColors.length],
-                }}
+                className={cn('h-full rounded-full transition-all duration-300', TONE_BG[tone])}
+                style={{ width: `${Math.max((item.count / maxCount) * 100, 2)}%` }}
               />
             </div>
+            <span className="min-w-8 shrink-0 text-right text-meta text-text-3 tabular-nums">
+              {formatNumber(item.count)}
+            </span>
           </div>
         ))}
       </div>

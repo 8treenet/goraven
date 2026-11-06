@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:ui": "node scripts/check-ui-conventions.mjs --strict",
+    "check:ui:report": "node scripts/check-ui-conventions.mjs"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.0",

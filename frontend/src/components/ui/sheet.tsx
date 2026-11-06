@@ -36,8 +36,12 @@ function SheetContent({
   side = 'right',
   className,
   children,
+  hideClose,
   ...props
-}: React.ComponentProps<typeof SheetPrimitive.Content> & { side?: 'right' | 'left' }) {
+}: React.ComponentProps<typeof SheetPrimitive.Content> & {
+  side?: 'right' | 'left'
+  hideClose?: boolean
+}) {
   return (
     <SheetPrimitive.Portal>
       <SheetOverlay />
@@ -50,10 +54,12 @@ function SheetContent({
         {...props}
       >
         {children}
-        <SheetPrimitive.Close className="absolute right-4 top-3.5 text-text-3 transition-colors hover:text-text-1">
-          <X className="size-4" />
-          <span className="sr-only">Close</span>
-        </SheetPrimitive.Close>
+        {!hideClose && (
+          <SheetPrimitive.Close className="absolute right-4 top-3.5 text-text-3 transition-colors hover:text-text-1">
+            <X className="size-4" />
+            <span className="sr-only">Close</span>
+          </SheetPrimitive.Close>
+        )}
       </SheetPrimitive.Content>
     </SheetPrimitive.Portal>
   )

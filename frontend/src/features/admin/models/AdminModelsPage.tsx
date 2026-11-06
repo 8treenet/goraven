@@ -1,16 +1,24 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { toast } from 'sonner'
 import { useT, t as translate } from '@/i18n'
-import { Search, X, Plus } from 'lucide-react'
+import { Search, X, Plus, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { adminModelsApi, adminProvidersApi } from '@/api'
 import type { AdminModelItem, ProviderItem } from '@/api'
 import {
-  EmptyState,
-  ErrorState,
   Pagination,
   TableSkeleton,
 } from './shared'
+import { EmptyState } from '@/components/patterns/EmptyState'
+import { ErrorState } from '@/components/patterns/ErrorState'
+import { PageHeader } from '@/components/patterns/PageHeader'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+} from '@/components/ui/table'
 import type { DialogMode, DrawerMode, ModelEditFormData, ModelFormData, PageState } from './shared'
 import { AddModelDrawer, DeleteModelDialog, EditModelDrawer } from './drawers'
 import { ModelMembersDialog } from './ModelMembersDialog'
@@ -169,10 +177,10 @@ export function Component() {
 
   return (
     <div className="flex h-full flex-col bg-bg-base">
-      {/* Toolbar */}
-      <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
-        <h1 className="text-base font-semibold text-text-1">{t('adminModels.title')}</h1>
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title={t('adminModels.title')}
+        actions={
+          <>
           <div className="relative">
             {/* Hidden dummy fields to prevent Chrome autofill from targeting the search input */}
             <input type="text" name="username" style={{ position: 'absolute', left: -9999 }} tabIndex={-1} autoComplete="username" />
@@ -213,52 +221,74 @@ export function Component() {
             variant="default"
             size="sm"
             onClick={() => setDrawerMode('add')}
-            className="text-highlight hover:text-highlight"
+           
           >
             <Plus className="size-3.5" />
             {t('adminModels.addModel')}
           </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Content */}
       {state === 'loading' && <TableSkeleton />}
 
-      {state === 'error' && <ErrorState onRetry={loadData} />}
+      {state === 'error' && <ErrorState description={t('adminModels.fetchFailedList')} onRetry={loadData} />}
 
       {state === 'empty' && (
         <EmptyState
-          hasFilter={false}
-          onClearFilter={handleClearFilter}
-          onAdd={() => setDrawerMode('add')}
+          tone={1}
+          icon={<Zap className="size-5" />}
+          title={t('adminModels.noModels')}
+          action={
+            <Button variant="default" size="sm" onClick={() => setDrawerMode('add')}>
+              <Plus className="size-3.5" />
+              {t('adminModels.addFirst')}
+            </Button>
+          }
         />
       )}
 
       {state === 'data' && models.length === 0 && (
         <EmptyState
-          hasFilter={hasFilter}
-          onClearFilter={handleClearFilter}
-          onAdd={() => setDrawerMode('add')}
+          tone={1}
+          icon={<Zap className="size-5" />}
+          title={hasFilter ? t('adminModels.noMatch') : t('adminModels.noModels')}
+          action={
+            hasFilter ? (
+              <button
+                onClick={handleClearFilter}
+                className="text-xs text-interactive transition-colors hover:text-interactive-hover"
+              >
+                {t('adminUsers.clearFilter')}
+              </button>
+            ) : (
+              <Button variant="default" size="sm" onClick={() => setDrawerMode('add')}>
+                <Plus className="size-3.5" />
+                {t('adminModels.addFirst')}
+              </Button>
+            )
+          }
         />
       )}
 
       {state === 'data' && models.length > 0 && (
         <>
           <div className="flex-1 overflow-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="sticky top-0 z-10 border-b border-border bg-bg-base text-left text-xs text-text-3">
-                  <th className="pb-2 pl-4 pr-2 font-normal">{t('adminModels.provider')}</th>
-                  <th className="pb-2 pr-2 font-normal">{t('adminModels.modelDisplayName')}</th>
-                  <th className="pb-2 pr-2 font-normal">{t('common.model')}</th>
-                  <th className="pb-2 pr-2 font-normal">{t('adminModels.labels')}</th>
-                  <th className="pb-2 pr-2 font-normal">{t('adminModels.accessLabel')}</th>
-                  <th className="pb-2 pr-2 font-normal">{t('adminModels.contextLength')}</th>
-                  <th className="pb-2 pr-2 font-normal">{t('adminModels.updatedAt')}</th>
-                  <th className="pb-2 pr-4 font-normal" />
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="pl-4 pr-2">{t('adminModels.provider')}</TableHead>
+                  <TableHead className="pr-2">{t('adminModels.modelDisplayName')}</TableHead>
+                  <TableHead className="pr-2">{t('common.model')}</TableHead>
+                  <TableHead className="pr-2">{t('adminModels.labels')}</TableHead>
+                  <TableHead className="pr-2">{t('adminModels.accessLabel')}</TableHead>
+                  <TableHead className="pr-2 text-right">{t('adminModels.contextLength')}</TableHead>
+                  <TableHead className="pr-2">{t('adminModels.updatedAt')}</TableHead>
+                  <TableHead className="pr-4" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {models.map((model) => (
                   <ModelRow
                     key={model.aiModelId}
@@ -281,8 +311,8 @@ export function Component() {
                     onSetVisual={() => handleSetVisual(model.aiModelId, model.isVisual === 1)}
                   />
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           <Pagination
             page={safePage}

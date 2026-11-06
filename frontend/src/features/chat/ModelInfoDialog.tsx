@@ -180,13 +180,13 @@ export function ModelInfoDialog({
                           <span className="w-32 shrink-0 text-xs text-text-3">{t('adminModels.labels')}</span>
                           <span className="flex items-center gap-1">
                             {!!modelInfo.isDefault && (
-                              <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs bg-highlight/15 text-highlight">
+                              <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs bg-accent/15 text-accent">
                                 <Star className="size-2.5" />
                                 {t('common.default')}
                               </span>
                             )}
                             {!!modelInfo.isFlash && (
-                              <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs bg-interactive text-white">
+                              <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs bg-interactive text-bg-base">
                                 <Zap className="size-2.5" />
                                 {t('adminModels.flash')}
                               </span>
@@ -219,7 +219,7 @@ export function ModelInfoDialog({
                 <div className="rounded-lg border border-border bg-bg-layer-2 px-4 py-3 space-y-2">
                   <div className="flex items-center">
                     <span className="w-32 shrink-0 text-xs text-text-3">{t('personas.currentContext')}</span>
-                    <span className="text-sm text-highlight tabular-nums">
+                    <span className="text-sm text-accent tabular-nums">
                       {formatTokensInK(contextTokens)}
                       {modelInfo?.contextLen ? (
                         <span> / {formatK(modelInfo.contextLen)}</span>

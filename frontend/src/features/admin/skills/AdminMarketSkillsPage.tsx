@@ -1,12 +1,21 @@
-import { Upload, Download, Trash2 } from 'lucide-react'
+import { Upload, Download, Trash2, Archive } from 'lucide-react'
 import { Icon } from '@/components/common/Icon'
 import { Button } from '@/components/ui/button'
 import { useT, t as translate } from '@/i18n'
 import { useAdminSkills } from './context'
 import {
-  SearchBox, SelectField, ScopeLabel, StatusToggle, EmptyState,
+  SearchBox, SelectField, ScopeLabel, StatusToggle,
   getSourceLabel,
 } from './shared'
+import { EmptyState } from '@/components/patterns/EmptyState'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table'
 
 export function AdminMarketSkillsPage() {
   const t = useT()
@@ -33,11 +42,11 @@ export function AdminMarketSkillsPage() {
           </SelectField>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setDrawer('publish')} className="text-highlight hover:text-highlight">
+          <Button variant="outline" onClick={() => setDrawer('publish')} className="text-accent hover:text-accent-hover">
             <Upload className="size-4" />
             {t('adminSkills.publishSkill')}
           </Button>
-          <Button onClick={() => openClawHubDrawer()} className="text-highlight hover:text-highlight">
+          <Button onClick={() => openClawHubDrawer()}>
             <Download className="size-4" />
             {t('adminSkills.importFromClawhub')}
           </Button>
@@ -46,13 +55,15 @@ export function AdminMarketSkillsPage() {
 
       {filteredMarketSkills.length === 0 ? (
         <EmptyState
+          variant="card"
+          icon={<Archive className="size-8 text-text-muted" />}
           title={t('adminSkills.emptyMarket')}
           description={t('adminSkills.marketHint')}
           action={<div className="flex gap-2"><Button onClick={() => openClawHubDrawer()}>{t('adminSkills.importFromClawhub')}</Button><Button variant="outline" onClick={() => setDrawer('publish')}>{t('adminSkills.publishSkill')}</Button></div>}
         />
       ) : (
         <div className="overflow-hidden rounded-lg border border-border bg-bg-layer-1">
-          <table className="w-full table-fixed text-sm">
+          <Table className="table-fixed">
             <colgroup>
               <col />
               <col className="w-32" />
@@ -62,66 +73,66 @@ export function AdminMarketSkillsPage() {
               <col className="w-16" />
               <col className="w-36" />
             </colgroup>
-            <thead className="text-xs text-text-3">
-              <tr className="border-b border-border">
-                <th className="px-4 py-3 text-left font-normal">{t('common.skills')}</th>
-                <th className="px-4 py-3 text-left font-normal">{translate('skills.source')}</th>
-                <th className="px-4 py-3 text-left font-normal">{t('common.category')}</th>
-                <th className="px-4 py-3 text-left font-normal">{t('adminSkills.installs')}</th>
-                <th className="px-4 py-3 text-left font-normal">{t('common.status')}</th>
-                <th className="px-4 py-3 text-left font-normal">{t('common.sort')}</th>
-                <th className="pl-[26px] pr-4 py-3 text-left font-normal">{t('adminSkills.actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="px-4">{t('common.skills')}</TableHead>
+                <TableHead className="px-4">{translate('skills.source')}</TableHead>
+                <TableHead className="px-4">{t('common.category')}</TableHead>
+                <TableHead className="px-4 text-right">{t('adminSkills.installs')}</TableHead>
+                <TableHead className="px-4">{t('common.status')}</TableHead>
+                <TableHead className="px-4 text-right">{t('common.sort')}</TableHead>
+                <TableHead className="px-4">{t('adminSkills.actions')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredMarketSkills.map((skill) => (
-                <tr key={skill.skillId} className="border-b border-border/50 transition-colors last:border-0 hover:bg-bg-hover">
-                  <td className="px-4 py-3">
+                <TableRow key={skill.skillId} className="group h-16">
+                  <TableCell className="px-4 py-0">
                     <div className="flex items-center gap-3">
-                      <Icon name={skill.icon} className="size-5 shrink-0 text-interactive" />
+                      <Icon name={skill.icon} className="size-5 shrink-0 text-accent" />
                       <div className="min-w-0">
-                        <div className="font-medium text-text-1">{skill.name}</div>
+                        <div className="truncate text-[13px] font-medium text-text-1">{skill.name}</div>
                         <div className="mt-1 truncate text-xs text-text-3">{skill.description}</div>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-4 py-3"><ScopeLabel>{getSourceLabel(skill.source)}</ScopeLabel></td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell className="px-4 py-0"><ScopeLabel>{getSourceLabel(skill.source)}</ScopeLabel></TableCell>
+                  <TableCell className="px-4 py-0">
                     <div className="flex items-center gap-2 text-text-2">
                       <Icon name={skill.categoryIcon} className="size-3.5 shrink-0 text-interactive" />
                       <span className="truncate">{skill.categoryName}</span>
                     </div>
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell className="px-4 py-0 text-right tabular-nums">
                     <button
                       onClick={() => openUsersDrawer(skill.skillId)}
                       className="text-text-1 underline-offset-4 hover:underline"
                     >
                       {skill.installedCount}
                     </button>
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell className="px-4 py-0">
                     <StatusToggle
                       checked={skill.status === 1}
                       onToggle={(checked) => toggleMarketStatus(skill.skillId, checked)}
                       labelOn={t('adminSkills.published')}
                       labelOff={t('adminSkills.unpublished')}
                     />
-                  </td>
-                  <td className="px-4 py-3 text-text-3">{skill.sortOrder}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-1">
+                  </TableCell>
+                  <TableCell className="px-4 py-0 text-right tabular-nums text-text-3">{skill.sortOrder}</TableCell>
+                  <TableCell className="px-4 py-0">
+                    <div className="flex justify-end gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
                       <Button variant="ghost" size="sm" onClick={() => openMarketEditor(skill)}>{t('common.edit')}</Button>
                       <Button variant="ghost" size="sm" onClick={() => openUsersDrawer(skill.skillId)}>{t('common.user')}</Button>
-                      <Button variant="ghost" size="icon-sm" onClick={() => setDeleteTarget({ type: 'market', id: skill.skillId, label: skill.name })}>
+                      <Button variant="ghost" size="icon-sm" aria-label={t('common.delete')} className="text-text-3 hover:text-destructive" onClick={() => setDeleteTarget({ type: 'market', id: skill.skillId, label: skill.name })}>
                         <Trash2 className="size-4" />
                       </Button>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </section>

@@ -8,8 +8,6 @@ import {
   KeyRound,
   LogOut,
   User as UserIcon,
-  AlertCircle,
-  RefreshCw,
   Sun,
   Moon,
   Monitor,
@@ -18,6 +16,11 @@ import {
 import { useT, t as translate } from '@/i18n'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Logo } from '@/components/brand/Logo'
+import { ErrorState } from '@/components/patterns/ErrorState'
+import { PageHeader } from '@/components/patterns/PageHeader'
+import { PageContainer } from '@/components/patterns/PageContainer'
 import { Input } from '@/components/ui/input'
 import {
   Dialog,
@@ -186,7 +189,7 @@ function AvatarDialog({
           <div
             className={cn(
               'flex h-32 w-32 items-center justify-center overflow-hidden rounded-full bg-bg-layer-3',
-              dragOver && 'ring-2 ring-text-3',
+              dragOver && 'ring-2 ring-accent ring-offset-2 ring-offset-bg-base',
             )}
           >
             {displaySrc ? (
@@ -206,8 +209,8 @@ function AvatarDialog({
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
             className={cn(
-              'w-full cursor-pointer rounded-md border border-dashed border-border px-4 py-6 text-center transition-colors hover:border-bg-hover',
-              dragOver && 'border-bg-hover bg-bg-hover',
+              'w-full cursor-pointer rounded-md border border-dashed border-accent-border px-4 py-6 text-center transition-colors hover:border-accent hover:bg-accent-soft/40',
+              dragOver && 'border-accent bg-accent-soft',
             )}
           >
             <p className="text-sm text-text-2">
@@ -442,11 +445,22 @@ function ThemeSegment() {
             className={cn(
               'flex cursor-pointer items-center justify-center gap-1.5 rounded-sm px-2 py-1.5 text-sm transition-colors sm:px-3 sm:py-1',
               active
-                ? 'bg-highlight text-highlight-fg shadow-sm'
+                ? 'bg-accent text-accent-foreground shadow-sm'
                 : 'text-text-3 hover:text-text-2',
             )}
           >
-            <opt.icon className="size-4 sm:size-3.5" />
+            <opt.icon
+              className={cn(
+                'size-4 sm:size-3.5',
+                active
+                  ? 'text-accent-foreground'
+                  : opt.value === 'light'
+                    ? 'text-amber-strong'
+                    : opt.value === 'dark'
+                      ? 'text-cat-1'
+                      : 'text-cat-2',
+              )}
+            />
             <span className="hidden sm:inline">{t(opt.key)}</span>
           </button>
         )
@@ -463,10 +477,8 @@ function ProfileSkeleton() {
   const t = useT()
   return (
     <div className="flex min-h-full flex-col">
-      <div className="flex h-10 shrink-0 items-center border-b border-border px-4">
-        <span className="text-base font-semibold text-text-1">{t('profile.title')}</span>
-      </div>
-      <div className="flex flex-1 justify-center p-8">
+      <PageHeader title={t('profile.title')} />
+      <PageContainer contained className="flex flex-1 justify-center py-8">
         <div className="w-full max-w-[640px]">
         <div className="mb-8 h-7 w-24 animate-pulse rounded-sm bg-bg-layer-2" />
         <div className="mb-6 h-px bg-border" />
@@ -488,8 +500,8 @@ function ProfileSkeleton() {
           <div className="h-4 w-16 animate-pulse rounded-sm bg-bg-layer-2" />
           <div className="h-4 w-20 animate-pulse rounded-sm bg-bg-layer-2" />
         </div>
-      </div>
-      </div>
+        </div>
+      </PageContainer>
     </div>
   )
 }
@@ -502,19 +514,8 @@ function ProfileError({ onRetry }: { onRetry: () => void }) {
   const t = useT()
   return (
     <div className="flex min-h-full flex-col">
-      <div className="flex h-10 shrink-0 items-center border-b border-border px-4">
-        <span className="text-base font-semibold text-text-1">{t('profile.title')}</span>
-      </div>
-      <div className="flex flex-1 items-center justify-center">
-        <div className="flex max-w-[640px] flex-col items-center gap-4">
-          <AlertCircle className="size-8 text-text-3" />
-          <p className="text-sm text-text-2">{t('profile.fetchFailed')}</p>
-          <Button variant="outline" size="default" onClick={onRetry}>
-            <RefreshCw className="size-4" />
-            {t('common.retry')}
-          </Button>
-        </div>
-      </div>
+      <PageHeader title={t('profile.title')} />
+      <ErrorState description={t('profile.fetchFailed')} onRetry={onRetry} />
     </div>
   )
 }
@@ -621,12 +622,10 @@ export function Component() {
 
   return (
     <div className="flex min-h-full flex-col">
-      {/* Toolbar */}
-      <div className="flex h-10 shrink-0 items-center border-b border-border px-4">
-        <span className="text-base font-semibold text-text-1">{t('profile.title')}</span>
-      </div>
+      {/* Page header */}
+      <PageHeader title={t('profile.title')} />
 
-      <div className="flex flex-1 justify-center p-8">
+      <PageContainer contained className="flex flex-1 justify-center py-8">
         <div className="w-full max-w-[640px] pb-16">
           {/* Section: 个人信息 */}
         <div className="mb-8">
@@ -639,16 +638,16 @@ export function Component() {
                 <img
                   src={user.avatar}
                   alt={displayName}
-                  className="h-16 w-16 rounded-full object-cover"
+                  className="h-16 w-16 rounded-full object-cover ring-2 ring-cat-1/30 ring-offset-2 ring-offset-bg-base"
                 />
               ) : (
-                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-interactive text-xl font-semibold text-white">
+                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-cat-1 text-xl font-semibold text-bg-base ring-2 ring-cat-1/30 ring-offset-2 ring-offset-bg-base">
                   {initial}
                 </span>
               )}
               <button
                 onClick={() => setAvatarOpen(true)}
-                className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-bg-layer-2 text-text-3 transition-colors hover:bg-bg-layer-3 hover:text-text-1"
+                className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full border border-accent-border bg-accent-soft text-accent transition-colors hover:text-accent-hover"
               >
                 <Camera className="size-3" />
               </button>
@@ -682,9 +681,7 @@ export function Component() {
 
               <p className="text-sm text-text-3">
                 @{user.username}
-                <span className="ml-2 inline-block rounded bg-highlight px-1.5 py-0.5 text-xs text-highlight-fg">
-                  {roleLabel}
-                </span>
+                <Badge variant="info" className="ml-2 align-middle px-1.5 text-xs">{roleLabel}</Badge>
               </p>
 
               <div className="flex items-baseline gap-2">
@@ -754,7 +751,7 @@ export function Component() {
 
           <div className="flex items-center justify-between">
             <p className="text-sm text-text-3">{t('profile.envVarsDesc')}</p>
-            <Button variant="outline" size="default" onClick={() => setEnvVarsOpen(true)} className="border-highlight text-highlight hover:bg-highlight/10">
+            <Button variant="outline" size="default" onClick={() => setEnvVarsOpen(true)} className="border-accent text-accent hover:bg-accent/10">
               <Braces className="size-4" />
               {t('profile.envVarsManage')}
             </Button>
@@ -803,22 +800,7 @@ export function Component() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-text-3 transition-colors hover:text-text-1"
             >
-              <svg className="size-4" viewBox="0 0 56 56" fill="none">
-                <polygon points="30,12 42,9 30,17" fill="currentColor" />
-                <rect x="20" y="6" width="12" height="12" fill="currentColor" />
-                <polygon points="20,6 24,6 24,2 16,4" fill="currentColor" />
-                <rect x="18" y="16" width="10" height="6" fill="currentColor" />
-                <polygon points="18,20 32,20 30,32 16,32" fill="currentColor" />
-                <polygon points="20,20 32,20 34,28 20,28" fill="currentColor" />
-                <polygon points="20,28 34,28 36,36 20,36" fill="currentColor" />
-                <polygon points="16,32 10,34 8,42 16,40" fill="currentColor" />
-                <polygon points="16,40 8,42 10,46 18,44" fill="currentColor" />
-                <rect x="18" y="36" width="2" height="10" fill="currentColor" />
-                <rect x="22" y="36" width="2" height="10" fill="currentColor" />
-                <polygon points="18,46 20,46 21,48 17,48" fill="currentColor" />
-                <polygon points="22,46 24,46 25,48 21,48" fill="currentColor" />
-                <rect x="24" y="8" width="3" height="3" fill="#0a0a0b" />
-              </svg>
+              <Logo size={16} />
               goraven.dev
             </a>
           </p>
@@ -846,7 +828,7 @@ export function Component() {
             <p className="text-sm text-text-3">
               {t('profile.logoutDesc')}
             </p>
-            <Button variant="outline" size="default" onClick={() => setLogoutOpen(true)} className="border-interactive text-interactive hover:bg-interactive/10">
+            <Button variant="outline" size="default" onClick={() => setLogoutOpen(true)} className="border-destructive/30 text-destructive hover:bg-destructive-soft">
               <LogOut className="size-4" />
               {t('profile.logout')}
             </Button>
@@ -864,7 +846,7 @@ export function Component() {
         <LogoutDialog open={logoutOpen} onOpenChange={setLogoutOpen} />
         <EnvVarsDialog open={envVarsOpen} onOpenChange={setEnvVarsOpen} />
         </div>
-      </div>
+      </PageContainer>
     </div>
   )
 }

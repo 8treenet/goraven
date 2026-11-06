@@ -70,7 +70,7 @@ export function PreviewDialog({ item, type, url, text, sheets, loading, error, o
           type="button"
           onClick={onRefresh}
           disabled={loading}
-          className="absolute right-20 top-4 rounded text-text-3 transition-colors hover:text-text-1 disabled:opacity-50 focus:outline-none"
+          className="absolute right-20 top-4 rounded text-text-3 transition-colors hover:text-text-1 disabled:opacity-50"
           title={t('common.refresh')}
         >
           <RefreshCw className={cn('size-4', loading && 'animate-spin')} />
@@ -79,7 +79,7 @@ export function PreviewDialog({ item, type, url, text, sheets, loading, error, o
         <button
           type="button"
           onClick={toggleMaximized}
-          className="absolute right-12 top-4 rounded text-text-3 transition-colors hover:text-text-1 focus:outline-none"
+          className="absolute right-12 top-4 rounded text-text-3 transition-colors hover:text-text-1"
           title={maximized ? t('common.exitFullscreen') : t('common.fullscreen')}
         >
           {maximized ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}

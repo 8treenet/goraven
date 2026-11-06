@@ -151,7 +151,7 @@ export function GitChangesPanel({ gitApi, projectId, status, onMutated, onUnrela
                 onClick={() => handleCommit(true)}
                 disabled={!canCommit || !hasRemote}
                 title={hasRemote ? undefined : t('files.gitNoRemoteHint')}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-highlight py-1.5 text-xs text-highlight-fg transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-accent py-1.5 text-xs text-accent-foreground transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {busy === 'commitPush' && <Loader2 className="size-3.5 animate-spin" />}
                 {t('files.gitCommitAndPush')}

@@ -3,7 +3,8 @@ import {
   AtSign,
   ArrowLeft,
   RefreshCw,
-  Users,
+  Share2,
+  User,
   FolderOpen,
   FolderGit2,
   Loader2,
@@ -19,6 +20,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { useT, t as translate } from '@/i18n'
 import { listFiles, getFileUrl } from '@/api/files'
 import { listMyProjects, listMyFiles, getMyDownloadUrl } from '@/api/my-projects'
@@ -28,8 +30,8 @@ import {
   getTeamDownloadUrl,
 } from '@/api/team-projects'
 import type { FileItem, TeamProjectItem, MyProjectItem } from '@/api/types'
-import { useUserStore } from '@/stores/user-store'
-import { getFileIcon, formatSize } from '../files/file-helpers'
+import { getFileVisual, formatSize, formatTime } from '../files/file-helpers'
+import { TONE_TEXT } from '@/lib/tone'
 
 export interface PickedFile {
   /** Source of the file: 'mine' or 'team' */
@@ -420,7 +422,7 @@ export function FilePickerDialog({
         {/* Header: title + tabs */}
         <div className="flex flex-col gap-2 border-b border-border px-4 py-3 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2">
-            <AtSign className="size-4 text-highlight" />
+            <AtSign className="size-4 text-accent" />
             <span className="text-sm font-semibold text-text-1">{t('chat.filePickerTitle')}</span>
           </div>
           <div className="flex items-center gap-1 self-start rounded-md border border-border bg-bg-layer-2 p-0.5 sm:ml-auto sm:self-auto">
@@ -465,7 +467,7 @@ export function FilePickerDialog({
               )}
             >
               <span className="inline-flex items-center gap-1">
-                <Users className="size-3.5 text-interactive" />
+                <Share2 className="size-3.5 text-interactive" />
                 {t('files.teamProjects')}
               </span>
             </button>
@@ -687,7 +689,7 @@ function TeamBreadcrumbs({
       >
         <ArrowLeft className="size-3.5" />
       </button>
-      <Users className="size-3.5 text-highlight" />
+      <Share2 className="size-3.5 text-accent" />
       <button
         onClick={onBack}
         className={cn(
@@ -802,8 +804,6 @@ function MyProjectGrid({
   onRetry: () => void
 }) {
   const t = useT()
-  const user = useUserStore((s) => s.currentUser)
-  const userName = user?.nickname || user?.username || ''
 
   if (loading) {
     return (
@@ -841,35 +841,24 @@ function MyProjectGrid({
   return (
     <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3 p-4">
       {projects.map((project) => (
-        <div
+        <Card
           key={project.id}
           onClick={() => onEnter(project)}
-          className="group flex cursor-pointer flex-col gap-1.5 rounded-lg border border-border bg-bg-layer-1 p-3 transition-colors hover:border-highlight/40 hover:bg-bg-hover"
+          className="group flex cursor-pointer flex-col gap-2 p-3 transition-colors hover:border-border-strong hover:bg-bg-layer-2"
         >
           <div className="flex items-center gap-1.5">
-            <FolderGit2 className="size-3.5 shrink-0 text-folder" />
-            <span className="truncate text-sm font-semibold text-text-1">
+            <FolderGit2 className="size-4 shrink-0 text-folder" />
+            <span className="truncate text-section font-semibold text-text-1">
               {project.projectName}
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
-            {user?.avatar ? (
-              <img
-                src={user.avatar}
-                alt={userName}
-                className="size-4 shrink-0 rounded-sm object-cover"
-              />
-            ) : (
-              <div className="inline-flex size-4 shrink-0 items-center justify-center rounded-sm bg-interactive text-[9px] font-medium text-white">
-                {userName.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <span className="truncate text-xs text-text-3">{userName}</span>
-          </div>
           {project.description && (
-            <p className="line-clamp-2 text-xs text-text-2">{project.description}</p>
+            <p className="line-clamp-2 text-meta text-text-2">{project.description}</p>
           )}
-        </div>
+          <span className="mt-auto text-micro text-text-muted tabular-nums">
+            {formatTime(project.updatedAt)}
+          </span>
+        </Card>
       ))}
     </div>
   )
@@ -937,8 +926,8 @@ function FileList({
             <Folder className="size-4 shrink-0 text-folder" />
           ) : (
             (() => {
-              const Icon = getFileIcon(item)
-              return <Icon className="size-4 shrink-0 text-text-3" />
+              const { icon: Icon, tone } = getFileVisual(item)
+              return <Icon className={cn('size-4 shrink-0', tone ? TONE_TEXT[tone] : 'text-text-3')} />
             })()
           )}
           <span className="flex-1 truncate text-sm text-text-1">
@@ -1004,7 +993,7 @@ function TeamProjectGrid({
   if (projects.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-2 py-8">
-        <Users className="size-6 text-text-3" />
+        <Share2 className="size-6 text-text-3" />
         <p className="text-sm text-text-3">{t('files.noTeamProjects')}</p>
         <p className="text-xs text-text-muted">{t('files.noTeamProjectsHint')}</p>
       </div>
@@ -1014,35 +1003,39 @@ function TeamProjectGrid({
   return (
     <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3 p-4">
       {projects.map((project) => (
-        <div
+        <Card
           key={project.id}
           onClick={() => onEnter(project)}
-          className="group flex cursor-pointer flex-col gap-1.5 rounded-lg border border-border bg-bg-layer-1 p-3 transition-colors hover:border-highlight/40 hover:bg-bg-hover"
+          className="group flex cursor-pointer flex-col gap-2 p-3 transition-colors hover:border-border-strong hover:bg-bg-layer-2"
         >
           <div className="flex items-center gap-1.5">
-            <Users className="size-3.5 shrink-0 text-highlight" />
-            <span className="truncate text-sm font-semibold text-text-1">
+            <Share2 className="size-4 shrink-0 text-cat-1" />
+            <span className="truncate text-section font-semibold text-text-1">
               {project.projectName}
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
+          {project.description && (
+            <p className="line-clamp-2 text-meta text-text-2">{project.description}</p>
+          )}
+          <div className="mt-auto flex min-w-0 items-center gap-1.5 text-micro text-text-muted">
             {project.creatorAvatar ? (
               <img
                 src={project.creatorAvatar}
                 alt={project.creatorName}
-                className="size-4 shrink-0 rounded-sm object-cover"
+                className="size-4 shrink-0 rounded-full object-cover"
               />
             ) : (
-              <div className="inline-flex size-4 shrink-0 items-center justify-center rounded-sm bg-interactive text-[9px] font-medium text-white">
-                {project.creatorName.charAt(0).toUpperCase()}
-              </div>
+              <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-accent text-bg-base">
+                <User className="size-2.5" />
+              </span>
             )}
-            <span className="truncate text-xs text-text-3">{project.creatorName}</span>
+            <span className="truncate">{project.creatorName}</span>
+            <span className="shrink-0">·</span>
+            <span className="shrink-0 tabular-nums">
+              {formatTime(project.updatedAt)}
+            </span>
           </div>
-          {project.description && (
-            <p className="line-clamp-2 text-xs text-text-2">{project.description}</p>
-          )}
-        </div>
+        </Card>
       ))}
     </div>
   )

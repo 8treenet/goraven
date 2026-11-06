@@ -1,10 +1,12 @@
 import { useMemo } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { CalendarClock, CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Timer } from 'lucide-react'
 import { AutomationExecType, AutomationStatus } from '@/api/types'
+import type { Tone } from '@/lib/tone'
 import type { AutomationTaskItem } from '@/api/types'
 import type { TranslationKey } from '@/i18n'
 import { useT } from '@/i18n'
 import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
 
 /* ============================================
    自动化任务共享展示组件与格式化工具
@@ -87,6 +89,28 @@ export function execTypeLabel(execType: number, t: T): string {
   }
 }
 
+export function execTypeTone(execType: number): Tone {
+  switch (execType) {
+    case AutomationExecType.Once: return 4
+    case AutomationExecType.Interval: return 2
+    case AutomationExecType.Daily: return 1
+    case AutomationExecType.Weekly: return 3
+    default: return 1
+  }
+}
+
+export function ExecTypeIcon({ execType, className }: { execType: number; className?: string }) {
+  const Icon =
+    execType === AutomationExecType.Once
+      ? CalendarClock
+      : execType === AutomationExecType.Interval
+        ? Timer
+        : execType === AutomationExecType.Weekly
+          ? CalendarRange
+          : CalendarDays
+  return <Icon className={className} />
+}
+
 /** 调度规则简述（列表 meta 标签 / 详情页执行时间） */
 export function scheduleLabel(task: AutomationTaskItem, t: T): string {
   switch (task.execType) {
@@ -120,40 +144,35 @@ export function scheduleTimeValue(task: AutomationTaskItem, t: T): string {
 }
 
 export function StatusBadge({ status, t, className }: { status: number; t: T; className?: string }) {
-  const config = {
-    [AutomationStatus.Enabled]: {
-      className: 'bg-emerald-500/10 text-emerald-600',
-      dot: 'bg-emerald-500',
-      label: t('automation.statusEnabled'),
-    },
-    [AutomationStatus.Disabled]: {
-      className: 'bg-bg-layer-3 text-text-3',
-      dot: 'bg-text-3',
-      label: t('automation.statusDisabled'),
-    },
-    [AutomationStatus.Done]: {
-      className: 'bg-interactive-soft text-interactive',
-      dot: 'bg-interactive',
-      label: t('automation.statusDone'),
-    },
-  }[status] ?? {
-    className: 'bg-bg-layer-3 text-text-3',
-    dot: 'bg-text-3',
-    label: '-',
-  }
+  const label =
+    status === AutomationStatus.Enabled
+      ? t('automation.statusEnabled')
+      : status === AutomationStatus.Done
+        ? t('automation.statusDone')
+        : status === AutomationStatus.Disabled
+          ? t('automation.statusDisabled')
+          : '-'
+
+  const variant =
+    status === AutomationStatus.Enabled
+      ? 'success'
+      : status === AutomationStatus.Done
+        ? 'info'
+        : 'neutral'
 
   return (
-    <span
-      className={cn(
-        'inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium',
-        config.className,
-        className,
-      )}
-    >
-      <span className={cn('size-1.5 rounded-full', config.dot)} />
-      {config.label}
-    </span>
+    <Badge variant={variant} dot className={cn('shrink-0', className)}>
+      {label}
+    </Badge>
   )
+}
+
+export function statusRailClass(status: number): string {
+  return status === AutomationStatus.Enabled
+    ? 'before:bg-success'
+    : status === AutomationStatus.Done
+      ? 'before:bg-info'
+      : 'before:bg-border-strong'
 }
 
 /* ============================================
@@ -191,8 +210,8 @@ export function Pagination({
   if (totalPages <= 1) return null
 
   return (
-    <div className="flex items-center justify-between border-t border-border-custom px-4 py-2">
-      <span className="hidden text-xs text-text-3 md:inline">{t('automation.totalTasks').replace('{n}', String(totalCount))}</span>
+    <div className="flex items-center justify-between border-t border-border px-5 py-2.5">
+      <span className="hidden text-meta text-text-3 md:inline">{t('automation.totalTasks').replace('{n}', String(totalCount))}</span>
       <div className="flex items-center gap-1">
         <button
           onClick={() => onPageChange(page - 1)}
@@ -203,7 +222,7 @@ export function Pagination({
         </button>
         {pages.map((p, i) =>
           p === '...' ? (
-            <span key={`dots-${i}`} className="px-1 text-xs text-text-3">
+            <span key={`dots-${i}`} className="px-1 text-meta text-text-3">
               ...
             </span>
           ) : (
@@ -211,9 +230,9 @@ export function Pagination({
               key={p}
               onClick={() => onPageChange(p)}
               className={cn(
-                'inline-flex size-7 items-center justify-center rounded-md text-xs tabular-nums transition-colors',
+                'inline-flex size-7 items-center justify-center rounded-md text-meta tabular-nums transition-colors',
                 p === page
-                  ? 'bg-bg-layer-3 text-text-1 font-medium'
+                  ? 'bg-accent-soft text-accent font-medium'
                   : 'text-text-3 hover:bg-bg-layer-2 hover:text-text-1',
               )}
             >

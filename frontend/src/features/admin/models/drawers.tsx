@@ -7,9 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { adminModelsApi } from '@/api'
 import type { AdminModelItem, ProviderItem } from '@/api'
-import {
-  Drawer, StatusToggle,
-} from './shared'
+import { StatusToggle } from './shared'
+import { AppDrawer } from '@/components/patterns/AppDrawer'
 import type { ModelFormData, ModelEditFormData, TestState } from './shared'
 import { IconPicker, SearchableCombobox, ApiKeyField, TestIndicator } from './fields'
 
@@ -179,11 +178,33 @@ export function AddModelDrawer({
   }
 
   return (
-    <Drawer open={open} onClose={onClose} title={t('adminModels.addModel')}>
+    <AppDrawer
+      width="sm"
+      open={open}
+      onClose={onClose}
+      title={t('adminModels.addModel')}
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" size="default" onClick={onClose} disabled={submitting} className="text-accent hover:text-accent-hover">
+            {t('common.cancel')}
+          </Button>
+          <Button variant="default" size="default" disabled={!canSave} onClick={handleSubmit}>
+            {submitting ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin" />
+                {t('common.testing')}
+              </>
+            ) : (
+              t('adminModels.saveAndTest')
+            )}
+          </Button>
+        </div>
+      }
+    >
       <div className="flex flex-col gap-4">
         {/* provider select */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">{t('adminModels.provider')}</Label>
+          <Label className="text-[13px] font-medium text-text-2">{t('adminModels.provider')}</Label>
           <select
             value={form.providerId}
             onChange={(e) => {
@@ -198,7 +219,7 @@ export function AddModelDrawer({
                 baseUrl: p ? p.defaultBaseUrl : '',
               }))
             }}
-            className="h-8 rounded-lg border border-border-strong bg-transparent px-2.5 text-sm text-text-1 outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
+            className="h-9 rounded-lg border border-border-strong bg-transparent px-2.5 text-[13px] text-text-1 outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
           >
             <option value="">{t('adminModels.selectProvider')}</option>
             {providers.map((p) => (
@@ -211,7 +232,7 @@ export function AddModelDrawer({
 
         {/* display name */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">
+          <Label className="text-[13px] font-medium text-text-2">
             {t('adminModels.provider')}
             <span className="ml-0.5 text-destructive">*</span>
           </Label>
@@ -219,28 +240,28 @@ export function AddModelDrawer({
             value={form.providerDisplayName}
             onChange={(e) => setForm((f) => ({ ...f, providerDisplayName: e.target.value }))}
             placeholder="DeepSeek"
-            className="h-8 text-sm"
+            className="h-9 text-[13px]"
           />
           <p className="text-xs text-text-muted">{t('adminModels.nameHint')}</p>
         </div>
 
         {/* model display name */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">
+          <Label className="text-[13px] font-medium text-text-2">
             {t('adminModels.modelDisplayName')}
           </Label>
           <Input
             value={form.displayName}
             onChange={(e) => setForm((f) => ({ ...f, displayName: e.target.value }))}
             placeholder="deepseek-v4-pro"
-            className="h-8 text-sm"
+            className="h-9 text-[13px]"
           />
           <p className="text-xs text-text-muted">{t('adminModels.displayNameHint')}</p>
         </div>
 
         {/* icon */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">{t('common.icon')}</Label>
+          <Label className="text-[13px] font-medium text-text-2">{t('common.icon')}</Label>
           <IconPicker
             value={form.icon}
             onChange={(path) => setForm((f) => ({ ...f, icon: path }))}
@@ -250,7 +271,7 @@ export function AddModelDrawer({
         {/* api keys */}
         {showApiKey && (
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-text-2">
+            <Label className="text-[13px] font-medium text-text-2">
               API Key
               {selectedProvider && <span className="ml-0.5 text-destructive">*</span>}
             </Label>
@@ -265,7 +286,7 @@ export function AddModelDrawer({
         {/* base url */}
         {showBaseUrl && (
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-text-2">
+            <Label className="text-[13px] font-medium text-text-2">
               Base URL
               <span className="ml-0.5 text-destructive">*</span>
             </Label>
@@ -273,14 +294,14 @@ export function AddModelDrawer({
               value={form.baseUrl}
               onChange={(e) => setForm((f) => ({ ...f, baseUrl: e.target.value }))}
               placeholder="https://api.deepseek.com"
-              className="h-8 text-sm font-mono"
+              className="h-9 text-[13px] font-mono"
             />
           </div>
         )}
 
         {/* model name searchable combobox */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">
+          <Label className="text-[13px] font-medium text-text-2">
             {t('common.model')}
             <span className="ml-0.5 text-destructive">*</span>
           </Label>
@@ -296,41 +317,41 @@ export function AddModelDrawer({
 
         {/* proxy url */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">{t('adminModels.networkProxy')}</Label>
+          <Label className="text-[13px] font-medium text-text-2">{t('adminModels.networkProxy')}</Label>
           <Input
             value={form.proxyUrl}
             onChange={(e) => setForm((f) => ({ ...f, proxyUrl: e.target.value }))}
             placeholder={`http://127.0.0.1:7890（${t('common.optional')}）`}
-            className="h-8 text-sm font-mono"
+            className="h-9 text-[13px] font-mono"
           />
         </div>
 
         {/* context len */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">{t('adminModels.contextKB')}</Label>
+          <Label className="text-[13px] font-medium text-text-2">{t('adminModels.contextKB')}</Label>
           <Input
             type="number"
             value={String(form.contextLen)}
             onChange={(e) => setForm((f) => ({ ...f, contextLen: Number(e.target.value) || 0 }))}
-            className="h-8 text-sm"
+            className="h-9 text-[13px]"
           />
         </div>
 
         {/* conversation header key */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">{t('adminModels.conversationHeaderKey')}</Label>
+          <Label className="text-[13px] font-medium text-text-2">{t('adminModels.conversationHeaderKey')}</Label>
           <Input
             value={form.conversationHeaderKey}
             onChange={(e) => setForm((f) => ({ ...f, conversationHeaderKey: e.target.value }))}
             placeholder={`X-Opencode-Session（${t('common.optional')}）`}
-            className="h-8 text-sm font-mono"
+            className="h-9 text-[13px] font-mono"
           />
           <p className="text-xs text-text-muted">{t('adminModels.conversationHeaderKeyHint')}</p>
         </div>
 
         {/* flags */}
         <div className="flex flex-col gap-2">
-          <Label className="text-xs text-text-2">{t('adminModels.modelLabels')}</Label>
+          <Label className="text-[13px] font-medium text-text-2">{t('adminModels.modelLabels')}</Label>
           <div className="flex flex-col gap-2">
             <label className="flex items-center justify-between">
               <span className="text-sm text-text-2">
@@ -365,50 +386,33 @@ export function AddModelDrawer({
         {/* extra fields - only for openai_compatible / claude_compatible */}
         {(form.providerId === 'openai_compatible' || form.providerId === 'claude_compatible') && (
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-text-2">extra_body</Label>
+            <Label className="text-[13px] font-medium text-text-2">extra_body</Label>
             <textarea
               value={form.extraFields}
               onChange={(e) => setForm((f) => ({ ...f, extraFields: e.target.value }))}
               placeholder='{"thinking":{"type":"enabled"}}'
               rows={3}
               spellCheck={false}
-              className="min-h-[60px] w-full rounded-lg border border-border-strong bg-transparent px-2.5 py-1.5 font-mono text-xs text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-3 focus:ring-ring/50"
+              className="min-h-[60px] w-full rounded-lg border border-border-strong bg-transparent px-2.5 py-1.5 font-mono text-[13px] text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-3 focus:ring-ring/50"
             />
           </div>
         )}
 
         {/* remark */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">{t('adminModels.remark')}</Label>
+          <Label className="text-[13px] font-medium text-text-2">{t('adminModels.remark')}</Label>
           <Input
             value={form.remark}
             onChange={(e) => setForm((f) => ({ ...f, remark: e.target.value }))}
             placeholder={t('common.optional')}
-            className="h-8 text-sm"
+            className="h-9 text-[13px]"
           />
         </div>
 
         {/* test indicator */}
         <TestIndicator state={testState} errorMsg={testError} />
-
-        {/* buttons */}
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" size="default" onClick={onClose} disabled={submitting} className="text-highlight hover:text-highlight/80">
-            {t('common.cancel')}
-          </Button>
-          <Button variant="default" size="default" disabled={!canSave} onClick={handleSubmit} className="text-highlight">
-            {submitting ? (
-              <>
-                <Loader2 className="size-3.5 animate-spin" />
-                {t('common.testing')}
-              </>
-            ) : (
-              t('adminModels.saveAndTest')
-            )}
-          </Button>
-        </div>
       </div>
-    </Drawer>
+    </AppDrawer>
   )
 }
 
@@ -536,44 +540,66 @@ export function EditModelDrawer({
   const markConnectionChanged = () => setConnectionChanged(true)
 
   return (
-    <Drawer open={open} onClose={onClose} title={t('adminModels.editModel')}>
+    <AppDrawer
+      width="sm"
+      open={open}
+      onClose={onClose}
+      title={t('adminModels.editModel')}
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" size="default" onClick={onClose} disabled={submitting} className="text-accent hover:text-accent-hover">
+            {t('common.cancel')}
+          </Button>
+          <Button variant="default" size="default" disabled={!canSave} onClick={handleSubmit}>
+            {submitting ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin" />
+                {t('common.saving')}
+              </>
+            ) : (
+              t('common.save')
+            )}
+          </Button>
+        </div>
+      }
+    >
       <div className="flex flex-col gap-4">
         {/* provider id (disabled) */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">{t('adminModels.provider')}</Label>
-          <Input value={model.providerId} disabled className="h-8 text-sm opacity-50" />
+          <Label className="text-[13px] font-medium text-text-2">{t('adminModels.provider')}</Label>
+          <Input value={model.providerId} disabled className="h-9 text-[13px] opacity-50" />
           <p className="text-xs text-text-muted">{t('adminModels.providerReadonly')}</p>
         </div>
 
         {/* display name */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">
+          <Label className="text-[13px] font-medium text-text-2">
             {t('adminModels.provider')}
             <span className="ml-0.5 text-destructive">*</span>
           </Label>
           <Input
             value={form.providerDisplayName}
             onChange={(e) => setForm((f) => ({ ...f, providerDisplayName: e.target.value }))}
-            className="h-8 text-sm"
+            className="h-9 text-[13px]"
           />
         </div>
 
         {/* model display name */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">
+          <Label className="text-[13px] font-medium text-text-2">
             {t('adminModels.modelDisplayName')}
           </Label>
           <Input
             value={form.displayName}
             onChange={(e) => setForm((f) => ({ ...f, displayName: e.target.value }))}
-            className="h-8 text-sm"
+            className="h-9 text-[13px]"
           />
           <p className="text-xs text-text-muted">{t('adminModels.displayNameHint')}</p>
         </div>
 
         {/* icon */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">{t('common.icon')}</Label>
+          <Label className="text-[13px] font-medium text-text-2">{t('common.icon')}</Label>
           <IconPicker
             value={form.icon}
             onChange={(path) => setForm((f) => ({ ...f, icon: path }))}
@@ -582,7 +608,7 @@ export function EditModelDrawer({
 
         {/* api keys (with copy) */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">API Key</Label>
+          <Label className="text-[13px] font-medium text-text-2">API Key</Label>
           <ApiKeyField
             value={form.apiKey}
             onChange={(key) => {
@@ -601,70 +627,70 @@ export function EditModelDrawer({
 
         {/* base url */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">Base URL</Label>
+          <Label className="text-[13px] font-medium text-text-2">Base URL</Label>
           <Input
             value={form.baseUrl}
             onChange={(e) => {
               setForm((f) => ({ ...f, baseUrl: e.target.value }))
               markConnectionChanged()
             }}
-            className="h-8 text-sm font-mono"
+            className="h-9 text-[13px] font-mono"
             placeholder="https://api.deepseek.com"
           />
         </div>
 
         {/* model name */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">
+          <Label className="text-[13px] font-medium text-text-2">
             {t('common.model')}
             <span className="ml-0.5 text-destructive">*</span>
           </Label>
           <Input
             value={form.modelName}
             onChange={(e) => setForm((f) => ({ ...f, modelName: e.target.value }))}
-            className="h-8 text-sm"
+            className="h-9 text-[13px]"
           />
         </div>
 
         {/* proxy url */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">{t('adminModels.networkProxy')}</Label>
+          <Label className="text-[13px] font-medium text-text-2">{t('adminModels.networkProxy')}</Label>
           <Input
             value={form.proxyUrl}
             onChange={(e) => {
               setForm((f) => ({ ...f, proxyUrl: e.target.value }))
               markConnectionChanged()
             }}
-            className="h-8 text-sm font-mono"
+            className="h-9 text-[13px] font-mono"
           />
         </div>
 
         {/* context len */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">{t('adminModels.contextKB')}</Label>
+          <Label className="text-[13px] font-medium text-text-2">{t('adminModels.contextKB')}</Label>
           <Input
             type="number"
             value={String(form.contextLen)}
             onChange={(e) => setForm((f) => ({ ...f, contextLen: Number(e.target.value) || 0 }))}
-            className="h-8 text-sm"
+            className="h-9 text-[13px]"
           />
         </div>
 
         {/* conversation header key */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">{t('adminModels.conversationHeaderKey')}</Label>
+          <Label className="text-[13px] font-medium text-text-2">{t('adminModels.conversationHeaderKey')}</Label>
           <Input
             value={form.conversationHeaderKey}
             onChange={(e) => setForm((f) => ({ ...f, conversationHeaderKey: e.target.value }))}
             placeholder={`X-Opencode-Session（${t('common.optional')}）`}
-            className="h-8 text-sm font-mono"
+            className="h-9 text-[13px] font-mono"
           />
           <p className="text-xs text-text-muted">{t('adminModels.conversationHeaderKeyHint')}</p>
         </div>
 
         {/* flags */}
         <div className="flex flex-col gap-2">
-          <Label className="text-xs text-text-2">{t('adminModels.modelLabels')}</Label>
+          <Label className="text-[13px] font-medium text-text-2">{t('adminModels.modelLabels')}</Label>
           <div className="flex flex-col gap-2">
             <label className="flex items-center justify-between">
               <span className="text-sm text-text-2">
@@ -699,48 +725,31 @@ export function EditModelDrawer({
         {/* extra fields - only for openai_compatible / claude_compatible */}
         {(model.providerId === 'openai_compatible' || model.providerId === 'claude_compatible') && (
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-text-2">extra_body</Label>
+            <Label className="text-[13px] font-medium text-text-2">extra_body</Label>
             <textarea
               value={form.extraFields}
               onChange={(e) => setForm((f) => ({ ...f, extraFields: e.target.value }))}
               rows={3}
               spellCheck={false}
-              className="min-h-[60px] w-full rounded-lg border border-border-strong bg-transparent px-2.5 py-1.5 font-mono text-xs text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-3 focus:ring-ring/50"
+              className="min-h-[60px] w-full rounded-lg border border-border-strong bg-transparent px-2.5 py-1.5 font-mono text-[13px] text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-3 focus:ring-ring/50"
             />
           </div>
         )}
 
         {/* remark */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">{t('adminModels.remark')}</Label>
+          <Label className="text-[13px] font-medium text-text-2">{t('adminModels.remark')}</Label>
           <Input
             value={form.remark}
             onChange={(e) => setForm((f) => ({ ...f, remark: e.target.value }))}
-            className="h-8 text-sm"
+            className="h-9 text-[13px]"
           />
         </div>
 
         {/* test indicator */}
         <TestIndicator state={testState} errorMsg={testError} />
-
-        {/* buttons */}
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" size="default" onClick={onClose} disabled={submitting} className="text-highlight hover:text-highlight/80">
-            {t('common.cancel')}
-          </Button>
-          <Button variant="default" size="default" disabled={!canSave} onClick={handleSubmit} className="text-highlight">
-            {submitting ? (
-              <>
-                <Loader2 className="size-3.5 animate-spin" />
-                {t('common.saving')}
-              </>
-            ) : (
-              t('common.save')
-            )}
-          </Button>
-        </div>
       </div>
-    </Drawer>
+    </AppDrawer>
   )
 }
 

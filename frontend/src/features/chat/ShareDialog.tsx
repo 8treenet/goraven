@@ -123,16 +123,16 @@ export function ShareDialog({ open, onOpenChange, sessionTitle, onGenerate }: Sh
               <label
                 className={cn(
                   'flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2.5 transition-colors',
-                  shareType === 'public' ? 'border-highlight' : 'border-border hover:border-text-muted',
+                  shareType === 'public' ? 'border-accent' : 'border-border hover:border-text-muted',
                 )}
               >
                 <span
                   className={cn(
                     'mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border transition-colors',
-                    shareType === 'public' ? 'border-highlight' : 'border-border',
+                    shareType === 'public' ? 'border-accent' : 'border-border',
                   )}
                 >
-                  {shareType === 'public' && <span className="size-2 rounded-full bg-highlight" />}
+                  {shareType === 'public' && <span className="size-2 rounded-full bg-accent" />}
                 </span>
                 <input
                   type="radio"
@@ -155,16 +155,16 @@ export function ShareDialog({ open, onOpenChange, sessionTitle, onGenerate }: Sh
               <label
                 className={cn(
                   'flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2.5 transition-colors',
-                  shareType === 'internal' ? 'border-highlight' : 'border-border hover:border-text-muted',
+                  shareType === 'internal' ? 'border-accent' : 'border-border hover:border-text-muted',
                 )}
               >
                 <span
                   className={cn(
                     'mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border transition-colors',
-                    shareType === 'internal' ? 'border-highlight' : 'border-border',
+                    shareType === 'internal' ? 'border-accent' : 'border-border',
                   )}
                 >
-                  {shareType === 'internal' && <span className="size-2 rounded-full bg-highlight" />}
+                  {shareType === 'internal' && <span className="size-2 rounded-full bg-accent" />}
                 </span>
                 <input
                   type="radio"
@@ -203,12 +203,12 @@ export function ShareDialog({ open, onOpenChange, sessionTitle, onGenerate }: Sh
                       className={cn(
                         'flex size-4 shrink-0 items-center justify-center rounded-full border transition-colors',
                         expiry === value
-                          ? 'border-highlight'
+                          ? 'border-accent'
                           : 'border-border',
                       )}
                     >
                       {expiry === value && (
-                        <span className="size-2 rounded-full bg-highlight" />
+                        <span className="size-2 rounded-full bg-accent" />
                       )}
                     </span>
                     <input

@@ -11,14 +11,15 @@ import {
   Pencil,
   Lock,
   FolderOpen,
-  AlertCircle,
-  RefreshCw,
   Eye,
   X,
   Ellipsis,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { TONE_TEXT } from '@/lib/tone'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/patterns/EmptyState'
+import { ErrorState } from '@/components/patterns/ErrorState'
 import { useT, t as translate } from '@/i18n'
 import type { FileItem } from '@/api/types'
 import type { UploadProgress } from '@/hooks/useChunkUpload'
@@ -34,7 +35,7 @@ import {
   canPreview,
   formatSize,
   formatTime,
-  getFileIcon,
+  getFileVisual,
   sortItems,
   validateName,
   type ContextMenuState,
@@ -475,14 +476,14 @@ export const FileList = forwardRef<FileListHandle, FileListProps>(function FileL
     <div className="flex h-full flex-col">
       {/* Back / directory indicator */}
       {(hasRootBack || !isRoot || !!toolbarExtra) && !hasSelection && (
-        <div className="flex h-8 shrink-0 items-center gap-1 px-3">
+        <div className="flex h-10 shrink-0 items-center gap-1 px-3">
           {(hasRootBack || !isRoot) && (
-            <Button variant="ghost" size="icon" onClick={goBack} title={t('files.backTooltip')} className="size-6 text-text-3 hover:text-text-1">
+            <Button variant="ghost" size="icon" onClick={goBack} title={t('files.backTooltip')} className="size-7 text-text-3 hover:text-text-1">
               <ArrowLeft className="size-3.5" />
             </Button>
           )}
           {(hasRootBack || !isRoot) && (
-            <span className="text-xs font-medium text-folder">{currentDirName}</span>
+            <span className="min-w-0 truncate text-xs font-medium text-text-2">{currentDirName}</span>
           )}
           <div className="flex-1" />
           {toolbarExtra}
@@ -491,26 +492,26 @@ export const FileList = forwardRef<FileListHandle, FileListProps>(function FileL
 
       {/* Selection action bar */}
       {hasSelection && (
-        <div className="flex h-8 shrink-0 items-center gap-1 bg-interactive/5 px-3">
-          <span className="mr-2 text-xs font-medium text-interactive tabular-nums">
+        <div className="flex h-10 shrink-0 items-center gap-1 bg-accent-soft px-3">
+          <span className="mr-2 text-xs font-medium text-accent tabular-nums">
             {t('files.selectedN').replace('{n}', String(selectedNames.size))}
           </span>
           {!selectedItems.some((i) => i.isDir) && selectedItems.length === 1 && (
-            <Button variant="ghost" size="default" className="h-6 px-2 text-xs text-text-2 hover:text-text-1" aria-label={t('files.download')} onClick={() => handleDownload(selectedItems[0])}>
+            <Button variant="ghost" size="xs" className="h-7 px-2 text-xs text-text-2 hover:text-text-1" aria-label={t('files.download')} onClick={() => handleDownload(selectedItems[0])}>
               <Download className="size-3.5" />
               <span className="hidden md:inline">{t('files.download')}</span>
             </Button>
           )}
-          <Button variant="ghost" size="default" className="h-6 px-2 text-xs text-text-2 hover:text-text-1" aria-label={t('files.delete')} disabled={!canDelete} onClick={openDeleteDialog}>
+          <Button variant="ghost" size="xs" className="h-7 px-2 text-xs text-text-2 hover:text-text-1" aria-label={t('files.delete')} disabled={!canDelete} onClick={openDeleteDialog}>
             <Trash2 className="size-3.5" />
             <span className="hidden md:inline">{t('files.delete')}</span>
           </Button>
-          <Button variant="ghost" size="default" className="h-6 px-2 text-xs text-text-2 hover:text-text-1" aria-label={t('files.compress')} onClick={openCompressDialog}>
+          <Button variant="ghost" size="xs" className="h-7 px-2 text-xs text-text-2 hover:text-text-1" aria-label={t('files.compress')} onClick={openCompressDialog}>
             <Archive className="size-3.5" />
             <span className="hidden md:inline">{t('files.compress')}</span>
           </Button>
           {canDecompress && (
-            <Button variant="ghost" size="default" className="h-6 px-2 text-xs text-text-2 hover:text-text-1" aria-label={t('files.decompress')} onClick={openDecompressDialog}>
+            <Button variant="ghost" size="xs" className="h-7 px-2 text-xs text-text-2 hover:text-text-1" aria-label={t('files.decompress')} onClick={openDecompressDialog}>
               <FolderArchive className="size-3.5" />
               <span className="hidden md:inline">{t('files.decompress')}</span>
             </Button>
@@ -541,62 +542,51 @@ export const FileList = forwardRef<FileListHandle, FileListProps>(function FileL
         )}
 
         {pageState === 'error' && (
-          <div className="flex h-full flex-col items-center justify-center gap-4">
-            <AlertCircle className="size-8 text-text-3" />
-            <div className="text-center">
-              <p className="text-sm text-text-2">{errorTitle ?? t('common.loadFailed')}</p>
-              {errorHint && (
-                <p className="mt-1 text-sm text-text-3">{errorHint}</p>
-              )}
+          errorAction ? (
+            <div className="flex h-full flex-col items-center justify-center gap-4">
+              <ErrorState
+                title={errorTitle ?? t('common.loadFailed')}
+                description={errorHint}
+                className="flex-none py-0!"
+              />
+              <Button variant="outline" onClick={errorAction}>
+                <ArrowLeft className="size-4" />
+                {errorActionLabel}
+              </Button>
             </div>
-            <button
-              onClick={errorAction ?? (() => loadDir(currentDir))}
-              className="inline-flex items-center gap-1.5 rounded-md bg-bg-layer-2 px-3 py-1.5 text-sm text-text-1 transition-colors hover:bg-bg-layer-3"
-            >
-              {errorAction ? (
-                <>
-                  <ArrowLeft className="size-4" />
-                  {errorActionLabel}
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="size-4" />
-                  {t('common.retry')}
-                </>
-              )}
-            </button>
-          </div>
+          ) : (
+            <ErrorState
+              title={errorTitle ?? t('common.loadFailed')}
+              description={errorHint}
+              onRetry={() => loadDir(currentDir)}
+              className="h-full"
+            />
+          )
         )}
 
         {pageState === 'empty' && (
-          <div className="flex h-full flex-col items-center justify-center gap-3">
-            <FolderOpen className="size-12 text-text-3" />
-            <div className="text-center">
-              <p className="text-sm text-text-2">{t('files.emptyFolder')}</p>
-              <p className="mt-1 text-sm text-text-3">{t('files.emptyHint')}</p>
-            </div>
-            <div className="mt-2 flex items-center gap-2">
-              <button
-                onClick={handleUploadClick}
-                className="inline-flex items-center gap-1.5 rounded-md bg-bg-layer-2 px-3 py-1.5 text-sm text-text-1 transition-colors hover:bg-bg-layer-3"
-              >
-                <Upload className="size-4" />
-                {t('files.upload')}
-              </button>
-              <button
-                onClick={openNewFolderDialog}
-                className="inline-flex items-center gap-1.5 rounded-md bg-bg-layer-2 px-3 py-1.5 text-sm text-text-1 transition-colors hover:bg-bg-layer-3"
-              >
-                <FolderPlus className="size-4" />
-                {t('files.newFolder')}
-              </button>
-            </div>
-          </div>
+          <EmptyState
+            tone={3}
+            icon={<FolderOpen className="size-6" />}
+            title={t('files.emptyFolder')}
+            description={t('files.emptyHint')}
+            action={
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={handleUploadClick}>
+                  <Upload className="size-4" /> {t('files.upload')}
+                </Button>
+                <Button onClick={openNewFolderDialog}>
+                  <FolderPlus className="size-4" /> {t('files.newFolder')}
+                </Button>
+              </div>
+            }
+            className="h-full"
+          />
         )}
 
         {pageState === 'data' && (
           <>
-            <div className="hidden h-8 items-center gap-3 border-b border-border px-4 md:flex">
+            <div className="hidden h-10 items-center gap-3 border-b border-border px-4 md:flex">
               <div className="flex size-4 shrink-0 items-center justify-center">
                 <input
                   type="checkbox"
@@ -605,7 +595,7 @@ export const FileList = forwardRef<FileListHandle, FileListProps>(function FileL
                     if (el) el.indeterminate = someSelected
                   }}
                   onChange={handleSelectAll}
-                  className="size-4 rounded-sm border-border-strong bg-transparent cursor-pointer"
+                  className="size-4 cursor-pointer rounded-sm border-border-strong bg-transparent accent-accent"
                 />
               </div>
               <div className="flex-1">
@@ -637,38 +627,39 @@ export const FileList = forwardRef<FileListHandle, FileListProps>(function FileL
                   className="ml-auto"
                 />
               </div>
+              <div className="w-8 shrink-0" />
             </div>
 
             {isUploading && uploadProgress && (
-              <div className="flex h-10 items-center gap-3 border-b border-border px-4">
+              <div className="flex h-12 items-center gap-3 border-b border-border px-4">
                 <div className="size-4 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <Upload className="size-4 shrink-0 text-text-3" />
-                    <span className="text-sm text-text-2 truncate">
+                    <span className="text-[13px] text-text-2 truncate">
                       {uploadProgress.fileName}
                     </span>
-                    <span className="shrink-0 text-sm text-text-3 tabular-nums">
+                    <span className="shrink-0 text-xs text-text-3 tabular-nums">
                       {uploadProgress.percentage}%
                     </span>
                   </div>
-                  <div className="mt-0.5 h-0.5 w-full overflow-hidden rounded-full bg-bg-layer-3">
+                  <div className="mt-0.5 h-1 w-full overflow-hidden rounded-full bg-bg-layer-3">
                     <div
-                      className="h-full bg-highlight transition-all duration-200"
+                      className="h-full bg-accent transition-all duration-200"
                       style={{ width: `${uploadProgress.percentage}%` }}
                     />
                   </div>
                 </div>
                 <div className="hidden w-[120px] md:block" />
                 <div className="hidden w-[160px] md:block" />
+                <div className="hidden w-8 md:block" />
               </div>
             )}
 
             {sortedItems.map((item) => {
               const isSelected = selectedNames.has(item.name)
               const isRenaming = renamingItem === item.name
-              const Icon = getFileIcon(item)
-              const rowH = sortedItems.length <= 5 ? 'h-11' : 'h-11 md:h-9'
+              const { icon: Icon, tone } = getFileVisual(item)
 
               return (
                 <div
@@ -683,11 +674,10 @@ export const FileList = forwardRef<FileListHandle, FileListProps>(function FileL
                     handleContextMenu(item, e)
                   }}
                   className={cn(
-                    'flex cursor-pointer items-center gap-3 px-4 transition-colors select-none',
-                    rowH,
+                    'group flex min-h-14 cursor-pointer items-center gap-3 px-4 transition-colors select-none md:h-12 md:min-h-12',
                     isSelected
-                      ? 'bg-bg-layer-3'
-                      : 'hover:bg-bg-hover',
+                      ? 'bg-accent-soft'
+                      : 'hover:bg-bg-layer-2',
                   )}
                 >
                   <div className="flex size-4 shrink-0 items-center justify-center">
@@ -699,11 +689,11 @@ export const FileList = forwardRef<FileListHandle, FileListProps>(function FileL
                         e.stopPropagation()
                         handleCheckboxToggle(item.name)
                       }}
-                      className="size-4 rounded-sm border-border-strong bg-transparent cursor-pointer"
+                      className="size-4 cursor-pointer rounded-sm border-border-strong bg-transparent accent-accent"
                     />
                   </div>
 
-                  <Icon className={cn('size-4 shrink-0', isSelected ? 'text-highlight' : 'text-text-3')} />
+                  <Icon className={cn('size-4 shrink-0', tone ? TONE_TEXT[tone] : 'text-text-3')} />
 
                   <div className="-ml-0.5 flex min-w-0 flex-1 flex-col justify-center">
                     <div className="flex min-w-0 items-center gap-2.5">
@@ -719,16 +709,16 @@ export const FileList = forwardRef<FileListHandle, FileListProps>(function FileL
                           }}
                           onBlur={cancelRename}
                           onClick={(e) => e.stopPropagation()}
-                          className="h-6 flex-1 min-w-0 rounded-sm border border-border-strong bg-bg-layer-2 px-1.5 text-sm text-text-1 outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+                          className="h-6 flex-1 min-w-0 rounded-sm border border-border-strong bg-bg-layer-2 px-1.5 text-[13px] text-text-1 outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
                         />
                       ) : (
-                        <span className="text-sm text-text-1 truncate">
+                        <span className="truncate text-[13px] font-medium text-text-1">
                           {item.name}
                           {item.isDir && '/'}
                         </span>
                       )}
                       {isProtected?.(item) && (
-                        <Lock className="size-3.5 shrink-0 text-interactive" />
+                        <Lock className="size-3.5 shrink-0 text-text-3" />
                       )}
                       {(() => {
                         if (item.isDir) return null
@@ -738,7 +728,7 @@ export const FileList = forwardRef<FileListHandle, FileListProps>(function FileL
                         return (
                           <span
                             title={changeBadgeLabel(st)}
-                            className={cn('shrink-0 font-mono text-[10px] font-semibold', changeBadgeClass(st))}
+                            className={cn('shrink-0 font-mono text-micro font-semibold', changeBadgeClass(st))}
                           >
                             {st}
                           </span>
@@ -754,25 +744,29 @@ export const FileList = forwardRef<FileListHandle, FileListProps>(function FileL
                     )}
                   </div>
 
-                  <div className="hidden w-[120px] text-right text-sm text-text-3 tabular-nums md:block">
+                  <div className="hidden w-[120px] text-right text-xs text-text-3 tabular-nums md:block">
                     {item.isDir ? '-' : formatSize(item.size)}
                   </div>
 
-                  <div className="hidden w-[160px] text-right text-sm text-text-3 tabular-nums md:block">
+                  <div className="hidden w-[160px] text-right text-xs text-text-3 tabular-nums md:block">
                     {formatTime(item.modTime)}
                   </div>
 
-                  {!(item.isDir && isProtected?.(item)) && !isRenaming && (
-                    <button
+                  {!(item.isDir && isProtected?.(item)) && !isRenaming ? (
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleContextMenu(item, e)
                       }}
                       aria-label={t('sidebar.menu')}
-                      className="flex size-7 shrink-0 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1 md:hidden"
+                      className="shrink-0 text-text-3 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
                     >
                       <Ellipsis className="size-4" />
-                    </button>
+                    </Button>
+                  ) : (
+                    <div className="size-8 shrink-0" aria-hidden />
                   )}
                 </div>
               )

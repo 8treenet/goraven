@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { TONE_BG, type Tone } from '@/lib/tone'
+import { cn } from '@/lib/utils'
 
 function formatElapsed(seconds: number): string {
   const m = Math.floor(seconds / 60)
@@ -149,8 +151,8 @@ function BackgroundThinking({ startTime }: { startTime?: string }) {
 
         .agent-signal-grid {
           background-image:
-            linear-gradient(var(--border-custom) 1px, transparent 1px),
-            linear-gradient(90deg, var(--border-custom) 1px, transparent 1px);
+            linear-gradient(var(--border) 1px, transparent 1px),
+            linear-gradient(90deg, var(--border) 1px, transparent 1px);
           background-size: 44px 44px;
           mask-image: radial-gradient(circle at 50% 42%, black 0%, transparent 72%);
         }
@@ -172,7 +174,7 @@ function BackgroundThinking({ startTime }: { startTime?: string }) {
         }
 
         .agent-flow {
-          background-image: repeating-linear-gradient(90deg, transparent 0 18px, var(--highlight) 18px 26px, transparent 26px 52px);
+          background-image: repeating-linear-gradient(90deg, transparent 0 18px, var(--accent) 18px 26px, transparent 26px 52px);
           background-size: 128px 1px;
           animation: agent-flow 2.8s linear infinite;
         }
@@ -193,16 +195,16 @@ function BackgroundThinking({ startTime }: { startTime?: string }) {
 
       <section
         data-testid="background-thinking-panel"
-        className="relative mx-auto flex min-h-[calc(100vh-14rem)] w-full max-w-7xl overflow-hidden rounded-xl border border-border-custom bg-bg-layer-1 text-text-1 shadow-pop"
+        className="relative mx-auto flex min-h-[calc(100vh-14rem)] w-full max-w-7xl overflow-hidden rounded-xl border border-border bg-bg-layer-1 text-text-1 shadow-pop"
       >
         <div className="agent-signal-grid pointer-events-none absolute inset-0 opacity-50" />
-        <div className="agent-scan-line pointer-events-none absolute inset-x-0 top-0 h-24 bg-highlight/10" />
-        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-highlight/70" />
+        <div className="agent-scan-line pointer-events-none absolute inset-x-0 top-0 h-24 bg-cat-2/10" />
+        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-cat-2/70" />
 
         <div className="relative z-10 flex min-h-full w-full flex-col p-4 sm:p-6 lg:p-8">
-          <header className="flex flex-col gap-4 border-b border-border-custom pb-5 lg:flex-row lg:items-start lg:justify-between">
+          <header className="flex flex-col gap-4 border-b border-border pb-5 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <div className="mb-3 flex flex-wrap items-center gap-2 font-mono text-[11px] uppercase tracking-[0.28em] text-text-muted">
+              <div className="mb-3 flex flex-wrap items-center gap-2 font-mono text-micro uppercase tracking-[0.28em] text-text-muted">
                 <span>BACKGROUND TASK</span>
                 <span className="h-px w-8 bg-border-strong" />
                 <span>AGENT WORKING</span>
@@ -215,7 +217,7 @@ function BackgroundThinking({ startTime }: { startTime?: string }) {
             <div className="grid grid-cols-2 gap-2 font-mono text-xs sm:grid-cols-4 lg:min-w-[420px]">
               {TELEMETRY.map(([label, value]) => (
                 <div key={label} className="rounded-lg bg-bg-layer-2 px-3 py-2">
-                  <div className="mb-1 text-[10px] uppercase tracking-[0.2em] text-text-muted">{label}</div>
+                  <div className="mb-1 text-micro uppercase tracking-[0.2em] text-text-muted">{label}</div>
                   <div className="truncate text-text-2">{value}</div>
                 </div>
               ))}
@@ -223,36 +225,37 @@ function BackgroundThinking({ startTime }: { startTime?: string }) {
           </header>
 
           <div className="grid flex-1 gap-6 py-6 lg:grid-cols-12 lg:py-8">
-            <div className="relative min-h-[360px] overflow-hidden rounded-lg bg-bg-base/70 lg:col-span-7">
-              <div className="absolute inset-0 border border-border-custom" />
-              <div className="absolute left-5 top-5 font-mono text-[11px] uppercase tracking-[0.24em] text-text-muted">
+            <div className="relative min-h-[360px] overflow-hidden rounded-xl bg-bg-base/70 lg:col-span-7">
+              <div className="absolute inset-0 border border-border" />
+              <div className="absolute left-5 top-5 font-mono text-micro uppercase tracking-[0.24em] text-text-muted">
                 runtime map
               </div>
-              <div className="absolute right-5 top-5 rounded-full bg-highlight px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-highlight-fg">
+              <div className="absolute right-5 top-5 rounded-full border border-amber-border bg-amber-soft px-2.5 py-1 font-mono text-micro uppercase tracking-[0.18em] text-amber-strong">
                 active run
               </div>
 
-              <div className="absolute left-1/2 top-1/2 size-56 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border-custom sm:size-72">
-                <div className="agent-orbit absolute inset-0 rounded-full border border-dashed border-highlight/45" />
-                <div className="agent-orbit-reverse absolute -inset-10 rounded-full border border-border-custom" />
-                <div className="agent-pulse absolute left-1/2 top-1/2 size-24 -translate-x-1/2 -translate-y-1/2 rounded-lg border border-highlight/60 bg-bg-layer-2 shadow-pop sm:size-28">
+              <div className="absolute left-1/2 top-1/2 size-56 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border sm:size-72">
+                <div className="agent-orbit absolute inset-0 rounded-full border border-dashed border-cat-2/45" />
+                <div className="agent-orbit-reverse absolute -inset-10 rounded-full border border-border" />
+                <div className="agent-pulse absolute left-1/2 top-1/2 size-24 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-cat-2/60 bg-bg-layer-2 shadow-pop sm:size-28">
                   <div className="flex h-full flex-col items-center justify-center font-mono">
-                    <span className="text-[10px] uppercase tracking-[0.28em] text-text-muted">agent</span>
-                    <span className="mt-1 text-lg text-highlight">RUN</span>
+                    <span className="text-micro uppercase tracking-[0.28em] text-text-muted">agent</span>
+                    <span className="mt-1 text-lg text-amber-strong">RUN</span>
                   </div>
                 </div>
 
                 {PIPELINE.map((step, index) => {
+                  const tone = ((index % 5) + 1) as Tone
                   return (
                     <div
                       key={step.label}
-                      className={`${PIPELINE_POSITIONS[index]} absolute w-28 rounded-lg border border-border-custom bg-bg-layer-1 px-3 py-2 font-mono shadow-soft`}
+                      className={`${PIPELINE_POSITIONS[index]} absolute w-28 rounded-xl border border-border bg-bg-layer-1 px-3 py-2 font-mono shadow-soft`}
                     >
-                      <div className="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-text-muted">
-                        <span className="size-1.5 rounded-full bg-highlight" />
+                      <div className="mb-1 flex items-center gap-2 text-micro uppercase tracking-[0.2em] text-text-muted">
+                        <span className={cn('size-1.5 rounded-full', TONE_BG[tone])} />
                         {step.label}
                       </div>
-                      <div className="truncate text-[11px] text-text-3">{step.detail}</div>
+                      <div className="truncate text-micro text-text-3">{step.detail}</div>
                     </div>
                   )
                 })}
@@ -260,7 +263,7 @@ function BackgroundThinking({ startTime }: { startTime?: string }) {
 
               <div className="absolute inset-x-6 bottom-8 space-y-3">
                 {PIPELINE.map((step, index) => (
-                  <div key={step.label} className="grid grid-cols-[72px_1fr] items-center gap-3 font-mono text-[11px] text-text-muted">
+                  <div key={step.label} className="grid grid-cols-[72px_1fr] items-center gap-3 font-mono text-micro text-text-muted">
                     <span className="uppercase tracking-[0.18em]">{step.label}</span>
                     <span className="agent-flow h-px bg-border-custom opacity-80" style={{ animationDelay: `${index * 180}ms` }} />
                   </div>
@@ -268,31 +271,31 @@ function BackgroundThinking({ startTime }: { startTime?: string }) {
               </div>
             </div>
 
-            <aside className="flex min-h-[360px] flex-col rounded-lg border border-border-custom bg-bg-base/80 lg:col-span-5">
-              <div className="flex items-center justify-between border-b border-border-custom px-4 py-3">
-                <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-text-muted">live console</div>
-                <div className="font-mono text-xs tabular-nums text-highlight">running {elapsed}</div>
+            <aside className="flex min-h-[360px] flex-col rounded-xl border border-border bg-bg-base/80 shadow-soft lg:col-span-5">
+              <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                <div className="font-mono text-micro uppercase tracking-[0.24em] text-text-muted">live console</div>
+                <div className="font-mono text-xs tabular-nums text-accent">running {elapsed}</div>
               </div>
 
               <div className="flex-1 px-4 py-4 font-mono text-[13px] leading-relaxed text-text-3">
                 {history.map((line, i) => (
-                  <div key={`${line}-${i}`} className="text-highlight/65">
+                  <div key={`${line}-${i}`} className="text-accent/65">
                     {line}
                   </div>
                 ))}
-                {current && <div className="text-highlight">{current}</div>}
+                {current && <div className="text-accent">{current}</div>}
                 <div className="mt-1 flex items-center gap-1.5">
-                  <span className="text-highlight">$</span>
-                  <span className="term-cursor inline-block h-[15px] w-2 bg-highlight align-middle" />
+                  <span className="text-accent">$</span>
+                  <span className="term-cursor inline-block h-[15px] w-2 bg-accent align-middle" />
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 border-t border-border-custom font-mono text-[11px] text-text-muted">
+              <div className="grid grid-cols-3 border-t border-border font-mono text-micro text-text-muted">
                 <div className="px-4 py-3">
                   <div className="mb-1 uppercase tracking-[0.18em]">state</div>
                   <div className="text-text-2">processing</div>
                 </div>
-                <div className="border-x border-border-custom px-4 py-3">
+                <div className="border-x border-border px-4 py-3">
                   <div className="mb-1 uppercase tracking-[0.18em]">tools</div>
                   <div className="text-text-2">armed</div>
                 </div>

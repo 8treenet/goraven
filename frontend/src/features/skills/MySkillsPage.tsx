@@ -3,7 +3,14 @@ import { useT, t as translate } from '@/i18n'
 import { toast } from 'sonner'
 import { Search, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { TONE_BG, toneFromKey, type Tone } from '@/lib/tone'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import { PageHeader } from '@/components/patterns/PageHeader'
+import { PageContainer } from '@/components/patterns/PageContainer'
+import { PageTabs } from '@/components/patterns/PageTabs'
+import { EmptyState } from '@/components/patterns/EmptyState'
+import { Card } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { getSkillCategories, getUserSkills, getMarketSkills, installSkill, deleteUserSkill, refreshSkills, toggleAlwaysOn, updateUserSkill } from '@/api/skills'
 import { getUserSkillDetail, getMarketSkillDetail } from '@/api/skills'
 import { getShareSkills, shareSkillToTeam, installShareSkill, deleteShareSkill, getShareSkillDetail } from '@/api/skills'
@@ -48,39 +55,6 @@ function formatDate(iso: string): string {
 }
 
 /* ============================================
-   SegmentedControl
-   ============================================ */
-
-function SegmentedControl({
-  options,
-  value,
-  onChange,
-}: {
-  options: { value: string; label: string }[]
-  value: string
-  onChange: (v: string) => void
-}) {
-  return (
-    <div className="flex gap-0 border-b border-border">
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          onClick={() => onChange(opt.value)}
-          className={cn(
-            'relative px-3 py-1 text-xs transition-colors',
-            value === opt.value
-              ? 'text-text-1 font-medium after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[2px] after:bg-highlight after:rounded-full'
-              : 'text-text-3 hover:text-text-2',
-          )}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  )
-}
-
-/* ============================================
    FilterDropdown
    ============================================ */
 
@@ -91,7 +65,7 @@ function FilterDropdown<T extends string | number | null>({
   onChange,
 }: {
   label: string
-  options: { value: T; label: string }[]
+  options: { value: T; label: string; tone?: Tone }[]
   value: T
   onChange: (v: T) => void
 }) {
@@ -116,15 +90,18 @@ function FilterDropdown<T extends string | number | null>({
       <button
         onClick={() => setOpen(!open)}
         className={cn(
-          'flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs transition-colors hover:bg-bg-hover hover:text-text-2',
-          value !== null ? 'text-highlight' : 'text-text-3',
+          'flex h-8 max-w-24 items-center gap-1 rounded-lg border border-border bg-bg-layer-1 px-3 text-xs shadow-xs transition-colors hover:bg-bg-layer-2 sm:max-w-none',
+          value !== null ? 'text-text-1' : 'text-text-3',
         )}
       >
-        {current ? current.label : label}
-        <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        {current?.tone && (
+          <span aria-hidden="true" className={cn('size-1.5 shrink-0 rounded-full', TONE_BG[current.tone])} />
+        )}
+        <span className="truncate">{current ? current.label : label}</span>
+        <svg className="size-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
       </button>
       {open && (
-        <div className="absolute top-full left-0 z-30 mt-1 min-w-[120px] rounded-md border border-border bg-bg-layer-2 py-1 shadow-pop">
+        <div className="absolute top-full left-0 z-30 mt-1 min-w-[140px] rounded-lg border border-border bg-bg-layer-1 py-1 shadow-pop">
           {options.map((opt) => (
             <button
               key={String(opt.value)}
@@ -133,12 +110,15 @@ function FilterDropdown<T extends string | number | null>({
                 setOpen(false)
               }}
               className={cn(
-                'w-full px-3 py-1.5 text-left text-xs transition-colors',
+                'flex w-full items-center gap-1.5 px-3 py-1.5 text-left text-xs transition-colors',
                 value === opt.value
-                  ? 'bg-highlight/10 text-highlight'
-                  : 'text-text-3 hover:bg-bg-hover hover:text-text-2',
+                  ? 'bg-accent-soft text-accent'
+                  : 'text-text-3 hover:bg-bg-layer-2 hover:text-text-1',
               )}
             >
+              {opt.tone && (
+                <span aria-hidden="true" className={cn('size-1.5 shrink-0 rounded-full', TONE_BG[opt.tone])} />
+              )}
               {opt.label}
             </button>
           ))}
@@ -463,6 +443,7 @@ export function Component() {
     ...categories.map((c) => ({
       value: c.categoryId,
       label: c.name,
+      tone: toneFromKey(c.categoryId),
     })),
   ]
 
@@ -586,6 +567,7 @@ export function Component() {
   const drawerCategoryName = drawerSkill
     ? ('categoryName' in drawerSkill ? drawerSkill.categoryName : null)
     : null
+  const drawerCategoryId = drawerSkill && 'categoryId' in drawerSkill ? drawerSkill.categoryId : undefined
   const drawerIcon = drawerSkill ? drawerSkill.icon : ''
   const drawerDescription = drawerSkill ? drawerSkill.description : ''
 
@@ -599,107 +581,107 @@ export function Component() {
 
   return (
     <div className="flex h-full flex-col bg-bg-base">
-      {/* Toolbar */}
-      <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border px-4">
-        <h1 className="text-base font-semibold text-text-1">
-          {t('skills.title')}
-        </h1>
-
-        <SegmentedControl
-          options={[
-            { value: 'installed', label: `${t('skills.installed')} (${installedCount})` },
-            { value: 'market', label: `${t('skills.marketplace')} (${marketCount})` },
-            { value: 'team', label: `${t('skills.team')} (${shareCount})` },
-          ]}
-          value={activeTab}
-          onChange={(v) => {
-            setActiveTab(v as TabValue)
-            setSearchQuery('')
-            setCategoryFilter(null)
-          }}
-        />
-
-        <div className="flex-1" />
-
-        <div className="flex items-center gap-1.5">
-          <div className="relative">
-            <Search className="absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-text-muted" />
-            <input
-              ref={searchRef}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              spellCheck={false}
-              placeholder={t('skills.searchPlaceholder')}
-              className="h-7 w-40 rounded-md border border-border bg-transparent pl-7 pr-2 text-xs text-text-1 placeholder:text-text-muted outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+      {/* Page header */}
+      <PageHeader
+        title={t('skills.title')}
+        actions={
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-text-muted" />
+              <input
+                ref={searchRef}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                spellCheck={false}
+                placeholder={t('skills.searchPlaceholder')}
+                className="h-9 w-28 rounded-lg border border-border bg-bg-layer-1 pl-8 pr-2.5 text-meta text-text-1 placeholder:text-text-muted outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30 sm:w-60"
+              />
+            </div>
+            <FilterDropdown
+              label={t('skills.allCategories')}
+              options={categoryOptions}
+              value={categoryFilter}
+              onChange={setCategoryFilter}
             />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className="inline-flex size-9 items-center justify-center rounded-lg text-cat-4 transition-colors hover:bg-cat-4-soft hover:text-cat-4 disabled:opacity-50"
+                >
+                  <Sparkles
+                    className={cn('size-4', isRefreshing && 'animate-spin')}
+                  />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{t('skills.refreshTip')}</TooltipContent>
+            </Tooltip>
           </div>
-          <FilterDropdown
-            label={t('skills.allCategories')}
-            options={categoryOptions}
-            value={categoryFilter}
-            onChange={setCategoryFilter}
-          />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                className="inline-flex size-7 items-center justify-center rounded text-highlight transition-colors hover:bg-bg-layer-2 disabled:opacity-50"
-              >
-                <Sparkles
-                  className={cn('size-3.5', isRefreshing && 'animate-spin')}
-                />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>{t('skills.refreshTip')}</TooltipContent>
-          </Tooltip>
-        </div>
-      </div>
+        }
+      />
 
-      {/* Content */}
       <div className="flex-1 overflow-auto">
+        <PageContainer className="flex min-h-full flex-col py-0">
+          <PageTabs
+            className="pt-4"
+            value={activeTab}
+            onChange={(v) => {
+              setActiveTab(v)
+              setSearchQuery('')
+              setCategoryFilter(null)
+            }}
+            items={[
+              { value: 'installed', label: `${t('skills.installed')} (${installedCount})` },
+              { value: 'market', label: `${t('skills.marketplace')} (${marketCount})` },
+              { value: 'team', label: `${t('skills.team')} (${shareCount})` },
+            ]}
+          />
+
+          {/* Content */}
+          <div className="flex-1 py-4">
         {/* Loading */}
         {pageState === 'loading' && (
-          <div>
+          <Card className="overflow-hidden">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
-                className="flex items-center gap-3 border-b border-border px-4 py-2.5"
+                className="flex min-h-[72px] items-center gap-3 border-b border-border px-5 py-3 last:border-b-0"
               >
-                <div className="size-4 shrink-0 animate-pulse rounded-sm bg-bg-layer-3" />
-                <div className="flex-1">
-                  <div className="h-4 w-32 animate-pulse rounded bg-bg-layer-3" />
-                  <div className="mt-1.5 h-3 w-56 animate-pulse rounded bg-bg-layer-3" />
+                <Skeleton className="size-8 shrink-0 rounded-lg" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-40 rounded" />
+                  <Skeleton className="h-3 w-64 rounded" />
                 </div>
-                <div className="h-4 w-16 animate-pulse rounded bg-bg-layer-3" />
+                <Skeleton className="hidden h-5 w-16 rounded-full sm:block" />
               </div>
             ))}
-          </div>
+          </Card>
         )}
 
         {/* Empty */}
         {pageState === 'data' && currentList.length === 0 && (
-          <div className="flex h-full flex-col items-center justify-center gap-3">
-            <svg className="size-10 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14l2 2h16l2-2"/></svg>
-            <div className="text-center">
-              <p className="text-sm text-text-2">
-                {searchQuery || categoryFilter
-                  ? t('skills.noMatch')
-                  : activeTab === 'installed'
-                    ? t('skills.noInstalled')
-                    : activeTab === 'market'
-                      ? t('skills.noMarketplace')
-                      : t('skills.noTeamShares')}
-              </p>
-              <p className="mt-1 text-xs text-text-3">
-                {activeTab === 'installed'
-                  ? t('skills.marketplaceHint')
+          <EmptyState
+            variant="card"
+            tone={4}
+            icon={<Sparkles className="size-5" />}
+            title={
+              searchQuery || categoryFilter
+                ? t('skills.noMatch')
+                : activeTab === 'installed'
+                  ? t('skills.noInstalled')
                   : activeTab === 'market'
-                    ? t('skills.marketplaceEmptyHint')
-                    : t('skills.teamSharesHint')}
-              </p>
-            </div>
-          </div>
+                    ? t('skills.noMarketplace')
+                    : t('skills.noTeamShares')
+            }
+            description={
+              activeTab === 'installed'
+                ? t('skills.marketplaceHint')
+                : activeTab === 'market'
+                  ? t('skills.marketplaceEmptyHint')
+                  : t('skills.teamSharesHint')
+            }
+          />
         )}
 
         {/* Rows */}
@@ -741,6 +723,8 @@ export function Component() {
                   ))}
           </>
         )}
+          </div>
+        </PageContainer>
       </div>
 
       {/* Bottom bar */}
@@ -761,6 +745,7 @@ export function Component() {
           description={drawerDescription}
           sourceLabel={drawerSourceLabel}
           categoryName={drawerCategoryName}
+          categoryId={drawerCategoryId}
           metaFields={drawerMetaFields}
           editableIcon={isDrawerInstalled}
           editableCategory={isDrawerInstalled}

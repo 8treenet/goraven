@@ -195,7 +195,7 @@ export function MembersDialog({ project, onClose, onSaved }: MembersDialogProps)
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {/* 创建者 */}
                     <span className="inline-flex items-center gap-1 rounded-md border border-border bg-bg-layer-2 px-2 py-1 text-xs text-text-1">
-                      <Crown className="size-3 text-highlight" />
+                      <Crown className="size-3 text-accent" />
                       {displayName(creatorId)}
                       <span className="text-text-muted">({t('files.owner')})</span>
                     </span>
@@ -243,7 +243,7 @@ export function MembersDialog({ project, onClose, onSaved }: MembersDialogProps)
                           {user.avatar ? (
                             <img src={user.avatar} alt="" className="size-6 shrink-0 rounded-sm object-cover" />
                           ) : (
-                            <div className="inline-flex size-6 shrink-0 items-center justify-center rounded-sm bg-interactive text-[11px] font-medium text-white">
+                            <div className="inline-flex size-6 shrink-0 items-center justify-center rounded-sm bg-interactive text-[11px] font-medium text-bg-base">
                               {(user.nickname || user.username).charAt(0).toUpperCase()}
                             </div>
                           )}

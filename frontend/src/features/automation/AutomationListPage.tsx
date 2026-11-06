@@ -1,10 +1,17 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Play, Ellipsis, Trash2, AlertCircle, RefreshCw, HelpCircle, Menu } from 'lucide-react'
+import { Play, Ellipsis, Trash2, CalendarClock, HelpCircle, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Card } from '@/components/ui/card'
+import { EmptyState } from '@/components/patterns/EmptyState'
+import { ErrorState } from '@/components/patterns/ErrorState'
+import { PageHeader } from '@/components/patterns/PageHeader'
+import { PageContainer } from '@/components/patterns/PageContainer'
+import { PageTabs } from '@/components/patterns/PageTabs'
 import {
   Dialog,
   DialogContent,
@@ -14,11 +21,12 @@ import {
 } from '@/components/ui/dialog'
 import { useT, t as translate } from '@/i18n'
 import { cn } from '@/lib/utils'
+import { TONE_SOFT, TONE_TEXT } from '@/lib/tone'
 import { useSidebarStore } from '@/stores/sidebar-store'
 import { AutomationStatus } from '@/api/types'
 import type { AutomationTaskItem } from '@/api/types'
 import { getAutomationTasks, updateTaskStatus, deleteTask, executeTask } from '@/api/automation'
-import { StatusBadge, scheduleLabel, nextRunText, Pagination } from './shared'
+import { StatusBadge, scheduleLabel, nextRunText, Pagination, ExecTypeIcon, execTypeTone, statusRailClass } from './shared'
 
 const PAGE_SIZE = 10
 
@@ -136,104 +144,107 @@ export function Component() {
 
   return (
     <div>
-      {/* Sticky toolbar */}
-      <div className="sticky top-0 z-10 flex h-10 items-center gap-2 border-b border-border-custom bg-bg-base px-4">
-        <button
-          onClick={openMobile}
-          aria-label={t('sidebar.menu')}
-          className="shrink-0 text-text-1 transition-colors md:hidden"
-        >
-          <Menu className="size-4" />
-        </button>
-        <div className="flex items-center gap-1.5">
-          <h1 className="text-[18px] font-semibold text-text-1">{t('automation.title')}</h1>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                aria-label={t('automation.createHint')}
-                onClick={() => setHintOpen(true)}
-                className="flex items-center text-amber-500 transition-colors hover:text-amber-400"
-              >
-                <HelpCircle className="size-3.5" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-72">{t('automation.createHint')}</TooltipContent>
-          </Tooltip>
-        </div>
-      </div>
+      <PageHeader
+        title={t('automation.title')}
+        className="sticky top-0 z-10"
+        actions={
+          <>
+            <button
+              onClick={openMobile}
+              aria-label={t('sidebar.menu')}
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1 md:hidden"
+            >
+              <Menu className="size-4" />
+            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={t('automation.createHint')}
+                  onClick={() => setHintOpen(true)}
+                  className="inline-flex size-9 items-center justify-center rounded-lg text-cat-3 transition-colors hover:bg-cat-3-soft hover:text-cat-3"
+                >
+                  <HelpCircle className="size-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-72">{t('automation.createHint')}</TooltipContent>
+            </Tooltip>
+          </>
+        }
+      />
 
-      {/* Status tabs */}
-      <div className="flex gap-1 border-b border-border-custom px-4 pt-2">
-        {TABS.map(({ key, labelKey }) => (
-          <button
-            key={key}
-            onClick={() => handleTabChange(key)}
-            className={cn(
-              'relative px-2.5 py-1.5 text-[13px] transition-colors md:px-3',
-              tab === key
-                ? 'font-medium text-text-1 after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[2px] after:rounded-full after:bg-highlight'
-                : 'text-text-3 hover:text-text-2',
-            )}
-          >
-            {t(labelKey)}
-          </button>
-        ))}
-      </div>
+      <PageContainer className="py-0">
+        {/* Status tabs */}
+        <PageTabs
+          className="pt-4"
+          value={tab}
+          onChange={handleTabChange}
+          items={TABS.map(({ key, labelKey }) => ({ value: key, label: t(labelKey) }))}
+        />
 
-      {/* Content */}
-      {state === 'loading' && <Skeleton />}
-      {state === 'error' && <ErrorView onRetry={() => fetchTasks(tab, page)} />}
-      {state === 'empty' && (tab === 'all' ? <EmptyView /> : (
-        <p className="px-4 py-10 text-center text-sm text-text-3">{t('automation.emptyTasks')}</p>
+        {/* Content */}
+        {state === 'loading' && <AutomationListSkeleton />}
+      {state === 'error' && <ErrorState onRetry={() => fetchTasks(tab, page)} />}
+      {state === 'empty' && (tab === 'all' ? (
+        <EmptyState
+          variant="card"
+          tone={3}
+          icon={<CalendarClock className="size-5" />}
+          title={t('automation.emptyTasks')}
+          description={t('automation.emptyTasksHint')}
+        />
+      ) : (
+        <p className="py-10 text-center text-meta text-text-3">{t('automation.emptyTasks')}</p>
       ))}
       {state === 'data' && (
         <div>
           {tasks.map((task) => {
+            const execTone = execTypeTone(task.execType)
             const done = task.status === AutomationStatus.Done
             const next = nextRunText(task, t)
             const meta: string[] = [scheduleLabel(task, t)]
-            if (task.aiModelName) meta.push(`${t('automation.model')} · ${task.aiModelName}`)
-            if (task.personaName) meta.push(`${t('automation.persona')} · ${task.personaName}`)
+            if (task.aiModelName) meta.push(`${t('automation.model')} ${task.aiModelName}`)
+            if (task.personaName) meta.push(`${t('automation.persona')} ${task.personaName}`)
             if (task.mcpNames.length > 0) meta.push(t('automation.mcpCount').replace('{n}', String(task.mcpNames.length)))
             if (task.skillNames.length > 0) meta.push(t('automation.skillCount').replace('{n}', String(task.skillNames.length)))
 
             return (
               <div
                 key={task.id}
-                className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border-custom px-4 py-3 transition-colors hover:bg-bg-hover md:flex-nowrap md:gap-3"
+                className={cn(
+                  'group relative flex min-h-[72px] flex-col gap-2 border-b border-border px-5 py-3 transition-colors hover:bg-bg-layer-2 md:flex-row md:items-center md:gap-4',
+                  'before:absolute before:left-0 before:top-3 before:bottom-3 before:w-0.5 before:rounded-r',
+                  statusRailClass(task.status),
+                )}
               >
                 <button
-                  className="flex w-full min-w-0 flex-col items-start gap-1.5 text-left md:w-auto md:flex-1"
+                  className="min-w-0 flex-1 text-left"
                   onClick={() => handleRowClick(task.id)}
                 >
-                  <span className="flex w-full min-w-0 items-center gap-2">
-                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-text-1">{task.title}</span>
-                    <StatusBadge status={task.status} t={t} className="md:hidden" />
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className={cn('flex size-7 shrink-0 items-center justify-center rounded-md', TONE_SOFT[execTone], TONE_TEXT[execTone])}>
+                      <ExecTypeIcon execType={task.execType} className="size-4" />
+                    </span>
+                    <span className="min-w-0 truncate text-body font-medium text-text-1">{task.title}</span>
+                    <StatusBadge status={task.status} t={t} />
                   </span>
-                  <span className="flex flex-wrap items-center gap-1.5 text-[11px] text-text-3">
-                    {meta.map((m) => (
-                      <span key={m} className="rounded border border-border-custom px-1.5 py-0.5 text-text-2">
-                        {m}
-                      </span>
-                    ))}
+                  <span className="mt-1 line-clamp-2 text-meta leading-[18px] text-text-3 md:truncate">
+                    {meta.join(' · ')}
                   </span>
                 </button>
 
-                <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5 md:flex-none md:shrink-0 md:items-end">
-                  <span className="text-[11px] text-text-3">
+                <div className="flex shrink-0 items-center gap-2 md:gap-3">
+                  <span className="mr-auto whitespace-nowrap text-meta tabular-nums text-text-3 md:mr-0">
                     {next.label}：{next.value}
                   </span>
-                  <StatusBadge status={task.status} t={t} className="hidden md:inline-flex" />
-                </div>
 
-                <div className="flex shrink-0 items-center gap-2">
                   <button
                     title={t('automation.executeNow')}
+                    aria-label={t('automation.executeNow')}
                     disabled={done || busyId === task.id}
                     onClick={(e) => { e.stopPropagation(); handleExecute(task) }}
                     className={cn(
-                      'flex h-7 w-7 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1',
+                      'flex size-7 items-center justify-center rounded-md text-text-3 opacity-100 transition-all hover:bg-bg-layer-3 hover:text-text-1 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100',
                       (done || busyId === task.id) && 'cursor-not-allowed opacity-35 hover:bg-transparent hover:text-text-3',
                     )}
                   >
@@ -241,28 +252,32 @@ export function Component() {
                   </button>
 
                   <Switch
-                    size="sm"
+                    size="default"
+                    aria-label={task.status === AutomationStatus.Enabled ? t('automation.disable') : t('automation.enable')}
                     checked={task.status === AutomationStatus.Enabled}
                     disabled={done || busyId === task.id}
                     onCheckedChange={(checked) => handleToggle(task, checked)}
                   />
 
-                  <div className="relative">
+                  <div className="relative opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
                     <button
+                      aria-label={t('sidebar.menu')}
+                      aria-haspopup="menu"
+                      aria-expanded={menuOpenId === task.id}
                       onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === task.id ? null : task.id) }}
-                      className="flex h-7 w-7 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1"
+                      className="flex size-7 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-layer-3 hover:text-text-1"
                     >
                       <Ellipsis className="size-4" />
                     </button>
                     {menuOpenId === task.id && (
                       <>
                         <div className="fixed inset-0 z-10" onClick={() => setMenuOpenId(null)} />
-                        <div className="absolute right-0 top-full z-20 mt-1 w-32 rounded-md border border-border-custom bg-bg-layer-2 py-1 shadow-pop">
+                        <div className="absolute right-0 top-full z-20 mt-1 w-32 rounded-lg border border-border bg-bg-layer-1 py-1 shadow-pop">
                           <button
-                            className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
+                            className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-destructive transition-colors hover:bg-destructive/10"
                             onClick={(e) => { e.stopPropagation(); setMenuOpenId(null); setDeleteTarget(task) }}
                           >
-                            <Trash2 className="size-3" />
+                            <Trash2 className="size-3.5" />
                             {t('automation.delete')}
                           </button>
                         </div>
@@ -281,13 +296,14 @@ export function Component() {
           />
         </div>
       )}
+      </PageContainer>
 
       {/* Hint dialog */}
       <Dialog open={hintOpen} onOpenChange={setHintOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <HelpCircle className="size-4 text-amber-500" />
+              <HelpCircle className="size-4 text-text-3" />
               {t('automation.title')}
             </DialogTitle>
             <DialogDescription>{t('automation.createHint')}</DialogDescription>
@@ -327,44 +343,19 @@ export function Component() {
    Sub-views
    ============================================ */
 
-function Skeleton() {
+function AutomationListSkeleton() {
   return (
-    <div>
+    <Card className="overflow-hidden">
       {[1, 2, 3, 4].map((i) => (
-        <div key={i} className="flex items-center gap-3 border-b border-border-custom px-4 py-3">
+        <div key={i} className="flex min-h-[72px] flex-col gap-2 border-b border-border px-5 py-3 last:border-b-0 md:flex-row md:items-center md:gap-4">
           <div className="flex-1 space-y-2">
-            <span className="block h-4 w-28 rounded bg-bg-layer-3 animate-pulse" />
-            <span className="block h-3.5 w-64 rounded bg-bg-layer-3 animate-pulse" />
+            <Skeleton className="block h-4 w-40 rounded" />
+            <Skeleton className="block h-3 w-72 rounded" />
           </div>
-          <span className="h-5 w-14 rounded-full bg-bg-layer-3 animate-pulse" />
-          <span className="h-7 w-7 rounded-md bg-bg-layer-3 animate-pulse" />
+          <Skeleton className="h-5 w-14 rounded-full" />
+          <Skeleton className="h-5 w-9 rounded-full" />
         </div>
       ))}
-    </div>
-  )
-}
-
-function EmptyView() {
-  const t = useT()
-  return (
-    <div className="flex flex-col items-center justify-center py-24">
-      <AlertCircle className="size-8 text-text-muted" />
-      <p className="mt-3 text-sm text-text-2">{t('automation.emptyTasks')}</p>
-      <p className="mt-1 text-xs text-text-3">{t('automation.emptyTasksHint')}</p>
-    </div>
-  )
-}
-
-function ErrorView({ onRetry }: { onRetry: () => void }) {
-  const t = useT()
-  return (
-    <div className="flex flex-col items-center justify-center py-24">
-      <AlertCircle className="size-8 text-text-muted" />
-      <p className="mt-3 text-sm text-text-2">{t('common.loadFailed')}</p>
-      <Button variant="outline" size="default" className="mt-4" onClick={onRetry}>
-        <RefreshCw className="size-4" />
-        {t('common.retry')}
-      </Button>
-    </div>
+    </Card>
   )
 }

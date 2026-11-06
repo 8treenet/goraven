@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import type { FileItem } from '@/api/types'
 import { t as translate } from '@/i18n'
+import type { Tone } from '@/lib/tone'
 
 export type SortField = 'name' | 'size' | 'time'
 export type SortOrder = 'asc' | 'desc'
@@ -90,8 +91,14 @@ export function formatTime(iso: string): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-export function getFileIcon(item: FileItem): LucideIcon {
-  if (item.isDir) return FolderOpen
+export interface FileVisual {
+  icon: LucideIcon
+  tone: Tone | null
+}
+
+export function getFileVisual(item: FileItem): FileVisual {
+  if (item.isDir) return { icon: FolderOpen, tone: 3 }
+
   const ext = item.name.split('.').pop()?.toLowerCase()
   switch (ext) {
     case 'pdf':
@@ -99,35 +106,61 @@ export function getFileIcon(item: FileItem): LucideIcon {
     case 'docx':
     case 'txt':
     case 'md':
-      return FileText
+      return { icon: FileText, tone: 1 }
     case 'ppt':
     case 'pptx':
-      return Presentation
+      return { icon: Presentation, tone: 3 }
     case 'png':
     case 'jpg':
     case 'jpeg':
     case 'gif':
     case 'svg':
     case 'webp':
-      return Image
+      return { icon: Image, tone: 4 }
     case 'mp4':
     case 'mov':
     case 'avi':
     case 'webm':
-      return Video
+      return { icon: Video, tone: 5 }
+    case 'mp3':
+    case 'wav':
+    case 'ogg':
+    case 'flac':
+    case 'aac':
+    case 'm4a':
+      return { icon: File, tone: 5 }
     case 'zip':
     case 'tar':
     case 'gz':
     case 'rar':
     case '7z':
-      return Archive
+      return { icon: Archive, tone: 3 }
     case 'csv':
     case 'xls':
     case 'xlsx':
-      return Table2
+      return { icon: Table2, tone: 2 }
+    case 'js':
+    case 'ts':
+    case 'jsx':
+    case 'tsx':
+    case 'py':
+    case 'go':
+    case 'rs':
+    case 'java':
+    case 'json':
+    case 'yaml':
+    case 'yml':
+    case 'toml':
+    case 'sh':
+    case 'sql':
+      return { icon: File, tone: 2 }
     default:
-      return File
+      return { icon: File, tone: null }
   }
+}
+
+export function getFileIcon(item: FileItem): LucideIcon {
+  return getFileVisual(item).icon
 }
 
 export function canPreview(item: FileItem): boolean {

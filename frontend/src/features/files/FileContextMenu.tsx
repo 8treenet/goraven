@@ -47,7 +47,7 @@ export function ContextMenu({ x, y, onClose, children }: ContextMenuProps) {
   return createPortal(
     <div
       ref={menuRef}
-      className="fixed z-50 min-w-[140px] rounded-md border border-border bg-bg-layer-2 py-1 shadow-pop"
+      className="fixed z-50 min-w-[160px] rounded-lg border border-border bg-bg-layer-2 p-1 shadow-pop"
       style={{ left: pos.x, top: pos.y }}
     >
       {children}
@@ -67,10 +67,10 @@ export function ContextMenuItem({ onClick, children, danger }: ContextMenuItemPr
     <button
       onClick={onClick}
       className={cn(
-        'flex w-full items-center gap-2 px-3 py-1.5 text-sm transition-colors text-left',
+        'flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] transition-colors',
         danger
-          ? 'text-text-2 hover:bg-bg-hover hover:text-text-1'
-          : 'text-text-2 hover:bg-bg-hover hover:text-text-1',
+          ? 'text-destructive hover:bg-bg-layer-3'
+          : 'text-text-2 hover:bg-bg-layer-3 hover:text-text-1',
       )}
     >
       {children}
@@ -93,7 +93,7 @@ export function ColumnHeader({ label, field, currentField, order, onClick, class
     <button
       onClick={() => onClick(field)}
       className={cn(
-        'flex items-center gap-0.5 text-sm transition-colors select-none',
+        'flex items-center gap-0.5 text-micro font-medium transition-colors select-none',
         active ? 'text-text-1' : 'text-text-3 hover:text-text-2',
         className,
       )}

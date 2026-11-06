@@ -1,9 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import {
-  RefreshCw,
-  AlertCircle,
-} from 'lucide-react'
-import {
   ResponsiveContainer,
   BarChart,
   Bar,
@@ -18,8 +14,14 @@ import {
   Area,
   ReferenceLine,
 } from 'recharts'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Card } from '@/components/ui/card'
+import { ErrorState } from '@/components/patterns/ErrorState'
+import { PageHeader } from '@/components/patterns/PageHeader'
+import { PageContainer } from '@/components/patterns/PageContainer'
 import { useT, type TranslationKey } from '@/i18n'
-import { formatNumber } from '@/lib/format'
+import { formatNumber, formatPercent } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { SegmentedControl } from '@/components/charts/SegmentedControl'
 import { ChartTooltip } from '@/components/charts/ChartTooltip'
 import { RankingPanel } from '@/components/charts/RankingPanel'
@@ -89,26 +91,16 @@ interface DashboardData {
    Chart colors
    ============================================ */
 
-const CHART_PALETTE = [
-  'var(--highlight)',
-  'var(--color-interactive)',
+const CHART_COLORS = [
+  'var(--chart-1)',
+  'var(--chart-2)',
   'var(--chart-3)',
   'var(--chart-4)',
   'var(--chart-5)',
-  'var(--color-bg-hover)',
-]
+] as const
 
 function useChartColors() {
-  return useMemo(() => {
-    const style = getComputedStyle(document.documentElement)
-    return CHART_PALETTE.map((c) => {
-      if (c.startsWith('var(')) {
-        const name = c.slice(4, -1).trim()
-        return style.getPropertyValue(name).trim() || c
-      }
-      return c
-    })
-  }, [])
+  return CHART_COLORS
 }
 
 type TrendDays = 7 | 30 | 90
@@ -125,117 +117,97 @@ function getTrendOptions(t: (key: TranslationKey) => string) {
    Shared axis style
    ============================================ */
 
-const AXIS_STYLE = { fontSize: 10 }
+const AXIS_STYLE = { fontSize: 11 }
 
 /* ============================================
    Skeleton
    ============================================ */
 
-function Skeleton() {
+function AdminDashboardSkeleton() {
   return (
-    <div className="flex flex-1 flex-col gap-2 overflow-hidden p-2">
+    <PageContainer className="flex flex-1 flex-col gap-4 overflow-hidden">
       {/* Row 1: Pulse */}
-      <div className="flex min-h-[120px] gap-2">
-        <div className="flex flex-1 flex-col justify-center gap-3 rounded-lg border border-border bg-bg-layer-1 px-6 py-4">
-          <div className="h-3 w-20 animate-pulse rounded bg-bg-layer-2" />
+      <div className="flex min-h-[120px] gap-4">
+        <Card className="flex flex-1 flex-col justify-center gap-3 px-6 py-4">
+          <Skeleton className="h-3 w-20 rounded bg-bg-layer-2" />
           <div className="flex gap-8">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i}>
-                <div className="h-7 w-14 animate-pulse rounded bg-bg-layer-2" />
-                <div className="mt-1.5 h-2.5 w-10 animate-pulse rounded bg-bg-layer-2" />
+                <Skeleton className="h-7 w-14 rounded bg-bg-layer-2" />
+                <Skeleton className="mt-1.5 h-2.5 w-10 rounded bg-bg-layer-2" />
               </div>
             ))}
           </div>
-          <div className="h-12 animate-pulse rounded bg-bg-layer-2" />
-        </div>
+          <Skeleton className="h-12 rounded bg-bg-layer-2" />
+        </Card>
       </div>
 
       {/* Row 2: Token Trend */}
-      <div className="flex flex-[2] min-h-[220px] gap-2">
-        <div className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-6 py-4">
+      <div className="flex flex-[2] min-h-[220px] gap-4">
+        <Card className="flex flex-1 flex-col px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="h-3 w-28 animate-pulse rounded bg-bg-layer-2" />
-            <div className="h-6 w-40 animate-pulse rounded bg-bg-layer-2" />
+            <Skeleton className="h-3 w-28 rounded bg-bg-layer-2" />
+            <Skeleton className="h-6 w-40 rounded bg-bg-layer-2" />
           </div>
           <div className="mt-2 flex gap-6">
-            <div className="h-3 w-24 animate-pulse rounded bg-bg-layer-2" />
-            <div className="h-3 w-32 animate-pulse rounded bg-bg-layer-2" />
+            <Skeleton className="h-3 w-24 rounded bg-bg-layer-2" />
+            <Skeleton className="h-3 w-32 rounded bg-bg-layer-2" />
           </div>
-          <div className="mt-3 flex-1 animate-pulse rounded bg-bg-layer-2" />
-        </div>
+          <Skeleton className="mt-3 flex-1 rounded bg-bg-layer-2" />
+        </Card>
       </div>
 
       {/* Row 3: Model Usage + User Rank */}
-      <div className="flex flex-[2] min-h-[220px] gap-2">
-        <div className="flex flex-col rounded-lg border border-border bg-bg-layer-1 px-6 py-4" style={{ flex: 3 }}>
-          <div className="h-3 w-20 animate-pulse rounded bg-bg-layer-2" />
+      <div className="flex flex-[2] min-h-[220px] gap-4">
+        <Card className="flex flex-col px-6 py-4" style={{ flex: 3 }}>
+          <Skeleton className="h-3 w-20 rounded bg-bg-layer-2" />
           <div className="mt-4 flex-1 space-y-2">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-4 animate-pulse rounded bg-bg-layer-2" style={{ width: `${100 - i * 15}%` }} />
+              <Skeleton key={i} className="h-4 rounded bg-bg-layer-2" style={{ width: `${100 - i * 15}%` }} />
             ))}
           </div>
-        </div>
-        <div className="flex flex-col rounded-lg border border-border bg-bg-layer-1 px-6 py-4" style={{ flex: 2 }}>
-          <div className="h-3 w-28 animate-pulse rounded bg-bg-layer-2" />
+        </Card>
+        <Card className="flex flex-col px-6 py-4" style={{ flex: 2 }}>
+          <Skeleton className="h-3 w-28 rounded bg-bg-layer-2" />
           <div className="mt-4 flex-1 space-y-2">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-4 animate-pulse rounded bg-bg-layer-2" style={{ width: `${100 - i * 10}%` }} />
+              <Skeleton key={i} className="h-4 rounded bg-bg-layer-2" style={{ width: `${100 - i * 10}%` }} />
             ))}
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Row 4: Active Trend */}
-      <div className="flex min-h-[140px] gap-2">
-        <div className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-6 py-4">
+      <div className="flex min-h-[140px] gap-4">
+        <Card className="flex flex-1 flex-col px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="h-3 w-28 animate-pulse rounded bg-bg-layer-2" />
-            <div className="h-6 w-40 animate-pulse rounded bg-bg-layer-2" />
+            <Skeleton className="h-3 w-28 rounded bg-bg-layer-2" />
+            <Skeleton className="h-6 w-40 rounded bg-bg-layer-2" />
           </div>
-          <div className="mt-3 flex-1 animate-pulse rounded bg-bg-layer-2" />
-        </div>
+          <Skeleton className="mt-3 flex-1 rounded bg-bg-layer-2" />
+        </Card>
       </div>
 
       {/* Row 5: Rankings */}
-      <div className="flex flex-[2] min-h-[200px] gap-2">
+      <div className="flex flex-[2] min-h-[200px] gap-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-6 py-4">
-            <div className="h-3 w-16 animate-pulse rounded bg-bg-layer-2" />
+          <Card key={i} className="flex flex-1 flex-col px-6 py-4">
+            <Skeleton className="h-3 w-16 rounded bg-bg-layer-2" />
             <div className="mt-4 flex-1 space-y-2">
               {[1, 2, 3, 4, 5].map((j) => (
-                <div key={j} className="h-3 animate-pulse rounded bg-bg-layer-2" style={{ width: `${100 - j * 12}%` }} />
+                <Skeleton key={j} className="h-3 rounded bg-bg-layer-2" style={{ width: `${100 - j * 12}%` }} />
               ))}
             </div>
-          </div>
+          </Card>
         ))}
       </div>
-    </div>
+    </PageContainer>
   )
 }
 
 /* ============================================
    Error
    ============================================ */
-
-function ErrorState({ onRetry }: { onRetry: () => void }) {
-  const t = useT()
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4">
-      <AlertCircle className="size-8 text-text-3" />
-      <div className="text-center">
-        <p className="text-sm text-text-2">{t('adminDashboard.errLoad')}</p>
-        <p className="mt-1 text-xs text-text-3">{t('adminDashboard.errLoad')}</p>
-      </div>
-      <button
-        onClick={onRetry}
-        className="inline-flex items-center gap-1 rounded-md bg-bg-layer-2 px-3 py-1.5 text-xs text-text-1 transition-colors hover:bg-bg-layer-3"
-      >
-        <RefreshCw className="size-3" />
-        {t('common.retry')}
-      </button>
-    </div>
-  )
-}
 
 /* ============================================
    Pulse
@@ -244,7 +216,16 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
 function PulsePanel({ data }: { data: OverviewData }) {
   const t = useT()
   const metrics = [
-    { label: t('adminDashboard.activeUsers'), value: formatNumber(data.activeUsers), extra: null },
+    {
+      label: t('adminDashboard.activeUsers'),
+      value: formatNumber(data.activeUsers),
+      extra:
+        Math.abs(data.activeUsersDiff) < 0.05 ? null : (
+          <span className={cn('text-xs tabular-nums', data.activeUsersDiff > 0 ? 'text-success' : 'text-destructive')}>
+            {data.activeUsersDiff > 0 ? '+' : ''}{formatPercent(data.activeUsersDiff)}
+          </span>
+        ),
+    },
     { label: t('adminDashboard.totalSessions'), value: formatNumber(data.totalSessions), extra: <span className="text-xs text-text-3">{t('common.total')}</span> },
     { label: t('adminDashboard.newThisWeek'), value: formatNumber(data.newSessions), extra: <span className="text-xs text-text-3">{t('adminDashboard.totalSessions')}</span> },
     { label: t('adminDashboard.weeklyTokens'), value: formatNumber(data.weekTokens), extra: null },
@@ -255,15 +236,15 @@ function PulsePanel({ data }: { data: OverviewData }) {
   return (
     <div className="flex flex-col gap-2 px-6 py-4">
       <div className="flex items-center gap-2">
-        <h3 className="text-xs font-semibold text-text-2">{t('adminDashboard.systemOverview')}</h3>
+        <h3 className="text-section font-semibold text-text-1">{t('adminDashboard.systemOverview')}</h3>
       </div>
 
       {/* Metrics row */}
-      <div className="flex items-baseline gap-8">
+      <div className="flex flex-wrap items-baseline gap-x-8 gap-y-3">
         {metrics.map((m) => (
           <div key={m.label}>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-lg font-semibold text-text-1 leading-none tabular-nums">
+              <span className="text-display font-semibold leading-none text-text-1 tabular-nums">
                 {m.value}
               </span>
               {m.extra}
@@ -279,8 +260,8 @@ function PulsePanel({ data }: { data: OverviewData }) {
           <AreaChart data={data.sparkline} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
             <defs>
               <linearGradient id="sparklineGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--highlight)" stopOpacity={0.25} />
-                <stop offset="100%" stopColor="var(--highlight)" stopOpacity={0} />
+                <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.25} />
+                <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0} />
               </linearGradient>
             </defs>
             <Tooltip
@@ -300,11 +281,11 @@ function PulsePanel({ data }: { data: OverviewData }) {
             <Area
               type="monotone"
               dataKey="tokens"
-              stroke="var(--highlight)"
+              stroke="var(--chart-1)"
               fill="url(#sparklineGrad)"
               strokeWidth={1.5}
               dot={false}
-              activeDot={{ r: 3, fill: 'var(--highlight)', stroke: 'var(--bg-base)', strokeWidth: 1 }}
+              activeDot={{ r: 3, fill: 'var(--chart-1)', stroke: 'var(--bg-base)', strokeWidth: 1 }}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -342,7 +323,6 @@ function TokenTrendPanel({
   onTrendDaysChange: (v: TrendDays) => void
 }) {
   const t = useT()
-  const colors = useChartColors()
   const stats = useMemo(() => computeTrendStats(data), [data])
   const maxY = useMemo(() => {
     let m = 0
@@ -368,7 +348,7 @@ function TokenTrendPanel({
   return (
     <div className="flex flex-1 flex-col px-6 py-4">
       <div className="flex shrink-0 items-center justify-between">
-        <h3 className="text-xs font-semibold text-text-2">{t('adminDashboard.tokenTrend')}</h3>
+        <h3 className="text-section font-semibold text-text-1">{t('adminDashboard.tokenTrend')}</h3>
         <SegmentedControl value={trendDays} options={getTrendOptions(t)} onChange={onTrendDaysChange} />
       </div>
 
@@ -411,11 +391,11 @@ function TokenTrendPanel({
               strokeDasharray="4 4"
               strokeWidth={1}
             />
-            <Bar dataKey="promptTokens" name="Prompt" stackId="a" fill={colors[0]} radius={0} />
+            <Bar dataKey="promptTokens" name="Prompt" stackId="a" fill="var(--chart-1)" radius={0} />
             {hasCached && (
-              <Bar dataKey="promptCachedTokens" name={t('adminDashboard.cachedTokens')} stackId="a" fill={colors[3]} radius={0} />
+              <Bar dataKey="promptCachedTokens" name={t('adminDashboard.cachedTokens')} stackId="a" fill="var(--chart-cached)" radius={0} />
             )}
-            <Bar dataKey="completionTokens" name="Completion" stackId="a" fill={colors[1]} radius={[3, 3, 0, 0]} />
+            <Bar dataKey="completionTokens" name="Completion" stackId="a" fill="var(--chart-4)" radius={[3, 3, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -442,7 +422,7 @@ function ModelUsagePanel({
   return (
     <div className="flex flex-1 flex-col px-6 py-4">
       <div className="flex shrink-0 items-center justify-between">
-        <h3 className="text-xs font-semibold text-text-2">{t('adminDashboard.modelUsage')}</h3>
+        <h3 className="text-section font-semibold text-text-1">{t('adminDashboard.modelUsage')}</h3>
         <SegmentedControl value={trendDays} options={getTrendOptions(t)} onChange={onTrendDaysChange} />
       </div>
       <div className="mt-4 flex-1 min-h-0">
@@ -475,22 +455,27 @@ function ModelUsagePanel({
               <Tooltip
                 content={({ active, payload }) => {
                   if (!active || !payload?.length) return null
-                  const data = payload[0]?.payload as ModelUsageItem | undefined
-                  if (!data) return null
+                  const item = payload[0]?.payload as ModelUsageItem | undefined
+                  if (!item) return null
+                  const itemIndex = data.findIndex((d) => d.modelName === item.modelName)
+                  const itemColor = itemIndex >= 0 ? colors[itemIndex % colors.length] : colors[0]
                   return (
                     <div className="rounded-lg border border-border bg-bg-layer-2 px-3 py-2 shadow-pop">
-                      <p className="text-xs text-text-3">{data.modelName}</p>
-                      <p className="text-xs" style={{ color: 'var(--color-interactive)' }}>
-                        Prompt: {formatNumber(Math.max(0, data.promptTokens - data.promptCachedTokens))}
+                      <p className="flex items-center text-xs text-text-3">
+                        <span aria-hidden="true" className="mr-1 inline-block size-1.5 rounded-full" style={{ backgroundColor: itemColor }} />
+                        {item.modelName}
+                      </p>
+                      <p className="text-xs" style={{ color: 'var(--chart-1)' }}>
+                        Prompt: {formatNumber(Math.max(0, item.promptTokens - item.promptCachedTokens))}
+                      </p>
+                      <p className="text-xs" style={{ color: 'var(--chart-cached)' }}>
+                        Cached: {formatNumber(item.promptCachedTokens)}
                       </p>
                       <p className="text-xs" style={{ color: 'var(--chart-4)' }}>
-                        Cached: {formatNumber(data.promptCachedTokens)}
-                      </p>
-                      <p className="text-xs" style={{ color: 'var(--highlight)' }}>
-                        Completion: {formatNumber(data.completionTokens)}
+                        Completion: {formatNumber(item.completionTokens)}
                       </p>
                       <p className="mt-1 border-t border-border pt-1 text-xs font-medium text-text-1">
-                        Total: {formatNumber(data.tokenCount)}
+                        Total: {formatNumber(item.tokenCount)}
                       </p>
                     </div>
                   )
@@ -519,17 +504,14 @@ function UserTokenRankPanel({
   onTrendDaysChange: (v: TrendDays) => void
 }) {
   const t = useT()
-  const rankColors = useMemo(
-    () => ['var(--highlight)', 'var(--color-interactive)', 'var(--chart-4)'],
-    [],
-  )
+  const rankColors = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)']
   const maxToken = data.length > 0 ? data[0].tokenCount : 1
 
   if (data.length === 0) {
     return (
       <div className="flex flex-1 flex-col px-6 py-4">
         <div className="flex shrink-0 items-center justify-between">
-          <h3 className="text-xs font-semibold text-text-2">{t('adminDashboard.userTokenRank')}</h3>
+          <h3 className="text-section font-semibold text-text-1">{t('adminDashboard.userTokenRank')}</h3>
           <SegmentedControl value={trendDays} options={getTrendOptions(t)} onChange={onTrendDaysChange} />
         </div>
         <div className="flex flex-1 items-center justify-center">
@@ -542,7 +524,7 @@ function UserTokenRankPanel({
   return (
     <div className="flex flex-1 flex-col px-6 py-4">
       <div className="flex shrink-0 items-center justify-between">
-        <h3 className="text-xs font-semibold text-text-2">{t('adminDashboard.userTokenRank')}</h3>
+        <h3 className="text-section font-semibold text-text-1">{t('adminDashboard.userTokenRank')}</h3>
         <SegmentedControl value={trendDays} options={getTrendOptions(t)} onChange={onTrendDaysChange} />
       </div>
       <div className="mt-3 flex-1 space-y-2 overflow-hidden">
@@ -606,7 +588,7 @@ function ActiveTrendPanel({
   return (
     <div className="flex flex-1 flex-col px-6 py-4">
       <div className="flex shrink-0 items-center justify-between">
-        <h3 className="text-xs font-semibold text-text-2">{t('adminDashboard.activityTrend')}</h3>
+        <h3 className="text-section font-semibold text-text-1">{t('adminDashboard.activityTrend')}</h3>
         <SegmentedControl value={trendDays} options={getTrendOptions(t)} onChange={onTrendDaysChange} />
       </div>
 
@@ -637,16 +619,16 @@ function ActiveTrendPanel({
               type="monotone"
               dataKey="count"
               name="DAU"
-              stroke="var(--color-interactive)"
+              stroke="var(--chart-1)"
               strokeWidth={1.5}
               dot={false}
-              activeDot={{ r: 3, fill: 'var(--color-interactive)', stroke: 'var(--bg-base)', strokeWidth: 1 }}
+              activeDot={{ r: 3, fill: 'var(--chart-1)', stroke: 'var(--bg-base)', strokeWidth: 1 }}
             />
           <Line
             type="monotone"
             dataKey="ma"
             name={t('adminDashboard.ma7d')}
-              stroke="var(--highlight)"
+              stroke="var(--chart-4)"
               strokeWidth={1.5}
               strokeDasharray="5 3"
               dot={false}
@@ -734,78 +716,75 @@ export function Component() {
 
   return (
     <div className="flex h-full flex-col bg-bg-base">
-      {/* Toolbar */}
-      <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
-        <h1 className="text-base font-semibold text-text-1">{t('adminDashboard.title')}</h1>
-      </div>
+      <PageHeader title={t('adminDashboard.title')} />
 
       {/* Content */}
-      {state === 'loading' && <Skeleton />}
+      {state === 'loading' && <AdminDashboardSkeleton />}
 
-      {state === 'error' && <ErrorState onRetry={handleRetry} />}
+      {state === 'error' && <ErrorState title={t('adminDashboard.errLoad')} description={t('adminDashboard.errLoad')} onRetry={handleRetry} />}
 
       {state === 'data' && data && (
-        <div className="flex flex-1 flex-col gap-2 overflow-auto p-2">
+        <PageContainer className="flex flex-1 flex-col gap-4 overflow-auto">
           {/* Row 1: System Pulse (full width) */}
-          <div className="flex min-h-[120px] gap-2">
-            <div className="flex w-full flex-col rounded-lg border border-border bg-bg-layer-1">
+          <div className="flex min-h-[120px] gap-4">
+            <Card className="flex w-full flex-col">
               <PulsePanel data={data.overview} />
-            </div>
+            </Card>
           </div>
 
           {/* Row 2: Token Trend (full width, 2fr) */}
-          <div className="flex flex-[2] min-h-[220px] gap-2">
-            <div className="flex flex-1 rounded-lg border border-border bg-bg-layer-1">
+          <div className="flex flex-[2] min-h-[220px] gap-4">
+            <Card className="flex flex-1">
               <TokenTrendPanel
                 data={trendData}
                 trendDays={trendDays}
                 onTrendDaysChange={handleTrendDaysChange}
               />
-            </div>
+            </Card>
           </div>
 
           {/* Row 3: Model Usage (3/5) + User Token Rank (2/5) */}
-          <div className="flex flex-[2] min-h-[220px] gap-2">
-            <div className="flex rounded-lg border border-border bg-bg-layer-1" style={{ flex: 3 }}>
+          <div className="flex flex-[2] min-h-[220px] gap-4">
+            <Card className="flex" style={{ flex: 3 }}>
               <ModelUsagePanel
                 data={modelUsageData}
                 trendDays={modelUsageDays}
                 onTrendDaysChange={handleModelUsageDaysChange}
               />
-            </div>
-            <div className="flex rounded-lg border border-border bg-bg-layer-1" style={{ flex: 2 }}>
+            </Card>
+            <Card className="flex" style={{ flex: 2 }}>
               <UserTokenRankPanel
                 data={userTokenRankData}
                 trendDays={userTokenRankDays}
                 onTrendDaysChange={handleUserTokenRankDaysChange}
               />
-            </div>
+            </Card>
           </div>
 
           {/* Row 4: Active Trend (full width) */}
-          <div className="flex min-h-[140px] gap-2">
-            <div className="flex flex-1 rounded-lg border border-border bg-bg-layer-1">
+          <div className="flex min-h-[140px] gap-4">
+            <Card className="flex flex-1">
               <ActiveTrendPanel
                 data={activeData}
                 trendDays={activeDays}
                 onTrendDaysChange={handleActiveDaysChange}
               />
-            </div>
+            </Card>
           </div>
 
           {/* Row 5: Rankings (1:1:1) */}
-          <div className="flex flex-[2] min-h-[200px] gap-2">
-            <div className="flex flex-1 rounded-lg border border-border bg-bg-layer-1">
-              <RankingPanel title={t('adminDashboard.weeklySkillRank')} data={data.skillUsageRank} />
-            </div>
-            <div className="flex flex-1 rounded-lg border border-border bg-bg-layer-1">
-              <RankingPanel title={t('adminDashboard.weeklyMcpRank')} data={data.mcpUsageRank} />
-            </div>
-            <div className="flex flex-1 rounded-lg border border-border bg-bg-layer-1">
-              <RankingPanel title={t('adminDashboard.weeklyToolRank')} data={data.toolUsageRank} />
-            </div>
+          <div className="flex flex-[2] min-h-[200px] gap-4">
+            <Card className="flex flex-1">
+              <RankingPanel title={t('adminDashboard.weeklySkillRank')} data={data.skillUsageRank} tone={4} />
+            </Card>
+            <Card className="flex flex-1">
+              <RankingPanel title={t('adminDashboard.weeklyMcpRank')} data={data.mcpUsageRank} tone={3} />
+            </Card>
+            <Card className="flex flex-1">
+              <RankingPanel title={t('adminDashboard.weeklyToolRank')} data={data.toolUsageRank} tone={2} />
+            </Card>
           </div>
-        </div>
+        </PageContainer>
       )}
     </div>
   )

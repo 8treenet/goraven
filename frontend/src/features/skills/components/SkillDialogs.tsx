@@ -34,12 +34,12 @@ export function DeleteSkillDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <p className="text-xs text-text-3">{t('skills.deleteSkillDesc')}</p>
+          <p className="text-meta text-text-3">{t('skills.deleteSkillDesc')}</p>
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="default" onClick={onClose}>
+            <Button variant="outline" size="default" onClick={onClose}>
               {t('common.cancel')}
             </Button>
-            <Button variant="default" size="default" onClick={onConfirm}>
+            <Button variant="destructive" size="default" onClick={onConfirm}>
               {t('common.confirmDelete')}
             </Button>
           </div>
@@ -74,23 +74,23 @@ export function InstallSuccessDialog({
             <div className="flex items-start gap-4">
               <Icon
                 name={target?.icon || 'bot'}
-                className="size-8 shrink-0 mt-0.5 text-text-2"
+                className="size-8 shrink-0 mt-0.5 text-success"
               />
               <div className="min-w-0">
-                <h3 className="text-base font-semibold text-text-1">{target?.name}</h3>
-                <p className="mt-1 text-sm text-text-3 leading-relaxed">
+                <h3 className="text-section font-semibold text-text-1">{target?.name}</h3>
+                <p className="mt-1 text-[13px] leading-[1.65] text-text-3">
                   {target?.description}
                 </p>
               </div>
             </div>
           </div>
 
-          <p className="text-sm text-text-3 leading-relaxed">
+          <p className="text-[13px] leading-[1.65] text-text-3">
             {t('skills.installSuccessDesc')}
           </p>
 
           <div className="rounded-md border border-border bg-bg-layer-2 p-4">
-            <p className="text-base text-text-2 leading-relaxed">
+            <p className="text-[13px] leading-[1.65] text-text-2">
               {target
                 ? translate('skills.installSuccessContent')
                     .replace('{name}', target.name)
@@ -100,7 +100,7 @@ export function InstallSuccessDialog({
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="ghost" size="default" onClick={onClose}>
+            <Button variant="outline" size="default" onClick={onClose}>
               {t('common.close')}
             </Button>
             <Button variant="default" size="default" onClick={onCopy}>
@@ -148,17 +148,17 @@ export function ShareSkillDialog({
             </div>
           </div>
           <div>
-            <label className="text-xs text-text-muted">{t('skills.shareNoteLabel')}</label>
+            <label className="text-meta text-text-3">{t('skills.shareNoteLabel')}</label>
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               spellCheck={false}
               placeholder={t('skills.shareNotePlaceholder')}
-              className="mt-1 w-full h-16 rounded-md border border-border bg-transparent px-3 py-2 text-xs text-text-1 placeholder:text-text-muted outline-none focus:border-ring focus:ring-2 focus:ring-ring/30 resize-none"
+              className="mt-1 h-16 w-full resize-none rounded-lg border border-border bg-transparent px-3 py-2 text-[13px] leading-[1.65] text-text-1 placeholder:text-text-muted outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30"
             />
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="default" onClick={() => {
+            <Button variant="outline" size="default" onClick={() => {
               setNote('')
               onClose()
             }}>
@@ -195,10 +195,10 @@ export function CancelShareDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" size="default" onClick={onClose}>
+          <Button variant="outline" size="default" onClick={onClose}>
             {t('common.cancel')}
           </Button>
-          <Button variant="default" size="default" onClick={onConfirm}>
+          <Button variant="destructive" size="default" onClick={onConfirm}>
             {t('common.confirmDelete')}
           </Button>
         </div>

@@ -6,13 +6,24 @@ import {
   Plus,
   Pencil,
   Trash2,
-  AlertCircle,
-  RefreshCw,
   ChevronLeft,
   ChevronRight,
   Maximize2,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { AppDrawer } from '@/components/patterns/AppDrawer'
+import { EmptyState } from '@/components/patterns/EmptyState'
+import { ErrorState } from '@/components/patterns/ErrorState'
+import { PageHeader } from '@/components/patterns/PageHeader'
+import { Badge } from '@/components/ui/badge'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -116,57 +127,6 @@ function RoleInfoPopover({ content }: { content: string }) {
    Drawer
    ============================================ */
 
-function Drawer({
-  open,
-  onClose,
-  title,
-  children,
-  footer,
-}: {
-  open: boolean
-  onClose: () => void
-  title: string
-  children: React.ReactNode
-  footer?: React.ReactNode
-}) {
-  return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <div className={cn('fixed inset-0 z-50', open ? 'visible' : 'invisible')}>
-        <div
-          className={cn(
-            'absolute inset-0 bg-black/60 transition-opacity duration-200',
-            open ? 'opacity-100' : 'opacity-0',
-          )}
-          onClick={onClose}
-        />
-        <div
-          className={cn(
-            'absolute right-0 top-0 z-50 flex h-full w-[480px] flex-col border-l border-border bg-bg-layer-1 shadow-pop transition-transform duration-200 ease-out',
-            open ? 'translate-x-0' : 'translate-x-full',
-          )}
-        >
-          <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
-            <h2 className="text-sm font-semibold text-text-1">{title}</h2>
-            <button
-              onClick={onClose}
-              className="rounded-sm p-0.5 text-text-3 transition-colors hover:bg-bg-hover hover:text-text-1"
-            >
-              <X className="size-4" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-auto p-4">
-            {children}
-          </div>
-          {footer && (
-            <div className="shrink-0 border-t border-border px-4 py-3">
-              {footer}
-            </div>
-          )}
-        </div>
-      </div>
-    </Dialog>
-  )
-}
 
 /* ============================================
    Template Drawer (Create / Edit)
@@ -243,16 +203,17 @@ function TemplateDrawer({
 
   return (
     <>
-      <Drawer
+      <AppDrawer
+        width="md"
         open={open}
         onClose={onClose}
         title={mode === 'add' ? t('adminPersonaTemplates.createTemplate') : t('adminPersonaTemplates.editTemplate')}
         footer={
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="default" onClick={onClose} className="text-highlight hover:text-highlight/80">
+            <Button variant="ghost" size="default" onClick={onClose} className="text-accent hover:text-accent-hover">
               {t('common.cancel')}
             </Button>
-            <Button variant="default" size="default" onClick={handleSave} className="text-highlight">
+            <Button variant="default" size="default" onClick={handleSave}>
               {t('common.save')}
             </Button>
           </div>
@@ -264,21 +225,21 @@ function TemplateDrawer({
             <h3 className="mb-3 text-xs font-semibold text-text-3 uppercase tracking-wide">{t('adminPersonaTemplates.basicInfo')}</h3>
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-text-2">
+                <Label className="text-[13px] font-medium text-text-2">
                   {t('adminPersonaTemplates.templateName')} <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                   placeholder={t('adminPersonaTemplates.templateName')}
-                  className="h-8 text-sm"
+                  className="h-9 text-[13px]"
                   maxLength={64}
                 />
                 {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-text-2">{t('common.icon')}</Label>
+                <Label className="text-[13px] font-medium text-text-2">{t('common.icon')}</Label>
                 <IconPickerTrigger
                   value={form.icon}
                   onChange={(name: IconName) => setForm((f) => ({ ...f, icon: name }))}
@@ -286,24 +247,24 @@ function TemplateDrawer({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-text-2">{t('adminPersonaTemplates.templateDesc')}</Label>
+                <Label className="text-[13px] font-medium text-text-2">{t('adminPersonaTemplates.templateDesc')}</Label>
                 <Input
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   placeholder={t('adminPersonaTemplates.templateDescHint')}
-                  className="h-8 text-sm"
+                  className="h-9 text-[13px]"
                   maxLength={128}
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-text-2">
+                <Label className="text-[13px] font-medium text-text-2">
                   {t('common.category')} <span className="text-destructive">*</span>
                 </Label>
                 <select
                   value={form.categoryId}
                   onChange={(e) => setForm((f) => ({ ...f, categoryId: Number(e.target.value) }))}
-                  className="h-8 rounded-lg border border-border-strong bg-transparent px-2.5 text-sm text-text-1 outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
+                  className="h-9 rounded-lg border border-border-strong bg-transparent px-2.5 text-[13px] text-text-1 outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
                 >
                   {categories.map((c) => (
                     <option key={c.categoryId} value={c.categoryId}>
@@ -321,7 +282,7 @@ function TemplateDrawer({
             <h3 className="mb-3 text-xs font-semibold text-text-3 uppercase tracking-wide">{t('adminPersonaTemplates.coreContent')}</h3>
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
-                <Label className="text-xs text-text-2">
+                <Label className="text-[13px] font-medium text-text-2">
                   {t('adminPersonaTemplates.systemPrompt')} <span className="text-destructive">*</span>
                 </Label>
                 <button
@@ -339,7 +300,7 @@ function TemplateDrawer({
                 placeholder={t('adminPersonaTemplates.promptPlaceholder')}
                 spellCheck={false}
                 maxLength={500}
-                className="min-h-[200px] resize-y rounded-lg border border-border-strong bg-transparent px-2.5 py-2 text-sm text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-3 focus:ring-ring/50 font-mono"
+                className="min-h-[200px] resize-y rounded-lg border border-border-strong bg-transparent px-2.5 py-2 text-[13px] leading-[1.7] text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-3 focus:ring-ring/50 font-mono"
               />
               <div className="flex items-center justify-between">
                 {errors.roleInfo ? (
@@ -356,18 +317,18 @@ function TemplateDrawer({
           <div>
             <h3 className="mb-3 text-xs font-semibold text-text-3 uppercase tracking-wide">{t('adminPersonaTemplates.otherSettings')}</h3>
             <div className="flex flex-col gap-1.5">
-              <Label className="text-xs text-text-2">{t('adminPersonaTemplates.sortOrder')}</Label>
+              <Label className="text-[13px] font-medium text-text-2">{t('adminPersonaTemplates.sortOrder')}</Label>
               <Input
                 type="number"
                 value={form.sortOrder}
                 onChange={(e) => setForm((f) => ({ ...f, sortOrder: Number(e.target.value) || 0 }))}
-                className="h-8 w-24 text-sm"
+                className="h-9 w-24 text-[13px]"
               />
               <p className="text-xs text-text-muted">{t('adminPersonaTemplates.sortHint')}</p>
             </div>
           </div>
         </div>
-      </Drawer>
+      </AppDrawer>
 
       {/* Fullscreen roleInfo editor */}
       <Dialog open={fullscreenOpen} onOpenChange={setFullscreenOpen}>
@@ -382,7 +343,7 @@ function TemplateDrawer({
             placeholder={t('adminPersonaTemplates.promptPlaceholder')}
             spellCheck={false}
             maxLength={500}
-            className="flex-1 resize-none rounded-lg border border-border-strong bg-transparent px-3 py-2.5 text-sm text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-3 focus:ring-ring/50 font-mono"
+            className="flex-1 resize-none rounded-lg border border-border-strong bg-transparent px-3 py-2.5 text-[13px] leading-[1.7] text-text-1 outline-none placeholder:text-text-muted focus:border-ring focus:ring-3 focus:ring-ring/50 font-mono"
           />
           <div className="flex items-center justify-between pt-2">
             <span className="text-xs text-text-muted tabular-nums">{t('adminPersonaTemplates.charCount').replace('{count}', String(roleInfoCharCount))}</span>
@@ -487,7 +448,7 @@ function CategoryManagementDialog({
                           <div className="flex items-center gap-1.5">
                             <span className="text-sm text-text-1">{cat.name}</span>
                             {cat.isDefault === 1 && (
-                              <span className="inline-flex items-center rounded px-1 py-0 text-[10px] text-text-3 bg-bg-layer-3">
+                              <span className="inline-flex items-center rounded px-1 py-0 text-micro text-text-3 bg-bg-layer-3">
                                 {t('common.default')}
                               </span>
                             )}
@@ -550,7 +511,7 @@ function CategoryManagementDialog({
           {(mode === 'add' || mode === 'edit') && (
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-text-2">{t('adminPersonaTemplates.categoryName')}</Label>
+                <Label className="text-[13px] font-medium text-text-2">{t('adminPersonaTemplates.categoryName')}</Label>
                 <Input
                   value={form.name}
                   onChange={(e) => {
@@ -558,14 +519,14 @@ function CategoryManagementDialog({
                     setFormError('')
                   }}
                   placeholder={t('adminPersonaTemplates.catNamePlaceholder')}
-                  className="h-8 text-sm"
+                  className="h-9 text-[13px]"
                   maxLength={32}
                 />
                 {formError && <p className="text-xs text-destructive">{formError}</p>}
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-text-2">{t('common.icon')}</Label>
+                <Label className="text-[13px] font-medium text-text-2">{t('common.icon')}</Label>
                 <IconPickerTrigger
                   value={form.icon}
                   onChange={(name: IconName) => setForm((f) => ({ ...f, icon: name }))}
@@ -581,7 +542,7 @@ function CategoryManagementDialog({
                     setEditTarget(null)
                     setFormError('')
                   }}
-                  className="text-highlight hover:text-highlight/80"
+                  className="text-accent hover:text-accent-hover"
                 >
                   {t('common.cancel')}
                 </Button>
@@ -589,7 +550,7 @@ function CategoryManagementDialog({
                   variant="default"
                   size="default"
                   onClick={mode === 'add' ? handleAddSave : handleEditSave}
-                  className="text-highlight"
+                 
                 >
                   {t('common.save')}
                 </Button>
@@ -682,53 +643,53 @@ function TemplateRow({
   onDelete: () => void
 }) {
   return (
-    <tr className="transition-colors hover:bg-bg-hover">
-      <td className="py-2.5 pl-4 pr-2">
-        <Icon name={template.icon} className="size-5 text-interactive" />
-      </td>
-      <td className="py-2.5 pr-4">
-        <span className="text-sm font-medium text-text-1">{template.name}</span>
-      </td>
-      <td className="py-2.5 pr-4">
-        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-text-2 border border-border-custom">
-          <Icon name={template.categoryIcon} className="size-3 text-interactive" />
+    <TableRow className="group">
+      <TableCell className="h-12 w-10 py-0 pl-4 pr-2">
+        <Icon name={template.icon} className="size-5 text-accent" />
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4">
+        <span className="text-[13px] font-medium text-text-1">{template.name}</span>
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4">
+        <Badge variant="outline">
+          <Icon name={template.categoryIcon} className="size-3 text-accent" />
           {template.categoryName}
-        </span>
-      </td>
-      <td className="py-2.5 pr-4 text-sm text-text-2 max-w-48">
+        </Badge>
+      </TableCell>
+      <TableCell className="h-12 max-w-48 py-0 pr-4 text-text-2">
         <span className="line-clamp-1">{template.description || '—'}</span>
-      </td>
-      <td className="py-2.5 pr-4">
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4">
         <RoleInfoPopover content={template.roleInfo} />
-      </td>
-      <td className="py-2.5 pr-4 text-sm tabular-nums text-text-2">
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4 text-right tabular-nums text-text-2">
         {template.usageCount.toLocaleString()}
-      </td>
-      <td className="py-2.5 pr-4 text-sm tabular-nums text-text-3">
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4 text-right tabular-nums text-text-3">
         {template.sortOrder}
-      </td>
-      <td className="py-2.5 pr-4 text-sm text-text-3 whitespace-nowrap">
+      </TableCell>
+      <TableCell className="h-12 whitespace-nowrap py-0 pr-4 text-text-3">
         {formatDate(template.updated)}
-      </td>
-      <td className="py-2.5 pr-4">
-        <div className="flex items-center gap-0.5">
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4">
+        <div className="flex items-center justify-end gap-0.5 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
           <button
             onClick={onEdit}
             className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1"
-            title={translate('common.edit')}
+            title={translate('common.edit')} aria-label={translate('common.edit')}
           >
             <Pencil className="size-3.5" />
           </button>
           <button
             onClick={onDelete}
             className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-destructive"
-            title={translate('common.delete')}
+            title={translate('common.delete')} aria-label={translate('common.delete')}
           >
             <Trash2 className="size-3.5" />
           </button>
         </div>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   )
 }
 
@@ -739,104 +700,54 @@ function TemplateRow({
 function TableSkeleton() {
   return (
     <div className="flex-1 overflow-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-border text-left text-xs text-text-3">
-            <th className="pb-2 pl-4 pr-2 font-normal" />
-            <th className="pb-2 pr-4 font-normal">{translate('common.name')}</th>
-            <th className="pb-2 pr-4 font-normal">{translate('common.category')}</th>
-            <th className="pb-2 pr-4 font-normal">{translate('common.description')}</th>
-            <th className="pb-2 pr-4 font-normal">{translate('adminPersonaTemplates.systemPrompt')}</th>
-                  <th className="pb-2 pr-4 font-normal">{translate('adminPersonaTemplates.usageCount')}</th>
-            <th className="pb-2 pr-4 font-normal">{translate('common.sort')}</th>
-            <th className="pb-2 pr-4 font-normal">{translate('common.updated')}</th>
-            <th className="pb-2 pr-4 font-normal" />
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="w-10 pl-4 pr-2" />
+            <TableHead className="pr-4">{translate('common.name')}</TableHead>
+            <TableHead className="pr-4">{translate('common.category')}</TableHead>
+            <TableHead className="pr-4">{translate('common.description')}</TableHead>
+            <TableHead className="pr-4">{translate('adminPersonaTemplates.systemPrompt')}</TableHead>
+            <TableHead className="pr-4 text-right">{translate('adminPersonaTemplates.usageCount')}</TableHead>
+            <TableHead className="pr-4 text-right">{translate('common.sort')}</TableHead>
+            <TableHead className="pr-4">{translate('common.updated')}</TableHead>
+            <TableHead className="pr-4" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {Array.from({ length: 8 }).map((_, i) => (
-            <tr key={i}>
-              <td className="py-2.5 pl-4 pr-2">
+            <TableRow key={i} className="hover:bg-transparent">
+              <TableCell className="h-12 py-0 pl-4 pr-2">
                 <div className="size-5 animate-pulse rounded-sm bg-bg-layer-3" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-3.5 w-24 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-5 w-16 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-3.5 w-32 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-3.5 w-40 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
-                <div className="h-3.5 w-10 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
-                <div className="h-3.5 w-6 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
+                <div className="ml-auto h-3.5 w-10 animate-pulse rounded bg-bg-layer-2" />
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
+                <div className="ml-auto h-3.5 w-6 animate-pulse rounded bg-bg-layer-2" />
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-3.5 w-28 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
-                <div className="h-3.5 w-12 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-            </tr>
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
+                <div className="ml-auto h-3.5 w-12 animate-pulse rounded bg-bg-layer-2" />
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-/* ============================================
-   Empty State
-   ============================================ */
-
-function EmptyState({ hasFilter, onClearFilter }: { hasFilter: boolean; onClearFilter: () => void }) {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3">
-      <Icon name="bot" className="size-10 text-text-muted" />
-      <div className="text-center">
-        <p className="text-sm text-text-2">
-          {hasFilter ? translate('adminPersonaTemplates.noMatch') : translate('adminPersonaTemplates.noTemplates')}
-        </p>
-      </div>
-      {hasFilter ? (
-        <button
-          onClick={onClearFilter}
-          className="text-xs text-interactive transition-colors hover:text-interactive-hover"
-        >
-          {translate('common.clear')}
-        </button>
-      ) : (
-        <p className="text-xs text-text-3">{translate('adminPersonaTemplates.createFirst')}</p>
-      )}
-    </div>
-  )
-}
-
-/* ============================================
-   Error State
-   ============================================ */
-
-function ErrorState({ onRetry }: { onRetry: () => void }) {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4">
-      <AlertCircle className="size-8 text-text-3" />
-      <div className="text-center">
-        <p className="text-sm text-text-2">{translate('common.loadFailed')}</p>
-        <p className="mt-1 text-xs text-text-3">{translate('adminPersonaTemplates.fetchFailed')}</p>
-      </div>
-      <button
-        onClick={onRetry}
-        className="inline-flex items-center gap-1 rounded-md bg-bg-layer-2 px-3 py-1.5 text-xs text-text-1 transition-colors hover:bg-bg-layer-3"
-      >
-        <RefreshCw className="size-3" />
-        {translate('common.retry')}
-      </button>
+        </TableBody>
+      </Table>
     </div>
   )
 }
@@ -881,7 +792,7 @@ function Pagination({
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}
-          className="inline-flex size-7 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1 disabled:opacity-30 disabled:hover:bg-transparent"
+          className="inline-flex size-8 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1 disabled:opacity-30 disabled:hover:bg-transparent"
         >
           <ChevronLeft className="size-3.5" />
         </button>
@@ -895,7 +806,7 @@ function Pagination({
               key={p}
               onClick={() => onPageChange(p)}
               className={cn(
-                'inline-flex size-7 items-center justify-center rounded-md text-xs tabular-nums transition-colors',
+                'inline-flex size-8 items-center justify-center rounded-md text-xs tabular-nums transition-colors',
                 p === page
                   ? 'bg-bg-layer-3 text-text-1 font-medium'
                   : 'text-text-3 hover:bg-bg-layer-2 hover:text-text-1',
@@ -908,7 +819,7 @@ function Pagination({
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page === totalPages}
-          className="inline-flex size-7 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1 disabled:opacity-30 disabled:hover:bg-transparent"
+          className="inline-flex size-8 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1 disabled:opacity-30 disabled:hover:bg-transparent"
         >
           <ChevronRight className="size-3.5" />
         </button>
@@ -1068,10 +979,10 @@ export function Component() {
 
   return (
     <div className="flex h-full flex-col bg-bg-base">
-      {/* Toolbar */}
-      <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
-        <h1 className="text-base font-semibold text-text-1">{t('adminPersonaTemplates.title')}</h1>
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title={t('adminPersonaTemplates.title')}
+        actions={
+          <>
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-text-3" />
             <input
@@ -1109,7 +1020,7 @@ export function Component() {
             variant="outline"
             size="sm"
             onClick={() => setCategoryDialogOpen(true)}
-            className="text-highlight hover:text-highlight"
+            className="text-accent hover:text-accent-hover"
           >
             <Icon name="folder-open" className="size-3.5" />
             {t('adminPersonaTemplates.categoryManagement')}
@@ -1118,43 +1029,64 @@ export function Component() {
             variant="default"
             size="sm"
             onClick={() => setDrawerMode('add')}
-            className="text-highlight hover:text-highlight"
+           
           >
             <Plus className="size-3.5" />
             {t('adminPersonaTemplates.createTemplate')}
           </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Content */}
       {state === 'loading' && <TableSkeleton />}
 
-      {state === 'error' && <ErrorState onRetry={loadData} />}
+      {state === 'error' && <ErrorState description={translate('adminPersonaTemplates.fetchFailed')} onRetry={loadData} />}
 
-      {state === 'empty' && <EmptyState hasFilter={false} onClearFilter={handleClearFilter} />}
+      {state === 'empty' && (
+        <EmptyState
+          icon={<Icon name="bot" className="size-10 text-text-muted" />}
+          title={translate('adminPersonaTemplates.noTemplates')}
+          description={translate('adminPersonaTemplates.createFirst')}
+        />
+      )}
 
       {state === 'data' && templates.length === 0 && (
-        <EmptyState hasFilter={hasFilter} onClearFilter={handleClearFilter} />
+        <EmptyState
+          icon={<Icon name="bot" className="size-10 text-text-muted" />}
+          title={hasFilter ? translate('adminPersonaTemplates.noMatch') : translate('adminPersonaTemplates.noTemplates')}
+          description={hasFilter ? undefined : translate('adminPersonaTemplates.createFirst')}
+          action={
+            hasFilter ? (
+              <button
+                onClick={handleClearFilter}
+                className="text-xs text-interactive transition-colors hover:text-interactive-hover"
+              >
+                {translate('common.clear')}
+              </button>
+            ) : undefined
+          }
+        />
       )}
 
       {state === 'data' && templates.length > 0 && (
         <>
           <div className="flex-1 overflow-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="sticky top-0 z-10 border-b border-border bg-bg-base text-left text-xs text-text-3">
-                  <th className="pb-2 pl-4 pr-2 font-normal" />
-                  <th className="pb-2 pr-4 font-normal">{t('common.name')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('common.category')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('common.description')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('adminPersonaTemplates.systemPrompt')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('adminPersonaTemplates.usageCount')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('common.sort')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('common.updated')}</th>
-                  <th className="pb-2 pr-4 font-normal" />
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="w-10 pl-4 pr-2" />
+                  <TableHead className="pr-4">{t('common.name')}</TableHead>
+                  <TableHead className="pr-4">{t('common.category')}</TableHead>
+                  <TableHead className="pr-4">{t('common.description')}</TableHead>
+                  <TableHead className="pr-4">{t('adminPersonaTemplates.systemPrompt')}</TableHead>
+                  <TableHead className="pr-4 text-right">{t('adminPersonaTemplates.usageCount')}</TableHead>
+                  <TableHead className="pr-4 text-right">{t('common.sort')}</TableHead>
+                  <TableHead className="pr-4">{t('common.updated')}</TableHead>
+                  <TableHead className="pr-4" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {templates.map((t) => (
                   <TemplateRow
                     key={t.templateId}
@@ -1166,8 +1098,8 @@ export function Component() {
                     onDelete={() => setDeleteTarget(t)}
                   />
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           <Pagination
             page={safePage}

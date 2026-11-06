@@ -19,6 +19,8 @@ interface MarkdownProps {
   isAnimating?: boolean
   className?: string
   components?: StreamdownProps['components']
+  /** Render embedded <goraven-file> chips at 13px (read-only share views). */
+  compactFiles?: boolean
 }
 
 const GORAVEN_FILE_RE = /<goraven-file\s+([^>]*?)\/?>/gi
@@ -93,6 +95,7 @@ export function Markdown({
   isAnimating = false,
   className,
   components,
+  compactFiles,
 }: MarkdownProps) {
   // Strip <goraven-upload> tags — server adds these from user uploads but the frontend
   // doesn't render them (files are already shown as attachment previews in the input)
@@ -132,6 +135,7 @@ export function Markdown({
               path={seg.attrs?.path}
               name={seg.attrs?.name}
               description={seg.attrs?.description}
+              compact={compactFiles}
             />
           )
         }

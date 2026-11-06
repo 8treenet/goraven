@@ -2,8 +2,6 @@ import { useState, useCallback, useEffect } from 'react'
 import { toast } from 'sonner'
 import {
   Trash2,
-  AlertCircle,
-  RefreshCw,
   Loader2,
   Lock,
   Share2,
@@ -11,6 +9,18 @@ import {
   Users,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { EmptyState } from '@/components/patterns/EmptyState'
+import { ErrorState } from '@/components/patterns/ErrorState'
+import { PageHeader } from '@/components/patterns/PageHeader'
+import { Badge } from '@/components/ui/badge'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useT, t as translate } from '@/i18n'
@@ -53,7 +63,7 @@ function Avatar({ name, avatar }: { name: string; avatar: string }) {
     )
   }
   return (
-    <div className="inline-flex size-7 shrink-0 items-center justify-center rounded-sm bg-interactive text-xs font-medium text-white">
+    <div className="inline-flex size-7 shrink-0 items-center justify-center rounded-sm bg-interactive text-xs font-medium text-bg-base">
       {name.charAt(0).toUpperCase()}
     </div>
   )
@@ -168,65 +178,62 @@ function ProjectRow({
 }) {
   const t = useT()
   return (
-    <tr className="transition-colors hover:bg-bg-hover">
-      <td className="py-2.5 pl-4 pr-2">
+    <TableRow className="group">
+      <TableCell className="h-12 py-0 pl-4 pr-2">
         <div className="flex items-center gap-2">
-          <Share2 className="size-4 shrink-0 text-text-3" />
-          <span className="text-sm font-medium text-text-1">{project.projectName}</span>
+          <Share2 className="size-4 shrink-0 text-cat-1" />
+          <span className="text-[13px] font-medium text-text-1">{project.projectName}</span>
         </div>
-      </td>
-      <td className="py-2.5 pr-4">
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4">
         <div className="flex items-center gap-2">
           <Avatar name={project.creatorName || project.creatorId} avatar={project.creatorAvatar} />
-          <span className="text-sm text-text-2">{project.creatorName || project.creatorId}</span>
+          <span className="text-[13px] text-text-2">{project.creatorName || project.creatorId}</span>
         </div>
-      </td>
-      <td className="py-2.5 pr-4 text-sm text-text-2">
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4 text-text-2">
         <span className="line-clamp-1 max-w-[260px]">{project.description || '—'}</span>
-      </td>
-      <td className="py-2.5 pr-4">
-        <span className={cn(
-          'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs',
-          project.access === 1 ? 'bg-interactive/10 text-interactive' : 'bg-highlight/15 text-highlight',
-        )}>
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4">
+        <Badge variant={project.access === 1 ? 'info' : 'neutral'} dot>
           <Users className="size-3" />
           {project.access === 1 ? t('files.accessMembers') : t('files.accessAll')}
-        </span>
-      </td>
-      <td className="py-2.5 pr-4 text-sm tabular-nums text-text-2">{project.visitCount}</td>
-      <td className="py-2.5 pr-4 text-sm text-text-3">
+        </Badge>
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4 text-right tabular-nums text-text-2">{project.visitCount}</TableCell>
+      <TableCell className="h-12 py-0 pr-4 text-text-3">
         {project.lastActiveAt ? formatRelative(project.lastActiveAt) : '—'}
-      </td>
-      <td className="py-2.5 pr-4">
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4">
         {project.locked ? (
-          <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs bg-highlight/15 text-highlight">
+          <Badge variant="warning" dot>
             <Lock className="size-3" />
             {t('adminSharedProjects.inUse')}
-          </span>
+          </Badge>
         ) : (
           <span className="text-xs text-text-3">{t('adminSharedProjects.idle')}</span>
         )}
-      </td>
-      <td className="py-2.5 pr-4 text-sm text-text-3">{formatDate(project.created)}</td>
-      <td className="py-2.5 pr-4">
-        <div className="flex items-center gap-0.5">
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4 text-text-3">{formatDate(project.created)}</TableCell>
+      <TableCell className="h-12 py-0 pr-4">
+        <div className="flex items-center justify-end gap-0.5 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
           <button
             onClick={onEdit}
-            className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-interactive"
-            title={t('adminSharedProjects.editDescription')}
+            className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-accent"
+            title={t('adminSharedProjects.editDescription')} aria-label={t('adminSharedProjects.editDescription')}
           >
             <Pencil className="size-3.5" />
           </button>
           <button
             onClick={onDelete}
             className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-destructive"
-            title={t('adminSharedProjects.deleteProject')}
+            title={t('adminSharedProjects.deleteProject')} aria-label={t('adminSharedProjects.deleteProject')}
           >
             <Trash2 className="size-3.5" />
           </button>
         </div>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   )
 }
 
@@ -238,103 +245,57 @@ function TableSkeleton() {
   const t = useT()
   return (
     <div className="flex-1 overflow-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-border text-left text-xs text-text-3">
-            <th className="pb-2 pl-4 pr-2 font-normal">{t('adminSharedProjects.projectName')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.creator')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.description')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('files.accessLabel')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.visitCount')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.lastActive')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.status')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.createTime')}</th>
-            <th className="pb-2 pr-4 font-normal" />
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="pl-4 pr-2">{t('adminSharedProjects.projectName')}</TableHead>
+            <TableHead className="pr-4">{t('adminSharedProjects.creator')}</TableHead>
+            <TableHead className="pr-4">{t('adminSharedProjects.description')}</TableHead>
+            <TableHead className="pr-4">{t('files.accessLabel')}</TableHead>
+            <TableHead className="pr-4 text-right">{t('adminSharedProjects.visitCount')}</TableHead>
+            <TableHead className="pr-4">{t('adminSharedProjects.lastActive')}</TableHead>
+            <TableHead className="pr-4">{t('adminSharedProjects.status')}</TableHead>
+            <TableHead className="pr-4">{t('adminSharedProjects.createTime')}</TableHead>
+            <TableHead className="pr-4" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {Array.from({ length: 8 }).map((_, i) => (
-            <tr key={i}>
-              <td className="py-2.5 pl-4 pr-2">
+            <TableRow key={i} className="hover:bg-transparent">
+              <TableCell className="h-12 py-0 pl-4 pr-2">
                 <div className="h-3.5 w-24 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="flex items-center gap-2">
                   <div className="size-7 animate-pulse rounded-sm bg-bg-layer-3" />
                   <div className="h-3.5 w-16 animate-pulse rounded bg-bg-layer-2" />
                 </div>
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-3.5 w-32 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-5 w-16 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
-                <div className="h-3.5 w-6 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
+                <div className="ml-auto h-3.5 w-6 animate-pulse rounded bg-bg-layer-2" />
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-3.5 w-14 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-5 w-12 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-3.5 w-28 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
-                <div className="h-3.5 w-6 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-            </tr>
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
+                <div className="ml-auto h-3.5 w-6 animate-pulse rounded bg-bg-layer-2" />
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-/* ============================================
-   Empty State
-   ============================================ */
-
-function EmptyState({ onRefresh }: { onRefresh: () => void }) {
-  const t = useT()
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3">
-      <Share2 className="size-10 text-text-muted" />
-      <div className="text-center">
-        <p className="text-sm text-text-2">{t('adminSharedProjects.noProjects')}</p>
-      </div>
-      <button
-        onClick={onRefresh}
-        className="text-xs text-interactive transition-colors hover:text-interactive-hover"
-      >
-        {t('adminUsers.clearFilter')}
-      </button>
-    </div>
-  )
-}
-
-/* ============================================
-   Error State
-   ============================================ */
-
-function ErrorState({ onRetry }: { onRetry: () => void }) {
-  const t = useT()
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4">
-      <AlertCircle className="size-8 text-text-3" />
-      <div className="text-center">
-        <p className="text-sm text-text-2">{t('adminSharedProjects.fetchFailed')}</p>
-        <p className="mt-1 text-xs text-text-3">{t('adminSharedProjects.fetchFailed')}</p>
-      </div>
-      <button
-        onClick={onRetry}
-        className="inline-flex items-center gap-1 rounded-md bg-bg-layer-2 px-3 py-1.5 text-xs text-text-1 transition-colors hover:bg-bg-layer-3"
-      >
-        <RefreshCw className="size-3" />
-        {t('common.retry')}
-      </button>
+        </TableBody>
+      </Table>
     </div>
   )
 }
@@ -379,7 +340,7 @@ function Pagination({ page, totalPages, totalCount, onPageChange }: PaginateProp
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}
-          className="inline-flex size-7 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1 disabled:opacity-30 disabled:hover:bg-transparent"
+          className="inline-flex size-8 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1 disabled:opacity-30 disabled:hover:bg-transparent"
         >
           <ChevronLeft className="size-3.5" />
         </button>
@@ -393,7 +354,7 @@ function Pagination({ page, totalPages, totalCount, onPageChange }: PaginateProp
               key={p}
               onClick={() => onPageChange(p)}
               className={cn(
-                'inline-flex size-7 items-center justify-center rounded-md text-xs tabular-nums transition-colors',
+                'inline-flex size-8 items-center justify-center rounded-md text-xs tabular-nums transition-colors',
                 p === page
                   ? 'bg-bg-layer-3 text-text-1 font-medium'
                   : 'text-text-3 hover:bg-bg-layer-2 hover:text-text-1',
@@ -406,7 +367,7 @@ function Pagination({ page, totalPages, totalCount, onPageChange }: PaginateProp
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page === totalPages}
-          className="inline-flex size-7 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1 disabled:opacity-30 disabled:hover:bg-transparent"
+          className="inline-flex size-8 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1 disabled:opacity-30 disabled:hover:bg-transparent"
         >
           <ChevronRight className="size-3.5" />
         </button>
@@ -495,40 +456,63 @@ export function Component() {
 
   return (
     <div className="flex h-full flex-col bg-bg-base">
-      {/* Toolbar */}
-      <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
-        <h1 className="text-base font-semibold text-text-1">{t('sidebar.sharedProjects')}</h1>
-      </div>
+      <PageHeader title={t('sidebar.sharedProjects')} />
 
       {/* Content */}
       {state === 'loading' && <TableSkeleton />}
 
-      {state === 'error' && <ErrorState onRetry={loadData} />}
+      {state === 'error' && <ErrorState title={t('adminSharedProjects.fetchFailed')} description={t('adminSharedProjects.fetchFailed')} onRetry={loadData} />}
 
-      {state === 'empty' && <EmptyState onRefresh={() => loadData()} />}
+      {state === 'empty' && (
+        <EmptyState
+          tone={1}
+          icon={<Share2 className="size-5" />}
+          title={t('adminSharedProjects.noProjects')}
+          action={
+            <button
+              onClick={() => loadData()}
+              className="text-xs text-interactive transition-colors hover:text-interactive-hover"
+            >
+              {t('adminUsers.clearFilter')}
+            </button>
+          }
+        />
+      )}
 
       {state === 'data' && projects.length === 0 && (
-        <EmptyState onRefresh={() => loadData()} />
+        <EmptyState
+          tone={1}
+          icon={<Share2 className="size-5" />}
+          title={t('adminSharedProjects.noProjects')}
+          action={
+            <button
+              onClick={() => loadData()}
+              className="text-xs text-interactive transition-colors hover:text-interactive-hover"
+            >
+              {t('adminUsers.clearFilter')}
+            </button>
+          }
+        />
       )}
 
       {state === 'data' && projects.length > 0 && (
         <>
           <div className="flex-1 overflow-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="sticky top-0 z-10 border-b border-border bg-bg-base text-left text-xs text-text-3">
-                  <th className="pb-2 pl-4 pr-2 font-normal">{t('adminSharedProjects.projectName')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.creator')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.description')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('files.accessLabel')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.visitCount')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.lastActive')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.status')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('adminSharedProjects.createTime')}</th>
-                  <th className="pb-2 pr-4 font-normal" />
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="pl-4 pr-2">{t('adminSharedProjects.projectName')}</TableHead>
+                  <TableHead className="pr-4">{t('adminSharedProjects.creator')}</TableHead>
+                  <TableHead className="pr-4">{t('adminSharedProjects.description')}</TableHead>
+                  <TableHead className="pr-4">{t('files.accessLabel')}</TableHead>
+                  <TableHead className="pr-4 text-right">{t('adminSharedProjects.visitCount')}</TableHead>
+                  <TableHead className="pr-4">{t('adminSharedProjects.lastActive')}</TableHead>
+                  <TableHead className="pr-4">{t('adminSharedProjects.status')}</TableHead>
+                  <TableHead className="pr-4">{t('adminSharedProjects.createTime')}</TableHead>
+                  <TableHead className="pr-4" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {projects.map((project) => (
                   <ProjectRow
                     key={project.id}
@@ -537,8 +521,8 @@ export function Component() {
                     onEdit={() => setEditTarget(project)}
                   />
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           <Pagination
             page={safePage}

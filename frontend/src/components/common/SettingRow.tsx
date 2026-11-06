@@ -25,13 +25,13 @@ export function SettingRow({
     >
       <div className="min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className="text-sm text-text-1">{label}</span>
+          <span className="text-[13px] font-medium text-text-1">{label}</span>
           {isDirty && (
-            <span className="size-1.5 shrink-0 rounded-full bg-highlight" />
+            <span className="size-1.5 shrink-0 rounded-full bg-accent" />
           )}
         </div>
         {description && (
-          <p className="mt-0.5 text-xs text-text-3 leading-relaxed">
+          <p className="mt-0.5 text-meta text-text-3 leading-relaxed">
             {description}
           </p>
         )}

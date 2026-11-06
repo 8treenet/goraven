@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Share2, Shrink, Paperclip, ArrowUp, Square, Loader2, TriangleAlert, FolderGit2, FolderOpen, FolderClock, Menu, Users, AtSign, X } from 'lucide-react'
+import { Share2, Shrink, Paperclip, ArrowUp, Square, Loader2, TriangleAlert, FolderGit2, FolderOpen, FolderClock, Menu, AtSign, X } from 'lucide-react'
 import { cn, uuid } from '@/lib/utils'
 import { listMyProjects } from '@/api/my-projects'
 import { listTeamProjects } from '@/api/team-projects'
@@ -18,6 +18,7 @@ import {
   DialogContent,
 } from '@/components/ui/dialog'
 import { Icon } from '@/components/common/Icon'
+import { Logo } from '@/components/brand/Logo'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { useChunkUpload } from '@/hooks/useChunkUpload'
 import { useT } from '@/i18n'
@@ -115,6 +116,7 @@ export function Component() {
 
 function NewChat() {
   const navigate = useNavigate()
+  const t = useT()
   const {
     personas, models, mcpEndpoints, skills,
     formPersonaId, formModelId, formMcpIds, formSkillIds,
@@ -188,14 +190,14 @@ function NewChat() {
 
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto [scrollbar-gutter:stable] [scrollbar-width:thin] [scrollbar-color:var(--color-bg-layer-3)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-bg-layer-3 [&::-webkit-scrollbar-track]:bg-transparent">
         {!chatting ? (
-          <div className="flex h-full flex-col items-center justify-center px-4 pb-20">
-            <div className="mb-8 flex w-full max-w-2xl flex-col items-center gap-3">
-              <img src="/favicon.svg" alt="GoRaven" className="size-12" />
-              <p className="text-xl text-text-1">
-                What can I help you build?
-              </p>
+          <div className="flex h-full flex-col items-center justify-center px-4 pb-24">
+            <div className="mb-8 flex w-full max-w-[720px] flex-col items-center gap-3">
+              <Logo size={48} />
+              <div className="text-center">
+                <h1 className="text-[24px] font-semibold leading-8 text-text-1">{t('chat.welcomeTitle')}</h1>
+              </div>
             </div>
-            <div className="w-full max-w-2xl">
+            <div className="w-full max-w-[720px]">
               <NewChatInput
                 value={input}
                 onChange={setInput}
@@ -486,6 +488,41 @@ function ChatToolbar({
     ? (formModelId === 0 ? virtualDefaultModel : models?.find(m => m.id === formModelId)) ?? null
     : null
 
+  const contextRatio =
+    tokenUsed !== undefined && tokenMax !== undefined && tokenMax > 0
+      ? tokenUsed / tokenMax
+      : 0
+  const contextPressure =
+    contextRatio >= 0.95 ? 'critical' : contextRatio >= 0.8 ? 'warning' : 'normal'
+
+  const contextDotClass =
+    contextPressure === 'critical'
+      ? 'bg-destructive'
+      : contextPressure === 'warning'
+        ? 'bg-warning'
+        : 'bg-cat-2'
+
+  const contextValueClass =
+    contextPressure === 'critical'
+      ? 'text-destructive'
+      : contextPressure === 'warning'
+        ? 'text-warning'
+        : 'text-cat-2'
+
+  const contextMaxClass =
+    contextPressure === 'critical'
+      ? 'text-destructive'
+      : contextPressure === 'warning'
+        ? 'text-warning'
+        : 'text-cat-2'
+
+  const compressToneClass =
+    contextPressure === 'critical'
+      ? 'text-destructive hover:bg-destructive-soft'
+      : contextPressure === 'warning'
+        ? 'text-warning hover:bg-warning-soft'
+        : 'text-amber-strong hover:bg-amber-soft'
+
   const handleSelectModel = (id: number) => {
     if (onPersonaChange) onPersonaChange(null)
     if (onModelChange) onModelChange(id)
@@ -499,7 +536,7 @@ function ChatToolbar({
 
   if (showSession) {
     return (
-      <div className="flex h-10 shrink-0 items-center gap-3 border-b border-border px-4">
+      <div className="flex h-16 shrink-0 items-center gap-3 border-b border-border px-6">
         <button
           onClick={openMobile}
           aria-label={t('sidebar.menu')}
@@ -510,15 +547,15 @@ function ChatToolbar({
         {personaName ? (
           <button
             onClick={onPersonaClick}
-            className="flex items-center gap-1.5 text-base text-text-2 min-w-0 rounded px-1 -mx-1 py-0.5 transition-colors hover:bg-bg-layer-2 hover:text-text-1"
+            className="flex items-center gap-1.5 text-[13px] text-text-2 min-w-0 rounded px-1 -mx-1 py-0.5 transition-colors hover:bg-bg-layer-2 hover:text-text-1"
           >
-            {personaIcon && <Icon name={personaIcon} className="size-4 shrink-0 text-highlight" />}
+            {personaIcon && <Icon name={personaIcon} className="size-4 shrink-0 text-cat-5" />}
             <span className="truncate max-w-24 sm:max-w-48">{personaName}</span>
           </button>
         ) : (
           <button
             onClick={onModelClick}
-            className="flex items-center gap-1.5 text-base text-text-2 min-w-0 rounded px-1 -mx-1 py-0.5 transition-colors hover:bg-bg-layer-2 hover:text-text-1"
+            className="flex items-center gap-1.5 text-[13px] text-text-2 min-w-0 rounded px-1 -mx-1 py-0.5 transition-colors hover:bg-bg-layer-2 hover:text-text-1"
           >
             <ModelIcon icon={modelIcon ?? undefined} />
             <span className="truncate max-w-24 sm:max-w-48">{modelName}</span>
@@ -529,13 +566,13 @@ function ChatToolbar({
 
         <div className="hidden items-center gap-2 md:flex">
           {sharedProject ? (
-            <div className="flex items-center gap-1.5 max-w-36 text-xs text-highlight">
-              <Users className="size-3.5 shrink-0" />
+            <div className="flex items-center gap-1.5 max-w-36 text-meta text-text-3">
+              <Share2 className="size-3.5 shrink-0 text-cat-1" />
               <span className="truncate">{sharedProject.projectName}</span>
             </div>
           ) : project ? (
-            <div className="flex items-center gap-1.5 max-w-36 text-xs text-highlight">
-              <FolderGit2 className="size-3.5 shrink-0" />
+            <div className="flex items-center gap-1.5 max-w-36 text-meta text-text-3">
+              <FolderGit2 className="size-3.5 shrink-0 text-folder" />
               <span className="truncate">{project}</span>
             </div>
           ) : null}
@@ -543,21 +580,23 @@ function ChatToolbar({
 
         <div className="flex items-center gap-1.5">
           {tokenUsed !== undefined && tokenMax !== undefined && tokenMax > 0 && (
-            <span className="whitespace-nowrap text-xs text-highlight tabular-nums">
-              {formatTokenK(tokenUsed)} / {formatTokenK(tokenMax)}
+            <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-meta tabular-nums">
+              <span aria-hidden="true" className={cn('size-1.5 shrink-0 rounded-full transition-colors', contextDotClass)} />
+              <span className={cn('font-medium transition-colors', contextValueClass)}>{formatTokenK(tokenUsed)}</span>
+              <span className={cn('transition-colors', contextMaxClass)}>/ {formatTokenK(tokenMax)}</span>
             </span>
           )}
           {compressing ? (
             <button
               disabled
-              className="rounded p-1 cursor-not-allowed text-text-muted/50"
+              className="rounded-md p-1 cursor-not-allowed text-amber-strong"
             >
               <Loader2 className="size-4 animate-spin" />
             </button>
           ) : !tokenUsed ? (
             <button
               disabled
-              className="rounded p-1 cursor-not-allowed text-text-muted/30"
+              className="rounded-md p-1 cursor-not-allowed text-text-muted/30"
             >
               <Shrink className="size-4" />
             </button>
@@ -566,7 +605,7 @@ function ChatToolbar({
               <TooltipTrigger asChild>
                 <button
                   onClick={onCompress}
-                  className="rounded p-1 text-highlight transition-colors hover:bg-bg-layer-2 hover:text-text-1"
+                  className={cn('rounded-md p-1 transition-colors', compressToneClass)}
                 >
                   <Shrink className="size-4" />
                 </button>
@@ -580,7 +619,7 @@ function ChatToolbar({
             <TooltipTrigger asChild>
               <button
                 onClick={() => setShareOpen(true)}
-                className="rounded p-1 text-highlight transition-colors hover:bg-bg-layer-2 hover:text-text-1"
+                className="rounded-md p-1 text-cat-1 transition-colors hover:bg-cat-1-soft"
               >
                 <Share2 className="size-4" />
               </button>
@@ -610,7 +649,7 @@ function ChatToolbar({
   }
 
   return (
-    <div className="flex h-10 shrink-0 items-center border-b border-border px-4">
+    <div className="flex h-16 shrink-0 items-center border-b border-border px-6">
       <button
         onClick={openMobile}
         aria-label={t('sidebar.menu')}
@@ -630,7 +669,7 @@ function ChatToolbar({
             <DialogContent className="max-w-md gap-0">
               <div className="rounded-lg border border-border px-4 py-5">
                 <div className="flex items-center gap-2.5 mb-3">
-                  <TriangleAlert className="size-5 shrink-0 text-highlight" />
+                  <TriangleAlert className="size-5 shrink-0 text-accent" />
                   <span className="text-base font-semibold text-text-1">{t('chat.noModelTitle')}</span>
                 </div>
                 <p className="text-sm text-text-2 leading-relaxed mb-3">
@@ -669,13 +708,13 @@ function ChatToolbar({
             <button
               onClick={() => setOpen(!open)}
               className={cn(
-                'flex items-center gap-1.5 rounded px-2.5 py-0.5 text-sm transition-colors',
+                'flex items-center gap-1.5 rounded px-2.5 py-0.5 text-[13px] transition-colors',
                 selectedPersona || selectedModel ? 'text-text-1 hover:bg-bg-layer-2' : 'text-text-3 hover:bg-bg-layer-2 hover:text-text-2',
                 open && 'bg-bg-layer-2',
               )}>
               <span className="truncate max-w-28 sm:max-w-48">
                 {selectedPersona ? (
-                  <span className="flex items-center gap-1.5"><Icon name={selectedPersona.icon} className="size-3.5 text-highlight" />{selectedPersona.name}</span>
+                  <span className="flex items-center gap-1.5"><Icon name={selectedPersona.icon} className="size-3.5 text-cat-5" />{selectedPersona.name}</span>
                 ) : selectedModel ? (
                   <span className="flex items-center gap-1.5"><ModelIcon icon={selectedModel.icon} />{selectedModel.name}</span>
                 ) : t('chat.selectModelOrPersona')}
@@ -723,7 +762,7 @@ function ChatToolbar({
                     <span className={cn('shrink-0 text-sm', formPersonaId === p.id ? 'text-text-1' : 'text-text-muted opacity-0')}>
                       {'✓'}
                     </span>
-                    <Icon name={p.icon} className={cn('size-3.5 shrink-0', formPersonaId === p.id ? 'text-highlight' : 'text-text-2')} />
+                    <Icon name={p.icon} className={cn('size-3.5 shrink-0', formPersonaId === p.id ? 'text-cat-5' : 'text-text-2')} />
                     <span className="truncate">{p.name}</span>
                   </button>
                 ))}
@@ -926,7 +965,7 @@ function NewChatInput({
   }, [addFormRef])
 
   return (
-    <div className={cn('rounded-lg border bg-bg-base', generating ? 'border-border' : 'border-highlight')}>
+    <div className="rounded-xl border border-border bg-bg-layer-1 shadow-soft transition-colors focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/15">
       <FilePreviews files={files} onRemove={removeFile} />
       {formRefs.length > 0 && (
         <div className="flex flex-wrap gap-2 px-3 pt-3">
@@ -964,7 +1003,7 @@ function NewChatInput({
         disabled={generating}
         rows={1}
         className={cn(
-          'w-full resize-none overflow-y-auto rounded-t-lg border-0 bg-transparent px-3 pt-3 text-base text-text-1 placeholder:text-text-muted outline-none max-h-40 [scrollbar-width:thin] [scrollbar-color:var(--color-bg-layer-3)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-bg-layer-3 [&::-webkit-scrollbar-track]:bg-transparent',
+          'w-full resize-none overflow-y-auto rounded-t-lg border-0 bg-transparent px-4 pt-3.5 text-[15px] leading-7 text-text-1 placeholder:text-text-muted outline-none max-h-40 [scrollbar-width:thin] [scrollbar-color:var(--color-bg-layer-3)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-bg-layer-3 [&::-webkit-scrollbar-track]:bg-transparent',
           generating && 'opacity-50',
         )}
       />
@@ -977,11 +1016,11 @@ function NewChatInput({
                 <button
                   onClick={personaLocked ? undefined : onPlusToggle}
                   className={cn(
-                    'rounded-md p-1 transition-colors',
+                    'rounded-md p-1.5 transition-colors',
                     personaLocked
                       ? 'pointer-events-none text-text-muted/30'
                       : (formMcpIds.length > 0 || formSkillIds.length > 0)
-                        ? 'text-highlight bg-highlight/10'
+                        ? 'text-cat-4 bg-cat-4-soft'
                         : plusOpen
                           ? 'bg-bg-hover text-text-2'
                         : 'text-text-1 hover:bg-bg-hover',
@@ -1009,7 +1048,7 @@ function NewChatInput({
                             )}>
                               <input type="checkbox" checked={checked}
                                 onChange={() => onMcpToggle(mcp.id)} className="size-3.5 shrink-0" />
-                              <Icon name={mcp.icon} className="size-3.5 shrink-0 text-interactive" />
+                              <Icon name={mcp.icon} className="size-3.5 shrink-0 text-cat-2" />
                               <span className="truncate">{mcp.name}</span>
                             </label>
                           </TooltipTrigger>
@@ -1036,7 +1075,7 @@ function NewChatInput({
                             )}>
                               <input type="checkbox" checked={checked}
                                 onChange={() => onSkillToggle(skill.id)} className="size-3.5 shrink-0" />
-                              <Icon name={skill.icon} className="size-3.5 shrink-0 text-highlight" />
+                              <Icon name={skill.icon} className="size-3.5 shrink-0 text-cat-4" />
                               <span className="truncate">{skill.name}</span>
                             </label>
                           </TooltipTrigger>
@@ -1066,14 +1105,14 @@ function NewChatInput({
             <TooltipTrigger asChild>
               <button
                 className={cn(
-                  'rounded-md p-1 transition-colors',
+                  'rounded-md p-1.5 transition-colors',
                   files.length > 0
-                    ? 'text-highlight bg-highlight/10'
+                    ? 'text-cat-2 bg-cat-2-soft'
                     : 'text-text-1 hover:bg-bg-hover',
                 )}
                 onClick={() => fileInputRef.current?.click()}
               >
-                <Paperclip className="size-3.5" />
+                <Paperclip className="size-4" />
               </button>
             </TooltipTrigger>
             <TooltipContent>{t('chat.maxFilesHint')}</TooltipContent>
@@ -1084,13 +1123,13 @@ function NewChatInput({
               <button
                 onClick={handleProjectOpen}
                   className={cn(
-                    'rounded-md p-1 transition-colors',
+                    'rounded-md p-1.5 transition-colors',
                     (formProjectPath || formSharedProjectId)
-                      ? 'text-highlight bg-highlight/10'
+                      ? 'text-folder bg-amber-soft'
                       : 'text-text-1 hover:bg-bg-hover',
                   )}
               >
-                <FolderGit2 className="size-3.5" />
+                <FolderGit2 className="size-4" />
               </button>
             </TooltipTrigger>
             <TooltipContent className="max-w-56">{t('chat.selectProject')}</TooltipContent>
@@ -1101,13 +1140,13 @@ function NewChatInput({
               <button
                 onClick={() => setFilePickerOpen(true)}
                 className={cn(
-                  'rounded-md p-1 transition-colors',
+                  'rounded-md p-1.5 transition-colors',
                   formRefs.length > 0
-                    ? 'text-highlight bg-highlight/10'
+                    ? 'text-cat-1 bg-cat-1-soft'
                     : 'text-text-1 hover:bg-bg-hover',
                 )}
               >
-                <AtSign className="size-3.5" />
+                <AtSign className="size-4" />
               </button>
             </TooltipTrigger>
             <TooltipContent className="max-w-56">{t('chat.selectFile')}</TooltipContent>
@@ -1118,9 +1157,9 @@ function NewChatInput({
             !generating && 'cursor-pointer hover:bg-bg-hover', thinking && 'text-text-1',
           )}>
             <span className={cn('relative inline-flex h-3.5 w-8 items-center rounded-full transition-colors',
-              thinking ? 'bg-highlight' : 'bg-bg-hover')}>
+              thinking ? 'bg-amber' : 'bg-bg-hover')}>
               <span className={cn('inline-block h-3 w-3 rounded-full transition-transform',
-                thinking ? 'bg-highlight-fg translate-x-5' : 'bg-text-muted')} />
+                thinking ? 'bg-accent-foreground translate-x-5' : 'bg-text-muted')} />
             </span>
             <span className="hidden sm:inline">{t('chat.thinkingToggle')}</span>
             <input type="checkbox" checked={thinking}
@@ -1154,17 +1193,17 @@ function NewChatInput({
             <TooltipTrigger asChild>
               <button onClick={handleSendOrStop} disabled={stopDisabled}
                 className={cn(
-                  'flex items-center justify-center rounded-md p-1.5 transition-colors',
+                  'flex size-9 items-center justify-center rounded-lg p-2 transition-colors',
                   stopDisabled && 'opacity-40 cursor-not-allowed',
                 )}
                 style={{
                   '--stop-angle': '0deg',
                   border: '1px solid transparent',
-                  backgroundImage: 'linear-gradient(var(--bg-base), var(--bg-base)), conic-gradient(from var(--stop-angle), var(--highlight), transparent 70%, transparent)',
+                  backgroundImage: 'linear-gradient(var(--bg-layer-1), var(--bg-layer-1)), conic-gradient(from var(--stop-angle), var(--accent), transparent 70%, transparent)',
                   backgroundOrigin: 'border-box',
                   backgroundClip: 'padding-box, border-box',
                   animation: stopDisabled ? 'none' : 'stop-spin 1.5s linear infinite',
-                  color: 'var(--highlight)',
+                  color: 'var(--accent)',
                 } as React.CSSProperties}
               >
                 <Square className="size-4 fill-current" />
@@ -1175,7 +1214,7 @@ function NewChatInput({
         ) : (
           <button onClick={handleSendOrStop} disabled={!value.trim()}
             className={cn(
-              'flex items-center justify-center rounded-md p-1.5 transition-colors bg-highlight text-highlight-fg hover:opacity-90',
+              'flex size-9 items-center justify-center rounded-lg p-2 transition-colors bg-accent text-accent-foreground hover:bg-accent-hover',
               !value.trim() && 'pointer-events-none opacity-40',
             )}
           >
@@ -1199,7 +1238,7 @@ function NewChatInput({
             <button
               onClick={() => { onProjectChange(null); onSharedProjectChange(null); setProjectOpen(false) }}
               className={cn(
-                'flex w-full items-center gap-2.5 px-4 py-2 text-[13px] transition-colors text-left outline-none',
+                'flex w-full items-center gap-2.5 px-4 py-2 text-[13px] transition-colors text-left',
                 !formProjectPath && !formSharedProjectId
                   ? 'bg-interactive/10 text-interactive'
                   : 'text-text-3 hover:bg-bg-hover hover:text-text-2',
@@ -1249,7 +1288,7 @@ function NewChatInput({
                     key={item.id}
                     onClick={() => handleProjectSelect(item.projectName)}
                     className={cn(
-                      'flex w-full items-center gap-2.5 px-4 py-2 text-[13px] transition-colors text-left outline-none',
+                      'flex w-full items-center gap-2.5 px-4 py-2 text-[13px] transition-colors text-left',
                       isSelected
                         ? 'bg-interactive/10 text-interactive'
                         : 'hover:bg-bg-hover text-text-2',
@@ -1270,7 +1309,7 @@ function NewChatInput({
 
             <div className="mb-1 mt-3 px-4">
               <p className="flex items-center gap-1.5 text-xs text-text-muted">
-                <Users className="size-3 text-interactive" />
+                <Share2 className="size-3 text-interactive" />
                 {t('chat.teamProjectsSection')}
               </p>
             </div>
@@ -1291,7 +1330,7 @@ function NewChatInput({
               </div>
             ) : teamItems.length === 0 ? (
               <div className="flex flex-col items-center gap-1 py-5">
-                <Users className="size-5 text-text-3" />
+                <Share2 className="size-5 text-text-3" />
                 <p className="text-xs text-text-3">{t('chat.noProject')}</p>
               </div>
             ) : (
@@ -1302,13 +1341,13 @@ function NewChatInput({
                     key={item.id}
                     onClick={() => handleTeamProjectSelect(item.id)}
                     className={cn(
-                      'flex w-full items-center gap-2.5 px-4 py-2 text-[13px] transition-colors text-left outline-none',
+                      'flex w-full items-center gap-2.5 px-4 py-2 text-[13px] transition-colors text-left',
                       isSelected
                         ? 'bg-interactive/10 text-interactive'
                         : 'hover:bg-bg-hover text-text-2',
                     )}
                   >
-                    <Users className={cn(
+                    <Share2 className={cn(
                       'size-4 shrink-0',
                       isSelected ? 'text-interactive' : 'text-interactive/50',
                     )} />
@@ -1444,9 +1483,9 @@ function ChatInput({
   }, [addFormRef])
 
   return (
-    <div className="shrink-0 px-4 pb-6 pt-3">
+    <div className="shrink-0 px-6 pb-6 pt-3">
       <div className="mx-auto max-w-3xl">
-        <div className={cn('overflow-hidden rounded-lg border bg-bg-base', (isGenerating || isBackground || compressing) ? 'border-border' : 'border-highlight')}>
+        <div className="overflow-hidden rounded-xl border border-border bg-bg-layer-1 shadow-soft transition-colors focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/15">
           <FilePreviews files={files} onRemove={removeFile} />
           {formRefs.length > 0 && (
             <div className="flex flex-wrap gap-2 px-3 pt-3">
@@ -1481,7 +1520,7 @@ function ChatInput({
             onCompositionEnd={() => { isComposingRef.current.composing = false }}
             placeholder={isBackground ? t('chat.backgroundThinkingPlaceholder') : t('chat.inputPlaceholderSession')} disabled={isGenerating || isBackground || compressing} rows={1}
             className={cn(
-              'w-full resize-none overflow-y-auto border-0 bg-transparent px-3 pt-3 text-base text-text-1 placeholder:text-text-muted outline-none max-h-40 [scrollbar-width:thin] [scrollbar-color:var(--color-bg-layer-3)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-bg-layer-3 [&::-webkit-scrollbar-track]:bg-transparent',
+              'w-full resize-none overflow-y-auto border-0 bg-transparent px-4 pt-3.5 text-[15px] leading-7 text-text-1 placeholder:text-text-muted outline-none max-h-40 [scrollbar-width:thin] [scrollbar-color:var(--color-bg-layer-3)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-bg-layer-3 [&::-webkit-scrollbar-track]:bg-transparent',
               (isGenerating || isBackground || compressing) && 'opacity-50',
             )} />
 
@@ -1501,14 +1540,14 @@ function ChatInput({
                 <TooltipTrigger asChild>
                   <button
                     className={cn(
-                      'rounded-md p-1 transition-colors',
+                      'rounded-md p-1.5 transition-colors',
                       compressing
                         ? 'cursor-not-allowed text-text-muted/30'
                         : 'text-text-muted hover:bg-bg-hover hover:text-text-2',
                     )}
                     onClick={() => !compressing && fileInputRef.current?.click()}
                   >
-                    <Paperclip className="size-3.5" />
+                    <Paperclip className="size-4" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>{t('chat.maxFilesHint')}</TooltipContent>
@@ -1519,15 +1558,15 @@ function ChatInput({
                   <button
                     onClick={() => setFilePickerOpen(true)}
                     className={cn(
-                      'rounded-md p-1 transition-colors',
+                      'rounded-md p-1.5 transition-colors',
                       compressing
                         ? 'cursor-not-allowed text-text-muted/30'
                         : formRefs.length > 0
-                          ? 'text-highlight bg-highlight/10'
+                          ? 'text-cat-1 bg-cat-1-soft'
                           : 'text-text-muted hover:bg-bg-hover hover:text-text-2',
                     )}
                   >
-                    <AtSign className="size-3.5" />
+                    <AtSign className="size-4" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-56">{t('chat.selectFile')}</TooltipContent>
@@ -1538,9 +1577,9 @@ function ChatInput({
                 !isGenerating && !isBackground && !compressing && 'cursor-pointer hover:bg-bg-hover', thinking && 'text-text-1',
               )}>
                 <span className={cn('relative inline-flex h-3.5 w-8 items-center rounded-full transition-colors',
-                  thinking ? 'bg-highlight' : 'bg-bg-hover')}>
+                  thinking ? 'bg-amber' : 'bg-bg-hover')}>
                   <span className={cn('inline-block h-3 w-3 rounded-full transition-transform',
-                    thinking ? 'bg-highlight-fg translate-x-5' : 'bg-text-muted')} />
+                    thinking ? 'bg-accent-foreground translate-x-5' : 'bg-text-muted')} />
                 </span>
                 <span className="hidden sm:inline">{t('chat.thinkingToggle')}</span>
                 <input type="checkbox" checked={thinking}
@@ -1554,17 +1593,17 @@ function ChatInput({
                   <TooltipTrigger asChild>
                     <button onClick={handleSendOrStop} disabled={stopDisabled}
                       className={cn(
-                        'flex items-center justify-center rounded-md p-1.5 transition-colors',
+                        'flex size-9 items-center justify-center rounded-lg p-2 transition-colors',
                         stopDisabled && 'opacity-40 cursor-not-allowed',
                       )}
                       style={{
                         '--stop-angle': '0deg',
                         border: '1px solid transparent',
-                        backgroundImage: 'linear-gradient(var(--bg-base), var(--bg-base)), conic-gradient(from var(--stop-angle), var(--highlight), transparent 70%, transparent)',
+                        backgroundImage: 'linear-gradient(var(--bg-layer-1), var(--bg-layer-1)), conic-gradient(from var(--stop-angle), var(--accent), transparent 70%, transparent)',
                         backgroundOrigin: 'border-box',
                         backgroundClip: 'padding-box, border-box',
                         animation: stopDisabled ? 'none' : 'stop-spin 1.5s linear infinite',
-                        color: 'var(--highlight)',
+                        color: 'var(--accent)',
                       } as React.CSSProperties}
                     >
                       <Square className="size-4 fill-current" />
@@ -1575,10 +1614,10 @@ function ChatInput({
               ) : (
                 <button onClick={handleSendOrStop} disabled={compressing || !value.trim()}
                   className={cn(
-                    'flex items-center justify-center rounded-md p-1.5 transition-colors',
+                    'flex size-9 items-center justify-center rounded-lg p-2 transition-colors',
                     compressing
                       ? 'bg-bg-layer-3 text-text-2'
-                      : 'bg-highlight text-highlight-fg hover:opacity-90',
+                      : 'bg-accent text-accent-foreground hover:bg-accent-hover',
                     !value.trim() && !compressing && 'pointer-events-none opacity-40',
                   )}
                 >

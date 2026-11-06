@@ -7,8 +7,6 @@ import {
   Pencil,
   Trash2,
   KeyRound,
-  AlertCircle,
-  RefreshCw,
   ChevronLeft,
   ChevronRight,
   Shield,
@@ -17,9 +15,22 @@ import {
   Check,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { AppDrawer } from '@/components/patterns/AppDrawer'
+import { EmptyState } from '@/components/patterns/EmptyState'
+import { ErrorState } from '@/components/patterns/ErrorState'
+import { PageHeader } from '@/components/patterns/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table'
 import { cn } from '@/lib/utils'
 import { useT, t as translate } from '@/i18n'
 import { adminUsersApi } from '@/api'
@@ -87,7 +98,7 @@ function Avatar({ username, avatar }: { username: string; avatar: string }) {
     )
   }
   return (
-    <div className="inline-flex size-7 shrink-0 items-center justify-center rounded-sm bg-interactive text-xs font-medium text-white">
+    <div className="inline-flex size-7 shrink-0 items-center justify-center rounded-sm bg-interactive text-xs font-medium text-bg-base">
       {username.charAt(0).toUpperCase()}
     </div>
   )
@@ -123,14 +134,14 @@ function StatusToggle({
       <div
         className={cn(
           'h-4 w-8 rounded-full border transition-colors',
-          'peer-checked:border-highlight peer-checked:bg-highlight',
+          'peer-checked:border-success peer-checked:bg-success',
           'border-border-strong bg-bg-layer-2',
           !disabled && 'peer-hover:border-text-2',
         )}
       />
       <div
         className={cn(
-          'absolute left-0.5 top-0.5 size-3 rounded-full bg-white shadow-sm transition-transform',
+          'absolute left-0.5 top-0.5 size-3 rounded-full bg-bg-base shadow-sm transition-transform',
           'peer-checked:translate-x-4',
         )}
       />
@@ -141,56 +152,6 @@ function StatusToggle({
 /* ============================================
    Drawer
    ============================================ */
-
-function Drawer({
-  open,
-  onClose,
-  title,
-  children,
-}: {
-  open: boolean
-  onClose: () => void
-  title: string
-  children: React.ReactNode
-}) {
-  return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <div
-        className={cn(
-          'fixed inset-0 z-50',
-          open ? 'visible' : 'invisible',
-        )}
-      >
-        <div
-          className={cn(
-            'absolute inset-0 bg-black/60 transition-opacity duration-200',
-            open ? 'opacity-100' : 'opacity-0',
-          )}
-          onClick={onClose}
-        />
-        <div
-          className={cn(
-            'absolute right-0 top-0 z-50 flex h-full w-[400px] flex-col border-l border-border bg-bg-layer-1 shadow-pop transition-transform duration-200 ease-out',
-            open ? 'translate-x-0' : 'translate-x-full',
-          )}
-        >
-          <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
-            <h2 className="text-sm font-semibold text-text-1">{title}</h2>
-            <button
-              onClick={onClose}
-              className="rounded-sm p-0.5 text-text-3 transition-colors hover:bg-bg-hover hover:text-text-1"
-            >
-              <X className="size-4" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-auto p-4">
-            {children}
-          </div>
-        </div>
-      </div>
-    </Dialog>
-  )
-}
 
 /* ============================================
    Add / Edit Form Drawers
@@ -258,45 +219,58 @@ function AddUserDrawer({
     usernameStatus !== 'checking'
 
   return (
-    <Drawer open={open} onClose={onClose} title={t('adminUsers.addUser')}>
+    <AppDrawer
+      width="sm"
+      open={open}
+      onClose={onClose}
+      title={t('adminUsers.addUser')}
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" size="default" onClick={onClose} className="text-accent hover:text-accent-hover">{t('common.cancel')}</Button>
+          <Button variant="default" size="default" disabled={!canSave} onClick={() => onSave(form)}>
+            {t('common.save')}
+          </Button>
+        </div>
+      }
+    >
       <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-text-2">{t('common.username')}</Label>
-            <div className="relative">
-              <Input
-                value={form.username}
-                onChange={(e) => {
-                  const v = e.target.value.replace(/[^a-zA-Z0-9_-]/g, '')
-                  setForm((f) => ({ ...f, username: v }))
-                  checkUsername(v)
-                }}
-                placeholder={t('adminUsers.usernamePlaceholder')}
-                className="h-8 pr-8 text-sm"
-                maxLength={16}
-              />
-              {usernameStatus === 'checking' && (
-                <Loader2 className="absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 animate-spin text-text-3" />
-              )}
-              {usernameStatus === 'ok' && (
-                <Check className="absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-highlight" />
-              )}
-            </div>
-            {usernameFormatError && (
-              <p className="text-xs text-destructive">{t('adminUsers.usernamePlaceholder')}</p>
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-[13px] font-medium text-text-2">{t('common.username')}</Label>
+          <div className="relative">
+            <Input
+              value={form.username}
+              onChange={(e) => {
+                const v = e.target.value.replace(/[^a-zA-Z0-9_-]/g, '')
+                setForm((f) => ({ ...f, username: v }))
+                checkUsername(v)
+              }}
+              placeholder={t('adminUsers.usernamePlaceholder')}
+              className="h-9 pr-8 text-[13px]"
+              maxLength={16}
+            />
+            {usernameStatus === 'checking' && (
+              <Loader2 className="absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 animate-spin text-text-3" />
             )}
-            {!usernameFormatError && usernameStatus === 'exists' && (
-              <p className="text-xs text-destructive">{t('adminUsers.usernameExists')}</p>
+            {usernameStatus === 'ok' && (
+              <Check className="absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-accent" />
             )}
           </div>
+          {usernameFormatError && (
+            <p className="text-xs text-destructive">{t('adminUsers.usernamePlaceholder')}</p>
+          )}
+          {!usernameFormatError && usernameStatus === 'exists' && (
+            <p className="text-xs text-destructive">{t('adminUsers.usernameExists')}</p>
+          )}
+        </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">{t('common.password')}</Label>
+          <Label className="text-[13px] font-medium text-text-2">{t('common.password')}</Label>
           <Input
             type="password"
             value={form.password}
             onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
             placeholder={t('adminUsers.passwordPlaceholder')}
-            className="h-8 text-sm"
+            className="h-9 text-[13px]"
           />
           {passwordError && (
             <p className="text-xs text-destructive">{t('adminUsers.passwordPlaceholder')}</p>
@@ -307,35 +281,28 @@ function AddUserDrawer({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">{t('adminUsers.nickname')}</Label>
+          <Label className="text-[13px] font-medium text-text-2">{t('adminUsers.nickname')}</Label>
           <Input
             value={form.nickname}
             onChange={(e) => setForm((f) => ({ ...f, nickname: e.target.value }))}
             placeholder={t('common.optional')}
-            className="h-8 text-sm"
+            className="h-9 text-[13px]"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">{t('common.role')}</Label>
+          <Label className="text-[13px] font-medium text-text-2">{t('common.role')}</Label>
           <select
             value={form.role}
             onChange={(e) => setForm((f) => ({ ...f, role: Number(e.target.value) as 0 | 1 }))}
-            className="h-8 rounded-lg border border-border-strong bg-transparent px-2.5 text-sm text-text-1 outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
+            className="h-9 rounded-lg border border-border-strong bg-transparent px-2.5 text-[13px] text-text-1 outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
           >
             <option value={0}>{t('adminUsers.regularUser')}</option>
             <option value={1}>{t('adminUsers.admin')}</option>
           </select>
         </div>
-
-        <div className="mt-2 flex justify-end gap-2">
-          <Button variant="ghost" size="default" onClick={onClose} className="text-highlight hover:text-highlight/80">{t('common.cancel')}</Button>
-          <Button variant="default" size="default" disabled={!canSave} onClick={() => onSave(form)} className="text-highlight">
-            {t('common.save')}
-          </Button>
-        </div>
       </div>
-    </Drawer>
+    </AppDrawer>
   )
 }
 
@@ -367,39 +334,52 @@ function EditUserDrawer({
   if (!user) return null
 
   return (
-    <Drawer open={open} onClose={onClose} title={t('adminUsers.editUser')}>
+    <AppDrawer
+      width="sm"
+      open={open}
+      onClose={onClose}
+      title={t('adminUsers.editUser')}
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" size="default" onClick={onClose} className="text-accent hover:text-accent-hover">{t('common.cancel')}</Button>
+          <Button variant="default" size="default" onClick={() => onSave(form)}>
+            {t('common.save')}
+          </Button>
+        </div>
+      }
+    >
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">{t('common.username')}</Label>
-          <Input value={user.username} disabled className="h-8 text-sm opacity-50" />
+          <Label className="text-[13px] font-medium text-text-2">{t('common.username')}</Label>
+          <Input value={user.username} disabled className="h-9 text-[13px] opacity-50" />
           <p className="text-xs text-text-muted">{t('adminUsers.usernameReadonly')}</p>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">{t('adminUsers.nickname')}</Label>
+          <Label className="text-[13px] font-medium text-text-2">{t('adminUsers.nickname')}</Label>
           <Input
             value={form.nickname}
             onChange={(e) => setForm((f) => ({ ...f, nickname: e.target.value }))}
-            className="h-8 text-sm"
+            className="h-9 text-[13px]"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">{t('common.email')}</Label>
+          <Label className="text-[13px] font-medium text-text-2">{t('common.email')}</Label>
           <Input
             type="email"
             value={form.email}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            className="h-8 text-sm"
+            className="h-9 text-[13px]"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">{t('common.role')}</Label>
+          <Label className="text-[13px] font-medium text-text-2">{t('common.role')}</Label>
           <select
             value={form.role}
             onChange={(e) => setForm((f) => ({ ...f, role: Number(e.target.value) as 0 | 1 }))}
-            className="h-8 rounded-lg border border-border-strong bg-transparent px-2.5 text-sm text-text-1 outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
+            className="h-9 rounded-lg border border-border-strong bg-transparent px-2.5 text-[13px] text-text-1 outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
           >
             <option value={0}>{t('adminUsers.regularUser')}</option>
             <option value={1}>{t('adminUsers.admin')}</option>
@@ -407,7 +387,7 @@ function EditUserDrawer({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-text-2">{t('common.status')}</Label>
+          <Label className="text-[13px] font-medium text-text-2">{t('common.status')}</Label>
           <div className="flex items-center gap-2">
             <StatusToggle
               checked={form.status === 1}
@@ -420,15 +400,8 @@ function EditUserDrawer({
             <p className="text-xs text-text-muted">{t('adminUsers.disableHint')}</p>
           )}
         </div>
-
-        <div className="mt-2 flex justify-end gap-2">
-          <Button variant="ghost" size="default" onClick={onClose} className="text-highlight hover:text-highlight/80">{t('common.cancel')}</Button>
-          <Button variant="default" size="default" onClick={() => onSave(form)} className="text-highlight">
-            {t('common.save')}
-          </Button>
-        </div>
       </div>
-    </Drawer>
+    </AppDrawer>
   )
 }
 
@@ -469,26 +442,26 @@ function ResetPasswordDialog({
         </DialogHeader>
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-text-2">{t('adminUsers.setNewPassword')}</Label>
+            <Label className="text-[13px] font-medium text-text-2">{t('adminUsers.setNewPassword')}</Label>
             <Input
               type="password"
               value={pwd}
               onChange={(e) => setPwd(e.target.value)}
               placeholder={t('adminUsers.passwordPlaceholder')}
-              className="h-8 text-sm"
+              className="h-9 text-[13px]"
             />
             {pwdFormatError && (
               <p className="text-xs text-destructive">{t('adminUsers.passwordPlaceholder')}</p>
             )}
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-text-2">{t('common.confirmPassword')}</Label>
+            <Label className="text-[13px] font-medium text-text-2">{t('common.confirmPassword')}</Label>
             <Input
               type="password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               placeholder={translate('adminUsers.passwordPlaceholder')}
-              className="h-8 text-sm"
+              className="h-9 text-[13px]"
             />
             {mismatch && <p className="text-xs text-destructive">{translate('common.confirmPassword')}</p>}
           </div>
@@ -613,7 +586,7 @@ function TokenLimitDialog({
                 className={cn(
                   'rounded-lg border px-3 py-1.5 text-xs transition-colors',
                   mode === 'preset' && preset === v
-                    ? 'border-highlight bg-highlight/10 font-medium text-highlight'
+                    ? 'border-accent bg-accent/10 font-medium text-accent'
                     : 'border-border-strong text-text-2 hover:border-text-3 hover:text-text-1',
                 )}
               >
@@ -625,10 +598,10 @@ function TokenLimitDialog({
             onClick={() => setMode('custom')}
             className={cn(
               'flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-colors',
-              mode === 'custom' ? 'border-highlight' : 'border-border-strong',
+              mode === 'custom' ? 'border-accent' : 'border-border-strong',
             )}
           >
-            <span className={cn('whitespace-nowrap text-xs', mode === 'custom' ? 'font-medium text-highlight' : 'text-text-2')}>
+            <span className={cn('whitespace-nowrap text-xs', mode === 'custom' ? 'font-medium text-accent' : 'text-text-2')}>
               {t('common.custom')}
             </span>
             <input
@@ -684,83 +657,74 @@ function UserRow({
 }) {
   const t = useT()
   return (
-    <tr className="transition-colors hover:bg-bg-hover">
-      <td className="py-2.5 pl-4 pr-2">
+    <TableRow className="group">
+      <TableCell className="h-12 w-10 py-0 pl-4 pr-2">
         <Avatar username={user.username} avatar={user.avatar} />
-      </td>
-      <td className="py-2.5 pr-4">
+      </TableCell>
+      <TableCell className="h-12 whitespace-nowrap py-0 pr-4">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-text-1">{user.username}</span>
+          <span className="text-[13px] font-medium text-text-1">{user.username}</span>
           {isCurrentUser && (
-            <Shield className="size-3.5 text-highlight" />
+            <Shield className="size-3.5 text-amber-strong" />
           )}
         </div>
-      </td>
-      <td className="py-2.5 pr-4 text-sm text-text-2">{user.nickname || '—'}</td>
-      <td className="py-2.5 pr-4 text-sm text-text-2">{user.email || '—'}</td>
-      <td className="py-2.5 pr-4">
-        <span
-          className={cn(
-            'inline-flex items-center rounded px-1.5 py-0.5 text-xs',
-            user.role === 1
-              ? 'bg-highlight/15 text-highlight'
-              : 'bg-bg-layer-3 text-text-2',
-          )}
-        >
-          {getRoleLabel(user.role)}
-        </span>
-      </td>
-      <td className="py-2.5 pr-4">
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4 text-text-2">{user.nickname || '—'}</TableCell>
+      <TableCell className="h-12 py-0 pr-4 text-text-2">{user.email || '—'}</TableCell>
+      <TableCell className="h-12 py-0 pr-4">
+        <Badge variant={user.role === 1 ? 'info' : 'neutral'}>{getRoleLabel(user.role)}</Badge>
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4">
         <StatusToggle
           checked={user.status === 1}
           disabled={isCurrentUser}
           onChange={onToggleStatus}
         />
-      </td>
-      <td className="py-2.5 pr-4">
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4 text-right">
         <button
           onClick={onEditLimit}
           title={t('adminUsers.editTokenLimit')}
-          className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-sm tabular-nums text-text-2 transition-colors hover:bg-bg-layer-2 hover:text-text-1"
+          className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[13px] tabular-nums text-accent transition-colors hover:bg-bg-layer-2 hover:text-accent-hover"
         >
           {user.dailyTokenLimit > 0 ? `${user.dailyTokenLimit}M` : <span className="text-text-3">—</span>}
           <Pencil className="size-3 text-text-3" />
         </button>
-      </td>
-      <td className="py-2.5 pr-4 text-sm tabular-nums text-text-2">{user.sessionCount}</td>
-      <td className="py-2.5 pr-4 text-sm text-text-3">
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4 text-right tabular-nums text-text-2">{user.sessionCount}</TableCell>
+      <TableCell className="h-12 py-0 pr-4 text-text-3">
         {formatRelative(user.lastActiveTime)}
-      </td>
-      <td className="py-2.5 pr-4">
-        <div className="flex items-center gap-0.5">
+      </TableCell>
+      <TableCell className="h-12 py-0 pr-4">
+        <div className="flex items-center justify-end gap-0.5 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
           {!isCurrentUser && (
             <>
               <button
                 onClick={onEdit}
                 className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1"
-                title={t('common.edit')}
+                title={t('common.edit')} aria-label={t('common.edit')}
               >
                 <Pencil className="size-3.5" />
               </button>
               <button
                 onClick={onResetPassword}
                 className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1"
-                title={t('adminUsers.resetPassword')}
+                title={t('adminUsers.resetPassword')} aria-label={t('adminUsers.resetPassword')}
               >
                 <KeyRound className="size-3.5" />
               </button>
               <button
                 onClick={onDelete}
                 className="rounded p-1 text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-destructive"
-                title={t('common.delete')}
+                title={t('common.delete')} aria-label={t('common.delete')}
               >
                 <Trash2 className="size-3.5" />
               </button>
             </>
           )}
         </div>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   )
 }
 
@@ -772,110 +736,58 @@ function TableSkeleton() {
   const t = useT()
   return (
     <div className="flex-1 overflow-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-border text-left text-xs text-text-3">
-            <th className="w-10 pb-2 pl-4 pr-2 font-normal" />
-            <th className="w-40 pb-2 pr-4 font-normal">{t('common.username')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('adminUsers.nickname')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('common.email')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('common.role')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('common.status')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('adminUsers.dailyTokenLimit')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('adminUsers.sessions')}</th>
-            <th className="pb-2 pr-4 font-normal">{t('adminUsers.lastActive')}</th>
-            <th className="pb-2 pr-4 font-normal" />
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="w-10 pl-4 pr-2" />
+            <TableHead className="w-40 pr-4">{t('common.username')}</TableHead>
+            <TableHead className="pr-4">{t('adminUsers.nickname')}</TableHead>
+            <TableHead className="pr-4">{t('common.email')}</TableHead>
+            <TableHead className="pr-4">{t('common.role')}</TableHead>
+            <TableHead className="pr-4">{t('common.status')}</TableHead>
+            <TableHead className="pr-4 text-right">{t('adminUsers.dailyTokenLimit')}</TableHead>
+            <TableHead className="pr-4 text-right">{t('adminUsers.sessions')}</TableHead>
+            <TableHead className="pr-4">{t('adminUsers.lastActive')}</TableHead>
+            <TableHead className="pr-4" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {Array.from({ length: 8 }).map((_, i) => (
-            <tr key={i}>
-              <td className="py-2.5 pl-4 pr-2">
+            <TableRow key={i} className="hover:bg-transparent">
+              <TableCell className="h-12 py-0 pl-4 pr-2">
                 <div className="size-7 animate-pulse rounded-sm bg-bg-layer-3" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-3.5 w-20 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-3.5 w-16 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-3.5 w-28 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-5 w-12 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-4 w-8 animate-pulse rounded-full bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
-                <div className="h-3.5 w-8 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
-                <div className="h-3.5 w-6 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
+                <div className="ml-auto h-3.5 w-8 animate-pulse rounded bg-bg-layer-2" />
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
+                <div className="ml-auto h-3.5 w-6 animate-pulse rounded bg-bg-layer-2" />
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
                 <div className="h-3.5 w-14 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-              <td className="py-2.5 pr-4">
-                <div className="h-3.5 w-16 animate-pulse rounded bg-bg-layer-2" />
-              </td>
-            </tr>
+              </TableCell>
+              <TableCell className="h-12 py-0 pr-4">
+                <div className="ml-auto h-3.5 w-16 animate-pulse rounded bg-bg-layer-2" />
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-/* ============================================
-   Empty State
-   ============================================ */
-
-function EmptyState({ hasFilter, onClearFilter }: { hasFilter: boolean; onClearFilter: () => void }) {
-  const t = useT()
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3">
-      <User className="size-10 text-text-muted" />
-      <div className="text-center">
-        <p className="text-sm text-text-2">
-          {hasFilter ? t('adminUsers.noMatch') : t('adminUsers.noUsers')}
-        </p>
-      </div>
-      {hasFilter ? (
-        <button
-          onClick={onClearFilter}
-          className="text-xs text-interactive transition-colors hover:text-interactive-hover"
-        >
-          {t('adminUsers.clearFilter')}
-        </button>
-      ) : (
-        <p className="text-xs text-text-3">{t('adminUsers.createFirst')}</p>
-      )}
-    </div>
-  )
-}
-
-/* ============================================
-   Error State
-   ============================================ */
-
-function ErrorState({ onRetry }: { onRetry: () => void }) {
-  const t = useT()
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4">
-      <AlertCircle className="size-8 text-text-3" />
-      <div className="text-center">
-        <p className="text-sm text-text-2">{t('adminUsers.fetchFailed')}</p>
-        <p className="mt-1 text-xs text-text-3">{t('adminUsers.fetchFailed')}</p>
-      </div>
-      <button
-        onClick={onRetry}
-        className="inline-flex items-center gap-1 rounded-md bg-bg-layer-2 px-3 py-1.5 text-xs text-text-1 transition-colors hover:bg-bg-layer-3"
-      >
-        <RefreshCw className="size-3" />
-        {t('common.retry')}
-      </button>
+        </TableBody>
+      </Table>
     </div>
   )
 }
@@ -921,7 +833,7 @@ function Pagination({
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}
-          className="inline-flex size-7 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1 disabled:opacity-30 disabled:hover:bg-transparent"
+          className="inline-flex size-8 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1 disabled:opacity-30 disabled:hover:bg-transparent"
         >
           <ChevronLeft className="size-3.5" />
         </button>
@@ -935,7 +847,7 @@ function Pagination({
               key={p}
               onClick={() => onPageChange(p)}
               className={cn(
-                'inline-flex size-7 items-center justify-center rounded-md text-xs tabular-nums transition-colors',
+                'inline-flex size-8 items-center justify-center rounded-md text-xs tabular-nums transition-colors',
                 p === page
                   ? 'bg-bg-layer-3 text-text-1 font-medium'
                   : 'text-text-3 hover:bg-bg-layer-2 hover:text-text-1',
@@ -948,7 +860,7 @@ function Pagination({
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page === totalPages}
-          className="inline-flex size-7 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1 disabled:opacity-30 disabled:hover:bg-transparent"
+          className="inline-flex size-8 items-center justify-center rounded-md text-text-3 transition-colors hover:bg-bg-layer-2 hover:text-text-1 disabled:opacity-30 disabled:hover:bg-transparent"
         >
           <ChevronRight className="size-3.5" />
         </button>
@@ -1097,10 +1009,10 @@ export function Component() {
 
   return (
     <div className="flex h-full flex-col bg-bg-base">
-      {/* Toolbar */}
-      <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
-        <h1 className="text-base font-semibold text-text-1">{t('adminUsers.title')}</h1>
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title={t('adminUsers.title')}
+        actions={
+          <>
           <div className="relative">
             {/* Hidden dummy fields to prevent Chrome autofill from targeting the search input */}
             <input type="text" name="username" style={{ position: 'absolute', left: -9999 }} tabIndex={-1} autoComplete="username" />
@@ -1138,44 +1050,67 @@ export function Component() {
             variant="default"
             size="sm"
             onClick={() => setDrawerMode('add')}
-            className="text-highlight hover:text-highlight"
+           
           >
             <Plus className="size-3.5" />
             {t('adminUsers.addUser')}
           </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Content */}
       {state === 'loading' && <TableSkeleton />}
 
-      {state === 'error' && <ErrorState onRetry={loadData} />}
+      {state === 'error' && <ErrorState title={t('adminUsers.fetchFailed')} description={t('adminUsers.fetchFailed')} onRetry={loadData} />}
 
-      {state === 'empty' && <EmptyState hasFilter={false} onClearFilter={handleClearFilter} />}
+      {state === 'empty' && (
+        <EmptyState
+          tone={1}
+          icon={<User className="size-5" />}
+          title={t('adminUsers.noUsers')}
+          description={t('adminUsers.createFirst')}
+        />
+      )}
 
       {state === 'data' && users.length === 0 && (
-        <EmptyState hasFilter={hasFilter} onClearFilter={handleClearFilter} />
+        <EmptyState
+          tone={1}
+          icon={<User className="size-5" />}
+          title={hasFilter ? t('adminUsers.noMatch') : t('adminUsers.noUsers')}
+          description={hasFilter ? undefined : t('adminUsers.createFirst')}
+          action={
+            hasFilter ? (
+              <button
+                onClick={handleClearFilter}
+                className="text-xs text-interactive transition-colors hover:text-interactive-hover"
+              >
+                {t('adminUsers.clearFilter')}
+              </button>
+            ) : undefined
+          }
+        />
       )}
 
       {state === 'data' && users.length > 0 && (
         <>
           <div className="flex-1 overflow-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="sticky top-0 z-10 border-b border-border bg-bg-base text-left text-xs text-text-3">
-                  <th className="w-10 pb-2 pl-4 pr-2 font-normal" />
-                  <th className="w-40 pb-2 pr-4 font-normal">{t('common.username')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('adminUsers.nickname')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('common.email')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('common.role')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('common.status')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('adminUsers.dailyTokenLimit')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('adminUsers.sessions')}</th>
-                  <th className="pb-2 pr-4 font-normal">{t('adminUsers.lastActive')}</th>
-                  <th className="pb-2 pr-4 font-normal" />
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="w-10 pl-4 pr-2" />
+                  <TableHead className="w-40 pr-4">{t('common.username')}</TableHead>
+                  <TableHead className="pr-4">{t('adminUsers.nickname')}</TableHead>
+                  <TableHead className="pr-4">{t('common.email')}</TableHead>
+                  <TableHead className="pr-4">{t('common.role')}</TableHead>
+                  <TableHead className="pr-4">{t('common.status')}</TableHead>
+                  <TableHead className="pr-4 text-right">{t('adminUsers.dailyTokenLimit')}</TableHead>
+                  <TableHead className="pr-4 text-right">{t('adminUsers.sessions')}</TableHead>
+                  <TableHead className="pr-4">{t('adminUsers.lastActive')}</TableHead>
+                  <TableHead className="pr-4" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {users.map((user) => (
                   <UserRow
                     key={user.userId}
@@ -1197,8 +1132,8 @@ export function Component() {
                     onEditLimit={() => setLimitTarget(user)}
                   />
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           <Pagination
             page={safePage}

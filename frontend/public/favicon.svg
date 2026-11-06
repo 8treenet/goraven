@@ -1,28 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <!-- GoRaven — geometric minimal silhouette, right-facing profile (square canvas) -->
-  <!-- Beak -->
-  <polygon points="46,19 60,15 46,26" fill="#8bb5d4"/>
-  <!-- Head -->
-  <rect x="34" y="12" width="14" height="14" fill="#8bb5d4"/>
-  <!-- Head top crest -->
-  <polygon points="34,12 39,12 38,6 29,9" fill="#8bb5d4"/>
-  <!-- Neck -->
-  <rect x="31" y="24" width="11" height="7" fill="#6c93b5"/>
-  <!-- Body -->
-  <polygon points="29,29 47,29 44,44 24,44" fill="#5589ad"/>
-  <!-- Wing upper -->
-  <polygon points="31,29 47,29 49,37 29,37" fill="#3d6d92"/>
-  <!-- Wing lower -->
-  <polygon points="29,37 49,37 51,45 27,45" fill="#6396ba"/>
-  <!-- Tail (amber) -->
-  <polygon points="26,39 9,44 3,56 21,51" fill="#d99a2c"/>
-  <polygon points="21,51 3,56 8,63 25,56" fill="#b87d1e"/>
-  <!-- Legs -->
-  <rect x="30" y="45" width="3" height="11" fill="#8bb5d4"/>
-  <rect x="36" y="45" width="3" height="11" fill="#8bb5d4"/>
-  <!-- Feet -->
-  <polygon points="29,56 33,56 35,60 28,60" fill="#8bb5d4"/>
-  <polygon points="35,56 39,56 41,60 34,60" fill="#8bb5d4"/>
-  <!-- Eye -->
-  <rect x="41" y="16" width="4" height="4" fill="#0a0a0b"/>
+  <!-- GoRaven — round little raven, transparent background -->
+  <style>
+    :root {
+      color: #101828;
+      --raven-amber: #d97706;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color: #f2f4f7;
+        --raven-amber: #f5b544;
+      }
+    }
+  </style>
+  <defs>
+    <mask id="raven-eye" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+      <rect width="64" height="64" fill="#fff" />
+      <circle cx="48" cy="19" r="3" fill="#000" />
+    </mask>
+  </defs>
+  <g fill="currentColor" mask="url(#raven-eye)">
+    <ellipse cx="32" cy="38" rx="17" ry="14" />
+    <circle cx="45" cy="23" r="11.5" />
+    <path d="M20 36 2 48l7 7 15-8z" />
+  </g>
+  <path d="M55 19.5 64 24 55 28.5z" fill="var(--raven-amber)" />
+  <g fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round">
+    <path d="M27 50v5M37 50v5" />
+  </g>
 </svg>

@@ -1,8 +1,7 @@
-import { X, Archive, Search } from 'lucide-react'
+import { X, Search } from 'lucide-react'
 import { renderIcon } from '@/components/common/Icon'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
-import { Dialog } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { t as translate } from '@/i18n'
 
@@ -148,53 +147,6 @@ description: fill skill description here
    Small components
    ============================================ */
 
-export function Drawer({
-  open,
-  onClose,
-  title,
-  description,
-  width = 'w-[680px]',
-  children,
-}: {
-  open: boolean
-  onClose: () => void
-  title: string
-  description?: string
-  width?: string
-  children: React.ReactNode
-}) {
-  return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <div className={cn('fixed inset-0 z-50', open ? 'visible' : 'invisible')}>
-        <div
-          className={cn('absolute inset-0 bg-black/60 transition-opacity duration-200', open ? 'opacity-100' : 'opacity-0')}
-          onClick={onClose}
-        />
-        <div
-          className={cn(
-            'absolute right-0 top-0 z-50 flex h-full flex-col border-l border-border bg-bg-layer-1 shadow-pop transition-transform duration-200 ease-out',
-            width,
-            open ? 'translate-x-0' : 'translate-x-full',
-          )}
-        >
-          <div className="flex min-h-12 shrink-0 items-center justify-between border-b border-border px-4">
-            <div>
-              <h2 className="text-sm font-semibold text-text-1">{title}</h2>
-              {description && <p className="mt-0.5 text-xs text-text-3">{description}</p>}
-            </div>
-            <button
-              onClick={onClose}
-              className="rounded-sm p-0.5 text-text-3 transition-colors hover:bg-bg-hover hover:text-text-1"
-            >
-              <X className="size-4" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-hidden">{children}</div>
-        </div>
-      </div>
-    </Dialog>
-  )
-}
 
 export function SelectField({ value, onChange, children, className }: {
   value: string
@@ -207,7 +159,7 @@ export function SelectField({ value, onChange, children, className }: {
       value={value}
       onChange={(event) => onChange(event.target.value)}
       className={cn(
-        'h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm text-text-1 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30',
+        'h-9 rounded-lg border border-input bg-transparent px-2.5 text-[13px] text-text-1 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30',
         className,
       )}
     >
@@ -224,7 +176,7 @@ export function SearchBox({ value, onChange, placeholder }: { value: string; onC
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="pl-8 pr-8 text-sm"
+        className="pl-8 pr-8 text-[13px]"
       />
       {value && (
         <button
@@ -286,13 +238,3 @@ export function StatusText({ children, tone = 'neutral' }: { children: React.Rea
   )
 }
 
-export function EmptyState({ title, description, action }: { title: string; description: string; action?: React.ReactNode }) {
-  return (
-    <div className="flex min-h-[280px] flex-col items-center justify-center rounded-lg border border-border bg-bg-layer-1 px-6 text-center">
-      <Archive className="mb-3 size-8 text-text-muted" />
-      <h3 className="text-sm font-semibold text-text-1">{title}</h3>
-      <p className="mt-1 max-w-sm text-sm text-text-3">{description}</p>
-      {action && <div className="mt-4">{action}</div>}
-    </div>
-  )
-}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, forwardRef } from 'react'
 import { Folder, FolderGit2, GitBranch } from 'lucide-react'
 import { useT } from '@/i18n'
+import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   listTeamFiles,
@@ -69,23 +70,25 @@ export const TeamProjectFiles = forwardRef<TeamProjectFilesHandle, TeamProjectFi
   const toolbarExtra = (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={() => setGitOpen(true)}
-          className="relative flex items-center gap-1 rounded-md px-2 py-1 text-xs text-text-2 transition-colors hover:bg-bg-hover hover:text-text-1"
+          className="relative"
         >
           {!gitEnabled ? (
-            <Folder className="size-3.5 text-text-3" />
+            <Folder className="size-4 text-text-3" />
           ) : gitHasRemote ? (
-            <GitBranch className="size-3.5 text-success" />
+            <GitBranch className="size-4 text-success" />
           ) : (
-            <FolderGit2 className="size-3.5 text-warning" />
+            <FolderGit2 className="size-4 text-warning" />
           )}
           {gitEnabled && gitChangeCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-highlight px-1 text-[9px] font-medium leading-none text-highlight-fg">
+            <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-accent px-1 text-micro font-medium leading-none text-accent-foreground">
               {gitChangeCount}
             </span>
           )}
-        </button>
+        </Button>
       </TooltipTrigger>
       <TooltipContent>
         {!gitEnabled ? t('files.gitTipNone') : gitHasRemote ? t('files.gitTipOrigin') : t('files.gitTipLocal')}

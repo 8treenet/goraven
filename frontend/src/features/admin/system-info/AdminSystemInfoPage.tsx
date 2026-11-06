@@ -1,6 +1,11 @@
 import { useState, useCallback, useEffect } from 'react'
-import { RefreshCw, AlertCircle, ChevronLeft, ChevronRight, Server, Database, Activity, HardDrive } from 'lucide-react'
+import { RefreshCw, ChevronLeft, ChevronRight, Server, Database, Activity, HardDrive } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Card } from '@/components/ui/card'
+import { ErrorState } from '@/components/patterns/ErrorState'
+import { PageHeader } from '@/components/patterns/PageHeader'
+import { PageContainer } from '@/components/patterns/PageContainer'
 import { formatBytes, formatRelativeTime, formatNumber } from '@/lib/format'
 import { adminSystemApi } from '@/api'
 import { useT, t as translate } from '@/i18n'
@@ -99,7 +104,7 @@ function FieldRow({ label, value, muted }: { label: string; value: string; muted
   return (
     <div className="flex items-baseline justify-between gap-4 py-1">
       <span className="shrink-0 text-xs text-text-3">{label}</span>
-      <span className={cn('truncate text-right text-sm tabular-nums', muted ? 'text-text-3' : 'text-text-1')}>
+      <span className={cn('break-all text-right text-[13px] tabular-nums', muted ? 'text-text-3' : 'text-text-1')}>
         {value}
       </span>
     </div>
@@ -113,8 +118,8 @@ function FieldRow({ label, value, muted }: { label: string; value: string; muted
 function OverviewPanel({ data }: { data: OverviewInfo }) {
   const t = useT()
   return (
-    <div className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
-      <h3 className="flex items-center gap-1.5 text-xs font-semibold text-text-2">
+    <Card className="flex flex-1 flex-col px-5 py-4">
+      <h3 className="flex items-center gap-1.5 text-section font-semibold text-text-1">
         <Server className="size-3.5 text-text-3" />
         {t('adminDashboard.systemOverview')}
       </h3>
@@ -127,7 +132,7 @@ function OverviewPanel({ data }: { data: OverviewInfo }) {
         <FieldRow label={t('adminSystemInfo.uploadedFiles')} value={formatBytes(data.uploadBytes)} />
         <FieldRow label={t('adminSystemInfo.tempFiles')} value={formatBytes(data.tempBytes)} />
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -141,8 +146,8 @@ function DatabasePanel({ data }: { data: DatabaseInfo }) {
   const hasWait = pool.waitCount > 0 || pool.waitDurationMs > 0
 
   return (
-    <div className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
-      <h3 className="flex items-center gap-1.5 text-xs font-semibold text-text-2">
+    <Card className="flex flex-1 flex-col px-5 py-4">
+      <h3 className="flex items-center gap-1.5 text-section font-semibold text-text-1">
         <Database className="size-3.5 text-text-3" />
         {t('adminSystemInfo.database')}
       </h3>
@@ -180,12 +185,12 @@ function DatabasePanel({ data }: { data: DatabaseInfo }) {
           <span>{t('adminSystemInfo.idle')} {pool.idle}</span>
         </div>
         {hasWait && (
-          <div className="mt-1 text-xs text-amber-400">
+          <div className="mt-1 text-xs text-warning">
             {t('adminSystemInfo.waiting')} {pool.waitCount} {t('adminSystemInfo.times')} · {t('adminSystemInfo.duration')} {pool.waitDurationMs}ms
           </div>
         )}
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -197,8 +202,8 @@ const MCP_PAGE_SIZE = 7
 
 function mcpStatus(healthLatency: number): { label: string; className: string } {
   if (healthLatency === 0) return { label: translate('common.offline'), className: 'bg-text-muted' }
-  if (healthLatency >= 3000) return { label: translate('adminSystemInfo.degraded'), className: 'bg-amber-400' }
-  return { label: translate('common.normal'), className: 'bg-emerald-500' }
+  if (healthLatency >= 3000) return { label: translate('adminSystemInfo.degraded'), className: 'bg-warning' }
+  return { label: translate('common.normal'), className: 'bg-success' }
 }
 
 function McpHealthPanel({ data }: { data: McpHealthItem[] }) {
@@ -213,20 +218,20 @@ function McpHealthPanel({ data }: { data: McpHealthItem[] }) {
 
   if (data.length === 0) {
     return (
-      <div className="flex flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
-        <h3 className="flex items-center gap-1.5 text-xs font-semibold text-text-2">
+      <Card className="flex flex-col px-5 py-4">
+        <h3 className="flex items-center gap-1.5 text-section font-semibold text-text-1">
           <Activity className="size-3.5 text-text-3" />
           {t('adminSystemInfo.mcpStatus')}
         </h3>
         <p className="mt-3 text-xs text-text-3">{t('adminSystemInfo.noMcp')}</p>
-      </div>
+      </Card>
     )
   }
 
   return (
-    <div className="flex flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
+    <Card className="flex flex-col px-5 py-4">
       <div className="flex items-center justify-between">
-        <h3 className="flex items-center gap-1.5 text-xs font-semibold text-text-2">
+        <h3 className="flex items-center gap-1.5 text-section font-semibold text-text-1">
           <Activity className="size-3.5 text-text-3" />
           {t('adminSystemInfo.mcpStatus')}
         </h3>
@@ -303,7 +308,7 @@ function McpHealthPanel({ data }: { data: McpHealthItem[] }) {
           </div>
         </div>
       )}
-    </div>
+    </Card>
   )
 }
 
@@ -312,28 +317,28 @@ function McpHealthPanel({ data }: { data: McpHealthItem[] }) {
    ============================================ */
 
 function diskBarColor(usedPercent: number): string {
-  if (usedPercent >= 90) return 'bg-[oklch(0.55_0.18_20)]'
-  if (usedPercent >= 80) return 'bg-amber-400'
-  return 'bg-interactive'
+  if (usedPercent >= 90) return 'bg-destructive'
+  if (usedPercent >= 80) return 'bg-warning'
+  return 'bg-accent'
 }
 
 function DisksPanel({ data }: { data: DiskInfo[] }) {
   const t = useT()
   if (data.length === 0) {
     return (
-      <div className="flex flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
-        <h3 className="flex items-center gap-1.5 text-xs font-semibold text-text-2">
+      <Card className="flex flex-col px-5 py-4">
+        <h3 className="flex items-center gap-1.5 text-section font-semibold text-text-1">
           <HardDrive className="size-3.5 text-text-3" />
           {t('adminSystemInfo.systemDisks')}
         </h3>
         <p className="mt-3 text-xs text-text-3">{t('adminSystemInfo.noDisks')}</p>
-      </div>
+      </Card>
     )
   }
 
   return (
-    <div className="flex flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
-      <h3 className="flex items-center gap-1.5 text-xs font-semibold text-text-2">
+    <Card className="flex flex-col px-5 py-4">
+      <h3 className="flex items-center gap-1.5 text-section font-semibold text-text-1">
         <HardDrive className="size-3.5 text-text-3" />
         {t('adminSystemInfo.systemDisks')}
       </h3>
@@ -375,7 +380,7 @@ function DisksPanel({ data }: { data: DiskInfo[] }) {
           </tbody>
         </table>
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -443,8 +448,8 @@ function EcosystemPanel({ data }: { data: EcosystemInfo }) {
   ]
 
   return (
-    <div className="flex flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
-      <h3 className="text-xs font-semibold text-text-2">{t('adminSystemInfo.ecosystemOverview')}</h3>
+    <Card className="flex flex-col px-5 py-4">
+      <h3 className="text-section font-semibold text-text-1">{t('adminSystemInfo.ecosystemOverview')}</h3>
       <div className="mt-3 grid grid-cols-4 gap-x-8 gap-y-3">
         {groups.map((group) => (
           <div key={group.label}>
@@ -453,7 +458,7 @@ function EcosystemPanel({ data }: { data: EcosystemInfo }) {
               {group.items.map((item, i) => (
                 <span key={item.label} className="inline-flex items-baseline gap-1">
                   {i > 0 && <span className="text-text-muted">/</span>}
-                  <span className="text-sm font-medium tabular-nums text-interactive">{item.value}</span>
+                  <span className="text-[13px] font-medium tabular-nums text-accent">{item.value}</span>
                   <span className="text-xs text-text-3">{item.label}</span>
                 </span>
               ))}
@@ -461,7 +466,7 @@ function EcosystemPanel({ data }: { data: EcosystemInfo }) {
           </div>
         ))}
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -493,18 +498,18 @@ function PluginsFooter({ data }: { data: PluginInfo[] }) {
    Skeleton
    ============================================ */
 
-function Skeleton() {
+function AdminSystemInfoSkeleton() {
   return (
     <div className="flex flex-1 flex-col gap-2 overflow-auto p-2">
       {/* Row 1: Ecosystem */}
       <div className="flex min-h-[120px] gap-2">
         <div className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
-          <div className="h-3 w-16 animate-pulse rounded bg-bg-layer-2" />
+          <Skeleton className="h-3 w-16 rounded bg-bg-layer-2" />
           <div className="mt-3 grid grid-cols-4 gap-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <div key={i}>
-                <div className="h-2.5 w-10 animate-pulse rounded bg-bg-layer-2" />
-                <div className="mt-1 h-3 w-24 animate-pulse rounded bg-bg-layer-2" />
+                <Skeleton className="h-2.5 w-10 rounded bg-bg-layer-2" />
+                <Skeleton className="mt-1 h-3 w-24 rounded bg-bg-layer-2" />
               </div>
             ))}
           </div>
@@ -514,41 +519,41 @@ function Skeleton() {
       {/* Row 2: Overview + Database */}
       <div className="flex min-h-[160px] gap-2">
         <div className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
-          <div className="h-3 w-14 animate-pulse rounded bg-bg-layer-2" />
+          <Skeleton className="h-3 w-14 rounded bg-bg-layer-2" />
           <div className="mt-3 flex-1 space-y-2.5">
             {[1, 2, 3, 4, 5, 6, 7].map((j) => (
               <div key={j} className="flex justify-between">
-                <div className="h-2.5 w-16 animate-pulse rounded bg-bg-layer-2" />
-                <div className="h-2.5 w-20 animate-pulse rounded bg-bg-layer-2" />
+                <Skeleton className="h-2.5 w-16 rounded bg-bg-layer-2" />
+                <Skeleton className="h-2.5 w-20 rounded bg-bg-layer-2" />
               </div>
             ))}
           </div>
         </div>
         <div className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
-          <div className="h-3 w-14 animate-pulse rounded bg-bg-layer-2" />
+          <Skeleton className="h-3 w-14 rounded bg-bg-layer-2" />
           <div className="mt-3 flex-1 space-y-2.5">
             {[1, 2, 3, 4].map((j) => (
               <div key={j} className="flex justify-between">
-                <div className="h-2.5 w-16 animate-pulse rounded bg-bg-layer-2" />
-                <div className="h-2.5 w-20 animate-pulse rounded bg-bg-layer-2" />
+                <Skeleton className="h-2.5 w-16 rounded bg-bg-layer-2" />
+                <Skeleton className="h-2.5 w-20 rounded bg-bg-layer-2" />
               </div>
             ))}
           </div>
-          <div className="mt-3 h-12 animate-pulse rounded bg-bg-layer-2" />
+          <Skeleton className="mt-3 h-12 rounded bg-bg-layer-2" />
         </div>
       </div>
 
       {/* Row 3: MCP Health */}
       <div className="flex min-h-[100px] gap-2">
         <div className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
-          <div className="h-3 w-24 animate-pulse rounded bg-bg-layer-2" />
+          <Skeleton className="h-3 w-24 rounded bg-bg-layer-2" />
           <div className="mt-3 space-y-2">
             {[1, 2, 3, 4, 5, 6].map((j) => (
               <div key={j} className="flex gap-8">
-                <div className="h-2.5 w-12 animate-pulse rounded bg-bg-layer-2" />
-                <div className="h-2.5 w-24 animate-pulse rounded bg-bg-layer-2" />
-                <div className="h-2.5 w-16 animate-pulse rounded bg-bg-layer-2" />
-                <div className="h-2.5 w-20 animate-pulse rounded bg-bg-layer-2" />
+                <Skeleton className="h-2.5 w-12 rounded bg-bg-layer-2" />
+                <Skeleton className="h-2.5 w-24 rounded bg-bg-layer-2" />
+                <Skeleton className="h-2.5 w-16 rounded bg-bg-layer-2" />
+                <Skeleton className="h-2.5 w-20 rounded bg-bg-layer-2" />
               </div>
             ))}
           </div>
@@ -558,19 +563,19 @@ function Skeleton() {
       {/* Row 4: Disks */}
       <div className="flex min-h-[80px] gap-2">
         <div className="flex flex-1 flex-col rounded-lg border border-border bg-bg-layer-1 px-5 py-4">
-          <div className="h-3 w-16 animate-pulse rounded bg-bg-layer-2" />
+          <Skeleton className="h-3 w-16 rounded bg-bg-layer-2" />
           <div className="mt-3 flex gap-8">
-            <div className="h-2.5 w-28 animate-pulse rounded bg-bg-layer-2" />
-            <div className="h-2.5 w-16 animate-pulse rounded bg-bg-layer-2" />
-            <div className="h-2.5 w-12 animate-pulse rounded bg-bg-layer-2" />
-            <div className="h-2.5 w-32 animate-pulse rounded bg-bg-layer-2" />
-            <div className="h-2.5 flex-1 animate-pulse rounded bg-bg-layer-2" />
+            <Skeleton className="h-2.5 w-28 rounded bg-bg-layer-2" />
+            <Skeleton className="h-2.5 w-16 rounded bg-bg-layer-2" />
+            <Skeleton className="h-2.5 w-12 rounded bg-bg-layer-2" />
+            <Skeleton className="h-2.5 w-32 rounded bg-bg-layer-2" />
+            <Skeleton className="h-2.5 flex-1 rounded bg-bg-layer-2" />
           </div>
         </div>
       </div>
 
       <div className="px-5 py-2">
-        <div className="h-2.5 w-32 animate-pulse rounded bg-bg-layer-2" />
+        <Skeleton className="h-2.5 w-32 rounded bg-bg-layer-2" />
       </div>
     </div>
   )
@@ -579,25 +584,6 @@ function Skeleton() {
 /* ============================================
    Error
    ============================================ */
-
-function ErrorState({ onRetry }: { onRetry: () => void }) {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4">
-      <AlertCircle className="size-8 text-text-3" />
-      <div className="text-center">
-        <p className="text-sm text-text-2">{translate('common.loadFailed')}</p>
-        <p className="mt-1 text-xs text-text-3">{translate('adminSystemInfo.fetchFailed')}</p>
-      </div>
-      <button
-        onClick={onRetry}
-        className="inline-flex items-center gap-1 rounded-md bg-bg-layer-2 px-3 py-1.5 text-xs text-text-1 transition-colors hover:bg-bg-layer-3"
-      >
-        <RefreshCw className="size-3" />
-        {translate('common.retry')}
-      </button>
-    </div>
-  )
-}
 
 /* ============================================
    Main Component
@@ -630,25 +616,26 @@ export function Component() {
 
   return (
     <div className="flex h-full flex-col bg-bg-base">
-      {/* Toolbar */}
-      <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
-        <h1 className="text-base font-semibold text-text-1">{t('adminSystemInfo.title')}</h1>
-        <button
-          onClick={handleRefresh}
-          className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs text-highlight transition-colors hover:bg-bg-hover"
-        >
-          <RefreshCw className="size-3" />
-          {t('common.refresh')}
-        </button>
-      </div>
+      <PageHeader
+        title={t('adminSystemInfo.title')}
+        actions={
+          <button
+            onClick={handleRefresh}
+            className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs text-accent transition-colors hover:bg-bg-hover"
+          >
+            <RefreshCw className="size-3" />
+            {t('common.refresh')}
+          </button>
+        }
+      />
 
       {/* Content */}
-      {state === 'loading' && <Skeleton />}
+      {state === 'loading' && <AdminSystemInfoSkeleton />}
 
-      {state === 'error' && <ErrorState onRetry={handleRefresh} />}
+      {state === 'error' && <ErrorState description={translate('adminSystemInfo.fetchFailed')} onRetry={handleRefresh} />}
 
       {state === 'data' && data && (
-        <div className="flex flex-1 flex-col gap-2 overflow-auto p-2">
+        <PageContainer className="flex flex-1 flex-col gap-2 overflow-auto">
           {/* Row 1: Ecosystem */}
           <EcosystemPanel data={data.ecosystem} />
 
@@ -666,7 +653,7 @@ export function Component() {
 
           {/* Plugins footer */}
           <PluginsFooter data={data.plugins} />
-        </div>
+        </PageContainer>
       )}
     </div>
   )

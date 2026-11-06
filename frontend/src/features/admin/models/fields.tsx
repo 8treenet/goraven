@@ -50,7 +50,7 @@ export function IconPicker({
       >
         {value ? (
           <>
-            <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-sm bg-white/20">
+            <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-sm bg-bg-layer-2">
               <img
                 src={value}
                 alt=""
@@ -101,7 +101,7 @@ export function IconPicker({
                       : 'border-border-strong',
                   )}
                 >
-                  <span className="inline-flex size-8 items-center justify-center rounded-sm bg-white/20">
+                  <span className="inline-flex size-8 items-center justify-center rounded-sm bg-bg-layer-2">
                     <img
                       src={path}
                       alt=""
@@ -198,7 +198,7 @@ export function SearchableCombobox({
               if (recommends.length > 0) setOpen(true)
             }}
             placeholder="deepseek-v4-pro"
-            className="h-8 pr-8 text-sm"
+            className="h-9 pr-8 text-[13px]"
           />
           {value && (
             <button
@@ -289,7 +289,7 @@ export function ApiKeyField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="sk-..."
-        className="h-8 pr-16 font-mono text-xs"
+        className="h-9 pr-16 font-mono text-[13px]"
         disabled={disabled}
       />
       <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-0.5">
@@ -306,7 +306,7 @@ export function ApiKeyField({
             onClick={handleCopy}
             className={cn(
               'rounded p-0.5 transition-colors',
-              copied ? 'text-highlight' : 'text-text-3 hover:text-text-2',
+              copied ? 'text-accent' : 'text-text-3 hover:text-text-2',
             )}
             title={t('common.copy')}
           >
@@ -337,7 +337,7 @@ export function TestIndicator({ state, errorMsg }: { state: TestState; errorMsg:
 
   if (state === 'success') {
     return (
-      <div className="flex items-center gap-2 text-xs text-highlight">
+      <div className="flex items-center gap-2 text-xs text-success">
         <Check className="size-3" />
         {t('adminModels.testPassed')}
       </div>

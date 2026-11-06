@@ -115,7 +115,7 @@ export function GitDialog(props: GitDialogProps) {
         <DialogContent className="flex max-h-[85dvh] max-w-2xl flex-col p-0 max-sm:left-0 max-sm:top-0 max-sm:h-dvh max-sm:max-h-none max-sm:w-screen max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none">
         <DialogHeader className="mb-0 shrink-0 px-5 pb-3 pr-10 pt-5 max-sm:pt-[max(1.25rem,env(safe-area-inset-top))]">
           <DialogTitle className="flex items-center gap-2">
-            <GitBranch className="size-4 text-highlight" />
+            <GitBranch className="size-4 text-accent" />
             <span className="truncate">{projectName}</span>
             <span className="text-xs font-normal text-text-3">Git</span>
           </DialogTitle>
@@ -231,14 +231,14 @@ export function GitDialog(props: GitDialogProps) {
         </div>
 
         {unrelatedOpen && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-black/50 p-5 max-sm:rounded-none">
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-bg-base/80 p-5 backdrop-blur-sm max-sm:rounded-none">
             <div className="w-full max-w-xs rounded-md border border-border bg-bg-layer-1 p-4 shadow-pop">
               <h4 className="text-sm font-semibold text-text-1">{t('files.gitUnrelatedTitle')}</h4>
               <p className="mt-1.5 text-xs text-text-3">{t('files.gitUnrelatedDesc')}</p>
               <div className="mt-3 flex flex-col gap-2">
                 <button
                   onClick={() => handleResolve('merge')}
-                  className="rounded-md bg-highlight py-1.5 text-xs text-highlight-fg transition-colors hover:opacity-90"
+                  className="rounded-md bg-accent py-1.5 text-xs text-accent-foreground transition-colors hover:opacity-90"
                 >
                   {t('files.gitUnrelatedMerge')}
                 </button>

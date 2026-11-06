@@ -12,6 +12,8 @@ interface GoRavenFileProps {
   path?: string
   name?: string
   description?: string
+  /** 13px file chip, used by read-only share views. */
+  compact?: boolean
 }
 
 const KIND_CONFIG = {
@@ -55,7 +57,7 @@ async function downloadFile(url: string, filename: string) {
   }
 }
 
-export function GoRavenFile({ kind = 'doc', path = '', name, description }: GoRavenFileProps) {
+export function GoRavenFile({ kind = 'doc', path = '', name, description, compact }: GoRavenFileProps) {
   const t = useT()
 
   if (kind === 'image') {
@@ -93,7 +95,9 @@ export function GoRavenFile({ kind = 'doc', path = '', name, description }: GoRa
       <Icon className="mt-px size-4 shrink-0 text-text-muted" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="truncate text-sm font-medium text-text-1">{displayName}</span>
+          <span className={cn('truncate font-medium text-text-1', compact ? 'text-[13px]' : 'text-sm')}>
+            {displayName}
+          </span>
           {ext && (
             <span className="shrink-0 rounded-sm bg-bg-layer-3 px-1.5 py-px text-xs text-text-muted">
               {ext}
@@ -104,9 +108,11 @@ export function GoRavenFile({ kind = 'doc', path = '', name, description }: GoRa
           )}
         </div>
         {description ? (
-          <p className="mt-1 text-xs leading-relaxed text-text-3">{description}</p>
+          <p className={cn('mt-1 leading-relaxed text-text-3', compact ? 'text-[13px]' : 'text-xs')}>
+            {description}
+          </p>
         ) : path && !isPrivate ? (
-          <p className="mt-1 text-xs text-text-muted truncate">{path}</p>
+          <p className={cn('mt-1 text-text-muted truncate', compact ? 'text-[13px]' : 'text-xs')}>{path}</p>
         ) : null}
       </div>
     </div>

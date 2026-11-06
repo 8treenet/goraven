@@ -228,7 +228,7 @@ export function ModelMembersDialog({ model, onClose, onSaved }: ModelMembersDial
                           {user.avatar ? (
                             <img src={user.avatar} alt="" className="size-6 shrink-0 rounded-sm object-cover" />
                           ) : (
-                            <div className="inline-flex size-6 shrink-0 items-center justify-center rounded-sm bg-interactive text-[11px] font-medium text-white">
+                            <div className="inline-flex size-6 shrink-0 items-center justify-center rounded-sm bg-interactive text-[11px] font-medium text-bg-base">
                               {(user.nickname || user.username).charAt(0).toUpperCase()}
                             </div>
                           )}
