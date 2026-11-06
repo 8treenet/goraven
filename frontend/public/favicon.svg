@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <!-- GoRaven — round little raven, transparent background -->
+  <!-- Keep the geometry in sync with src/components/brand/Logo.tsx. -->
   <style>
     :root {
       color: #101828;

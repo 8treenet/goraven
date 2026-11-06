@@ -6,6 +6,8 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Icon } from '@/components/common/Icon'
+import { ModelIcon } from '@/components/common/ModelIcon'
+import { Logo } from '@/components/brand/Logo'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { useT } from '@/i18n'
 import { personasApi, providersApi, mcpApi, skillsApi } from '@/api'
@@ -21,12 +23,6 @@ function formatTokensInK(n: number) {
   if (!n) return '0k'
   const v = n / 1024
   return formatK(v)
-}
-
-function ModelIcon({ icon }: { icon?: string }) {
-  const [err, setErr] = useState(false)
-  if (!icon || err) return <Icon name="brain" className="size-4 shrink-0 text-text-2" />
-  return <img src={icon} alt="" className="size-4 shrink-0 rounded object-cover" onError={() => setErr(true)} />
 }
 
 export function PersonaInfoDialog({
@@ -236,7 +232,7 @@ export function PersonaInfoDialog({
                     <span className="text-sm text-text-3">{t('personas.modelUnavailable')}</span>
                   ) : persona.aiModelId === 0 ? (
                     <span className="flex items-center gap-1.5 text-sm text-text-1">
-                      <img src="/favicon.svg" alt="" className="size-3.5 shrink-0 rounded object-cover" />
+                      <Logo size={14} />
                       {t('chat.autoModel')}
                     </span>
                   ) : null}

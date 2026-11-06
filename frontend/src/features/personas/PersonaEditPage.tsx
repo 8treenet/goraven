@@ -26,7 +26,9 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip
 import { PageHeader } from '@/components/patterns/PageHeader'
 import { PageContainer } from '@/components/patterns/PageContainer'
 import { Icon } from '@/components/common/Icon'
+import { ModelIcon } from '@/components/common/ModelIcon'
 import { IconPickerTrigger } from '@/components/common/IconPicker'
+import { BRAND_ICON } from '@/components/brand/Logo'
 import { useSidebarStore } from '@/stores/sidebar-store'
 import type { IconName } from '@/components/common/icon-registry'
 import { personasApi, mcpApi, providersApi, skillsApi } from '@/api'
@@ -43,32 +45,11 @@ const DEFAULT_MODEL: ModelInfo = {
   providerDisplayName: '',
   displayName: '',
   modelName: '',
-  icon: '/favicon.svg',
+  icon: BRAND_ICON,
   contextLen: 0,
   isDefault: 0,
   isFlash: 0,
   isVisual: 0,
-}
-
-/* ============================================
-   ModelIcon
-   ============================================ */
-
-function ModelIcon({ icon }: { icon?: string }) {
-  const [error, setError] = useState(false)
-
-  if (!icon || error) {
-    return <Icon name="brain" className="size-4 shrink-0 text-text-2" />
-  }
-
-  return (
-    <img
-      src={icon}
-      alt=""
-      className="size-4 shrink-0 rounded object-cover"
-      onError={() => setError(true)}
-    />
-  )
 }
 
 /* ============================================

@@ -23,6 +23,8 @@ import { ErrorState } from '@/components/patterns/ErrorState'
 import { PageHeader } from '@/components/patterns/PageHeader'
 import { PageContainer } from '@/components/patterns/PageContainer'
 import { Icon } from '@/components/common/Icon'
+import { ModelIcon } from '@/components/common/ModelIcon'
+import { BRAND_ICON } from '@/components/brand/Logo'
 import { useSidebarStore } from '@/stores/sidebar-store'
 
 import { personasApi, mcpApi, skillsApi } from '@/api'
@@ -193,7 +195,10 @@ export function Component() {
             </CardHeader>
             <CardContent className="pt-0">
               <div className="flex items-center gap-2.5">
-                <ModelIcon icon={data.aiModelId === 0 ? '/favicon.svg' : data.modelIcon} />
+                <ModelIcon
+                  icon={data.aiModelId === 0 ? BRAND_ICON : data.modelIcon}
+                  fallbackClassName="text-text-3"
+                />
                 <span className="text-[13px] text-text-1">
                   {data.aiModelId === 0 ? t('chat.autoModel') : data.modelName}
                 </span>
@@ -283,12 +288,6 @@ export function Component() {
 /* ============================================
    Sub-views
    ============================================ */
-
-function ModelIcon({ icon }: { icon?: string }) {
-  const [err, setErr] = useState(false)
-  if (!icon || err) return <Icon name="brain" className="size-4 shrink-0 text-text-3" />
-  return <img src={icon} alt="" className="size-4 shrink-0 rounded object-cover" onError={() => setErr(true)} />
-}
 
 function PersonaDetailSkeleton() {
   return (

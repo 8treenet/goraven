@@ -18,7 +18,8 @@ import {
   DialogContent,
 } from '@/components/ui/dialog'
 import { Icon } from '@/components/common/Icon'
-import { Logo } from '@/components/brand/Logo'
+import { ModelIcon } from '@/components/common/ModelIcon'
+import { BRAND_ICON, Logo } from '@/components/brand/Logo'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { useChunkUpload } from '@/hooks/useChunkUpload'
 import { useT } from '@/i18n'
@@ -339,7 +340,7 @@ function SessionChat({ sessionId }: { sessionId: string }) {
   // 图标与下拉虚拟选项一致使用 GoRaven 品牌图标；无默认模型时回退展示列表第一个。
   const fallbackDefault = models.find(m => m.isDefault)
   const fallbackName = fallbackDefault ? t('chat.autoModel') : models[0]?.name
-  const fallbackIcon = fallbackDefault ? '/favicon.svg' : models[0]?.icon
+  const fallbackIcon = fallbackDefault ? BRAND_ICON : models[0]?.icon
   const displayName = sessionDetail?.modelName || session.modelName || fallbackName || null
   // modelIcon 与 modelName 同源（后端 GetSession 对同一模型记录解析），
   // 优先使用，避免会话模型不在当前用户可见模型列表（受访问权限/停用影响）时回退到默认模型图标。
@@ -412,12 +413,6 @@ function SessionChat({ sessionId }: { sessionId: string }) {
    Toolbar
    ============================================ */
 
-function ModelIcon({ icon }: { icon?: string }) {
-  const [err, setErr] = useState(false)
-  if (!icon || err) return <Icon name="brain" className="size-4 shrink-0 text-text-2" />
-  return <img src={icon} alt="" className="size-4 shrink-0 rounded object-cover" onError={() => setErr(true)} />
-}
-
 function ChatToolbar({
   showSession,
   modelName,
@@ -482,7 +477,7 @@ function ChatToolbar({
   // “Auto”虚拟选项：仅当存在默认模型时提供，图标使用 GoRaven 品牌图标
   const defaultModels = models?.filter(m => m.isDefault) ?? []
   const virtualDefaultModel: Model | undefined = defaultModels.length > 0
-    ? { id: 0, name: t('chat.autoModel'), provider: '', icon: '/favicon.svg', isDefault: true, isFlash: false, isVisual: false }
+    ? { id: 0, name: t('chat.autoModel'), provider: '', icon: BRAND_ICON, isDefault: true, isFlash: false, isVisual: false }
     : undefined
   const selectedModel = !selectedPersona
     ? (formModelId === 0 ? virtualDefaultModel : models?.find(m => m.id === formModelId)) ?? null

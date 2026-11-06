@@ -17,7 +17,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { PageHeader } from '@/components/patterns/PageHeader'
 import { PageContainer } from '@/components/patterns/PageContainer'
 import { ErrorState } from '@/components/patterns/ErrorState'
-import { Icon } from '@/components/common/Icon'
+import { ModelIcon } from '@/components/common/ModelIcon'
+import { BRAND_ICON } from '@/components/brand/Logo'
 import { useSidebarStore } from '@/stores/sidebar-store'
 import { providersApi } from '@/api'
 import { useT, t as translate } from '@/i18n'
@@ -543,12 +544,6 @@ function KV({ k, v }: { k: string; v: string }) {
   )
 }
 
-function ModelIcon({ icon }: { icon?: string }) {
-  const [err, setErr] = useState(false)
-  if (!icon || err) return <Icon name="brain" className="size-3.5 shrink-0 text-text-2" />
-  return <img src={icon} alt="" className="size-3.5 shrink-0 rounded object-cover" onError={() => setErr(true)} />
-}
-
 /** 模型行：未选角色且未完成时可下拉修改，否则展示模型名并锁定（模型由角色/状态决定） */
 function ModelRow({
   detail,
@@ -583,7 +578,7 @@ function ModelRow({
   const modelIcon =
     models.find((m) => m.aiModelId === detail.aiModelId)?.icon ??
     models.find((m) => m.displayName === detail.aiModelName)?.icon ??
-    (detail.aiModelId === 0 ? '/favicon.svg' : undefined)
+    (detail.aiModelId === 0 ? BRAND_ICON : undefined)
   const lockHint = lockedByPersona ? t('automation.modelLockedByPersona') : t('automation.modelLockedDone')
 
   if (locked) {
@@ -593,7 +588,7 @@ function ModelRow({
         <Tooltip>
           <TooltipTrigger asChild>
             <span className="flex min-w-0 flex-1 items-center justify-end gap-1 text-meta text-text-1">
-              <ModelIcon icon={modelIcon} />
+              <ModelIcon icon={modelIcon} className="size-3.5" />
               <span className="min-w-0 truncate" title={displayName}>{displayName}</span>
               <Lock className="size-3 shrink-0 text-text-muted" />
             </span>
@@ -634,7 +629,7 @@ function ModelRow({
             saving && 'opacity-60',
           )}
         >
-          <ModelIcon icon={modelIcon} />
+          <ModelIcon icon={modelIcon} className="size-3.5" />
           <span className="min-w-0 truncate" title={displayName}>{displayName}</span>
           {saving ? (
             <Loader2 className="size-3 shrink-0 animate-spin" />
@@ -668,7 +663,7 @@ function ModelRow({
                 <span className={cn('shrink-0 text-sm', detail.aiModelId === m.aiModelId ? 'text-accent' : 'text-text-muted opacity-0')}>
                   {'✓'}
                 </span>
-                <ModelIcon icon={m.icon} />
+                <ModelIcon icon={m.icon} className="size-3.5" />
                 <span className="truncate">{m.displayName}</span>
               </button>
             ))}

@@ -18,16 +18,12 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Icon } from '@/components/common/Icon'
+import { ModelIcon } from '@/components/common/ModelIcon'
+import { BRAND_ICON, Logo } from '@/components/brand/Logo'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { useT } from '@/i18n'
 import { providersApi, mcpApi, skillsApi } from '@/api'
 import type { McpInfo, SkillSimple, ModelInfo } from '@/api/types'
-
-function ModelIcon({ icon }: { icon?: string }) {
-  const [err, setErr] = useState(false)
-  if (!icon || err) return <Icon name="brain" className="size-4 shrink-0 text-text-2" />
-  return <img src={icon} alt="" className="size-4 shrink-0 rounded object-cover" onError={() => setErr(true)} />
-}
 
 export function ModelInfoDialog({
   aiModelId,
@@ -144,7 +140,7 @@ export function ModelInfoDialog({
           <div className="border-b border-border">
             <div className="flex items-center gap-3 border-b border-border px-6 py-4">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-bg-layer-2 text-text-1">
-                <ModelIcon icon={modelInfo?.icon ?? (aiModelId === 0 ? '/favicon.svg' : undefined)} />
+                <ModelIcon icon={modelInfo?.icon ?? (aiModelId === 0 ? BRAND_ICON : undefined)} />
               </span>
               <div>
                 <h2 className="text-[15px] font-semibold text-text-1 leading-tight">
@@ -205,7 +201,7 @@ export function ModelInfoDialog({
                     <span className="text-sm text-text-3">{t('personas.modelUnavailable')}</span>
                   ) : aiModelId === 0 ? (
                     <span className="flex items-center gap-1.5 text-sm text-text-1">
-                      <img src="/favicon.svg" alt="" className="size-3.5 shrink-0 rounded object-cover" />
+                      <Logo size={14} />
                       {t('chat.autoModel')}
                     </span>
                   ) : null}
