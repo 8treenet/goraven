@@ -13,6 +13,7 @@ import (
 	"goraven/backend/vo/errs"
 	"goraven/config"
 	"goraven/core/provider"
+	"goraven/util"
 
 	"github.com/8treenet/freedom"
 	"github.com/cloudwego/eino/schema"
@@ -136,7 +137,7 @@ func (svc *AIModelService) CreateModel(req *vo.AdminCreateModelReq) error {
 		return err
 	}
 
-	if err := svc.testModelKeys(req.ProviderID, req.APIKey, baseURL, req.ExtraFields, req.ProxyURL, req.ModelName, req.ContextLen); err != nil {
+	if err := svc.testModelKeys(req.ProviderID, req.APIKey, baseURL, req.ExtraFields, req.ProxyURL, req.ModelName, req.ContextLen, req.ConversationHeaderKey); err != nil {
 		return err
 	}
 
@@ -184,6 +185,7 @@ func (svc *AIModelService) UpdateModel(id int, req *vo.AdminUpdateModelReq) erro
 
 	updates := map[string]interface{}{}
 	needTest := false
+	conversationHeaderKey := existing.ConversationHeaderKey
 
 	if req.ProviderDisplayName != "" {
 		updates["provider_display_name"] = req.ProviderDisplayName
@@ -227,7 +229,8 @@ func (svc *AIModelService) UpdateModel(id int, req *vo.AdminUpdateModelReq) erro
 		}
 	}
 	if req.ConversationHeaderKey != nil {
-		updates["conversation_header_key"] = *req.ConversationHeaderKey
+		conversationHeaderKey = *req.ConversationHeaderKey
+		updates["conversation_header_key"] = conversationHeaderKey
 	}
 	if req.ContextLen > 0 {
 		updates["context_len"] = req.ContextLen
@@ -278,7 +281,7 @@ func (svc *AIModelService) UpdateModel(id int, req *vo.AdminUpdateModelReq) erro
 		if req.ContextLen > 0 {
 			contextLen = req.ContextLen
 		}
-		if err := svc.testModelKeys(existing.ProviderID, apiKey, baseURL, existing.ExtraFields, proxyURL, modelName, contextLen); err != nil {
+		if err := svc.testModelKeys(existing.ProviderID, apiKey, baseURL, existing.ExtraFields, proxyURL, modelName, contextLen, conversationHeaderKey); err != nil {
 			return err
 		}
 	}
@@ -445,7 +448,7 @@ func (svc *AIModelService) RecommendModels(providerID string, apiKey string, bas
 	return items, nil
 }
 
-func (svc *AIModelService) testModelKeys(providerID, apiKey, baseURL, extraFields, proxyURL, modelName string, contextLen int) error {
+func (svc *AIModelService) testModelKeys(providerID, apiKey, baseURL, extraFields, proxyURL, modelName string, contextLen int, conversationHeaderKey string) error {
 	if apiKey == "" {
 		if providerID == provider.OllamaProviderName {
 			pv, err := provider.GetProviderByName(providerID, provider.ProviderConfig{BaseURL: baseURL})
@@ -455,7 +458,7 @@ func (svc *AIModelService) testModelKeys(providerID, apiKey, baseURL, extraField
 			if proxyURL != "" {
 				pv.SetProxy(proxyURL)
 			}
-			return svc.testSingleKey(pv, modelName, contextLen)
+			return svc.testSingleKey(pv, modelName, contextLen, conversationHeaderKey)
 		}
 		return errs.ErrAPIKeyRequired
 	}
@@ -472,10 +475,10 @@ func (svc *AIModelService) testModelKeys(providerID, apiKey, baseURL, extraField
 	if proxyURL != "" {
 		pv.SetProxy(proxyURL)
 	}
-	return svc.testSingleKey(pv, modelName, contextLen)
+	return svc.testSingleKey(pv, modelName, contextLen, conversationHeaderKey)
 }
 
-func (svc *AIModelService) testSingleKey(pv provider.Provider, modelName string, contextLen int) error {
+func (svc *AIModelService) testSingleKey(pv provider.Provider, modelName string, contextLen int, conversationHeaderKey string) error {
 	chatModel, err := pv.CreateModel(modelName, false, contextLen*1024)
 	if err != nil {
 		return errs.NewFormatError("create model error: %v", "创建模型错误: %v", err)
@@ -483,6 +486,8 @@ func (svc *AIModelService) testSingleKey(pv provider.Provider, modelName string,
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
+	// 与聊天运行链路保持一致：测试请求也要注入会话归并 header（如 X-Opencode-Session）
+	ctx = util.WithConversationHeader(ctx, conversationHeaderKey, util.UUID())
 
 	result, err := chatModel.Generate(ctx, []*schema.Message{
 		{Role: schema.User, Content: "hi"},
