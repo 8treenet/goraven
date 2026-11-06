@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/8treenet/blog/9d6f2d861fbb7c5f4627a9a5b1a3472fb4236881/img/favicon.svg" alt="GoRaven" width="80" />
+  <img src="https://raw.githubusercontent.com/8treenet/blog/refs/heads/master/img/raven-black.png" alt="GoRaven" width="80" />
 </p>
 
 <h1 align="center">GoRaven</h1>
