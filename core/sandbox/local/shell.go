@@ -287,6 +287,9 @@ func (s *LocalShell) streamCmdOutput(ctx context.Context, cmd *exec.Cmd, stdout,
 
 	hasOutput, err := s.streamStdout(ctx, cmd, stdout, w)
 	if err != nil {
+		// 非正常退出分支不会走到 handleCmdCompletion，必须在这里终止并回收子进程、
+		// 关闭管道，否则超时/取消或读失败后子进程会变成僵尸进程并泄漏管道 FD（issue #26）。
+		reapCmd(cmd, stdout, stderr)
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			exitCode := 124
 			timeoutMsg := "command timed out or was cancelled"
@@ -372,6 +375,22 @@ func (s *LocalShell) streamStdout(ctx context.Context, cmd *exec.Cmd, stdout io.
 				return hasOutput, nil
 			}
 		}
+	}
+}
+
+// reapCmd 在非正常退出分支回收子进程并关闭管道。
+// streamStdout 出错时通常已通过 killProcessGroup 终止了进程组；这里再兜底 kill 一次
+// （普通读错误分支进程可能仍在运行），随后 cmd.Wait() 回收，避免僵尸进程与 FD 泄漏。
+func reapCmd(cmd *exec.Cmd, stdout, stderr io.Closer) {
+	_ = killProcessGroup(cmd)
+	if stdout != nil {
+		_ = stdout.Close()
+	}
+	if stderr != nil {
+		_ = stderr.Close()
+	}
+	if cmd != nil {
+		_ = cmd.Wait()
 	}
 }
 
