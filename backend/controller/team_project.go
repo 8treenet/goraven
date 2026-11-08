@@ -118,7 +118,7 @@ func (controller *TeamProjectController) ListFiles(id int) freedom.Result {
 	if err := controller.Request.ReadQuery(&req, false); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
-	rsp, err := controller.TPSev.ListFiles(id, &req)
+	rsp, err := controller.TPSev.ListFiles(controller.Request.GetUserId(), id, &req)
 	if err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
@@ -131,7 +131,7 @@ func (controller *TeamProjectController) Upload(id int) freedom.Result {
 	if err := controller.Request.ReadJSON(&req, true); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
-	rsp, err := controller.TPSev.Upload(id, controller.Request.GetUserId(), &req)
+	rsp, err := controller.TPSev.Upload(controller.Request.GetUserId(), id, &req)
 	if err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
@@ -144,7 +144,7 @@ func (controller *TeamProjectController) Delete(id int) freedom.Result {
 	if err := controller.Request.ReadJSON(&req, true); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
-	if err := controller.TPSev.Delete(id, &req); err != nil {
+	if err := controller.TPSev.Delete(controller.Request.GetUserId(), id, &req); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
 	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
@@ -156,7 +156,7 @@ func (controller *TeamProjectController) Rename(id int) freedom.Result {
 	if err := controller.Request.ReadJSON(&req, true); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
-	if err := controller.TPSev.Rename(id, &req); err != nil {
+	if err := controller.TPSev.Rename(controller.Request.GetUserId(), id, &req); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
 	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
@@ -168,7 +168,7 @@ func (controller *TeamProjectController) Mkdir(id int) freedom.Result {
 	if err := controller.Request.ReadJSON(&req, true); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
-	if err := controller.TPSev.Mkdir(id, &req); err != nil {
+	if err := controller.TPSev.Mkdir(controller.Request.GetUserId(), id, &req); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
 	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
@@ -180,7 +180,7 @@ func (controller *TeamProjectController) Compress(id int) freedom.Result {
 	if err := controller.Request.ReadJSON(&req, true); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
-	rsp, err := controller.TPSev.Compress(id, &req)
+	rsp, err := controller.TPSev.Compress(controller.Request.GetUserId(), id, &req)
 	if err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
@@ -193,7 +193,7 @@ func (controller *TeamProjectController) Decompress(id int) freedom.Result {
 	if err := controller.Request.ReadJSON(&req, true); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
-	if err := controller.TPSev.Decompress(id, &req); err != nil {
+	if err := controller.TPSev.Decompress(controller.Request.GetUserId(), id, &req); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
 	return &infra.JSONResponse{Object: map[string]string{"status": "ok"}}
@@ -201,7 +201,7 @@ func (controller *TeamProjectController) Decompress(id int) freedom.Result {
 
 // Usage 项目磁盘使用统计 GET /api/teamProject/:id/usage
 func (controller *TeamProjectController) Usage(id int) freedom.Result {
-	rsp, err := controller.TPSev.Usage(id)
+	rsp, err := controller.TPSev.Usage(controller.Request.GetUserId(), id)
 	if err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
@@ -214,7 +214,7 @@ func (controller *TeamProjectController) CreateTempAccess(id int) freedom.Result
 	if err := controller.Request.ReadJSON(&req, true); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
-	rsp, err := controller.TPSev.CreateTempAccess(id, &req)
+	rsp, err := controller.TPSev.CreateTempAccess(controller.Request.GetUserId(), id, &req)
 	if err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
@@ -230,7 +230,7 @@ func (controller *TeamProjectController) Download(id int, p string) {
 		ctx.WriteString("path is required")
 		return
 	}
-	absPath, fileName, err := controller.TPSev.Download(id, strings.TrimPrefix(reqPath, "/"))
+	absPath, fileName, err := controller.TPSev.Download(controller.Request.GetUserId(), id, strings.TrimPrefix(reqPath, "/"))
 	if err != nil {
 		ctx.StatusCode(404)
 		ctx.WriteString(err.Error())

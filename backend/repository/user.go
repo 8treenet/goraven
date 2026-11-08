@@ -2,18 +2,25 @@ package repository
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"goraven/backend/infra"
 	"goraven/backend/po"
 	"goraven/backend/vo"
-	"strconv"
-	"time"
 
 	"github.com/8treenet/freedom"
 	"gorm.io/gorm"
 )
 
 const (
-	LoginFailKey           = "auth:login_fail"
+	// 登录失败计数按「账号」维度隔离。不再使用全局单键：避免一个人刷错密码
+	// 就让全站强制验证码 / 无法登录。
+	LoginFailUserKeyPrefix = "auth:login_fail:u:"
 	CaptchaAnswerKeyPrefix = "auth:captcha:"
 	LoginFailWindow        = 5 * time.Minute
 	CaptchaTTL             = 5 * time.Minute
@@ -165,20 +172,57 @@ func (repo *UserRepository) db() *gorm.DB {
 	return db
 }
 
-// RecordLoginFailure 全局密码错误后累加计数，返回累加后的当前值
-// 实现：先读当前值 +1 后写回并刷新 TTL；本地缓存模式与 Redis 模式语义一致
-// 全局计数：企业内应用，所有用户名共享同一个计数器
-func (repo *UserRepository) RecordLoginFailure() int64 {
+// scopeDigest 把账号归一化成定长十六进制，避免把用户名直接写进 Redis key。
+func scopeDigest(s string) string {
+	s = strings.ToLower(strings.TrimSpace(s))
+	if len(s) > 128 {
+		s = s[:128]
+	}
+	sum := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(sum[:16])
+}
+
+// loginFailKey 返回该账号的失败计数 key。
+//
+// 刻意不把来源 IP 作为共享计数维度：应用层看到的 RemoteAddr 在反向代理后
+// 往往恒为网关地址，所有账号共享同一个 IP key 会重新退化成「全站单计数器」，
+// 正是本补丁要消除的 DoS 根因。按 IP 的限流应放在可信的网关/反代层。
+// clientIP 参数保留给未来的可插拔限流策略，当前不参与判定。
+func (repo *UserRepository) loginFailKey(username string, clientIP string) string {
+	return LoginFailUserKeyPrefix + scopeDigest(username)
+}
+
+// loginFailMu 保证「读-加-写」在进程内原子。
+var loginFailMu sync.Mutex
+
+// RecordLoginFailure 累加该账号的失败次数并返回当前值。
+//
+// 注意：刻意不用 Redis INCR / EXPIRE。freedom 的本地缓存（cache_type=local）
+// 只实现了 redis.Cmdable 的部分方法，调用 Incr() 会直接 nil-pointer panic
+// （不是返回 error，调用方无法兜住）。统一改用 Get + Set（带 TTL），
+// 并用进程级互斥锁保证原子。Redis 模式下多实例并发最多让计数略偏低，
+// 只会让防护稍晚触发，不会误伤正常用户。
+func (repo *UserRepository) RecordLoginFailure(username, clientIP string) int64 {
+	loginFailMu.Lock()
+	defer loginFailMu.Unlock()
+
 	ctx := context.Background()
-	current := repo.GetLoginFailureCount()
+	key := repo.loginFailKey(username, clientIP)
+	var current int64
+	if v, err := repo.Redis().Get(ctx, key).Result(); err == nil {
+		current, _ = strconv.ParseInt(v, 10, 64)
+	}
 	current++
-	repo.Redis().Set(ctx, LoginFailKey, strconv.FormatInt(current, 10), LoginFailWindow)
+	if err := repo.Redis().Set(ctx, key, strconv.FormatInt(current, 10), LoginFailWindow).Err(); err != nil {
+		return 0
+	}
 	return current
 }
 
-// GetLoginFailureCount 读取全局密码错误累计次数，无值返回 0
-func (repo *UserRepository) GetLoginFailureCount() int64 {
-	v, err := repo.Redis().Get(context.Background(), LoginFailKey).Result()
+// GetLoginFailureCount 读取该账号的失败次数。
+func (repo *UserRepository) GetLoginFailureCount(username, clientIP string) int64 {
+	key := repo.loginFailKey(username, clientIP)
+	v, err := repo.Redis().Get(context.Background(), key).Result()
 	if err != nil {
 		return 0
 	}
@@ -187,6 +231,11 @@ func (repo *UserRepository) GetLoginFailureCount() int64 {
 		return 0
 	}
 	return n
+}
+
+// ResetLoginFailure 登录成功后清除该账号的计数。
+func (repo *UserRepository) ResetLoginFailure(username, clientIP string) {
+	repo.Redis().Del(context.Background(), repo.loginFailKey(username, clientIP))
 }
 
 // SaveCaptchaAnswer 下发验证码后保存正确答案（按用户名隔离，一次性，5 分钟过期）

@@ -194,11 +194,17 @@ func (repo *TeamProjectRepository) IsTeamProjectLocked(id int) (bool, string, er
 // --- 成员管理 ---
 
 // ListByUser 查询用户可见的团队项目（全员开放 OR 创建者 OR 成员），按更新时间倒序
+// ListByUser 列出当前用户「有权访问」的团队项目：创建者 OR 成员。
+//
+// 与 TeamProjectService.checkProjectAccess / GitContext.authorize 保持同一权限模型，
+// 不再把 access=TeamProjectAccessAll 的项目无条件暴露给所有登录用户：
+// 旧行为会让非成员在列表中看到项目，点进去却一律「权限不足」，属于可见性与权限不一致。
+// access 字段目前仅作为项目元数据保留（管理端展示/前端回填），不参与可见性判定；
+// 若业务确需「全员可发现」，应另行实现只读公开视图，而不是让列表越权于访问校验。
 func (repo *TeamProjectRepository) ListByUser(userId string) ([]po.TeamProject, error) {
 	var projects []po.TeamProject
 	err := repo.db().
-		Where("access = ? OR creator_id = ? OR id IN (?)",
-			po.TeamProjectAccessAll,
+		Where("creator_id = ? OR id IN (?)",
 			userId,
 			repo.db().Model(&po.TeamProjectMember{}).Select("project_id").Where("user_id = ?", userId),
 		).

@@ -2,6 +2,11 @@ package service
 
 import (
 	"fmt"
+	"html"
+	"net/url"
+	"strings"
+	"time"
+
 	"goraven/backend/infra"
 	"goraven/backend/po"
 	"goraven/backend/repository"
@@ -9,9 +14,6 @@ import (
 	"goraven/backend/vo/errs"
 	"goraven/config"
 	"goraven/util"
-	"html"
-	"strings"
-	"time"
 
 	"github.com/8treenet/freedom"
 	"github.com/8treenet/iris/v12"
@@ -99,8 +101,8 @@ func (service *ShareLinkService) CreateShare(userId string, sessionId string, re
 
 	title := service.buildShareTitle(req.Title, session)
 
-	// 如果系统域名未配置，尝试用前端传过来的域名自动补全
-	service.autoConfigureDomain(req.Domain)
+	// 系统域名只允许管理员补全（见 autoConfigureDomain）
+	service.autoConfigureDomain(req.Domain, userId)
 
 	// 若已有有效分享，更新它
 	existing, err := service.ShareLinkRepo.GetSessionShare(sessionId, userId)
@@ -385,11 +387,19 @@ func requestScheme(ctx iris.Context) string {
 	return "http"
 }
 
-// autoConfigureDomain 若系统 GeneralDomain 为空，尝试用前端传的 domain 自动补全。
-// 仅当 domain 为非 IP/非 localhost 的合法 URL 时才写入。
-func (service *ShareLinkService) autoConfigureDomain(domain string) {
+// autoConfigureDomain 在系统 GeneralDomain 为空时，仅允许管理员补全一次。
+//
+// 旧实现让任意登录用户（第一个创建分享的人）把前端传入的 domain 写进全局配置，
+// 后续文件外链、分享 OG URL、多模态图片直传 URL 全部基于该值，属于典型的
+// 「用户态输入写全局配置」，可导致钓鱼与媒体外链劫持。
+// 现在普通用户调用直接 no-op；管理员也应优先在 /api/admin/settings 显式配置。
+func (service *ShareLinkService) autoConfigureDomain(domain string, userId string) {
 	domain = strings.TrimSpace(domain)
 	if domain == "" {
+		return
+	}
+	user, err := service.UserRepo.FindByUserId(userId)
+	if err != nil || user.Role != po.UserRoleAdmin {
 		return
 	}
 	sysconf, err := service.SysCfgRepo.LoadConfig()
@@ -400,6 +410,16 @@ func (service *ShareLinkService) autoConfigureDomain(domain string) {
 		return
 	}
 	if util.IsLocalOrIPURL(domain) {
+		return
+	}
+	// 规范化为 scheme://host[:port]，丢弃路径与查询参数，避免写入畸形 URL。
+	if u, parseErr := url.Parse(domain); parseErr == nil && u.Scheme != "" && u.Host != "" {
+		if u.Scheme == "http" || u.Scheme == "https" {
+			domain = u.Scheme + "://" + u.Host
+		} else {
+			return
+		}
+	} else {
 		return
 	}
 	_ = service.SysCfgRepo.Update("general.domain", domain)

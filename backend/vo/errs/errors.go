@@ -428,6 +428,12 @@ var (
 		enMessage: "permission denied: only the creator can manage this team project",
 		zhMessage: "权限不足：仅创建者可管理此团队项目",
 	}
+	// ErrTeamProjectAccessDenied 用于「访问项目内容」场景，主体是创建者 OR 成员。
+	// 与 ErrTeamProjectPermission（仅创建者可管理）分开，避免把两种权限模型混成一句文案。
+	ErrTeamProjectAccessDenied = &Error{
+		enMessage: "permission denied: only the project creator or members can access this team project",
+		zhMessage: "权限不足：仅项目创建者或成员可访问此团队项目",
+	}
 	ErrTeamProjectAlreadyExists = &Error{
 		enMessage: "a team project with this name already exists",
 		zhMessage: "同名团队项目已存在",

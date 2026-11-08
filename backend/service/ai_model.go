@@ -334,11 +334,30 @@ func (svc *AIModelService) UpdateModelStatus(id int, status uint8) error {
 	return nil
 }
 
+// maskSecret 生成仅可展示、不可复制的密钥掩码。
+func maskSecret(s string) string {
+	if s == "" {
+		return ""
+	}
+	if len(s) <= 8 {
+		return "****"
+	}
+	return s[:4] + "****" + s[len(s)-4:]
+}
+
 func (svc *AIModelService) GetModelDetail(id int) (*vo.AdminModelDetailRsp, error) {
 	model, err := svc.ModelRepo.GetModelByID(id)
 	if err != nil {
 		return nil, errs.ErrModelNotFound
 	}
+
+	// 纵深防御：预览模式下即使将来出现绕过 middleware 的新入口，
+	// 也绝不把原始 API Key 返回给匿名访客。正常管理员仍可读取用于编辑 / 复制。
+	apiKey := model.APIKey
+	if config.Get().Behavior.PreviewUser != "" {
+		apiKey = maskSecret(apiKey)
+	}
+
 	return &vo.AdminModelDetailRsp{
 		AIModelId:             model.AIModelId,
 		ProviderDisplayName:   model.ProviderDisplayName,
@@ -346,7 +365,7 @@ func (svc *AIModelService) GetModelDetail(id int) (*vo.AdminModelDetailRsp, erro
 		ProviderID:            model.ProviderID,
 		ModelName:             model.ModelName,
 		Icon:                  model.Icon,
-		APIKey:                model.APIKey,
+		APIKey:                apiKey,
 		BaseURL:               model.BaseURL,
 		ExtraFields:           model.ExtraFields,
 		ProxyURL:              model.ProxyURL,

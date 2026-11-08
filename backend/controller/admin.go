@@ -72,7 +72,7 @@ func (controller *AdminController) BeforeActivation(b freedom.BeforeActivation) 
 	b.Handle("PUT", "/models/{id:string}/access", "UpdateModelAccess")
 
 	b.Handle("GET", "/providers", "GetProviders")
-	b.Handle("GET", "/providers/recommend", "GetRecommendModels")
+	b.Handle("POST", "/providers/recommend", "GetRecommendModels")
 
 	b.Handle("GET", "/mcp", "GetMCPs")
 	b.Handle("GET", "/mcp/{id:int}", "GetMCPDetail")
@@ -535,15 +535,16 @@ func (controller *AdminController) CheckMCPHealth() freedom.Result {
 	return &infra.JSONResponse{Object: map[string]string{"status": "checking"}}
 }
 
-// GetRecommendModels 推荐模型 GET /api/admin/providers/recommend
-// 永远返回空列表不报错，用于前端选型辅助
+// GetRecommendModels 推荐模型 POST /api/admin/providers/recommend
+// 密钥改由 JSON body 传递：旧版放在 URL query，会进入 Nginx/网关 access log、
+// 浏览器历史、Referer 与 APM 链路追踪。永远返回空列表不报错，用于前端选型辅助。
 func (controller *AdminController) GetRecommendModels() freedom.Result {
 	var req struct {
-		ProviderID string `url:"providerId"`
-		APIKey     string `url:"apiKey"`
-		BaseURL    string `url:"baseUrl"`
+		ProviderID string `json:"providerId"`
+		APIKey     string `json:"apiKey"`
+		BaseURL    string `json:"baseUrl"`
 	}
-	if err := controller.Request.ReadQuery(&req); err != nil {
+	if err := controller.Request.ReadJSON(&req); err != nil {
 		return &infra.JSONResponse{Object: map[string]interface{}{"list": []interface{}{}}}
 	}
 

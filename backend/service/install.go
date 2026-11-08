@@ -6,15 +6,17 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
+	"sync/atomic"
+	"syscall"
+	"time"
+
 	"goraven/backend/po"
 	"goraven/backend/repository"
 	"goraven/backend/vo"
 	"goraven/backend/vo/errs"
 	"goraven/config"
 	"goraven/util"
-	"strings"
-	"syscall"
-	"time"
 
 	"github.com/8treenet/freedom"
 	"github.com/redis/go-redis/v9"
@@ -68,8 +70,17 @@ func (service *InstallService) CheckRedis(req *vo.InstallRedisCheckReq) error {
 	return nil
 }
 
+// installDone 是进程级的一次性安装守卫。
+// 即使 config.yaml 写入成功但自重启失败，本进程也不会第二次执行安装；
+// 重启之后则由 config.System.Initialized 阻止安装路由重新注册。
+var installDone atomic.Bool
+
 // Init 执行系统初始化：验证连接、写入配置、建表、创建超管用户、标记完成并重启服务
 func (service *InstallService) Init(req *vo.InstallInitReq) (*vo.InstallInitRsp, error) {
+	// 幂等守卫必须放在最前面：避免匿名重复调用重设超管口令。
+	if config.Get().System.Initialized || installDone.Load() {
+		return nil, errs.NewFormatError("system is already initialized", "系统已完成初始化")
+	}
 	if !util.IsValidUsername(req.Username) {
 		return nil, errs.ErrInvalidUsername
 	}
@@ -98,29 +109,41 @@ func (service *InstallService) Init(req *vo.InstallInitReq) (*vo.InstallInitRsp,
 		}
 	}
 
-	// 写入 config.yaml
+	// 写入 config.yaml（批量一次性落盘；不含 initialized，建表与超管创建成功后才标记完成）
 	dsn := service.buildDSN(req.DBType, req.DBAddr, req.DBPort, req.DBUser, req.DBPass, req.DBName)
 	cfg := config.Get()
-	cfg.ModifyConfig("system", "language", req.Language)
-	cfg.ModifyConfig("system", "db_type", req.DBType)
-	cfg.ModifyConfig("system", "cache_type", req.CacheType)
-	cfg.ModifyConfig("db", "addr", dsn)
-	if req.CacheType == "redis" {
-		cfg.ModifyConfig("redis", "addr", redisAddr)
-		cfg.ModifyConfig("redis", "password", req.RedisPass)
-		cfg.ModifyConfig("redis", "db", fmt.Sprintf("%d", req.RedisDB))
+	entries := []config.ConfigEntry{
+		{Section: "system", Key: "language", Value: req.Language},
+		{Section: "system", Key: "db_type", Value: req.DBType},
+		{Section: "system", Key: "cache_type", Value: req.CacheType},
+		{Section: "db", Key: "addr", Value: dsn},
 	}
-	config.Get().System.Language = req.Language
-	config.Get().System.DBType = req.DBType
+	if req.CacheType == "redis" {
+		entries = append(entries,
+			config.ConfigEntry{Section: "redis", Key: "addr", Value: redisAddr},
+			config.ConfigEntry{Section: "redis", Key: "password", Value: req.RedisPass},
+			config.ConfigEntry{Section: "redis", Key: "db", Value: fmt.Sprintf("%d", req.RedisDB)},
+		)
+	}
+	if err := cfg.ModifyConfigs(entries); err != nil {
+		return nil, fmt.Errorf("persist install config: %w", err)
+	}
+	cfg.System.Language = req.Language
+	cfg.System.DBType = req.DBType
 
 	// 建表
 	if err = repository.Merge(db); err != nil {
-		freedom.Logger().Fatal(err.Error())
+		return nil, fmt.Errorf("init database schema: %w", err)
 	}
 
 	// 初始化数据
 	if err = repository.Seed(db); err != nil {
 		freedom.Logger().Errorf("seed data: %v", err)
+	}
+
+	passwordHash, err := util.HashPassword(req.Password)
+	if err != nil {
+		return nil, fmt.Errorf("hash super admin password: %w", err)
 	}
 
 	var userId string
@@ -129,7 +152,7 @@ func (service *InstallService) Init(req *vo.InstallInitReq) (*vo.InstallInitRsp,
 	if err == nil {
 		// 超管已存在，更新除 userId 外的所有字段
 		existingUser.Username = req.Username
-		existingUser.Password = util.MD5(req.Password) // 前端传明文，后端做 MD5
+		existingUser.Password = passwordHash
 		existingUser.Email = req.Email
 		existingUser.Role = 1
 		existingUser.SuperAdmin = 1
@@ -144,7 +167,7 @@ func (service *InstallService) Init(req *vo.InstallInitReq) (*vo.InstallInitRsp,
 		user := &po.User{
 			UserId:     userId,
 			Username:   req.Username,
-			Password:   util.MD5(req.Password), // 前端传明文，后端做 MD5
+			Password:   passwordHash,
 			Email:      req.Email,
 			Role:       1,
 			SuperAdmin: 1,
@@ -157,8 +180,13 @@ func (service *InstallService) Init(req *vo.InstallInitReq) (*vo.InstallInitRsp,
 		return nil, fmt.Errorf("query super admin failed: %w", err)
 	}
 
-	// 标记初始化完成
-	cfg.ModifyConfig("system", "initialized", "true")
+	// 标记初始化完成：单独一次写入，确保上面全部成功后才落 initialized=true。
+	// 写失败则不置内存标记、不置进程守卫，允许修复环境后重试。
+	if err := cfg.ModifyConfig("system", "initialized", "true"); err != nil {
+		return nil, fmt.Errorf("mark system initialized: %w", err)
+	}
+	cfg.System.Initialized = true
+	installDone.Store(true)
 
 	// 写入系统域名
 	if req.Domain != "" {
@@ -239,10 +267,19 @@ func (service *InstallService) splitHostPort(addr string, port int) (host, portS
 	return
 }
 
-// restartSelf 通过 syscall.Exec 重启当前进程
+// restartSelf 通过 syscall.Exec 重启当前进程。
+// Exec 失败时必须退出：否则进程会带着已注册的安装路由继续运行，
+// 而此时 DB 里超管已被重置，等于把「重复初始化」的窗口永久留着。
 func (service *InstallService) restartSelf() {
-	self, _ := os.Executable()
-	syscall.Exec(self, os.Args, os.Environ())
+	self, err := os.Executable()
+	if err != nil {
+		freedom.Logger().Errorf("resolve executable for restart: %v", err)
+		os.Exit(1)
+	}
+	if err := syscall.Exec(self, os.Args, os.Environ()); err != nil {
+		freedom.Logger().Errorf("restart after install failed: %v", err)
+		os.Exit(1)
+	}
 }
 
 // buildRedisAddr 拼接 Redis 连接地址 host:port

@@ -4,7 +4,6 @@ import (
 	"context"
 	"net"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"sync"
 	"time"
@@ -97,6 +96,23 @@ type goravenTransport struct {
 	Transport http.RoundTripper
 }
 
+// sensitiveDebugHeaders 是调试日志里必须脱敏的头部。
+var sensitiveDebugHeaders = []string{
+	"Authorization", "Proxy-Authorization", "X-Api-Key", "Api-Key",
+	"X-Access-Token", "Cookie", "Set-Cookie",
+}
+
+// maskSensitiveHeaders 返回脱敏后的头部副本，不修改原始请求/响应。
+func maskSensitiveHeaders(header http.Header) http.Header {
+	masked := header.Clone()
+	for _, key := range sensitiveDebugHeaders {
+		if masked.Get(key) != "" {
+			masked.Set(key, "***REDACTED***")
+		}
+	}
+	return masked
+}
+
 func (t *goravenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set("HTTP-Referer", "https://goraven.dev")
 	req.Header.Set("X-Title", "GoRaven")
@@ -109,24 +125,18 @@ func (t *goravenTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 		return t.Transport.RoundTrip(req)
 	}
 
-	dump, err := httputil.DumpRequestOut(req, true)
-	if err != nil {
-		freedom.Logger().Errorf("[HTTP Debug] DumpRequestOut error: %v", err)
-	} else {
-		freedom.Logger().Debug("[HTTP Debug] %s", string(dump))
-	}
+	// 调试日志只记录请求行 + 脱敏后的头部。
+	// 旧实现用 DumpRequestOut(req, true) / DumpResponse(resp, true) 完整 dump body，
+	// 会把 Authorization、apiKey、用户对话内容写进日志。
+	freedom.Logger().Debug("[HTTP Debug] %s %s headers=%v", req.Method, req.URL.Redacted(), maskSensitiveHeaders(req.Header))
 
 	resp, err := t.Transport.RoundTrip(req)
 	if err != nil {
 		freedom.Logger().Errorf("[HTTP Debug] RoundTrip error: %v", err)
 		return resp, err
 	}
-
-	dumpResp, err := httputil.DumpResponse(resp, true)
-	if err != nil {
-		freedom.Logger().Errorf("[HTTP Debug] DumpResponse error: %v", err)
-	} else {
-		freedom.Logger().Debug("[HTTP Debug] %s", string(dumpResp))
+	if resp != nil {
+		freedom.Logger().Debug("[HTTP Debug] response status=%d headers=%v", resp.StatusCode, maskSensitiveHeaders(resp.Header))
 	}
 
 	return resp, nil

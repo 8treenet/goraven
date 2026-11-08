@@ -766,7 +766,7 @@ export interface TeamProjectItem {
   creatorAvatar: string
   projectName: string
   description: string
-  access: number // 0全员开放 1仅成员可见
+  access: number // 元数据：0全员开放 1仅成员可见；不参与鉴权，实际权限为创建者/成员
   gitEnabled: boolean
   gitHasRemote: boolean // 已配置 origin 远程仓库
   cloneState: number // 0非克隆 1克隆中 2成功 3失败

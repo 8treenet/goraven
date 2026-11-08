@@ -12,11 +12,11 @@ export function getProviders() {
   return http.get<{ list: ProviderItem[] }>('/admin/providers')
 }
 
-/** GET /api/admin/providers/recommend */
+/** POST /api/admin/providers/recommend（密钥走 JSON body，不进 URL / 访问日志） */
 export function getRecommendModels(params: {
   providerId: string
   apiKey?: string
   baseUrl?: string
 }) {
-  return http.get<{ list: RecommendModelItem[] }>('/admin/providers/recommend', { params })
+  return http.post<{ list: RecommendModelItem[] }>('/admin/providers/recommend', params)
 }

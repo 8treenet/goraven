@@ -4,10 +4,6 @@ package main
 import (
 	"context"
 	"errors"
-	"html"
-	"net/http"
-	"os"
-	"path/filepath"
 	_ "goraven/backend/controller" //Implicit initialization controller
 	"goraven/backend/infra"
 	"goraven/backend/repository"
@@ -16,6 +12,10 @@ import (
 	"goraven/backend/vo"
 	"goraven/config"
 	"goraven/plugins"
+	"html"
+	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -53,7 +53,13 @@ func installMiddleware(app freedom.Application) {
 	app.InstallMiddleware(middleware.NewRecover())
 	app.InstallMiddleware(middleware.NewTrace("x-request-id"))
 	//One Loger per request New.
-	app.InstallMiddleware(middleware.NewRequestLogger("x-request-id"))
+	// 默认 RequestLogger 会把请求体与 URL query 原样写进 ACCESS 日志：
+	// 登录接口的明文口令、access_token / apiKey 查询参数、用户对话内容都会落盘。
+	// 这里显式关掉这两项，只保留 method/path/status/latency/x-request-id 供排障。
+	logConf := middleware.DefaultLoggerConfig()
+	logConf.RequestRawBody = false
+	logConf.Query = false
+	app.InstallMiddleware(middleware.NewRequestLogger("x-request-id", logConf))
 	//The middleware output of the log line.
 	app.Logger().Handle(middleware.DefaultLogRowHandle)
 
@@ -72,21 +78,48 @@ func installMiddleware(app freedom.Application) {
 	}
 }
 
+// previewAdminMockPaths 是预览模式下允许放行的管理后台 GET 接口白名单。
+// 这些接口在 controller 层明确返回 mock 数据，不含任何真实密钥 / 用户数据；
+// 其余 /api/admin/* 会读真实模型配置、用户清单、站点设置，不能对匿名访客开放。
+var previewAdminMockPaths = map[string]bool{
+	"/api/admin/dashboard":               true,
+	"/api/admin/dashboard/tokenTrend":    true,
+	"/api/admin/dashboard/modelUsage":    true,
+	"/api/admin/dashboard/userTokenRank": true,
+	"/api/admin/dashboard/activeUsers":   true,
+}
+
 func newPreviewMiddleware() freedom.Handler {
 	return func(ctx freedom.Context) {
-		if ctx.Method() == "GET" {
-			ctx.Next()
+		deny := func(msgEn, msgZh string) {
+			msg := msgEn
+			if config.Get().GetLanguage() == "zh" {
+				msg = msgZh
+			}
+			ctx.StatusCode(200)
+			infra.JSONResponse{
+				Code:  infra.Access_Denied,
+				Error: errors.New(msg),
+			}.Dispatch(ctx)
+		}
+
+		if ctx.Method() != "GET" {
+			deny("Preview mode, write operations are not allowed", "当前为预览模式，无法执行写操作")
 			return
 		}
-		msg := "Preview mode, write operations are not allowed"
-		if config.Get().GetLanguage() == "zh" {
-			msg = "当前为预览模式，无法执行写操作"
+
+		// 旧实现只拦非 GET，而预览身份被硬编码为管理员，导致所有管理后台 GET
+		// 对匿名访客开放。这里在路由层补上「只读白名单」，与 auth.go 的真实角色收敛形成双保险。
+		path := ctx.Path()
+		if strings.HasPrefix(path, "/api/install/") {
+			deny("Install endpoints are disabled in preview mode", "预览模式下禁用安装接口")
+			return
 		}
-		ctx.StatusCode(200)
-		infra.JSONResponse{
-			Code:  infra.Access_Denied,
-			Error: errors.New(msg),
-		}.Dispatch(ctx)
+		if strings.HasPrefix(path, "/api/admin/") && !previewAdminMockPaths[path] {
+			deny("Admin endpoints are disabled in preview mode", "预览模式下禁用管理后台接口")
+			return
+		}
+		ctx.Next()
 	}
 }
 

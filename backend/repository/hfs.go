@@ -26,10 +26,12 @@ const (
 
 // TempAccessCache 临时访问凭证缓存数据
 type TempAccessCache struct {
-	UserName string `json:"userName"`
-	Path     string `json:"path"`  // 凭证绑定路径，格式由 Space 决定
-	Type     string `json:"type"`  // "file" 或 "dir"
-	Space    string `json:"space"` // TempSpaceUser 用户空间 / TempSpaceShared 共享空间
+	UserName    string `json:"userName"`
+	Path        string `json:"path"`                  // 凭证绑定路径，格式由 Space 决定
+	Type        string `json:"type"`                  // "file" 或 "dir"
+	Space       string `json:"space"`                 // TempSpaceUser 用户空间 / TempSpaceShared 共享空间
+	ProjectId   int    `json:"projectId,omitempty"`   // 共享空间凭证所属团队项目 id，0 表示旧版/非团队项目凭证
+	OwnerUserId string `json:"ownerUserId,omitempty"` // 凭证签发者 userId，用于成员移除后实时吊销
 }
 
 func init() {
