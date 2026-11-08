@@ -3,23 +3,23 @@ package tools
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"goraven/config"
 	"goraven/util"
 
-	"github.com/8treenet/freedom/infra/requests"
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
 )
 
 func init() {
-	webFetchClient = requests.NewHTTPClient(time.Duration(config.Get().Tools.HTTPTimeoutSeconds)*time.Second, 5*time.Second)
+	timeout := time.Duration(config.Get().Tools.HTTPTimeoutSeconds) * time.Second
+	webFetchClient = util.NewSafeHTTPClient(timeout, config.Get().Tools.AllowPrivateFetch)
 }
 
-var (
-	webFetchClient requests.Client
-)
+// 抓取不可信 URL 必须使用带连接层 IP 校验的客户端，不能直接用通用 HTTP 客户端。
+var webFetchClient *http.Client
 
 type WebFetchRequest struct {
 	URL string `json:"url" jsonschema:"description=The web page URL to fetch, must be a complete HTTP or HTTPS URL"`
@@ -63,9 +63,11 @@ func (w *WebFetch) Invoke(ctx context.Context, req *WebFetchRequest) (*WebFetchR
 		return nil, fmt.Errorf("URL不能为空")
 	}
 
-	html, resp := requests.NewHTTPRequest(req.URL).Get().SetClient(webFetchClient).ToString()
-	if resp != nil && resp.Error != nil {
-		return nil, fmt.Errorf("请求网页失败: %w", resp.Error)
+	// FetchURL 内部完成 scheme 白名单、内网/元数据 IP 拦截、重定向逐跳校验、
+	// DNS rebinding 防护与响应体大小限制。
+	html, err := util.FetchURL(ctx, req.URL, webFetchClient, config.Get().Tools.AllowPrivateFetch)
+	if err != nil {
+		return nil, fmt.Errorf("请求网页失败: %w", err)
 	}
 
 	markdown, err := util.ConvertMarkDown(html)

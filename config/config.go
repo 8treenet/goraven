@@ -76,7 +76,8 @@ type PathsConf struct {
 
 // ToolsConf 工具配置（init 阶段使用，不适合放 DB）
 type ToolsConf struct {
-	HTTPTimeoutSeconds int `toml:"http_timeout_seconds" yaml:"http_timeout_seconds"` // HTTP 工具超时时间（秒），默认 60
+	HTTPTimeoutSeconds int  `toml:"http_timeout_seconds" yaml:"http_timeout_seconds"` // HTTP 工具超时时间（秒），默认 60
+	AllowPrivateFetch  bool `toml:"allow_private_fetch" yaml:"allow_private_fetch"`   // 是否允许 WebFetch 抓取内网/环回/链路本地地址，默认 false（SSRF 防护开关）
 }
 
 type RedisConf struct {
@@ -211,7 +212,29 @@ func (conf *Configuration) GetChromaPath(datasetID int) string {
 	return path
 }
 
+// ConfigEntry 描述一项待写入的配置。
+type ConfigEntry struct {
+	Section string
+	Key     string
+	Value   string
+}
+
+// ModifyConfig 修改单个配置项（保留既有调用方签名）。
 func (conf *Configuration) ModifyConfig(section, key, value string) error {
+	return conf.ModifyConfigs([]ConfigEntry{{Section: section, Key: key, Value: value}})
+}
+
+// ModifyConfigs 原子地批量写入多个配置项。
+//
+//   - 一次读取 / 一次编码 / 一次落盘，避免逐项写入留下半成品配置；
+//   - 先写同目录临时文件再 rename，避免读到一个写了一半的 config.yaml；
+//   - 权限固定 0600：该文件含数据库 DSN、Redis 明文口令，不能是 0644；
+//   - 任何一步失败都返回 error，由调用方决定回滚 / 是否标记安装完成。
+func (conf *Configuration) ModifyConfigs(entries []ConfigEntry) error {
+	if len(entries) == 0 {
+		return nil
+	}
+
 	data, err := os.ReadFile(conf.configPath)
 	if err != nil {
 		return fmt.Errorf("read config file: %w", err)
@@ -231,26 +254,27 @@ func (conf *Configuration) ModifyConfig(section, key, value string) error {
 		return fmt.Errorf("expected root mapping")
 	}
 
-	sectionNode := findMappingValue(rootMapping, section)
-	if sectionNode == nil {
-		sectionNode = &yaml.Node{Kind: yaml.MappingNode}
-		rootMapping.Content = append(rootMapping.Content,
-			&yaml.Node{Kind: yaml.ScalarNode, Value: section},
-			sectionNode,
-		)
-	} else if sectionNode.Kind != yaml.MappingNode {
-		return fmt.Errorf("section %q is not a mapping", section)
-	}
+	for _, entry := range entries {
+		sectionNode := findMappingValue(rootMapping, entry.Section)
+		if sectionNode == nil {
+			sectionNode = &yaml.Node{Kind: yaml.MappingNode}
+			rootMapping.Content = append(rootMapping.Content,
+				&yaml.Node{Kind: yaml.ScalarNode, Value: entry.Section},
+				sectionNode,
+			)
+		} else if sectionNode.Kind != yaml.MappingNode {
+			return fmt.Errorf("section %q is not a mapping", entry.Section)
+		}
 
-	keyIdx := findMappingKey(sectionNode, key)
-	if keyIdx >= 0 {
-		valNode := sectionNode.Content[keyIdx+1]
-		valNode.Value = value
-	} else {
-		sectionNode.Content = append(sectionNode.Content,
-			&yaml.Node{Kind: yaml.ScalarNode, Value: key},
-			&yaml.Node{Kind: yaml.ScalarNode, Value: value, Tag: "!!str"},
-		)
+		keyIdx := findMappingKey(sectionNode, entry.Key)
+		if keyIdx >= 0 {
+			sectionNode.Content[keyIdx+1].Value = entry.Value
+		} else {
+			sectionNode.Content = append(sectionNode.Content,
+				&yaml.Node{Kind: yaml.ScalarNode, Value: entry.Key},
+				&yaml.Node{Kind: yaml.ScalarNode, Value: entry.Value, Tag: "!!str"},
+			)
+		}
 	}
 
 	out, err := yaml.Marshal(&root)
@@ -258,10 +282,31 @@ func (conf *Configuration) ModifyConfig(section, key, value string) error {
 		return fmt.Errorf("encode config file: %w", err)
 	}
 
-	if err := os.WriteFile(conf.configPath, out, 0644); err != nil {
+	tmp, err := os.CreateTemp(filepath.Dir(conf.configPath), ".config-*.tmp")
+	if err != nil {
+		return fmt.Errorf("create temp config file: %w", err)
+	}
+	tmpName := tmp.Name()
+	defer os.Remove(tmpName)
+
+	if err := tmp.Chmod(0600); err != nil {
+		tmp.Close()
+		return fmt.Errorf("chmod config file: %w", err)
+	}
+	if _, err := tmp.Write(out); err != nil {
+		tmp.Close()
 		return fmt.Errorf("write config file: %w", err)
 	}
-
+	if err := tmp.Sync(); err != nil {
+		tmp.Close()
+		return fmt.Errorf("sync config file: %w", err)
+	}
+	if err := tmp.Close(); err != nil {
+		return fmt.Errorf("close config file: %w", err)
+	}
+	if err := os.Rename(tmpName, conf.configPath); err != nil {
+		return fmt.Errorf("replace config file: %w", err)
+	}
 	return nil
 }
 

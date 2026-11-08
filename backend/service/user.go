@@ -32,8 +32,11 @@ type UserService struct {
 }
 
 func (service *UserService) Login(req *vo.UserLoginReq) (*vo.UserLoginRsp, error) {
-	// 防护开关：全局密码错误累计达阈值时强制校验图形验证码
-	if service.UserRepo.GetLoginFailureCount() >= repository.CaptchaThreshold {
+	worker := service.Worker
+	clientIP := worker.IrisContext().RemoteAddr()
+
+	// 防护开关：仅当「该账号」或「该来源 IP」的失败次数达阈值时才强制验证码。
+	if service.UserRepo.GetLoginFailureCount(req.Username, clientIP) >= repository.CaptchaThreshold {
 		answer, ok := service.UserRepo.PopCaptchaAnswer(req.Username)
 		if !ok || req.CaptchaAnswer == 0 {
 			return nil, errs.ErrCaptchaRequired
@@ -45,12 +48,13 @@ func (service *UserService) Login(req *vo.UserLoginReq) (*vo.UserLoginRsp, error
 
 	user, err := service.UserRepo.FindByUsername(req.Username)
 	if err != nil {
-		service.UserRepo.RecordLoginFailure()
+		service.UserRepo.RecordLoginFailure(req.Username, clientIP)
 		return nil, errs.ErrInvalidCredentials
 	}
 
-	if user.Password != util.MD5(req.Password) {
-		service.UserRepo.RecordLoginFailure()
+	matched, needUpgrade := util.VerifyPassword(user.Password, req.Password)
+	if !matched {
+		service.UserRepo.RecordLoginFailure(req.Username, clientIP)
 		return nil, errs.ErrInvalidCredentials
 	}
 
@@ -58,10 +62,20 @@ func (service *UserService) Login(req *vo.UserLoginReq) (*vo.UserLoginRsp, error
 		return nil, infra.WrapperError(infra.Access_Disable, "account is disabled")
 	}
 
-	worker := service.Worker
+	// 历史遗留的无盐 MD5 哈希在成功登录时平滑升级为 bcrypt。
+	// 升级失败不阻断本次登录（用户仍能正常使用），只记录日志等待下次重试。
+	if needUpgrade {
+		if hash, hashErr := util.HashPassword(req.Password); hashErr == nil {
+			if updateErr := service.UserRepo.UpdatePassword(user.UserId, hash); updateErr != nil {
+				freedom.Logger().Errorf("upgrade legacy password hash for %s: %v", user.UserId, updateErr)
+			}
+		}
+	}
+	service.UserRepo.ResetLoginFailure(req.Username, clientIP)
+
 	token, err := service.UserRepo.GenerateToken(
 		user.UserId,
-		worker.IrisContext().RemoteAddr(),
+		clientIP,
 		worker.IrisContext().Request().UserAgent(),
 	)
 	if err != nil {
@@ -75,15 +89,14 @@ func (service *UserService) Login(req *vo.UserLoginReq) (*vo.UserLoginRsp, error
 
 // GetCaptcha 拉取登录算术验证码
 func (service *UserService) GetCaptcha(req *vo.CaptchaReq) (*vo.CaptchaRsp, error) {
-	failureCount := service.UserRepo.GetLoginFailureCount()
+	clientIP := service.Worker.IrisContext().RemoteAddr()
+	failureCount := service.UserRepo.GetLoginFailureCount(req.Username, clientIP)
 	if failureCount < repository.CaptchaThreshold {
 		return &vo.CaptchaRsp{Required: false}, nil
 	}
 
-	if failureCount > 120 {
-		return &vo.CaptchaRsp{Required: true, Image1: "goraven", Image2: "good"}, nil
-	}
-
+	// 无论失败次数多高，都必须下发真实图片并同步写入一次性答案。
+	// 旧实现在 >120 时返回两个假字符串且不写答案，导致所有用户必然登录失败。
 	a, b, err := util.RandCaptchaPair()
 	if err != nil {
 		return nil, err
@@ -204,10 +217,15 @@ func (service *UserService) AdminCreateUser(req *vo.AdminCreateUserReq) error {
 		return errs.ErrUsernameAlreadyExists
 	}
 
+	passwordHash, err := util.HashPassword(req.Password)
+	if err != nil {
+		return err
+	}
+
 	user := &po.User{
 		UserId:   util.UUID(),
 		Username: req.Username,
-		Password: util.MD5(req.Password),
+		Password: passwordHash,
 		Nickname: req.Nickname,
 		Role:     req.Role,
 		Status:   po.UserStatusEnabled,
@@ -223,14 +241,15 @@ func (service *UserService) AdminUpdateUser(userId string, req *vo.AdminUpdateUs
 	if err != nil {
 		return errs.ErrUserNotFound
 	}
-	if user.SuperAdmin == po.UserIsSuperAdmin && req.DailyTokenLimit != nil {
-		user.DailyTokenLimit = *req.DailyTokenLimit
-		if err := service.UserRepo.UpdateUser(user); err != nil {
-			return err
+	if user.SuperAdmin == po.UserIsSuperAdmin {
+		if req.DailyTokenLimit == nil {
+			return errs.ErrCannotEditSuperAdmin
 		}
-	}
-	if user.SuperAdmin == po.UserIsSuperAdmin && req.DailyTokenLimit == nil {
-		return errs.ErrCannotEditSuperAdmin
+		// 超管只允许改每日额度，保存后立即返回。
+		// 旧实现漏了这个 return，会继续用 req 的零值覆盖昵称/邮箱/角色/状态，
+		// 一次「只改额度」的请求就可能把超管降权或禁用。
+		user.DailyTokenLimit = *req.DailyTokenLimit
+		return service.UserRepo.UpdateUser(user)
 	}
 
 	user.Nickname = req.Nickname
@@ -269,7 +288,11 @@ func (service *UserService) AdminResetPassword(userId string, req *vo.AdminReset
 		return errs.ErrCannotResetSuperAdminPassword
 	}
 
-	if err := service.UserRepo.UpdatePassword(userId, util.MD5(req.Password)); err != nil {
+	passwordHash, err := util.HashPassword(req.Password)
+	if err != nil {
+		return err
+	}
+	if err := service.UserRepo.UpdatePassword(userId, passwordHash); err != nil {
 		return err
 	}
 	service.UserRepo.Auth.DeleteUserTokens(userId, "")
@@ -339,7 +362,8 @@ func (service *UserService) ChangePassword(req *vo.UserPasswordReq) error {
 		return errs.ErrInvalidCredentials
 	}
 
-	if user.Password != util.MD5(req.CurrentPassword) {
+	matched, _ := util.VerifyPassword(user.Password, req.CurrentPassword)
+	if !matched {
 		return errs.ErrPasswordIncorrect
 	}
 
@@ -347,7 +371,11 @@ func (service *UserService) ChangePassword(req *vo.UserPasswordReq) error {
 		return errs.ErrPasswordSameAsCurrent
 	}
 
-	if err := service.UserRepo.UpdatePassword(userId, util.MD5(req.NewPassword)); err != nil {
+	passwordHash, err := util.HashPassword(req.NewPassword)
+	if err != nil {
+		return err
+	}
+	if err := service.UserRepo.UpdatePassword(userId, passwordHash); err != nil {
 		return err
 	}
 

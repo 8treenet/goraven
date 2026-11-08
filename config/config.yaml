@@ -39,6 +39,9 @@ behavior:
 tools:
   # HTTP 工具超时时间（秒），默认 60。用于 MCP HTTP 客户端、WebFetch 等
   http_timeout_seconds: 60
+  # 是否允许 WebFetch 抓取内网 / 环回 / 链路本地（含云元数据）地址。
+  # 默认 false：拦截 SSRF。仅在完全离线、且已评估提示词注入风险的内网部署中显式开启。
+  allow_private_fetch: false
 
 redis:
   addr: "127.0.0.1:6379"

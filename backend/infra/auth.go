@@ -192,10 +192,13 @@ func (a *Auth) auth(ctx freedom.Context) bool {
 			return false
 		}
 
-		ca := &cachedAuth{UserId: user.UserId, Role: 1, UserName: user.Username}
+		// 预览身份必须沿用该用户在数据库里的真实角色。
+		// 旧实现硬编码 Role=1（管理员），等于把所有匿名访客提权为管理员，
+		// 使 /api/admin/* 的 GET 接口（含模型明文密钥、用户清单）对公网开放。
+		ca := &cachedAuth{UserId: user.UserId, Role: user.Role, UserName: user.Username}
 		a.setToCache(token, ca, 30*time.Minute)
 		worker.Store().Set(UserIdStoreKey, user.UserId)
-		worker.Store().Set(UserRoleStoreKey, uint8(1))
+		worker.Store().Set(UserRoleStoreKey, user.Role)
 		worker.Store().Set(UserNameStoreKey, ca.UserName)
 		return true
 	}

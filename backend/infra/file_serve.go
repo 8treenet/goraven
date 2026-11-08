@@ -2,6 +2,7 @@ package infra
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -14,16 +15,19 @@ import (
 func ServeFile(ctx iris.Context, absPath string, displayName string) {
 	f, err := os.Open(absPath)
 	if err != nil {
-		ctx.StatusCode(http.StatusInternalServerError)
-		ctx.WriteString(err.Error())
+		// os 错误里含服务器绝对路径，只能进服务端日志，不能回显给客户端。
+		log.Printf("[ServeFile] open failed: %v", err)
+		ctx.StatusCode(http.StatusNotFound)
+		ctx.WriteString("file not found")
 		return
 	}
 	defer f.Close()
 
 	info, err := f.Stat()
 	if err != nil {
-		ctx.StatusCode(http.StatusInternalServerError)
-		ctx.WriteString(err.Error())
+		log.Printf("[ServeFile] stat failed: %v", err)
+		ctx.StatusCode(http.StatusNotFound)
+		ctx.WriteString("file not found")
 		return
 	}
 

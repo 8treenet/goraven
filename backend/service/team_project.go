@@ -109,6 +109,9 @@ func (service *TeamProjectService) Get(userId string, id int) (*vo.TeamProjectIt
 	if err != nil {
 		return nil, errs.ErrTeamProjectNotFound
 	}
+	if err := service.checkProjectAccess(project, userId); err != nil {
+		return nil, err
+	}
 	item := vo.TeamProjectItem{
 		Id:          project.Id,
 		CreatorId:   project.CreatorId,
@@ -338,11 +341,42 @@ func resolveSharedAkPath(teamRoot, boundPath, typ, reqPath string) (string, erro
 	return absPath, nil
 }
 
-// validateProject 校验团队项目存在且目录有效，返回项目记录和物理目录
-func (service *TeamProjectService) validateProject(id int) (*po.TeamProject, string, error) {
+// checkProjectAccess 团队项目统一归属校验（单点收口）。
+//
+// 权限模型与 GitContext.authorize、TeamProjectRepository.ListByUser 保持一致：
+// 只有项目创建者与成员可以发现、读取或修改项目内容。
+// access 字段不参与鉴权：历史的「access=0 全员开放」曾让非成员在 /list 看到项目
+// 却在访问时被拒，已统一收敛为「创建者 OR 成员」。
+//
+// 若业务确需重新开放「全员可发现」，需同时给列表项补只读公开视图，
+// 并保证 CreateTempAccess（匿名凭证）始终限制为创建者/成员。
+func (service *TeamProjectService) checkProjectAccess(project *po.TeamProject, userId string) error {
+	if project == nil || userId == "" {
+		return errs.ErrTeamProjectAccessDenied
+	}
+	if project.CreatorId == userId {
+		return nil
+	}
+	isMember, err := service.TPRepo.IsMember(project.Id, userId)
+	if err != nil {
+		return err
+	}
+	if !isMember {
+		return errs.ErrTeamProjectAccessDenied
+	}
+	return nil
+}
+
+// validateProject 校验当前用户有权访问团队项目且目录有效，返回项目记录和物理目录。
+// 所有项目内文件操作必须经由本方法，禁止直接用 GetByID 拼目录。
+func (service *TeamProjectService) validateProject(userId string, id int) (*po.TeamProject, string, error) {
 	project, err := service.TPRepo.GetByID(id)
 	if err != nil {
 		return nil, "", errs.ErrTeamProjectNotFound
+	}
+	// 先鉴权再探测目录，避免通过错误差异枚举他人项目
+	if err := service.checkProjectAccess(project, userId); err != nil {
+		return nil, "", err
 	}
 	projectDir := getProjectDir(project.ProjectName)
 	info, statErr := os.Stat(projectDir)
@@ -353,8 +387,8 @@ func (service *TeamProjectService) validateProject(id int) (*po.TeamProject, str
 }
 
 // ListFiles 列出项目内指定目录的文件
-func (service *TeamProjectService) ListFiles(id int, req *vo.FileManagerListReq) (*vo.FileManagerListRsp, error) {
-	_, projectDir, err := service.validateProject(id)
+func (service *TeamProjectService) ListFiles(userId string, id int, req *vo.FileManagerListReq) (*vo.FileManagerListRsp, error) {
+	_, projectDir, err := service.validateProject(userId, id)
 	if err != nil {
 		return nil, err
 	}
@@ -362,8 +396,8 @@ func (service *TeamProjectService) ListFiles(id int, req *vo.FileManagerListReq)
 }
 
 // Upload 将 HFS 分片上传合并后的文件移入团队项目目录
-func (service *TeamProjectService) Upload(id int, userId string, req *vo.FileManagerUploadReq) (*vo.FileManagerUploadRsp, error) {
-	_, projectDir, err := service.validateProject(id)
+func (service *TeamProjectService) Upload(userId string, id int, req *vo.FileManagerUploadReq) (*vo.FileManagerUploadRsp, error) {
+	_, projectDir, err := service.validateProject(userId, id)
 	if err != nil {
 		return nil, err
 	}
@@ -371,8 +405,8 @@ func (service *TeamProjectService) Upload(id int, userId string, req *vo.FileMan
 }
 
 // Mkdir 在项目内新建目录
-func (service *TeamProjectService) Mkdir(id int, req *vo.FileManagerMkdirReq) error {
-	_, projectDir, err := service.validateProject(id)
+func (service *TeamProjectService) Mkdir(userId string, id int, req *vo.FileManagerMkdirReq) error {
+	_, projectDir, err := service.validateProject(userId, id)
 	if err != nil {
 		return err
 	}
@@ -380,8 +414,8 @@ func (service *TeamProjectService) Mkdir(id int, req *vo.FileManagerMkdirReq) er
 }
 
 // Rename 重命名项目内文件
-func (service *TeamProjectService) Rename(id int, req *vo.FileManagerRenameReq) error {
-	_, projectDir, err := service.validateProject(id)
+func (service *TeamProjectService) Rename(userId string, id int, req *vo.FileManagerRenameReq) error {
+	_, projectDir, err := service.validateProject(userId, id)
 	if err != nil {
 		return err
 	}
@@ -389,8 +423,8 @@ func (service *TeamProjectService) Rename(id int, req *vo.FileManagerRenameReq) 
 }
 
 // Delete 删除项目内文件
-func (service *TeamProjectService) Delete(id int, req *vo.FileManagerDeleteReq) error {
-	_, projectDir, err := service.validateProject(id)
+func (service *TeamProjectService) Delete(userId string, id int, req *vo.FileManagerDeleteReq) error {
+	_, projectDir, err := service.validateProject(userId, id)
 	if err != nil {
 		return err
 	}
@@ -398,8 +432,8 @@ func (service *TeamProjectService) Delete(id int, req *vo.FileManagerDeleteReq) 
 }
 
 // Compress 压缩项目内文件
-func (service *TeamProjectService) Compress(id int, req *vo.FileManagerCompressReq) (*vo.FileManagerCompressRsp, error) {
-	_, projectDir, err := service.validateProject(id)
+func (service *TeamProjectService) Compress(userId string, id int, req *vo.FileManagerCompressReq) (*vo.FileManagerCompressRsp, error) {
+	_, projectDir, err := service.validateProject(userId, id)
 	if err != nil {
 		return nil, err
 	}
@@ -407,8 +441,8 @@ func (service *TeamProjectService) Compress(id int, req *vo.FileManagerCompressR
 }
 
 // Decompress 解压项目内 zip 文件
-func (service *TeamProjectService) Decompress(id int, req *vo.FileManagerDecompressReq) error {
-	_, projectDir, err := service.validateProject(id)
+func (service *TeamProjectService) Decompress(userId string, id int, req *vo.FileManagerDecompressReq) error {
+	_, projectDir, err := service.validateProject(userId, id)
 	if err != nil {
 		return err
 	}
@@ -416,16 +450,16 @@ func (service *TeamProjectService) Decompress(id int, req *vo.FileManagerDecompr
 }
 
 // Usage 项目磁盘使用统计
-func (service *TeamProjectService) Usage(id int) (*vo.FileManagerUsageRsp, error) {
-	_, projectDir, err := service.validateProject(id)
+func (service *TeamProjectService) Usage(userId string, id int) (*vo.FileManagerUsageRsp, error) {
+	_, projectDir, err := service.validateProject(userId, id)
 	if err != nil {
 		return nil, err
 	}
 	return service.UsageRoot(projectDir)
 }
 
-// CreateTempAccess 为团队项目内文件/目录创建临时访问凭证
-func (service *TeamProjectService) CreateTempAccess(id int, req *vo.TempAccessReq) (*vo.TempAccessRsp, error) {
+// CreateTempAccess 为团队项目内文件/目录创建临时访问凭证（仅创建者/成员）
+func (service *TeamProjectService) CreateTempAccess(userId string, id int, req *vo.TempAccessReq) (*vo.TempAccessRsp, error) {
 	if req.Type != "file" && req.Type != "dir" {
 		return nil, errs.ErrTempAccessTypeInvalid
 	}
@@ -433,6 +467,10 @@ func (service *TeamProjectService) CreateTempAccess(id int, req *vo.TempAccessRe
 	project, err := service.TPRepo.GetByID(id)
 	if err != nil {
 		return nil, errs.ErrTeamProjectNotFound
+	}
+	// 匿名凭证可被未登录用户用于下载项目文件，必须限制为项目归属者
+	if err := service.checkProjectAccess(project, userId); err != nil {
+		return nil, err
 	}
 
 	projectDir := getProjectDir(project.ProjectName)
@@ -464,11 +502,15 @@ func (service *TeamProjectService) CreateTempAccess(id int, req *vo.TempAccessRe
 
 	ak := "rvnt_" + util.UUID()
 	// Path 统一存 ak 空间路径 /projects/<项目名>/<项目内相对路径>，与前端 buildAkPath 及 ak 下载 URL 一致
+	// 记录项目与签发者，供 ResolveAkDownload 做实时归属校验：
+	// 成员被移除或项目被删除后，该凭证立即失效，无需等 15 分钟 TTL。
 	cache := &repository.TempAccessCache{
-		UserName: user.Username,
-		Space:    repository.TempSpaceShared,
-		Path:     filepath.Join("/projects", project.ProjectName, filepath.Clean("/"+strings.TrimPrefix(req.Path, "/"))),
-		Type:     req.Type,
+		UserName:    user.Username,
+		Space:       repository.TempSpaceShared,
+		Path:        filepath.Join("/projects", project.ProjectName, filepath.Clean("/"+strings.TrimPrefix(req.Path, "/"))),
+		Type:        req.Type,
+		ProjectId:   id,
+		OwnerUserId: userId,
 	}
 	if err := service.HFSRepo.SetTempAccess(ak, cache); err != nil {
 		return nil, fmt.Errorf("create temp access: %w", err)
@@ -481,8 +523,8 @@ func (service *TeamProjectService) CreateTempAccess(id int, req *vo.TempAccessRe
 }
 
 // Download 解析团队项目内文件的绝对路径，供 controller SendFile
-func (service *TeamProjectService) Download(id int, subPath string) (string, string, error) {
-	_, projectDir, err := service.validateProject(id)
+func (service *TeamProjectService) Download(userId string, id int, subPath string) (string, string, error) {
+	_, projectDir, err := service.validateProject(userId, id)
 	if err != nil {
 		return "", "", err
 	}
@@ -511,6 +553,9 @@ func (service *TeamProjectService) ListMembers(userId string, projectId int) (*v
 	project, err := service.TPRepo.GetByID(projectId)
 	if err != nil {
 		return nil, errs.ErrTeamProjectNotFound
+	}
+	if err := service.checkProjectAccess(project, userId); err != nil {
+		return nil, err
 	}
 
 	members, err := service.TPRepo.ListMembers(projectId)

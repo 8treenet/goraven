@@ -47,6 +47,7 @@ type HFSService struct {
 	HFSRepo        *repository.HFSRepository
 	SysCfgRepo     *repository.SystemSettingRepository
 	UserRepository *repository.UserRepository
+	TPRepo         *repository.TeamProjectRepository
 }
 
 var _ iface.FileURLGenerator = (*HFSService)(nil)
@@ -179,6 +180,28 @@ func (service *HFSService) CreateTempAccess(userID, userName string, req *vo.Tem
 	}, nil
 }
 
+// sharedAkStillValid 实时校验共享空间（团队项目）凭证是否仍然有效。
+//
+// 这里刻意不维护「按项目/成员索引的 ak 集合」：freedom 的本地缓存只实现了
+// redis.Cmdable 的部分方法，且多实例部署下索引集合难以保持一致；每次下载
+// 回查一次 DB 更简单可靠，成员移除与项目删除都能立即生效（无需等 TTL）。
+func (service *HFSService) sharedAkStillValid(cache *repository.TempAccessCache) bool {
+	if service.TPRepo == nil || cache.ProjectId <= 0 || cache.OwnerUserId == "" {
+		// 旧版凭证缺少归属信息，无法判断签发者是否仍有权限，按失效处理。
+		// 影响窗口最长 TempAkTTL（15 分钟），重新签发即可。
+		return false
+	}
+	project, err := service.TPRepo.GetByID(cache.ProjectId)
+	if err != nil {
+		return false // 项目已被删除
+	}
+	if project.CreatorId == cache.OwnerUserId {
+		return true
+	}
+	isMember, err := service.TPRepo.IsMember(project.Id, cache.OwnerUserId)
+	return err == nil && isMember
+}
+
 // ResolveAkDownload 校验临时凭证并解析出待下载文件的绝对路径
 // reqPath 为 URL 中携带的 p:path，与凭证 Path 同属一个路径空间：
 // 用户空间凭证为用户工作区相对路径；共享空间凭证形如 /projects/<项目名>/<项目内相对路径>
@@ -196,7 +219,11 @@ func (service *HFSService) ResolveAkDownload(ak, reqPath string) (string, error)
 	}
 
 	if space == repository.TempSpaceShared {
-		// 共享空间凭证：文件位于团队项目目录，不在用户沙盒内
+		// 共享空间凭证：文件位于团队项目目录，不在用户沙盒内。
+		// 先做归属校验，成员被移除/项目被删除后凭证立即失效。
+		if !service.sharedAkStillValid(cache) {
+			return "", errs.ErrTempAccessInvalid
+		}
 		absPath, terr := resolveSharedAkPath(config.Get().GetTeamProjectDir(), cache.Path, cache.Type, reqPath)
 		if terr != nil {
 			return "", terr
