@@ -36,7 +36,7 @@ type ProviderConfig struct {
 }
 
 // GetProviderByName 根据供应商名称获取 Provider 实例
-// 支持的名称: deepseek, bailian (qwen), glm, minimax, openrouter, ollama, openai, claude, gemini, volcano, openai_compatible, claude_compatible
+// 支持的名称: deepseek, bailian (qwen), glm, minimax, openrouter, requesty, ollama, openai, claude, gemini, volcano, openai_compatible, claude_compatible
 func GetProviderByName(name string, cfg ProviderConfig) (Provider, error) {
 	switch name {
 	case DeepseekProviderName:
@@ -49,6 +49,8 @@ func GetProviderByName(name string, cfg ProviderConfig) (Provider, error) {
 		return NewMiniMaxProvider(cfg.APIKey, cfg.BaseURL), nil
 	case OpenrouterProviderName:
 		return NewOpenrouterProvider(cfg.APIKey), nil
+	case RequestyProviderName:
+		return NewRequestyProvider(cfg.APIKey), nil
 	case OllamaProviderName:
 		return NewOllamaProvider(cfg.BaseURL), nil
 	case OpenAIProviderName:

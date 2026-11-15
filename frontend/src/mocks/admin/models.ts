@@ -213,6 +213,7 @@ export const MOCK_PROVIDERS: ProviderItem[] = [
   { providerId: 'openai_compatible', providerDisplayNameZh: 'OpenAI Compatible', providerDisplayNameEn: 'OpenAI Compatible', icon: '', defaultBaseUrl: '', requireApiKey: true, requireBaseUrl: true },
   { providerId: 'claude_compatible', providerDisplayNameZh: 'Claude Compatible', providerDisplayNameEn: 'Claude Compatible', icon: '', defaultBaseUrl: '', requireApiKey: true, requireBaseUrl: true },
   { providerId: 'openrouter', providerDisplayNameZh: 'OpenRouter', providerDisplayNameEn: 'OpenRouter', icon: '/logos/openrouter.svg', defaultBaseUrl: '', requireApiKey: true, requireBaseUrl: false },
+  { providerId: 'requesty', providerDisplayNameZh: 'Requesty', providerDisplayNameEn: 'Requesty', icon: '/logos/requesty.svg', defaultBaseUrl: '', requireApiKey: true, requireBaseUrl: false },
 ]
 
 /* ============================================
@@ -344,6 +345,7 @@ export const AVAILABLE_LOGOS: string[] = [
   '/logos/qwen.svg',
   '/logos/rc.svg',
   '/logos/relaxcode.png',
+  '/logos/requesty.svg',
   '/logos/runapi.jpg',
   '/logos/shengsuanyun.svg',
   '/logos/siliconflow.svg',
