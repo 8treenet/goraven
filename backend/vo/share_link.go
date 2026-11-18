@@ -24,14 +24,14 @@ type ShareLinkRsp struct {
 
 // UserShareListItem 用户分享列表条目
 type UserShareListItem struct {
-	ShareId    string    `json:"shareId"`    // 分享唯一标识
-	SessionId  string    `json:"sessionId"`  // 被分享的会话ID
-	Title      string    `json:"title"`      // 分享标题
-	ShareType  string    `json:"shareType"`  // 分享类型：public(公开) / internal(内部)
-	ExpiresAt  time.Time `json:"expiresAt"`  // 过期时间
-	ViewCount  int       `json:"viewCount"`  // 浏览次数
-	IsExpired  bool      `json:"isExpired"`  // 是否已过期
-	Created    time.Time `json:"created"`    // 创建时间
+	ShareId   string    `json:"shareId"`   // 分享唯一标识
+	SessionId string    `json:"sessionId"` // 被分享的会话ID
+	Title     string    `json:"title"`     // 分享标题
+	ShareType string    `json:"shareType"` // 分享类型：public(公开) / internal(内部)
+	ExpiresAt time.Time `json:"expiresAt"` // 过期时间
+	ViewCount int       `json:"viewCount"` // 浏览次数
+	IsExpired bool      `json:"isExpired"` // 是否已过期
+	Created   time.Time `json:"created"`   // 创建时间
 }
 
 // UserShareListReq 用户分享列表请求

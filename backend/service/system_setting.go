@@ -1,13 +1,13 @@
 package service
 
 import (
-	"math"
 	"goraven/backend/po"
 	"goraven/backend/repository"
 	"goraven/backend/vo"
 	"goraven/backend/vo/errs"
 	"goraven/config"
 	"goraven/util"
+	"math"
 	"strconv"
 	"time"
 
@@ -29,8 +29,8 @@ func init() {
 // SystemSettingService 系统设置服务
 // 提供自描述式设置查询（含 UI 元数据）和批量更新
 type SystemSettingService struct {
-	Worker    freedom.Worker
-	Repo      *repository.SystemSettingRepository
+	Worker freedom.Worker
+	Repo   *repository.SystemSettingRepository
 }
 
 // settingMeta 设置项 UI 元数据，用于前端动态渲染
@@ -66,7 +66,7 @@ var settingRegistry = []settingMeta{
 		displayNameZh: "系统域名", displayNameEn: "System Domain",
 		descriptionZh: "系统对外服务域名，用于生成文件外链和分享链接；多模态（图片/音视频）传给模型需使用文件外链，请配置公网域名",
 		descriptionEn: "Public domain for generating file share links; multimodal (image/audio/video) inputs are passed to models via file external links, so a public domain must be configured",
-		inputType: "text", placeholder: "https://goraven.dev", displayOrder: 1, groupName: "general"},
+		inputType:     "text", placeholder: "https://goraven.dev", displayOrder: 1, groupName: "general"},
 
 	// ---- clawhub ----
 	{key: "clawhub.api_url", valueType: po.ValueTypeString, defaultValue: "https://clawhub.ai",

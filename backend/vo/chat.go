@@ -2,22 +2,22 @@ package vo
 
 // ChatReq POST /api/chat 发送消息请求
 type ChatReq struct {
-	SessionId       *string  `json:"sessionId"`                     // 会话ID，nil=新建会话
-	Content         string   `json:"content" validate:"required"`   // 消息内容（必填）
-	Attachments     []string `json:"attachments"`                   // 上传文件uploadId列表
-	AIModelId       int      `json:"aiModelId"`                     // 模型ID，0表示使用默认模型（后端从默认池随机选取）
-	PersonaId       *int     `json:"personaId"`                     // 角色ID
-	McpIds          []int    `json:"mcpIds"`                        // MCP ID列表（无角色时使用）
-	SkillIds        []int    `json:"skillIds"`                      // 技能ID列表（无角色时使用）
-	Reasoning       int      `json:"reasoning"`                     // 思考模式：0无思考 1深度思考
-	Project         string   `json:"project"`                       // 项目目录名称，空表示无项目
-	TeamProjectId   *int     `json:"sharedProjectId"`               // 团队项目ID，与Project互斥
+	SessionId     *string  `json:"sessionId"`                   // 会话ID，nil=新建会话
+	Content       string   `json:"content" validate:"required"` // 消息内容（必填）
+	Attachments   []string `json:"attachments"`                 // 上传文件uploadId列表
+	AIModelId     int      `json:"aiModelId"`                   // 模型ID，0表示使用默认模型（后端从默认池随机选取）
+	PersonaId     *int     `json:"personaId"`                   // 角色ID
+	McpIds        []int    `json:"mcpIds"`                      // MCP ID列表（无角色时使用）
+	SkillIds      []int    `json:"skillIds"`                    // 技能ID列表（无角色时使用）
+	Reasoning     int      `json:"reasoning"`                   // 思考模式：0无思考 1深度思考
+	Project       string   `json:"project"`                     // 项目目录名称，空表示无项目
+	TeamProjectId *int     `json:"sharedProjectId"`             // 团队项目ID，与Project互斥
 }
 
 // ChatRsp POST /api/chat 发送消息响应
 type ChatRsp struct {
-	SessionId string              `json:"sessionId"`          // 会话ID
-	Session   *SessionDetailRsp   `json:"session,omitempty"`  // 会话详情（新建/复用会话时返回，前端可直接使用，省去额外 getSessionDetail 请求）
+	SessionId string            `json:"sessionId"`         // 会话ID
+	Session   *SessionDetailRsp `json:"session,omitempty"` // 会话详情（新建/复用会话时返回，前端可直接使用，省去额外 getSessionDetail 请求）
 }
 
 // ChatStopReq POST /api/chat/stop 停止生成请求

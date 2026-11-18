@@ -33,11 +33,11 @@ type AdminDashboardOverview struct {
 // UserDashboardRsp 用户仪表盘响应
 // 趋势图表通过独立端点按需加载，此处返回脉搏指标、存储统计和工具排行
 type UserDashboardRsp struct {
-	Overview        UserDashboardOverview `json:"overview"`        // 个人脉搏指标
-	SkillUsageRank  []ToolUsageRankItem   `json:"skillUsageRank"`  // 近一周技能使用排行
-	McpUsageRank    []ToolUsageRankItem   `json:"mcpUsageRank"`    // 近一周 MCP 使用排行
-	ToolUsageRank   []ToolUsageRankItem   `json:"toolUsageRank"`   // 近一周工具使用排行
-	StorageStats    UserStorageStats      `json:"storageStats"`    // 存储空间使用统计
+	Overview       UserDashboardOverview `json:"overview"`       // 个人脉搏指标
+	SkillUsageRank []ToolUsageRankItem   `json:"skillUsageRank"` // 近一周技能使用排行
+	McpUsageRank   []ToolUsageRankItem   `json:"mcpUsageRank"`   // 近一周 MCP 使用排行
+	ToolUsageRank  []ToolUsageRankItem   `json:"toolUsageRank"`  // 近一周工具使用排行
+	StorageStats   UserStorageStats      `json:"storageStats"`   // 存储空间使用统计
 }
 
 // UserDashboardOverview 用户仪表盘脉搏指标
@@ -122,7 +122,6 @@ type StorageUsageItem struct {
 	BytesSize  int64   `json:"bytesSize"`  // 目录大小（字节）
 	Percentage float64 `json:"percentage"` // 占磁盘总容量百分比（0-100）
 }
-
 
 // TokenTrendRsp Token 趋势响应
 // 供前端切换时间粒度（7/30/90天）使用，admin 和 user 共用

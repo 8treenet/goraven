@@ -24,8 +24,8 @@ type ChunkUpload struct {
 	ChunkSize   int       `gorm:"column:chunk_size"`                            // 分片大小（字节）
 	TotalChunks int       `gorm:"column:total_chunks"`                          // 总分片数
 	TempDir     string    `gorm:"column:temp_dir;type:varchar(512)"`            // 临时存储目录
-	Status      uint8     `gorm:"column:status;default:0;index"`               // 状态：0进行中 1已完成 2已取消 3已使用
-	Deleted     uint8     `gorm:"column:deleted;default:0;index"`              // 软删除：0正常 1已删除
+	Status      uint8     `gorm:"column:status;default:0;index"`                // 状态：0进行中 1已完成 2已取消 3已使用
+	Deleted     uint8     `gorm:"column:deleted;default:0;index"`               // 软删除：0正常 1已删除
 	Created     time.Time `gorm:"not null;column:created"`
 	Updated     time.Time `gorm:"not null;column:updated"`
 }

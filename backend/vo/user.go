@@ -67,8 +67,8 @@ type AdminUserItem struct {
 type AdminCreateUserReq struct {
 	Username string `json:"username" validate:"required,min=8,max=16"` // 用户名 8-16 字符
 	Password string `json:"password" validate:"required"`              // 明文密码（后端做 MD5 哈希）
-	Nickname string `json:"nickname"`                                   // 昵称
-	Role     uint8  `json:"role"`                                       // 角色 0普通用户 1管理员
+	Nickname string `json:"nickname"`                                  // 昵称
+	Role     uint8  `json:"role"`                                      // 角色 0普通用户 1管理员
 }
 
 // AdminUpdateUserReq 管理员编辑用户请求

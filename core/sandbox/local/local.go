@@ -3,13 +3,13 @@ package local
 import (
 	"context"
 	"fmt"
-	"io"
-	"os"
-	"path/filepath"
 	"goraven/config"
 	"goraven/core/sandbox/types"
 	"goraven/util/disk"
 	"goraven/util/envfile"
+	"io"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/cloudwego/eino-ext/adk/backend/local"
@@ -21,9 +21,9 @@ var _ types.Sandbox = (*LocalSandbox)(nil)
 
 // LocalSandbox 本地文件系统沙盒
 type LocalSandbox struct {
-	userName         string
-	Workspace        string
-	extraWorkspace   string // 额外可访问的工作空间（如团队项目目录），validateFilePath 也会对此路径放行
+	userName       string
+	Workspace      string
+	extraWorkspace string // 额外可访问的工作空间（如团队项目目录），validateFilePath 也会对此路径放行
 }
 
 // NewLocalSandbox 创建本地沙盒

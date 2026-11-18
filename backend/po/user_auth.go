@@ -9,12 +9,12 @@ import (
 // UserAuth 用户登录鉴权表
 // 用于存储用户登录后的 AccessToken，支持多端登录和 Token 过期管理。
 type UserAuth struct {
-	AuthId      int       `gorm:"primaryKey;column:auth_id;autoIncrement"`               // 主键ID
-	UserId      string    `gorm:"index;column:user_id;type:varchar(64);not null"`        // 关联用户ID
+	AuthId      int       `gorm:"primaryKey;column:auth_id;autoIncrement"`                    // 主键ID
+	UserId      string    `gorm:"index;column:user_id;type:varchar(64);not null"`             // 关联用户ID
 	AccessToken string    `gorm:"uniqueIndex;column:access_token;type:varchar(128);not null"` // AccessToken，如 rvn_xxxx...
-	ExpiresAt   time.Time `gorm:"column:expires_at"`                                      // 过期时间，零值表示永不过期
-	ClientIP    string    `gorm:"column:client_ip;type:varchar(64)"`                     // 登录时客户端IP
-	ClientUA    string    `gorm:"column:client_ua;type:varchar(512)"`                    // 登录时User-Agent
+	ExpiresAt   time.Time `gorm:"column:expires_at"`                                          // 过期时间，零值表示永不过期
+	ClientIP    string    `gorm:"column:client_ip;type:varchar(64)"`                          // 登录时客户端IP
+	ClientUA    string    `gorm:"column:client_ua;type:varchar(512)"`                         // 登录时User-Agent
 	Created     time.Time `gorm:"not null;column:created"`
 	Updated     time.Time `gorm:"not null;column:updated"`
 }

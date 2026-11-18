@@ -9,7 +9,7 @@ import (
 // PersonaTool 角色关联工具表（替代 user_persona.mcpIds / skillIds 的 JSON 存储）
 // 每条记录表示一个角色绑定的一个 MCP 端点或用户技能
 type PersonaTool struct {
-	Id        int       `gorm:"primaryKey;column:id;type:int;autoIncrement"`                                                          // 主键ID
+	Id        int       `gorm:"primaryKey;column:id;type:int;autoIncrement"`                                                           // 主键ID
 	PersonaId int       `gorm:"uniqueIndex:idx_persona_type_tool;column:persona_id;type:int;not null"`                                 // 角色ID，关联 user_persona.personaId
 	UserId    string    `gorm:"index:idx_user_type_tool;column:user_id;type:varchar(64);not null"`                                     // 用户ID（冗余，方便按用户级联查询和删除）
 	ToolType  string    `gorm:"uniqueIndex:idx_persona_type_tool;index:idx_user_type_tool;column:tool_type;type:varchar(16);not null"` // 类型: mcp / skill

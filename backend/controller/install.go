@@ -34,13 +34,13 @@ func (controller *InstallController) BeforeActivation(b freedom.BeforeActivation
 // CheckDB 测试数据库连接，路由 POST /api/install/check-db
 func (controller *InstallController) CheckDB() freedom.Result {
 	var req vo.InstallDBCheckReq
-	if err := 	controller.Request.ReadJSON(&req, true); err != nil {
+	if err := controller.Request.ReadJSON(&req, true); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
 	if err := req.Check(); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
-	if err := 	controller.InstallSev.CheckDB(&req); err != nil {
+	if err := controller.InstallSev.CheckDB(&req); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
 	return &infra.JSONResponse{Object: "ok"}
@@ -49,10 +49,10 @@ func (controller *InstallController) CheckDB() freedom.Result {
 // CheckRedis 测试 Redis 连接，路由 POST /api/install/check-redis
 func (controller *InstallController) CheckRedis() freedom.Result {
 	var req vo.InstallRedisCheckReq
-	if err := 	controller.Request.ReadJSON(&req, true); err != nil {
+	if err := controller.Request.ReadJSON(&req, true); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
-	if err := 	controller.InstallSev.CheckRedis(&req); err != nil {
+	if err := controller.InstallSev.CheckRedis(&req); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
 	return &infra.JSONResponse{Object: "ok"}
@@ -61,13 +61,13 @@ func (controller *InstallController) CheckRedis() freedom.Result {
 // DoInit 执行系统初始化，路由 POST /api/install/init
 func (controller *InstallController) DoInit() freedom.Result {
 	var req vo.InstallInitReq
-	if err := 	controller.Request.ReadJSON(&req, true); err != nil {
+	if err := controller.Request.ReadJSON(&req, true); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
 	if err := req.Check(); err != nil {
 		return &infra.JSONResponse{Error: err}
 	}
-	rsp, err := 	controller.InstallSev.Init(&req)
+	rsp, err := controller.InstallSev.Init(&req)
 	if err != nil {
 		return &infra.JSONResponse{Error: err}
 	}

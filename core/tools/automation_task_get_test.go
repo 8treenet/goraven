@@ -17,10 +17,10 @@ import (
 // getFakeRepo 提供单任务查询行为的存根
 type getFakeRepo struct {
 	fakeAutomationRepo
-	stored   *po.AutomationTask
-	gotId    int
-	gotUser  string
-	getErr   error
+	stored  *po.AutomationTask
+	gotId   int
+	gotUser string
+	getErr  error
 }
 
 func (f *getFakeRepo) GetTask(id int, userId string) (*po.AutomationTask, error) {

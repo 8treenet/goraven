@@ -479,10 +479,10 @@ func (service *PersonaService) ListUserPersonas(userId string) ([]vo.UserPersona
 	items := make([]vo.UserPersonaListItem, 0, len(personas))
 	for _, p := range personas {
 		item := vo.UserPersonaListItem{
-			PersonaId: p.PersonaId,
-			Name:      p.Name,
-			Icon:      p.Icon,
-			RoleInfo:  p.RoleInfo,
+			PersonaId:  p.PersonaId,
+			Name:       p.Name,
+			Icon:       p.Icon,
+			RoleInfo:   p.RoleInfo,
 			CategoryId: p.CategoryId,
 			McpNames:   []string{},
 			SkillNames: []string{},

@@ -14,7 +14,7 @@ type FileLink struct {
 	FilePath  string    `gorm:"column:file_path;type:varchar(512)"`         // 用户目录下的相对路径，如 /temp/screenshot.png
 	FileName  string    `gorm:"column:file_name;type:varchar(255)"`         // 原始文件名，用于下载时展示
 	ExpiresAt time.Time `gorm:"column:expires_at"`                          // 失效时间
-	Deleted   uint8     `gorm:"column:deleted;default:0"`                  // 软删除: 0正常 1删除
+	Deleted   uint8     `gorm:"column:deleted;default:0"`                   // 软删除: 0正常 1删除
 	Created   time.Time `gorm:"not null;column:created"`
 	Updated   time.Time `gorm:"not null;column:updated"`
 }

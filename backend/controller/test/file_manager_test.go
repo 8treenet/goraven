@@ -18,11 +18,11 @@ type apiRsp struct {
 // TestFileManagerListRoot 列出根目录 GET /api/fileManager/list
 func TestFileManagerListRoot(t *testing.T) {
 	var rsp struct {
-		Code int                    `json:"code"`
-		Msg  string                 `json:"msg"`
-		Data vo.FileManagerListRsp  `json:"data,omitempty"`
+		Code int                   `json:"code"`
+		Msg  string                `json:"msg"`
+		Data vo.FileManagerListRsp `json:"data,omitempty"`
 	}
-	httpResp := requests.NewHTTPRequest(domain + "/api/fileManager/list").
+	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/list").
 		Get().
 		SetHeaderValue("Authorization", "Bearer "+token).
 		ToJSON(&rsp)
@@ -41,11 +41,11 @@ func TestFileManagerListRoot(t *testing.T) {
 // TestFileManagerListDocuments 列出 documents 目录 GET /api/fileManager/list?dir=documents
 func TestFileManagerListDocuments(t *testing.T) {
 	var rsp struct {
-		Code int                    `json:"code"`
-		Msg  string                 `json:"msg"`
-		Data vo.FileManagerListRsp  `json:"data,omitempty"`
+		Code int                   `json:"code"`
+		Msg  string                `json:"msg"`
+		Data vo.FileManagerListRsp `json:"data,omitempty"`
 	}
-	httpResp := requests.NewHTTPRequest(domain + "/api/fileManager/list?dir=documents").
+	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/list?dir=documents").
 		Get().
 		SetHeaderValue("Authorization", "Bearer "+token).
 		ToJSON(&rsp)
@@ -64,11 +64,11 @@ func TestFileManagerListDocuments(t *testing.T) {
 // TestFileManagerListSortBySize 按大小排序 GET /api/fileManager/list?dir=documents&sort=size&order=desc
 func TestFileManagerListSortBySize(t *testing.T) {
 	var rsp struct {
-		Code int                    `json:"code"`
-		Msg  string                 `json:"msg"`
-		Data vo.FileManagerListRsp  `json:"data,omitempty"`
+		Code int                   `json:"code"`
+		Msg  string                `json:"msg"`
+		Data vo.FileManagerListRsp `json:"data,omitempty"`
 	}
-	httpResp := requests.NewHTTPRequest(domain + "/api/fileManager/list?dir=documents&sort=size&order=desc").
+	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/list?dir=documents&sort=size&order=desc").
 		Get().
 		SetHeaderValue("Authorization", "Bearer "+token).
 		ToJSON(&rsp)
@@ -91,7 +91,7 @@ func TestFileManagerMkdirAndDelete(t *testing.T) {
 		Path: "test_mkdir_dir",
 	}
 	var mkdirRsp apiRsp
-	httpResp := requests.NewHTTPRequest(domain + "/api/fileManager/mkdir").
+	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/mkdir").
 		Post().
 		SetJSONBody(mkdirReq).
 		SetHeaderValue("Authorization", "Bearer "+token).
@@ -106,11 +106,11 @@ func TestFileManagerMkdirAndDelete(t *testing.T) {
 
 	// 验证目录存在
 	var listRsp struct {
-		Code int                    `json:"code"`
-		Msg  string                 `json:"msg"`
-		Data vo.FileManagerListRsp  `json:"data,omitempty"`
+		Code int                   `json:"code"`
+		Msg  string                `json:"msg"`
+		Data vo.FileManagerListRsp `json:"data,omitempty"`
 	}
-	requests.NewHTTPRequest(domain + "/api/fileManager/list").
+	requests.NewHTTPRequest(domain+"/api/fileManager/list").
 		Get().
 		SetHeaderValue("Authorization", "Bearer "+token).
 		ToJSON(&listRsp)
@@ -130,7 +130,7 @@ func TestFileManagerMkdirAndDelete(t *testing.T) {
 		Paths: []string{"test_mkdir_dir"},
 	}
 	var delRsp apiRsp
-	httpResp = requests.NewHTTPRequest(domain + "/api/fileManager/delete").
+	httpResp = requests.NewHTTPRequest(domain+"/api/fileManager/delete").
 		Delete().
 		SetJSONBody(deleteReq).
 		SetHeaderValue("Authorization", "Bearer "+token).
@@ -149,7 +149,7 @@ func TestFileManagerRename(t *testing.T) {
 	// 先创建测试目录
 	mkdirReq := vo.FileManagerMkdirReq{Path: "test_rename_before"}
 	var mkdirRsp apiRsp
-	requests.NewHTTPRequest(domain + "/api/fileManager/mkdir").
+	requests.NewHTTPRequest(domain+"/api/fileManager/mkdir").
 		Post().
 		SetJSONBody(mkdirReq).
 		SetHeaderValue("Authorization", "Bearer "+token).
@@ -164,7 +164,7 @@ func TestFileManagerRename(t *testing.T) {
 		NewPath: "test_rename_after",
 	}
 	var renameRsp apiRsp
-	httpResp := requests.NewHTTPRequest(domain + "/api/fileManager/rename").
+	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/rename").
 		Put().
 		SetJSONBody(renameReq).
 		SetHeaderValue("Authorization", "Bearer "+token).
@@ -179,7 +179,7 @@ func TestFileManagerRename(t *testing.T) {
 
 	// 清理
 	deleteReq := vo.FileManagerDeleteReq{Paths: []string{"test_rename_after"}}
-	requests.NewHTTPRequest(domain + "/api/fileManager/delete").
+	requests.NewHTTPRequest(domain+"/api/fileManager/delete").
 		Delete().
 		SetJSONBody(deleteReq).
 		SetHeaderValue("Authorization", "Bearer "+token).
@@ -190,7 +190,7 @@ func TestFileManagerRename(t *testing.T) {
 func TestFileManagerCompressAndDecompress(t *testing.T) {
 	// 创建测试文件
 	mkdirReq := vo.FileManagerMkdirReq{Path: "test_compress_src"}
-	requests.NewHTTPRequest(domain + "/api/fileManager/mkdir").
+	requests.NewHTTPRequest(domain+"/api/fileManager/mkdir").
 		Post().
 		SetJSONBody(mkdirReq).
 		SetHeaderValue("Authorization", "Bearer "+token).
@@ -202,11 +202,11 @@ func TestFileManagerCompressAndDecompress(t *testing.T) {
 		OutputName: "test_compress_src.zip",
 	}
 	var compressRsp struct {
-		Code int                        `json:"code"`
-		Msg  string                     `json:"msg"`
-		Data vo.FileManagerCompressRsp  `json:"data,omitempty"`
+		Code int                       `json:"code"`
+		Msg  string                    `json:"msg"`
+		Data vo.FileManagerCompressRsp `json:"data,omitempty"`
 	}
-	httpResp := requests.NewHTTPRequest(domain + "/api/fileManager/compress").
+	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/compress").
 		Post().
 		SetJSONBody(compressReq).
 		SetHeaderValue("Authorization", "Bearer "+token).
@@ -225,7 +225,7 @@ func TestFileManagerCompressAndDecompress(t *testing.T) {
 		ToSubDir: true,
 	}
 	var decompressRsp apiRsp
-	httpResp = requests.NewHTTPRequest(domain + "/api/fileManager/decompress").
+	httpResp = requests.NewHTTPRequest(domain+"/api/fileManager/decompress").
 		Post().
 		SetJSONBody(decompressReq).
 		SetHeaderValue("Authorization", "Bearer "+token).
@@ -242,7 +242,7 @@ func TestFileManagerCompressAndDecompress(t *testing.T) {
 	deleteReq := vo.FileManagerDeleteReq{
 		Paths: []string{"test_compress_src", "test_compress_src.zip", "test_compress_src"},
 	}
-	requests.NewHTTPRequest(domain + "/api/fileManager/delete").
+	requests.NewHTTPRequest(domain+"/api/fileManager/delete").
 		Delete().
 		SetJSONBody(deleteReq).
 		SetHeaderValue("Authorization", "Bearer "+token).
@@ -252,11 +252,11 @@ func TestFileManagerCompressAndDecompress(t *testing.T) {
 // TestFileManagerUsage 磁盘使用统计 GET /api/fileManager/usage
 func TestFileManagerUsage(t *testing.T) {
 	var rsp struct {
-		Code int                     `json:"code"`
-		Msg  string                  `json:"msg"`
-		Data vo.FileManagerUsageRsp  `json:"data,omitempty"`
+		Code int                    `json:"code"`
+		Msg  string                 `json:"msg"`
+		Data vo.FileManagerUsageRsp `json:"data,omitempty"`
 	}
-	httpResp := requests.NewHTTPRequest(domain + "/api/fileManager/usage").
+	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/usage").
 		Get().
 		SetHeaderValue("Authorization", "Bearer "+token).
 		ToJSON(&rsp)
@@ -284,11 +284,11 @@ func TestFileManagerUpload(t *testing.T) {
 		Dir:      "documents",
 	}
 	var rsp struct {
-		Code int                       `json:"code"`
-		Msg  string                    `json:"msg"`
-		Data vo.FileManagerUploadRsp   `json:"data,omitempty"`
+		Code int                     `json:"code"`
+		Msg  string                  `json:"msg"`
+		Data vo.FileManagerUploadRsp `json:"data,omitempty"`
 	}
-	httpResp := requests.NewHTTPRequest(domain + "/api/fileManager/upload").
+	httpResp := requests.NewHTTPRequest(domain+"/api/fileManager/upload").
 		Post().
 		SetJSONBody(uploadReq).
 		SetHeaderValue("Authorization", "Bearer "+token).

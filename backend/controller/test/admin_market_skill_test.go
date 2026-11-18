@@ -55,8 +55,8 @@ func TestGetMarketSkillDetail(t *testing.T) {
 // TestUpdateMarketSkill 编辑市场技能 PUT /api/admin/marketSkills/:id
 func TestUpdateMarketSkill(t *testing.T) {
 	req := vo.AdminUpdateMarketSkillReq{
-		Icon:        stringPtr("folder-git"),
-		SortOrder:   intPtr(10),
+		Icon:      stringPtr("folder-git"),
+		SortOrder: intPtr(10),
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/marketSkills/5").
 		Put().

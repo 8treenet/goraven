@@ -143,9 +143,9 @@ func (repo *MCPRepository) SoftDeleteMCPEndpoint(mcpId int) error {
 // UpdateMCPEndpointHealth 更新 MCP 端点延迟和检测时间
 func (repo *MCPRepository) UpdateMCPEndpointHealth(mcpId int, latencyMs int, checkedAt time.Time) error {
 	return repo.db().Model(&po.MCPEndpoint{}).Where("mcp_id = ? AND deleted = 0", mcpId).Updates(map[string]interface{}{
-		"health_latency":   latencyMs,
+		"health_latency":    latencyMs,
 		"health_checked_at": checkedAt,
-		"updated":         time.Now(),
+		"updated":           time.Now(),
 	}).Error
 }
 

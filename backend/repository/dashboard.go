@@ -38,6 +38,7 @@ func (repo *DashboardRepository) quoteUser() string {
 	}
 	return `"user"`
 }
+
 // dateExpr 根据数据库类型生成从毫秒时间戳提取日期的 SQL 表达式
 // message.timestamp 为 Unix 毫秒，需转换为 YYYY-MM-DD 格式
 func (repo *DashboardRepository) dateExpr() string {

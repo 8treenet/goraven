@@ -33,16 +33,16 @@ type AdminPersonaTemplateItem struct {
 
 // AdminPersonaTemplateDetailRsp 角色模板详情响应（含完整 roleInfo，用于编辑回填）
 type AdminPersonaTemplateDetailRsp struct {
-	TemplateId         int       `json:"templateId"`         // 主键ID
-	Name               string    `json:"name"`               // 模板名称（展示名称）
-	Icon               string    `json:"icon"`               // 图标：Lucide 图标名称或 URL
-	Description        string    `json:"description"`        // 模板描述
-	RoleInfo           string    `json:"roleInfo"`           // 系统提示词（完整内容）
-	CategoryId         int       `json:"categoryId"`         // 分类ID
-	UsageCount         int       `json:"usageCount"`         // 使用次数
-	SortOrder          int       `json:"sortOrder"`          // 排序号
-	Created            time.Time `json:"created"`            // 创建时间
-	Updated            time.Time `json:"updated"`            // 更新时间
+	TemplateId  int       `json:"templateId"`  // 主键ID
+	Name        string    `json:"name"`        // 模板名称（展示名称）
+	Icon        string    `json:"icon"`        // 图标：Lucide 图标名称或 URL
+	Description string    `json:"description"` // 模板描述
+	RoleInfo    string    `json:"roleInfo"`    // 系统提示词（完整内容）
+	CategoryId  int       `json:"categoryId"`  // 分类ID
+	UsageCount  int       `json:"usageCount"`  // 使用次数
+	SortOrder   int       `json:"sortOrder"`   // 排序号
+	Created     time.Time `json:"created"`     // 创建时间
+	Updated     time.Time `json:"updated"`     // 更新时间
 
 	// 关联分类信息（service 层组装）
 	CategoryName string `json:"categoryName,omitempty"` // 分类名称
@@ -51,22 +51,22 @@ type AdminPersonaTemplateDetailRsp struct {
 
 // AdminCreatePersonaTemplateReq 创建角色模板请求
 type AdminCreatePersonaTemplateReq struct {
-	Name               string `json:"name" validate:"required"`         // 模板名称（展示名称）
-	Icon               string `json:"icon"`                              // 图标：Lucide 图标名称或 URL
-	Description        string `json:"description"`                       // 模板描述（选填）
-	RoleInfo           string `json:"roleInfo" validate:"required"`      // 系统提示词（核心内容）
-	CategoryId         int    `json:"categoryId" validate:"required"`    // 分类ID
-	SortOrder          int    `json:"sortOrder"`                         // 排序号
+	Name        string `json:"name" validate:"required"`       // 模板名称（展示名称）
+	Icon        string `json:"icon"`                           // 图标：Lucide 图标名称或 URL
+	Description string `json:"description"`                    // 模板描述（选填）
+	RoleInfo    string `json:"roleInfo" validate:"required"`   // 系统提示词（核心内容）
+	CategoryId  int    `json:"categoryId" validate:"required"` // 分类ID
+	SortOrder   int    `json:"sortOrder"`                      // 排序号
 }
 
 // AdminUpdatePersonaTemplateReq 编辑角色模板请求（仅传需要修改的字段）
 type AdminUpdatePersonaTemplateReq struct {
-	Name               *string `json:"name"`                // 模板名称
-	Icon               *string `json:"icon"`                // 图标
-	Description        *string `json:"description"`         // 模板描述
-	RoleInfo           *string `json:"roleInfo"`            // 系统提示词
-	CategoryId         *int    `json:"categoryId"`          // 分类ID
-	SortOrder          *int    `json:"sortOrder"`           // 排序号
+	Name        *string `json:"name"`        // 模板名称
+	Icon        *string `json:"icon"`        // 图标
+	Description *string `json:"description"` // 模板描述
+	RoleInfo    *string `json:"roleInfo"`    // 系统提示词
+	CategoryId  *int    `json:"categoryId"`  // 分类ID
+	SortOrder   *int    `json:"sortOrder"`   // 排序号
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -148,16 +148,16 @@ type UserPersonaListItem struct {
 
 // UserPersonaDetailRsp 用户角色详情响应（编辑页回填，含完整配置）
 type UserPersonaDetailRsp struct {
-	PersonaId   int       `json:"personaId"`   // 主键ID
-	Name        string    `json:"name"`        // 角色名称
-	Icon        string    `json:"icon"`        // 图标
-	RoleInfo    string    `json:"roleInfo"`    // 角色设定文案
-	CategoryId  int       `json:"categoryId"`  // 分类ID
-	McpIds      []int     `json:"mcpIds"`      // MCP配置ID列表
-	SkillIds    []int     `json:"skillIds"`    // 技能ID列表
-	AIModelId   int       `json:"aiModelId"`   // 关联模型ID，0表示使用默认模型
-	Created     time.Time `json:"created"`     // 创建时间
-	Updated     time.Time `json:"updated"`     // 更新时间
+	PersonaId  int       `json:"personaId"`  // 主键ID
+	Name       string    `json:"name"`       // 角色名称
+	Icon       string    `json:"icon"`       // 图标
+	RoleInfo   string    `json:"roleInfo"`   // 角色设定文案
+	CategoryId int       `json:"categoryId"` // 分类ID
+	McpIds     []int     `json:"mcpIds"`     // MCP配置ID列表
+	SkillIds   []int     `json:"skillIds"`   // 技能ID列表
+	AIModelId  int       `json:"aiModelId"`  // 关联模型ID，0表示使用默认模型
+	Created    time.Time `json:"created"`    // 创建时间
+	Updated    time.Time `json:"updated"`    // 更新时间
 
 	// 关联信息（service 层组装）
 	CategoryName string `json:"categoryName,omitempty"` // 分类名称
@@ -168,14 +168,14 @@ type UserPersonaDetailRsp struct {
 
 // CreateUserPersonaReq 创建用户角色请求
 type CreateUserPersonaReq struct {
-	Name       string `json:"name" validate:"required"`     // 角色名称（同一用户下唯一，2-50字）
-	Icon       string `json:"icon"`                         // 图标：Lucide 图标名称或 URL
-	RoleInfo   string `json:"roleInfo" validate:"required"` // 角色设定文案
+	Name       string `json:"name" validate:"required"`       // 角色名称（同一用户下唯一，2-50字）
+	Icon       string `json:"icon"`                           // 图标：Lucide 图标名称或 URL
+	RoleInfo   string `json:"roleInfo" validate:"required"`   // 角色设定文案
 	CategoryId int    `json:"categoryId" validate:"required"` // 分类ID
-	McpIds     []int  `json:"mcpIds"`                       // MCP配置ID列表
-	SkillIds   []int  `json:"skillIds"`                     // 技能ID列表
-	AIModelId  int    `json:"aiModelId"`                    // 关联模型ID，0表示使用默认模型
-	TemplateId *int   `json:"templateId"`                   // 关联模板ID（可选，选择模板创建时传入，后端递增 usageCount）
+	McpIds     []int  `json:"mcpIds"`                         // MCP配置ID列表
+	SkillIds   []int  `json:"skillIds"`                       // 技能ID列表
+	AIModelId  int    `json:"aiModelId"`                      // 关联模型ID，0表示使用默认模型
+	TemplateId *int   `json:"templateId"`                     // 关联模板ID（可选，选择模板创建时传入，后端递增 usageCount）
 }
 
 // UpdateUserPersonaReq 编辑用户角色请求（仅传需要修改的字段）

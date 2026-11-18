@@ -81,14 +81,14 @@ type FileManagerProfileListRsp struct {
 
 // FileManagerProfileCreateReq 新增环境变量请求
 type FileManagerProfileCreateReq struct {
-	Key   string `json:"key" validate:"required"`   // 环境变量名
-	Value string `json:"value"`                      // 环境变量值
+	Key   string `json:"key" validate:"required"` // 环境变量名
+	Value string `json:"value"`                   // 环境变量值
 }
 
 // FileManagerProfileUpdateReq 更新环境变量请求
 type FileManagerProfileUpdateReq struct {
-	Key   string `json:"key" validate:"required"`   // 环境变量名
-	Value string `json:"value"`                      // 环境变量新值
+	Key   string `json:"key" validate:"required"` // 环境变量名
+	Value string `json:"value"`                   // 环境变量新值
 }
 
 // FileManagerProfileDeleteReq 删除环境变量请求

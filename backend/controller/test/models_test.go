@@ -66,7 +66,7 @@ func TestCreateModel(t *testing.T) {
 		//ProxyURL:            "http://127.0.0.1:33210",
 		ContextLen: 200,
 		IsDefault:  0,
-		IsFlash: 0,
+		IsFlash:    0,
 		Remark:     "test model",
 	}
 	str, httpResp := requests.NewHTTPRequest(domain+"/api/admin/models").

@@ -31,10 +31,10 @@ func ExampleNew() {
 
 	// 创建配置
 	config := &pruning.Config{
-		TokenThreshold:       160000, // Token阈值
-		MaxToolResultLength:  2000,   // 最大工具结果长度
-		HeadLength:           1000,   // 截断时保留头部1000字符
-		TailLength:           1000,   // 截断时保留尾部1000字符
+		TokenThreshold:      160000, // Token阈值
+		MaxToolResultLength: 2000,   // 最大工具结果长度
+		HeadLength:          1000,   // 截断时保留头部1000字符
+		TailLength:          1000,   // 截断时保留尾部1000字符
 	}
 
 	// 创建中间件

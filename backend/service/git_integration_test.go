@@ -358,8 +358,8 @@ func newGitServiceTestEnv(t *testing.T) *FileManagerService {
 func newTeamProjectServiceForTest(svc *FileManagerService) *TeamProjectService {
 	return &TeamProjectService{
 		FileManagerService: FileManagerService{
-			GitSettingRepo: svc.GitSettingRepo,
-			UserRepo:       svc.UserRepo,
+			GitSettingRepo:  svc.GitSettingRepo,
+			UserRepo:        svc.UserRepo,
 			TeamProjectRepo: svc.TeamProjectRepo,
 		},
 		TPRepo: svc.TeamProjectRepo,

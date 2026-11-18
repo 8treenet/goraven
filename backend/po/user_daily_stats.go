@@ -11,13 +11,13 @@ import (
 // 每轮对话 SSE end 事件后增量更新，避免仪表盘实时聚合 message 表
 type UserDailyStats struct {
 	StatId             int       `gorm:"primaryKey;column:id;autoIncrement"`
-	UserId             string    `gorm:"uniqueIndex:idx_user_date;column:user_id;type:varchar(64);not null"` // 用户ID
+	UserId             string    `gorm:"uniqueIndex:idx_user_date;column:user_id;type:varchar(64);not null"`         // 用户ID
 	StatDate           string    `gorm:"uniqueIndex:idx_user_date;index;column:stat_date;type:varchar(10);not null"` // 统计日期 (YYYY-MM-DD)
-	PromptTokens       int       `gorm:"column:prompt_tokens;default:0"`                                     // 当日 prompt token
-	PromptCachedTokens int       `gorm:"column:prompt_cached_tokens;default:0"`                               // 当日 缓存 prompt token
-	CompletionTokens   int       `gorm:"column:completion_tokens;default:0"`                                 // 当日 completion token
-	MessageCount       int       `gorm:"column:message_count;default:0"`                                     // 当日消息数
-	RoundCount         int       `gorm:"column:round_count;default:0"`                                       // 当日对话轮次
+	PromptTokens       int       `gorm:"column:prompt_tokens;default:0"`                                             // 当日 prompt token
+	PromptCachedTokens int       `gorm:"column:prompt_cached_tokens;default:0"`                                      // 当日 缓存 prompt token
+	CompletionTokens   int       `gorm:"column:completion_tokens;default:0"`                                         // 当日 completion token
+	MessageCount       int       `gorm:"column:message_count;default:0"`                                             // 当日消息数
+	RoundCount         int       `gorm:"column:round_count;default:0"`                                               // 当日对话轮次
 	Created            time.Time `gorm:"not null;column:created"`
 	Updated            time.Time `gorm:"not null;column:updated"`
 }

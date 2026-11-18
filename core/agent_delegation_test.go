@@ -3,11 +3,11 @@ package core_test
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"goraven/backend/po"
 	"goraven/backend/repository"
 	"goraven/core/agent"
 	unit_test "goraven/util/unit"
+	"math/rand"
 	"testing"
 )
 

@@ -75,8 +75,9 @@ func sessionStatus(sessionId string) uint8 {
 const mockSessionItemTitle = "代码审查 · GoRaven 项目"
 
 // BuildMockSessionList 按“用户是否调过 Chat()”组装会话列表：
-//   · 未调过：返回空 list，totalCount=0
-//   · 调过：  返回单条 list，sessionId 与 Chat 接口保持一致
+//
+//	· 未调过：返回空 list，totalCount=0
+//	· 调过：  返回单条 list，sessionId 与 Chat 接口保持一致
 func BuildMockSessionList(userId string) *infra.PageResponse {
 	sessionId, ok := GetMockSessionId(userId)
 	if !ok {
@@ -109,8 +110,9 @@ func BuildMockSessionList(userId string) *infra.PageResponse {
 }
 
 // BuildMockSessionDetail 按“sessionId 是否属于当前用户”组装详情：
-//   · 用户未调过 Chat()  或  sessionId 不匹配：返回 nil（controller 走 404）
-//   · 匹配：返回一条 mock 详情
+//
+//	· 用户未调过 Chat()  或  sessionId 不匹配：返回 nil（controller 走 404）
+//	· 匹配：返回一条 mock 详情
 func BuildMockSessionDetail(sessionId, userId string) *vo.SessionDetailRsp {
 	stored, ok := GetMockSessionId(userId)
 	if !ok || stored != sessionId {
@@ -118,20 +120,20 @@ func BuildMockSessionDetail(sessionId, userId string) *vo.SessionDetailRsp {
 	}
 	now := time.Now()
 	return &vo.SessionDetailRsp{
-		SessionId:     sessionId,
-		Title:         mockSessionItemTitle,
-		Status:        sessionStatus(sessionId),
-		PersonaId:     0,
-		Project:       "",
+		SessionId:          sessionId,
+		Title:              mockSessionItemTitle,
+		Status:             sessionStatus(sessionId),
+		PersonaId:          0,
+		Project:            "",
 		AIModelId:          1,
 		ContextTokens:      1234,
 		PromptCachedTokens: 0,
-		McpIds:        []int{},
-		SkillIds:      []int{},
-		LastChatTime:  now,
-		Created:       now,
-		ModelName:     "DeepSeek · deepseek-chat",
-		ModelIcon:     "/logos/deepseek.svg",
-		ContextLimit:  32768,
+		McpIds:             []int{},
+		SkillIds:           []int{},
+		LastChatTime:       now,
+		Created:            now,
+		ModelName:          "DeepSeek · deepseek-chat",
+		ModelIcon:          "/logos/deepseek.svg",
+		ContextLimit:       32768,
 	}
 }

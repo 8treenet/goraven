@@ -92,7 +92,7 @@ func (repo *ShareLinkRepository) IncrementViewCount(shareId string) error {
 		Where("share_id = ? AND deleted = 0", shareId).
 		Updates(map[string]interface{}{
 			"view_count": gorm.Expr("view_count + 1"),
-			"updated":   time.Now(),
+			"updated":    time.Now(),
 		}).Error
 }
 

@@ -49,10 +49,10 @@ type AdminMarketSkillDetailRsp struct {
 
 // AdminUpdateMarketSkillReq 管理员编辑市场技能请求（仅传需要修改的字段）
 type AdminUpdateMarketSkillReq struct {
-	Icon        *string `json:"icon"`        // 图标：Lucide 图标名称或 URL
-	CategoryId  *int    `json:"categoryId"`  // 分类ID
-	SortOrder   *int    `json:"sortOrder"`   // 排序号
-	Remark      *string `json:"remark"`      // 管理员备注
+	Icon       *string `json:"icon"`       // 图标：Lucide 图标名称或 URL
+	CategoryId *int    `json:"categoryId"` // 分类ID
+	SortOrder  *int    `json:"sortOrder"`  // 排序号
+	Remark     *string `json:"remark"`     // 管理员备注
 }
 
 // AdminMarketSkillStatusReq 管理员市场技能状态切换请求

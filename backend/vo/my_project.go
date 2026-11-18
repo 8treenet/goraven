@@ -25,14 +25,14 @@ type MyProjectUpdateReq struct {
 
 // MyProjectItem 个人项目列表项
 type MyProjectItem struct {
-	Id            int       `json:"id"`
-	ProjectName   string    `json:"projectName"`
-	Description   string    `json:"description"`
-	GitEnabled    bool      `json:"gitEnabled"`    // Git 开关
-	GitHasRemote  bool      `json:"gitHasRemote"`  // 已配置 origin 远程仓库
-	CloneState    uint8     `json:"cloneState"`    // 克隆状态：0非克隆 1克隆中 2成功 3失败
-	UpdatedAt     time.Time `json:"updatedAt"`
-	Created       time.Time `json:"created"`
+	Id           int       `json:"id"`
+	ProjectName  string    `json:"projectName"`
+	Description  string    `json:"description"`
+	GitEnabled   bool      `json:"gitEnabled"`   // Git 开关
+	GitHasRemote bool      `json:"gitHasRemote"` // 已配置 origin 远程仓库
+	CloneState   uint8     `json:"cloneState"`   // 克隆状态：0非克隆 1克隆中 2成功 3失败
+	UpdatedAt    time.Time `json:"updatedAt"`
+	Created      time.Time `json:"created"`
 }
 
 // MyProjectListRsp 个人项目列表响应

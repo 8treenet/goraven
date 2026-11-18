@@ -36,12 +36,12 @@ func (repo *DailyStatsRepository) AddDailyStats(userId string, promptTokens, com
 	return repo.db().Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "user_id"}, {Name: "stat_date"}},
 		DoUpdates: clause.Assignments(map[string]interface{}{
-			"prompt_tokens":       gorm.Expr("user_daily_stats.prompt_tokens + ?", promptTokens),
-			"completion_tokens":   gorm.Expr("user_daily_stats.completion_tokens + ?", completionTokens),
+			"prompt_tokens":        gorm.Expr("user_daily_stats.prompt_tokens + ?", promptTokens),
+			"completion_tokens":    gorm.Expr("user_daily_stats.completion_tokens + ?", completionTokens),
 			"prompt_cached_tokens": gorm.Expr("user_daily_stats.prompt_cached_tokens + ?", promptCachedTokens),
-			"message_count":       gorm.Expr("user_daily_stats.message_count + 1"),
-			"round_count":         gorm.Expr("user_daily_stats.round_count + 1"),
-			"updated":            time.Now(),
+			"message_count":        gorm.Expr("user_daily_stats.message_count + 1"),
+			"round_count":          gorm.Expr("user_daily_stats.round_count + 1"),
+			"updated":              time.Now(),
 		}),
 	}).Create(stats).Error
 }

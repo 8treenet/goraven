@@ -2,10 +2,10 @@ package controller
 
 import (
 	"fmt"
-	"path/filepath"
 	"goraven/backend/infra"
 	"goraven/backend/service"
 	"goraven/backend/vo"
+	"path/filepath"
 	"strings"
 
 	"github.com/8treenet/freedom"
@@ -19,9 +19,9 @@ func init() {
 
 // FileManagerController 文件管理控制器
 type FileManagerController struct {
-	FMSev    *service.FileManagerService
-	Worker   freedom.Worker
-	Request  *infra.Request
+	FMSev   *service.FileManagerService
+	Worker  freedom.Worker
+	Request *infra.Request
 }
 
 // BeforeActivation 注册路由

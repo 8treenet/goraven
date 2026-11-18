@@ -21,14 +21,14 @@ type RoundHook interface {
 
 // RoundContext carries the full context of a single query round.
 type RoundContext struct {
-	SessionID        string         // session identifier
-	UserID           string         // user identifier
-	RoundID          string         // unique round identifier
-	Query            string         // user input for this round (read-only in BeforeRound, nil in AfterRound)
+	SessionID        string            // session identifier
+	UserID           string            // user identifier
+	RoundID          string            // unique round identifier
+	Query            string            // user input for this round (read-only in BeforeRound, nil in AfterRound)
 	Messages         []*schema.Message // conversation history (BeforeRound: readable and modifiable; AfterRound: read-only)
-	Reply            *string        // agent reply content (AfterRound: readable and modifiable)
-	ReasoningContent *string        // full reasoning/thinking chain (AfterRound: read-only)
-	Stopped          bool           // whether the round was terminated
+	Reply            *string           // agent reply content (AfterRound: readable and modifiable)
+	ReasoningContent *string           // full reasoning/thinking chain (AfterRound: read-only)
+	Stopped          bool              // whether the round was terminated
 }
 
 // ======================= Agent Lifecycle Hook =======================

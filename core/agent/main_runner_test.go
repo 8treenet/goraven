@@ -162,10 +162,10 @@ type mediaSaveRepo struct {
 
 func (r *mediaSaveRepo) SaveChatMessage(_ string, m *po.Message) error { r.saved = m; return nil }
 func (r *mediaSaveRepo) GetChatMessages(string) ([]*po.Message, error) { return nil, nil }
-func (r *mediaSaveRepo) AddSessionTokens(string, int, int, int) error { return nil }
-func (r *mediaSaveRepo) SetContextTokens(string, int) error           { return nil }
-func (r *mediaSaveRepo) UpdateSessionStatus(string, int) error        { return nil }
-func (r *mediaSaveRepo) MarkSessionCompressed(string, []string) error { return nil }
+func (r *mediaSaveRepo) AddSessionTokens(string, int, int, int) error  { return nil }
+func (r *mediaSaveRepo) SetContextTokens(string, int) error            { return nil }
+func (r *mediaSaveRepo) UpdateSessionStatus(string, int) error         { return nil }
+func (r *mediaSaveRepo) MarkSessionCompressed(string, []string) error  { return nil }
 
 func TestSaveQueryPersistsMedia(t *testing.T) {
 	repo := &mediaSaveRepo{}

@@ -49,6 +49,6 @@ func NewDefaultSystemConfig() *SystemConfig {
 		ModelMaxRetries:            3,
 		ModelRateLimitWaitSec:      8,
 		ModelBackoffBaseSec:        3,
-		MainAgentTimeoutMinutes:  20,
+		MainAgentTimeoutMinutes:    20,
 	}
 }

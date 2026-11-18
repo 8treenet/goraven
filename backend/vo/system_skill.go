@@ -5,7 +5,7 @@ import "time"
 // AdminSystemSkillListReq 管理员系统技能列表请求
 type AdminSystemSkillListReq struct {
 	Search   string `url:"search"`   // 名称/描述模糊搜索
-	Status   *uint8 `url:"status"`  // 状态筛选：0启用 1禁用，nil不筛选
+	Status   *uint8 `url:"status"`   // 状态筛选：0启用 1禁用，nil不筛选
 	Page     int    `url:"page"`     // 页码
 	PageSize int    `url:"pageSize"` // 每页条数
 }
